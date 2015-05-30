@@ -57,7 +57,7 @@ exports["create (batch)"] = {
 		});
 	}
 };
-/*
+
 exports["read (valid)"] = {
 	setUp: function (done) {
 		this.store = haro();
@@ -67,13 +67,13 @@ exports["read (valid)"] = {
 		var self = this;
 
 		test.expect(4);
-		this.store.set(null, data[0]).then(function() {
-			var record = self.store.get(0);
+		this.store.set(null, data[0]).then(function(arg) {
+			var record = self.store.get(arg[0]);
 
 			test.equal(self.store.total, 1, "Should be '1'");
 			test.equal(self.store.data.size, 1, "Should be '1'");
-			test.equal(Object.keys(record.data).length, 19, "Should be a '19'");
-			test.equal(record.data.name, "Decker Merrill", "Should be a match");
+			test.equal(Object.keys(record[1]).length, 19, "Should be a '19'");
+			test.equal(record[1].name, "Decker Merrill", "Should be a match");
 			test.done();
 		}, function (e) {
 			console.log(e.stack);
@@ -94,7 +94,7 @@ exports["read (invalid)"] = {
 		this.store.set(null, data[0]).then(function() {
 			test.equal(self.store.total, 1, "Should be '1'");
 			test.equal(self.store.data.size, 1, "Should be '1'");
-			test.equal(self.store.get(1), undefined, "Should be 'undefined'");
+			test.equal(self.store.get('abc'), undefined, "Should be 'undefined'");
 			test.done();
 		}, function (e) {
 			console.log(e.stack);
@@ -102,7 +102,7 @@ exports["read (invalid)"] = {
 		});
 	}
 };
-
+/*
 exports["read (indexed & filtered)"] = {
 	setUp: function (done) {
 		this.store = store(null, {index:["age", "name", "age|name"]});
