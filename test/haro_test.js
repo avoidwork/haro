@@ -157,7 +157,7 @@ exports["delete"] = {
 		});
 	}
 };
-/*
+
 exports["delete (batch)"] = {
 	setUp: function (done) {
 		this.store = haro();
@@ -166,15 +166,14 @@ exports["delete (batch)"] = {
 	test: function (test) {
 		var self = this;
 
-		test.expect(5);
-		this.store.batch("set", data).then(function(arg) {
-			test.equal(arg[0].data.name, "Decker Merrill", "Should be a match");
-		}).then(function () {
-			self.store.batch("del", [0,2]).then(function () {
+		test.expect(3);
+		this.store.batch(data, "set").then(function(arg) {
+			test.equal(arg[0][1].name, "Decker Merrill", "Should be a match");
+			return arg;
+		}).then(function (arg) {
+			self.store.batch([arg[0][0], arg[2][0]], "del").then(function () {
 				test.equal(self.store.total, 4, "Should be '4'");
 				test.equal(self.store.data.size, 4, "Should be '4'");
-				test.equal(self.store.records[0].data.name, "Waters Yates", "Should be a match");
-				test.equal(self.store.records[0].index, 0, "Should be '0'");
 				test.done();
 			}, function (e) {
 				console.log(e.stack);
@@ -186,35 +185,7 @@ exports["delete (batch)"] = {
 		});
 	}
 };
-
-exports["delete (indexed)"] = {
-	setUp: function (done) {
-		this.store = store(null, {index:["age", "name", "age|name"]});
-		done();
-	},
-	test: function (test) {
-		var self = this;
-
-		test.expect(4);
-		this.store.batch("set", data).then(function() {
-			// self.store.indexes.key is automatically created
-			test.equal(Object.keys(self.store.indexes).length, 4, "Should be '4'");
-			test.equal(Object.keys(self.store.indexes.age).length, 4, "Should be '4'");
-			test.equal(Object.keys(self.store.indexes.age["20"]).length, 2, "Should be '2'");
-			self.store.del(0).then(function () {
-				test.equal(Object.keys(self.store.indexes.age["20"]).length, 1, "Should be '1'");
-				test.done();
-			}, function (e) {
-				console.log(e.stack);
-				test.done();
-			});
-		}).catch( function (e) {
-			console.log(e.stack);
-			test.done();
-		});
-	}
-};
-
+/*
 exports["setUri"] = {
 	setUp: function (done) {
 		this.store = store(null, {source: "data.result", key: "id"});
@@ -349,4 +320,4 @@ exports["update (wired / overwrite)"] = {
 		});
 	}
 };
-	*/
+*/
