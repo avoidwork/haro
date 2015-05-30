@@ -7,8 +7,20 @@ Harō is modern DataStore that can be wired to an API, & provides a simple feedb
 ```javascript
 var store = haro();
 
+console.log(store.total); // 0
+
 store.set(null, {abc: true}).then(function (arg) {
   console.log(arg); // ["ae3b34bd-8725-43e6-98a8-bf783bae6d71", {abc: true}];
+});
+
+console.log(store.total); // 1
+
+store.set("ae3b34bd-8725-43e6-98a8-bf783bae6d71", {abc: false}).then(function (arg) {
+  console.log(arg); // ["ae3b34bd-8725-43e6-98a8-bf783bae6d71", {abc: false}];
+});
+
+store.del("ae3b34bd-8725-43e6-98a8-bf783bae6d71").then(function () {
+  console.log(store.total); // 0;
 });
 ```
 
