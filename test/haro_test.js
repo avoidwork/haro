@@ -1,5 +1,43 @@
 var haro = require( "../lib/haro" ),
-    data = require( "./data.json" );
+    data = require( "./data.json" ),
+    tenso = require( "tenso" ),
+	server;
+
+server = tenso( {
+	security: {
+		csrf: false
+	},
+	logs: {
+		level: "warn"
+	},
+	routes: {
+		get: {
+			"/data.*" : function ( req, res ) {
+				res.respond( data );
+			}
+		},
+		put: {
+			"/data.*" : function ( req, res ) {
+				res.respond( req.body );
+			}
+		},
+		post: {
+			"/data.*" : function ( req, res ) {
+				res.respond( req.body, 201 );
+			}
+		},
+		patch: {
+			"/data.*" : function ( req, res ) {
+				res.respond( { success: true } );
+			}
+		},
+		"delete": {
+			"/data.*" : function ( req, res ) {
+				res.respond( { success: true } );
+			}
+		}
+	}
+} );
 
 exports["empty"] = {
 	setUp: function (done) {
@@ -185,23 +223,25 @@ exports["delete (batch)"] = {
 		});
 	}
 };
-/*
+
 exports["setUri"] = {
 	setUp: function (done) {
-		this.store = store(null, {source: "data.result", key: "id"});
+		this.store = haro(null);
+		this.store.source = "data.result";
+		this.store.key = "id";
 		done();
 	},
 	test: function (test) {
 		var self = this;
 
-		test.expect(6);
+		test.expect(5);
 		test.equal(this.store.total, 0, "Should be '0'");
 		test.equal(this.store.data.size, 0, "Should be '0'");
 		this.store.setUri("http://localhost:8000/data?page_size=10").then(function(args) {
+			console.log("here?");
 			test.equal(args.length, 6, "Should be '6'");
 			test.equal(self.store.total, 6, "Should be '6'");
 			test.equal(self.store.data.size, 6, "Should be '6'");
-			test.equal(self.store.records[0].key, args[0].key, "Should be a match");
 			test.done();
 		}, function (e) {
 			console.log(e.stack);
@@ -209,10 +249,10 @@ exports["setUri"] = {
 		});
 	}
 };
-
+/*
 exports["create (wired)"] = {
 	setUp: function (done) {
-		this.store     = store(null, {source: "data.result", key: "id"});
+		this.store     = haro(null, {source: "data.result", key: "id"});
 		this.record    = clone( data[0], true );
 		this.record.id = 6;
 		done();
@@ -240,7 +280,7 @@ exports["create (wired)"] = {
 
 exports["delete (wired)"] = {
 	setUp: function (done) {
-		this.store = store(null, {source: "data.result", key: "id"});
+		this.store = haro(null, {source: "data.result", key: "id"});
 		done();
 	},
 	test: function (test) {
@@ -266,7 +306,7 @@ exports["delete (wired)"] = {
 
 exports["update (wired / patch)"] = {
 	setUp: function (done) {
-		this.store = store(null, {source: "data.result", key: "id"});
+		this.store = haro(null, {source: "data.result", key: "id"});
 		done();
 	},
 	test: function (test) {
@@ -294,7 +334,7 @@ exports["update (wired / patch)"] = {
 
 exports["update (wired / overwrite)"] = {
 	setUp: function (done) {
-		this.store = store(null, {source: "data.result", key: "id"});
+		this.store = haro(null, {source: "data.result", key: "id"});
 		done();
 	},
 	test: function (test) {

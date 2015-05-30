@@ -102,11 +102,7 @@ class Haro {
 		let cfg = merge( this.config, config );
 
 		return fetch( input, cfg ).then( function( res ) {
-			return res[ cfg.headers.accept === "application/json" ? "json" : "text" ]().then( function ( data ) {
-				return data;
-			}, function ( e ) {
-				throw e;
-			} );
+			return res[ cfg.headers.accept === "application/json" ? "json" : "text" ]();
 		}, function ( e ) {
 			throw e;
 		} );
@@ -148,7 +144,17 @@ class Haro {
 
 		if ( this.uri ) {
 			this.request( this.uri ).then( arg => {
-				let data = this.source ? arg[ this.source ] : arg;
+				let data = arg;
+
+				if ( this.source ) {
+					try {
+						this.source.split( "." ).forEach( function ( i ) {
+							data = data[ i ];
+						} );
+					} catch ( e ) {
+						return defer.reject( e );
+					}
+				}
 
 				this.batch( data, "set" ).then( function ( records ) {
 					defer.resolve( records );
