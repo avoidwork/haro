@@ -290,7 +290,6 @@ exports["delete (wired)"] = {
 		test.expect(3);
 		this.store.setUri("http://localhost:8000/data?page_size=10").then(function(args) {
 			test.equal(self.store.total, 6, "Should be a match");
-			test.done();
 			self.store.del(args[0][0]).then(function () {
 				test.equal(self.store.total, self.store.data.size, "Should be a match");
 				test.equal(self.store.data.size, 5, "Should be a match");
@@ -305,52 +304,23 @@ exports["delete (wired)"] = {
 		});
 	}
 };
-/*
-exports["update (wired / patch)"] = {
-	setUp: function (done) {
-		this.store = haro(null, {source: "data.result", key: "id"});
-		done();
-	},
-	test: function (test) {
-		var self = this;
-
-		test.expect(3);
-		this.store.setUri("http://localhost:8000/data?page_size=10").then(function(args) {
-			var obj = args[0];
-
-			self.store.set(obj.key, {blah: true}).then(function (arg) {
-				test.equal(arg.key, self.store.records[0].key, "Should be a match");
-				test.equal(arg.index, self.store.records[0].index, "Should be a match");
-				test.equal(arg.data.blah, true, "Should be a match");
-				test.done();
-			}, function (e) {
-				console.log(e.stack);
-				test.done();
-			});
-		}, function (e) {
-			console.log(e.stack);
-			test.done();
-		});
-	}
-};
 
 exports["update (wired / overwrite)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {source: "data.result", key: "id"});
+		this.store = haro(null);
+		this.store.source = "data.result";
+		this.store.key = "guid";
 		done();
 	},
 	test: function (test) {
 		var self = this;
 
-		test.expect(4);
+		test.expect(1);
 		this.store.setUri("http://localhost:8000/data?page_size=10").then(function(args) {
 			var obj = args[0];
 
-			self.store.set(obj.key, {blah: true}, false, true).then(function (arg) {
-				test.equal(arg.key, self.store.records[0].key, "Should be a match");
-				test.equal(arg.index, self.store.records[0].index, "Should be a match");
-				test.equal(arg.data.blah, true, "Should be a match");
-				test.equal(Object.keys(arg.data ).length, 1, "Should be a match");
+			self.store.set(obj[0], {blah: true}, false, true).then(function (arg) {
+				test.equal(Object.keys(arg[1]).length, 1, "Should be a match");
 				test.done();
 			}, function (e) {
 				console.log(e.stack);
@@ -362,4 +332,3 @@ exports["update (wired / overwrite)"] = {
 		});
 	}
 };
-*/

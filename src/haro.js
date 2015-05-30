@@ -47,7 +47,7 @@ class Haro {
 
 		if ( this.data.has( key ) ) {
 			if ( !batch && this.uri ) {
-				this.request( this.uri + "/" + key, {method: "delete"} ).then( function () {
+				this.request( this.uri.replace( /\?.*/, "" ) + "/" + key, {method: "delete"} ).then( () => {
 					if ( this.data.has( key ) ) {
 						this.data.delete( key );
 						--this.total;
@@ -62,7 +62,7 @@ class Haro {
 				defer.resolve();
 			}
 		} else {
-			defer.reject( "Record not found" );
+			defer.reject( new Error( "Record not found" ) );
 		}
 
 		return defer.promise;
@@ -105,7 +105,7 @@ class Haro {
 		} );
 	}
 
-	set ( key, data, batch=false ) {
+	set ( key, data, batch=false, override=false ) {
 		let defer = deferred(),
 		    method = "post",
 		    ldata = clone( data );
@@ -114,11 +114,14 @@ class Haro {
 			key = this.key ? ldata[ this.key ] : uuid() || uuid();
 		} else if ( this.data.has( key ) ) {
 			method = "put";
-			ldata  = merge( this.get( key )[ 1 ], ldata );
+
+			if ( !override ) {
+				ldata = merge( this.get( key )[ 1 ], ldata );
+			}
 		}
 
 		if ( !batch && this.uri ) {
-			this.request( this.uri + "/" + key, { method: method, body: JSON.stringify( ldata ) } ).then( () => {
+			this.request( this.uri.replace( /\?.*/, "" ) + "/" + key, { method: method, body: JSON.stringify( ldata ) } ).then( () => {
 				this.data.set( key, ldata );
 				++this.total;
 				defer.resolve( this.get( key ) );
