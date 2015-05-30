@@ -29,10 +29,7 @@ class Haro {
 			} );
 		} else {
 			args.forEach( i => {
-				let data = clone( i ),
-				    key = this.key ? data[ this.key ] || uuid() : uuid();
-
-				promises.push( this.set( key, data, true ) );
+				promises.push( this.set( null, i, true ) );
 			} );
 		}
 

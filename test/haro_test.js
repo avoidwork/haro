@@ -228,7 +228,7 @@ exports["setUri"] = {
 	setUp: function (done) {
 		this.store = haro(null);
 		this.store.source = "data.result";
-		this.store.key = "id";
+		this.store.key = "guid";
 		done();
 	},
 	test: function (test) {
@@ -253,9 +253,9 @@ exports["create (wired)"] = {
 	setUp: function (done) {
 		this.store = haro(null);
 		this.store.source = "data.result";
-		this.store.key = "id";
+		this.store.key = "guid";
 		this.record = JSON.parse(JSON.stringify( data[0] ) );
-		this.record.id = "abc";
+		this.record.id = "8385ac94-0ebf-4a83-a6ba-25b54ce343be";
 		done();
 	},
 	test: function (test) {
@@ -276,21 +276,24 @@ exports["create (wired)"] = {
 		});
 	}
 };
-/*
+
 exports["delete (wired)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {source: "data.result", key: "id"});
+		this.store = haro(null);
+		this.store.source = "data.result";
+		this.store.key = "guid";
 		done();
 	},
 	test: function (test) {
 		var self = this;
 
 		test.expect(3);
-		this.store.setUri("http://localhost:8000/data?page_size=10").then(function() {
-			self.store.del(0).then(function () {
+		this.store.setUri("http://localhost:8000/data?page_size=10").then(function(args) {
+			test.equal(self.store.total, 6, "Should be a match");
+			test.done();
+			self.store.del(args[0][0]).then(function () {
 				test.equal(self.store.total, self.store.data.size, "Should be a match");
 				test.equal(self.store.data.size, 5, "Should be a match");
-				test.equal(self.store.records[0].key, '1', "Should be a match");
 				test.done();
 			}, function (e) {
 				console.log(e.stack);
@@ -302,7 +305,7 @@ exports["delete (wired)"] = {
 		});
 	}
 };
-
+/*
 exports["update (wired / patch)"] = {
 	setUp: function (done) {
 		this.store = haro(null, {source: "data.result", key: "id"});
