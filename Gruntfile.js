@@ -83,7 +83,7 @@ module.exports = function (grunt) {
 	grunt.loadNpmTasks("grunt-babel");
 
 	// aliases
-	grunt.registerTask("test", [/*"nodeunit"*/]);
+	grunt.registerTask("test", ["nodeunit"]);
 	grunt.registerTask("build", ["concat", "sed", "babel", "uglify"]);
 	grunt.registerTask("default", ["build", "test"]);
 };
