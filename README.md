@@ -13,65 +13,65 @@ store.set(null, {abc: true}).then(function (arg) {
 ```
 
 ### Configuration
-_config_
-Object
+**config**
+_Object_
 
 Default settings for `fetch()`. You must manually enable `CORS` mode!
 
-_key_
-String
+**key**
+_String_
 
 Optional `Object` key to utilize as `Map` key, defaults to a version 4 `UUID` if not specified, or found
 
-_source_
-String
+**source**
+_String_
 
 Optional `Object` key to retrieve data from API responses, see `setUri()`
 
 ### Properties
-_total_
-Number
+**total**
+_Number_
 
 Total records in the DataStore
 
-_uri_
-String
+**uri**
+_String_
 
 URI of an API the DataStore is wired to, in a feedback loop (do not modify, use `setUri()`)
 
 ### API
-_batch( array, type )_
-Promise
+**batch( array, type )**
+_Promise_
 
 The first argument must be an `Array`, and the second argument must be `del` or `set`
 
-_del( key )_
-Promise
+**del( key )**
+_Promise_
 
 Deletes the record
 
-_get( key )_
-Tuple
+**get( key )**
+_Tuple_
 
 Gets the record as a double `Tuple` with the shape `[key, data]` 
 
-_range( start, end )_
-Tuple
+**range( start, end )**
+_Tuple_
 
 Gets a `Tuple` of double `Tuples` with the shape `[key, data]` for the corresponding range of records
 
-_request( input, config )_
-Promise
+**request( input, config )**
+_Promise_
 
 Returns a `Promise` for a `fetch()` with a coerced response body (JSON or text) as the `resolve()` argument
 
-_set( key, data, batch=false )_
-Promise
+**set( key, data, batch=false )**
+_Promise_
 
 Returns a `Promise` for setting/amending a record in the DataStore, if `key` is `false` a version 4 `UUID` will be generated
 
-_setUri( uri )_
-Promise
+**setUri( uri )**
+_Promise_
 
 Returns a `Promise` for wiring the DataStore to an API, with the retrieved record set as the `resolve()` argument
 
