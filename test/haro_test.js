@@ -102,37 +102,8 @@ exports["read (invalid)"] = {
 		});
 	}
 };
-/*
-exports["read (indexed & filtered)"] = {
-	setUp: function (done) {
-		this.store = store(null, {index:["age", "name", "age|name"]});
-		done();
-	},
-	test: function (test) {
-		var self = this;
 
-		test.expect(5);
-		this.store.batch("set", data).then(function() {
-			// self.store.indexes.key is automatically created
-			test.equal(Object.keys(self.store.indexes).length, 4, "Should be '4'");
-			test.equal(Object.keys(self.store.indexes.age).length, 4, "Should be '4'");
-			self.store.select({age:20}).then(function (args) {
-				test.equal(args.length, Object.keys(self.store.indexes.age["20"]).length, "Should be a match");
-				test.equal(args[0].data.name, "Decker Merrill", "Should be a match");
-				test.equal(args[1].data.name, "Leann Sosa", "Should be a match");
-				test.done();
-			}, function (e) {
-				console.log(e.stack);
-				test.done();
-			});
-		}).catch( function (e) {
-			console.log(e.stack);
-			test.done();
-		});
-	}
-};
-
-exports["update (delta)"] = {
+exports["update"] = {
 	setUp: function (done) {
 		this.store = haro();
 		done();
@@ -142,37 +113,11 @@ exports["update (delta)"] = {
 
 		test.expect(2);
 		this.store.set(null, data[0]).then(function(arg) {
-			test.equal(arg.data.name, "Decker Merrill", "Should be a match");
-		}).then(function () {
-			self.store.set(0, {name: "John Doe"}).then(function (arg) {
-				test.equal(arg.data.name, "John Doe", "Should be a match");
-				test.done();
-			}, function (e) {
-				console.log(e.stack);
-				test.done();
-			});
-		}).catch(function (e) {
-			console.log(e.stack);
-			test.done();
-		});
-	}
-};
-
-exports["update (overwrite)"] = {
-	setUp: function (done) {
-		this.store = haro();
-		done();
-	},
-	test: function (test) {
-		var self = this;
-
-		test.expect(3);
-		this.store.set(null, data[0]).then(function(arg) {
-			test.equal(arg.data.name, "Decker Merrill", "Should be a match");
-		}).then(function () {
-			self.store.set(0, {name: "John Doe"}, false, true).then(function (arg) {
-				test.equal(arg.data.name, "John Doe", "Should be a match");
-				test.equal(Object.keys(arg.data ).length, 1, "Should be '1'");
+			test.equal(arg[1].name, "Decker Merrill", "Should be a match");
+			return arg;
+		}).then(function (arg) {
+			self.store.set(arg[0], {name: "John Doe"}).then(function (arg) {
+				test.equal(arg[1].name, "John Doe", "Should be a match");
 				test.done();
 			}, function (e) {
 				console.log(e.stack);
@@ -195,9 +140,10 @@ exports["delete"] = {
 
 		test.expect(3);
 		this.store.set(null, data[0]).then(function(arg) {
-			test.equal(arg.data.name, "Decker Merrill", "Should be a match");
-		}).then(function () {
-			self.store.del(0).then(function () {
+			test.equal(arg[1].name, "Decker Merrill", "Should be a match");
+			return arg;
+		}).then(function (arg) {
+			self.store.del(arg[0]).then(function () {
 				test.equal(self.store.total, 0, "Should be '0'");
 				test.equal(self.store.data.size, 0, "Should be '0'");
 				test.done();
@@ -211,7 +157,7 @@ exports["delete"] = {
 		});
 	}
 };
-
+/*
 exports["delete (batch)"] = {
 	setUp: function (done) {
 		this.store = haro();
