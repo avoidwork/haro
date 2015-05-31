@@ -152,7 +152,7 @@ class Haro {
 				this.registry.push( key );
 				this.versions.set( key, new Set() );
 			} else {
-				this.versions.get( key ).add( clone( this.data.get( key ) ) );
+				this.versions.get( key ).add( tuple( this.data.get( key ) ) );
 			}
 
 			this.data.set( key, ldata );
