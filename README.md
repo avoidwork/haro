@@ -84,7 +84,7 @@ _Tuple_
 Gets the record as a double `Tuple` with the shape `[key, data]`.
 
 **keys()**
-__Iterator__
+_MapIterator_
 
 Returns a new Iterator object that contains the keys for each element in the Map object in insertion order.Returns a new Iterator object that contains the keys for each element in the Map object in insertion order.
 
@@ -109,7 +109,7 @@ _Promise_
 Returns a `Promise` for wiring the DataStore to an API, with the retrieved record set as the `resolve()` argument.
 
 **values()**
-_Iterator_
+_MapIterator_
 
 Returns a new Iterator object that contains the values for each element in the Map object in insertion order.
 
