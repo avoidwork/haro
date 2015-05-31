@@ -1,6 +1,6 @@
 {
   "name": "haro",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Harō is modern DataStore that can be wired to an API",
   "main": "lib/haro.js",
   "scripts": {

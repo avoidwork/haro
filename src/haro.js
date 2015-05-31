@@ -117,14 +117,19 @@ class Haro {
 	limit ( start=0, offset=0 ) {
 		let i = start,
 		    nth = start + offset,
-		    list = [];
+		    list = [],
+		    k;
 
-		if ( i === nth || i > nth || nth > this.total ) {
+		if ( i < 0 || i >= nth ) {
 			throw new Error( "Invalid range" );
 		}
 
 		do {
-			list.push( this.get( this.registry[ i ] ) );
+			k = this.registry[ i ];
+
+			if ( k ) {
+				list.push( this.get( k ) );
+			}
 		} while ( ++i < nth );
 
 		return tuple.apply( tuple, list );
