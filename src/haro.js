@@ -105,7 +105,7 @@ class Haro {
 			}
 		} );
 
-		return tuple.call( tuple, result );
+		return tuple.apply( tuple, result );
 	}
 
 	forEach ( fn, ctx ) {
