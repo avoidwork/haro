@@ -37,7 +37,7 @@ class Haro {
 		Promise.all( promises ).then( function ( arg ) {
 			defer.resolve( arg );
 		}, function ( e ) {
-			defer.reject( e.message || e );
+			defer.reject( e );
 		} );
 
 		return defer.promise;
@@ -77,7 +77,7 @@ class Haro {
 		if ( this.data.has( key ) ) {
 			if ( !batch && this.uri ) {
 				this.request( this.uri.replace( /\?.*/, "" ) + "/" + key, {method: "delete"} ).then( next, function ( e ) {
-					defer.reject( e.message || e );
+					defer.reject( e );
 				} );
 			} else {
 				next()
@@ -166,7 +166,7 @@ class Haro {
 
 		if ( !batch && this.uri ) {
 			this.request( this.uri.replace( /\?.*/, "" ) + "/" + key, { method: method, body: JSON.stringify( ldata ) } ).then( next, function ( e ) {
-				defer.reject( e.message || e );
+				defer.reject( e );
 			} );
 		} else {
 			next();
@@ -197,10 +197,10 @@ class Haro {
 				this.batch( data, "set" ).then( function ( records ) {
 					defer.resolve( records );
 				}, function ( e ) {
-					defer.reject( e.message || e );
+					defer.reject( e );
 				} );
 			}, function ( e ) {
-				defer.reject( e.message || e );
+				defer.reject( e );
 			} )
 		} else {
 			defer.resolve();
