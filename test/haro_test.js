@@ -77,7 +77,7 @@ exports["create (batch)"] = {
 	test: function (test) {
 		var self = this;
 
-		test.expect(8);
+		test.expect(9);
 		test.equal(this.store.total, 0, "Should be '0'");
 		test.equal(this.store.data.size, 0, "Should be '0'");
 		this.store.batch(data, "set").then(function() {
@@ -87,6 +87,7 @@ exports["create (batch)"] = {
 			test.equal(self.store.limit(2, 1)[0][0], self.store.get(self.store.registry[2])[0], "Should be a match");
 			test.equal(self.store.limit(2, 2)[1][0], self.store.get(self.store.registry[3])[0], "Should be a match");
 			test.equal(self.store.limit(10, 5).length, 0, "Should be '0'");
+			test.equal(self.store.filter(function (i) { return /decker/i.test(i.name); }).length, 1, "Should be '1'");
 			test.done();
 		}, function (e) {
 			console.log(e.stack);

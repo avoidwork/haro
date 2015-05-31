@@ -96,6 +96,18 @@ class Haro {
 		return this.data.entries();
 	}
 
+	filter ( fn ) {
+		let result = [];
+
+		this.forEach( function ( i ) {
+			if ( fn( i ) === true ) {
+				result.push( i );
+			}
+		} );
+
+		return tuple.call( tuple, result );
+	}
+
 	forEach ( fn, ctx ) {
 		return this.data.forEach( fn, ctx );
 	}
