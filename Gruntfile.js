@@ -53,7 +53,7 @@ module.exports = function (grunt) {
 				sourceMap: true,
 				sourceMapIncludeSources: true,
 				mangle: {
-					except: ["Tuple"]
+					except: ["Haro"]
 				}
 			},
 			target: {
