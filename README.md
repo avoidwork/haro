@@ -82,12 +82,12 @@ _MapIterator_
 
 Returns returns a new `Iterator` object that contains an array of `[key, value]` for each element in the `Map` object in insertion order.
 
-**filter(callbackFn)**
+**filter( callbackFn )**
 _Tuple_
 
 Returns a `Tuple` of double `Tuples` with the shape `[key, value]` for records which returned `true` to `callbackFn(value, key)`.
 
-**forEach(callbackFn[, thisArg])**
+**forEach( callbackFn[, thisArg] )**
 _Undefined_
 
 Calls `callbackFn` once for each key-value pair present in the `Map` object, in insertion order. If a `thisArg` parameter is provided to `forEach`, it will be used as the this value for each callback.
@@ -107,7 +107,7 @@ _Tuple_
 
 Returns a `Tuple` of double `Tuples` with the shape `[key, value]` for the corresponding range of records.
 
-**map(callbackFn)**
+**map( callbackFn )**
 _Tuple_
 
 Returns a `Tuple` of double `Tuples` with the shape `[key, value]` of records with the returned `value` of `callbackFn(value, key)`.
