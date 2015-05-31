@@ -8,20 +8,17 @@ Harō is modern DataStore that can be wired to an API, & provides a simple feedb
 var store = haro();
 
 console.log(store.total); // 0
-
 store.set(null, {abc: true}).then(function (arg) {
-  var id = arg[0];
-
-  console.log(arg); // ["ae3b34bd-8725-43e6-98a8-bf783bae6d71", {abc: true}];
+  console.log(arg); // [$uuid, {abc: true}];
   console.log(store.total); // 1
-
-  store.set(id, {abc: false}).then(function (arg) {
-    console.log(arg); // ["ae3b34bd-8725-43e6-98a8-bf783bae6d71", {abc: false}];
-
-    store.del(id).then(function () {
-      console.log(store.total); // 0;
-    });
-  });
+  return store.set(arg[0], {abc: false});
+}).then(function (arg) {
+  console.log(arg); // [$uuid, {abc: false}];
+  return store.del(arg[0])
+}).then(function () {
+  console.log(store.total); // 0;
+}).catch(function (e) {
+  console.error(e.stack || e.message || e);
 });
 ```
 

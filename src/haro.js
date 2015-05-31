@@ -78,7 +78,7 @@ class Haro {
 			if ( !batch && this.uri ) {
 				this.request( this.uri.replace( /\?.*/, "" ) + "/" + key, {method: "delete"} ).then( next, function ( e ) {
 					defer.reject( e.message || e );
-				});
+				} );
 			} else {
 				next()
 			}
