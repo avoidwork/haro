@@ -115,7 +115,7 @@ Returns a `Tuple` of double `Tuples` with the shape `[key, value]` of records wi
 **request( input, config )**
 _Promise_
 
-Returns a `Promise` for a `fetch()` with a coerced response body (JSON or text) as the `resolve()` argument.
+Returns a `Promise` for a `fetch()` with a double `Tuple` [`body`, `status`] as the `resolve()` argument.
 
 **set( key, data, batch=false )**
 _Promise_

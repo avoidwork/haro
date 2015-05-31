@@ -80,7 +80,7 @@ class Haro {
 		if ( this.data.has( key ) ) {
 			if ( !batch && this.uri ) {
 				this.request( this.uri.replace( /\?.*/, "" ) + "/" + key, {method: "delete"} ).then( next, function ( e ) {
-					defer.reject( e );
+					defer.reject( e[0] || e );
 				} );
 			} else {
 				next()
@@ -161,9 +161,17 @@ class Haro {
 		let cfg = merge( this.config, config );
 
 		return fetch( input, cfg ).then( function( res ) {
-			return res[ cfg.headers.accept === "application/json" ? "json" : "text" ]();
+			return res[ res.headers.get( "content-type").indexOf( "application/json" ) > -1 ? "json" : "text" ]().then( function ( arg ) {
+				if ( res.status === 0 || res.status >= 400 ) {
+					throw tuple( arg, res.status );
+				}
+
+				return tuple( arg, res.status );
+			}, function ( e ) {
+				throw tuple( e.message, res.status );
+			} );
 		}, function ( e ) {
-			throw e;
+			throw tuple( e.message, 0 );
 		} );
 	}
 
@@ -198,7 +206,7 @@ class Haro {
 
 		if ( !batch && this.uri ) {
 			this.request( this.uri.replace( /\?.*/, "" ) + "/" + key, { method: method, body: JSON.stringify( ldata ) } ).then( next, function ( e ) {
-				defer.reject( e );
+				defer.reject( e[0] || e );
 			} );
 		} else {
 			next();
@@ -214,7 +222,7 @@ class Haro {
 
 		if ( this.uri ) {
 			this.request( this.uri ).then( arg => {
-				let data = arg;
+				let data = arg[ 0 ];
 
 				if ( this.source ) {
 					try {
@@ -232,7 +240,7 @@ class Haro {
 					defer.reject( e );
 				} );
 			}, function ( e ) {
-				defer.reject( e );
+				defer.reject( e[0] || e );
 			} )
 		} else {
 			defer.resolve();
