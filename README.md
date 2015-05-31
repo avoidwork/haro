@@ -1,5 +1,5 @@
 # haro
-Harō is modern DataStore that can be wired to an API, & provides a simple feedback loop with `Promises`!
+Harō is modern DataStore that can be wired to an API, & provides a simple feedback loop with `Promises`.
 
 [![build status](https://secure.travis-ci.org/avoidwork/haro.svg)](http://travis-ci.org/avoidwork/haro)
 
