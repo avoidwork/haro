@@ -14,6 +14,7 @@ class Haro {
 		this.source = "";
 		this.total = 0;
 		this.uri = "";
+		this.versions = new Map();
 
 		if ( data ) {
 			this.batch( data, "set" );
@@ -47,6 +48,7 @@ class Haro {
 		this.total = 0;
 		this.registry = [];
 		this.data.clear();
+		this.versions.clear();
 
 		return this;
 	}
@@ -68,6 +70,7 @@ class Haro {
 				}
 
 				this.data.delete( key );
+				this.versions.delete( key );
 				--this.total;
 			}
 
@@ -144,13 +147,15 @@ class Haro {
 			next;
 
 		next = () => {
-			this.data.set( key, ldata );
-
 			if (method === "post" ) {
-				this.registry.push( key );
 				++this.total;
+				this.registry.push( key );
+				this.versions.set( key, new Set() );
+			} else {
+				this.versions.get( key ).add( clone( this.data.get( key ) ) );
 			}
 
+			this.data.set( key, ldata );
 			defer.resolve( this.get( key ) );
 		};
 

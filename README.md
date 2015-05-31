@@ -1,5 +1,6 @@
 # haro
-Harō is modern DataStore that can be wired to an API, & provides a simple feedback loop with `Promises`.
+Harō is modern DataStore that can be wired to an API, & provides a simple feedback loop with `Promises`. It is a
+partially persistent data structure, by maintaining version sets of records in `versions`.
 
 [![build status](https://secure.travis-ci.org/avoidwork/haro.svg)](http://travis-ci.org/avoidwork/haro)
 
@@ -14,6 +15,7 @@ store.set(null, {abc: true}).then(function (arg) {
   return store.set(arg[0], {abc: false});
 }).then(function (arg) {
   console.log(arg); // [$uuid, {abc: false}];
+  console.log(store.versions.get(arg[0]).size); // 1;
   return store.del(arg[0])
 }).then(function () {
   console.log(store.total); // 0;
@@ -39,6 +41,11 @@ _String_
 Optional `Object` key to retrieve data from API responses, see `setUri()`
 
 ### Properties
+**data**
+_Map_
+
+`Map` of records, updated by `del()` & `set()`
+
 **total**
 _Number_
 
@@ -48,6 +55,11 @@ Total records in the DataStore
 _String_
 
 URI of an API the DataStore is wired to, in a feedback loop (do not modify, use `setUri()`)
+
+**versions**
+_Map_
+
+`Map` of `Sets` of records, updated by `set()`
 
 ### API
 **batch( array, type )**
@@ -68,27 +80,27 @@ Deletes the record.
 **entries()**
 _MapIterator_
 
-Returns returns a new Iterator object that contains an array of [key, value] for each element in the Map object in insertion order.
+Returns returns a new `Iterator` object that contains an array of `[key, value]` for each element in the `Map` object in insertion order.
 
-**forEach(fn[, thisArg])**
+**forEach(callbackFn[, thisArg])**
 _Undefined_
 
-Calls callbackFn once for each key-value pair present in the Map object, in insertion order. If a thisArg parameter is provided to forEach, it will be used as the this value for each callback.
+Calls `callbackFn` once for each key-value pair present in the `Map` object, in insertion order. If a `thisArg` parameter is provided to `forEach`, it will be used as the this value for each callback.
 
 **get( key )**
 _Tuple_
 
-Gets the record as a double `Tuple` with the shape `[key, data]`.
+Gets the record as a double `Tuple` with the shape `[key, value]`.
 
 **keys()**
 _MapIterator_
 
-Returns a new Iterator object that contains the keys for each element in the Map object in insertion order.Returns a new Iterator object that contains the keys for each element in the Map object in insertion order.
+Returns a new `Iterator` object that contains the keys for each element in the `Map` object in insertion order.`
 
 **limit( start, offset )**
 _Tuple_
 
-Returns a `Tuple` of double `Tuples` with the shape `[key, data]` for the corresponding range of records.
+Returns a `Tuple` of double `Tuples` with the shape `[key, value]` for the corresponding range of records.
 
 **request( input, config )**
 _Promise_
@@ -108,11 +120,12 @@ Returns a `Promise` for wiring the DataStore to an API, with the retrieved recor
 **values()**
 _MapIterator_
 
-Returns a new Iterator object that contains the values for each element in the Map object in insertion order.
+Returns a new `Iterator` object that contains the values for each element in the `Map` object in insertion order.
 
 ### Requirements
 - `Map`
 - `Promise`
+- `Set`
 - `fetch()`
 - `tuple()` see [tiny-tuple](https://github.com/avoidwork/tiny-tuple) for loading in a browser
 

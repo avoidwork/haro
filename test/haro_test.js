@@ -147,13 +147,14 @@ exports["update"] = {
 	test: function (test) {
 		var self = this;
 
-		test.expect(2);
+		test.expect(3);
 		this.store.set(null, data[0]).then(function(arg) {
 			test.equal(arg[1].name, "Decker Merrill", "Should be a match");
 			return arg;
 		}).then(function (arg) {
 			self.store.set(arg[0], {name: "John Doe"}).then(function (arg) {
 				test.equal(arg[1].name, "John Doe", "Should be a match");
+				test.equal(self.store.versions.get(arg[0]).size, 1, "Should be a '1'");
 				test.done();
 			}, function (e) {
 				console.log(e.stack);
