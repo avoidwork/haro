@@ -107,6 +107,11 @@ _Tuple_
 
 Returns a `Tuple` of double `Tuples` with the shape `[key, value]` for the corresponding range of records.
 
+**map(callbackFn)**
+_Tuple_
+
+Returns a `Tuple` of double `Tuples` with the shape `[key, value]` of records with the returned `value` of `callbackFn(value, key)`.
+
 **request( input, config )**
 _Promise_
 

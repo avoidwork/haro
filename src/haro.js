@@ -100,7 +100,7 @@ class Haro {
 		let result = [];
 
 		this.forEach( function ( value, key ) {
-			if ( fn( value, key ) === true ) {
+			if ( fn( clone( value ), clone( key ) ) === true ) {
 				result.push( tuple( key, value ) );
 			}
 		} );
@@ -145,6 +145,16 @@ class Haro {
 		} while ( ++i < nth );
 
 		return tuple.apply( tuple, list );
+	}
+
+	map ( fn ) {
+		let result = [];
+
+		this.forEach( function ( value, key ) {
+			result.push( tuple( key, fn( clone( value ), clone( key ) ) ) );
+		} );
+
+		return tuple.apply( tuple, result );
 	}
 
 	request ( input, config={} ) {
