@@ -140,7 +140,19 @@ class Haro {
 	set ( key, data, batch=false, override=false ) {
 		let defer = deferred(),
 		    method = "post",
-		    ldata = clone( data );
+		    ldata = clone( data ),
+			next;
+
+		next = () => {
+			this.data.set( key, ldata );
+
+			if (method === "post" ) {
+				this.registry.push( key );
+				++this.total;
+			}
+
+			defer.resolve( this.get( key ) );
+		};
 
 		if ( key === undefined || key === null ) {
 			key = this.key ? ldata[ this.key ] : uuid() || uuid();
@@ -153,19 +165,11 @@ class Haro {
 		}
 
 		if ( !batch && this.uri ) {
-			this.request( this.uri.replace( /\?.*/, "" ) + "/" + key, { method: method, body: JSON.stringify( ldata ) } ).then( () => {
-				this.data.set( key, ldata );
-				this.registry.push( key );
-				++this.total;
-				defer.resolve( this.get( key ) );
-			}, function ( e ) {
+			this.request( this.uri.replace( /\?.*/, "" ) + "/" + key, { method: method, body: JSON.stringify( ldata ) } ).then( next, function ( e ) {
 				defer.reject( e.message || e );
 			} );
 		} else {
-			this.data.set( key, ldata );
-			this.registry.push( key );
-			++this.total;
-			defer.resolve( this.get( key ) );
+			next();
 		}
 
 		return defer.promise;
