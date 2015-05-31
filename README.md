@@ -82,6 +82,11 @@ _MapIterator_
 
 Returns returns a new `Iterator` object that contains an array of `[key, value]` for each element in the `Map` object in insertion order.
 
+**filter(callbackFn)**
+_Tuple_
+
+Returns a `Tuple` of double `Tuples` with the shape `[key, value]` for records which returned `true` to `callbackFn(value, key)`.
+
 **forEach(callbackFn[, thisArg])**
 _Undefined_
 

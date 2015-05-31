@@ -99,9 +99,9 @@ class Haro {
 	filter ( fn ) {
 		let result = [];
 
-		this.forEach( function ( i ) {
-			if ( fn( i ) === true ) {
-				result.push( i );
+		this.forEach( function ( value, key ) {
+			if ( fn( value, key ) === true ) {
+				result.push( tuple( key, value ) );
 			}
 		} );
 
