@@ -9,6 +9,7 @@ class Haro {
 				"content-type": "application/json"
 			}
 		};
+		this.registry = [];
 		this.key = "";
 		this.source = "";
 		this.total = 0;
@@ -42,30 +43,58 @@ class Haro {
 		return defer.promise;
 	}
 
+	clear () {
+		this.total = 0;
+		this.registry = [];
+		this.data.clear();
+
+		return this;
+	}
+
 	del ( key, batch=false ) {
-		let defer = deferred();
+		let defer = deferred(),
+			index;
+
+		let next = () => {
+			index = this.registry.indexOf( key );
+
+			if ( index > -1 ) {
+				if ( index === 0 ) {
+					this.registry.shift();
+				} else if ( index === ( this.registry.length - 1 ) ) {
+					this.registry.pop();
+				} else {
+					this.registry.splice( index, 1 );
+				}
+
+				this.data.delete( key );
+				--this.total;
+			}
+
+			defer.resolve();
+		};
 
 		if ( this.data.has( key ) ) {
 			if ( !batch && this.uri ) {
-				this.request( this.uri.replace( /\?.*/, "" ) + "/" + key, {method: "delete"} ).then( () => {
-					if ( this.data.has( key ) ) {
-						this.data.delete( key );
-						--this.total;
-					}
-					defer.resolve();
-				}, function ( e ) {
+				this.request( this.uri.replace( /\?.*/, "" ) + "/" + key, {method: "delete"} ).then( next, function ( e ) {
 					defer.reject( e.message || e );
 				});
 			} else {
-				this.data.delete( key );
-				--this.total;
-				defer.resolve();
+				next()
 			}
 		} else {
 			defer.reject( new Error( "Record not found" ) );
 		}
 
 		return defer.promise;
+	}
+
+	entries () {
+		return this.data.entries();
+	}
+
+	forEach ( fn, ctx ) {
+		return this.data.forEach( fn, ctx );
 	}
 
 	get ( key ) {
@@ -78,21 +107,24 @@ class Haro {
 		return output;
 	}
 
-	range ( start=0, end=0 ) {
-		let i, n, output;
+	keys () {
+		return this.data.keys();
+	}
 
-		if ( start === end || end > start ) {
+	limit ( start=0, offset=1 ) {
+		let i = start,
+		    nth = start + offset,
+		    list = [];
+
+		if ( i === nth || i > nth || nth > this.total ) {
 			throw new Error( "Invalid range" );
-		} else {
-			i = start - 1;
-			n = [];
-			do {
-				n.push( this.data[ i ] );
-			} while ( ++i <= end && i < this.total );
-			output = tuple.apply( tuple, n );
 		}
 
-		return output;
+		do {
+			list.push( this.get( this.registry[ i ] ) );
+		} while ( ++i < nth );
+
+		return tuple.apply( tuple, list );
 	}
 
 	request ( input, config={} ) {
@@ -123,6 +155,7 @@ class Haro {
 		if ( !batch && this.uri ) {
 			this.request( this.uri.replace( /\?.*/, "" ) + "/" + key, { method: method, body: JSON.stringify( ldata ) } ).then( () => {
 				this.data.set( key, ldata );
+				this.registry.push( key );
 				++this.total;
 				defer.resolve( this.get( key ) );
 			}, function ( e ) {
@@ -130,6 +163,7 @@ class Haro {
 			} );
 		} else {
 			this.data.set( key, ldata );
+			this.registry.push( key );
 			++this.total;
 			defer.resolve( this.get( key ) );
 		}
@@ -169,5 +203,9 @@ class Haro {
 		}
 
 		return defer.promise;
+	}
+
+	values () {
+		return this.data.values();
 	}
 }

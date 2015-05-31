@@ -26,11 +26,6 @@ server = tenso( {
 				res.respond( req.body, 201 );
 			}
 		},
-		patch: {
-			"/data.*" : function ( req, res ) {
-				res.respond( { success: true } );
-			}
-		},
 		"delete": {
 			"/data.*" : function ( req, res ) {
 				res.respond( { success: true } );
@@ -82,12 +77,15 @@ exports["create (batch)"] = {
 	test: function (test) {
 		var self = this;
 
-		test.expect(4);
+		test.expect(7);
 		test.equal(this.store.total, 0, "Should be '0'");
 		test.equal(this.store.data.size, 0, "Should be '0'");
 		this.store.batch(data, "set").then(function() {
 			test.equal(self.store.total, 6, "Should be '6'");
 			test.equal(self.store.data.size, 6, "Should be '6'");
+			test.equal(self.store.registry.length, 6, "Should be '6'");
+			test.equal(self.store.limit(2, 1)[0][0], self.store.get(self.store.registry[2])[0], "Should be a match");
+			test.equal(self.store.limit(2, 2)[1][0], self.store.get(self.store.registry[3])[0], "Should be a match");
 			test.done();
 		}, function (e) {
 			console.log(e.stack);
