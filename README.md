@@ -28,7 +28,7 @@ store.set(null, {abc: true}).then(function (arg) {
 **config**
 _Object_
 
-Default settings for `fetch()`. You must manually enable `CORS` mode!
+Default settings for `fetch()`.
 
 **key**
 _String_
