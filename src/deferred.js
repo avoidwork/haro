@@ -1,10 +1,10 @@
 function deferred () {
-	let promise, pResolve, pReject;
+	let promise, resolver, rejecter;
 
 	promise = new Promise( function ( resolve, reject ) {
-		pResolve = resolve;
-		pReject = reject;
+		resolver = resolve;
+		rejecter = reject;
 	} );
 
-	return { resolve: pResolve, reject: pReject, promise: promise };
+	return { resolve: resolver, reject: rejecter, promise: promise };
 }
