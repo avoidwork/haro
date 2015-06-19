@@ -1,5 +1,5 @@
 # haro
-Harō is modern DataStore that can be wired to an API, & provides a simple feedback loop with `Promises`. It is a
+Harō is a modern immutable DataStore that can be wired to an API. It is a
 partially persistent data structure, by maintaining version sets of records in `versions`.
 
 [![build status](https://secure.travis-ci.org/avoidwork/haro.svg)](http://travis-ci.org/avoidwork/haro)
@@ -45,6 +45,10 @@ Optional `Object` key to retrieve data from API responses, see `setUri()`
 _Map_
 
 `Map` of records, updated by `del()` & `set()`
+
+**registry**
+_Array_
+Array representing the order of **data**
 
 **total**
 _Number_
