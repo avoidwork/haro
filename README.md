@@ -6,7 +6,7 @@ partially persistent data structure, by maintaining version sets of records in `
 
 ### Example
 ```javascript
-var store = haro();
+var store = haro(null, {index: ["abc"]});
 
 console.log(store.total); // 0
 store.set(null, {abc: true}).then(function (arg) {
@@ -22,6 +22,8 @@ store.set(null, {abc: true}).then(function (arg) {
 }).catch(function (e) {
   console.error(e.stack || e.message || e);
 });
+
+store.find({abc: true}); // [[$uuid, {abc: true}]]
 ```
 
 ### Configuration
