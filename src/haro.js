@@ -23,9 +23,7 @@ class Haro {
 			this[i] = merge(this[i], config[i]);
 		});
 
-		this.index.forEach(i => {
-			this.indexes.set(i, new Map());
-		});
+		this.reindex();
 
 		if (data) {
 			this.batch(data, "set");
@@ -62,11 +60,7 @@ class Haro {
 		this.indexes.clear();
 		this.versions.clear();
 
-		this.index.forEach(i => {
-			this.indexes.set(i, new Map());
-		});
-
-		return this;
+		return this.reindex();
 	}
 
 	del (key, batch=false) {
@@ -164,6 +158,12 @@ class Haro {
 		return output;
 	}
 
+	keyIndex (key, data) {
+		return key.split(this.delimiter).map(function (i) {
+			return data[i].toString() || "";
+		}).join(this.delimiter);
+	}
+
 	keys () {
 		return this.data.keys();
 	}
@@ -199,6 +199,19 @@ class Haro {
 		return tuple.apply(tuple, result);
 	}
 
+	reindex () {
+		this.indexes.clear();
+		this.index.forEach(i => {
+			this.indexes.set(i, new Map());
+		});
+
+		this.forEach((key, value) => {
+			this.setIndex(key, value);
+		});
+
+		return this;
+	}
+
 	request (input, config={}) {
 		let cfg = merge(this.config, config);
 
@@ -223,15 +236,18 @@ class Haro {
 			ldata = clone(data);
 
 		let next = () => {
+			let ogdata;
+
 			if (method === "post") {
 				++this.total;
 				this.registry.push(key);
 				this.versions.set(key, new Set());
 			} else {
-				this.versions.get(key).add(tuple(this.data.get(key)));
+				ogdata = this.data.get(key);
+				this.versions.get(key).add(tuple(ogdata));
+				this.delIndex(key, ogdata);
 			}
 
-			this.delIndex(key, this.data.get(key));
 			this.data.set(key, ldata);
 			this.setIndex(key, ldata);
 			defer.resolve(this.get(key));
@@ -256,12 +272,6 @@ class Haro {
 		}
 
 		return defer.promise;
-	}
-
-	keyIndex (key, data) {
-		return key.split(this.delimiter).map(function (i) {
-			return data[i].toString() || "";
-		}).join(this.delimiter);
 	}
 
 	setIndex (key, data) {
