@@ -176,6 +176,51 @@ exports["read (indexed)"] = {
 	}
 };
 
+exports["read (toArray)"] = {
+	setUp: function (done) {
+		this.store = haro(null);
+		done();
+	},
+	test: function (test) {
+		var self = this;
+
+		test.expect(1);
+		this.store.batch(data, "set").then(function(args) {
+			test.equal( self.store.toArray().length, 6, "Should be `6`" );
+			test.done();
+		}, function (e) {
+			console.log(e.stack);
+			test.done();
+		});
+	}
+};
+
+exports["read (sort)"] = {
+	setUp: function (done) {
+		this.store = haro(null);
+		done();
+	},
+	test: function (test) {
+		var self = this;
+
+		test.expect(1);
+		this.store.batch(data, "set").then(function() {
+			// Sorting age descending
+			return self.store.sort(function (a, b) {
+				return a.age > b.age ? -1 : (a.age === b.age ? 0 : 1);
+			});
+		}, function (e) {
+			throw e;
+		}).then(function (arg) {
+			test.equal( arg[0].guid, "a94c8560-7bfd-42ec-a759-cbd5899b33c0", "Should be `a94c8560-7bfd-42ec-a759-cbd5899b33c0`" );
+			test.done();
+		}, function (e) {
+			console.log(e.stack);
+			test.done();
+		});
+	}
+};
+
 exports["update"] = {
 	setUp: function (done) {
 		this.store = haro();

@@ -322,6 +322,20 @@ class Haro {
 		return defer.promise;
 	}
 
+	sort (fn) {
+		return this.toArray().sort(fn);
+	}
+
+	toArray () {
+		let result = [];
+
+		this.forEach(function (value) {
+			result.push(clone(value));
+		});
+
+		return result;
+	}
+
 	values () {
 		return this.data.values();
 	}

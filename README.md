@@ -155,6 +155,16 @@ _Promise_
 
 Returns a `Promise` for wiring the DataStore to an API, with the retrieved record set as the `resolve()` argument.
 
+**sort( callbackFn )**
+_Array_
+
+Returns an Array of the DataStore, sorted by `callbackFn`.
+
+**toArray()**
+_Array_
+
+Returns an Array of the DataStore.
+
 **values()**
 _MapIterator_
 
