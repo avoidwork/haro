@@ -6,7 +6,7 @@ partially persistent data structure, by maintaining version sets of records in `
 
 ### Example
 ```javascript
-var store = haro();
+var store = haro(null, {index: ["abc"]});
 
 console.log(store.total); // 0
 store.set(null, {abc: true}).then(function (arg) {
@@ -22,6 +22,8 @@ store.set(null, {abc: true}).then(function (arg) {
 }).catch(function (e) {
   console.error(e.stack || e.message || e);
 });
+
+store.find({abc: true}); // [[$uuid, {abc: true}]]
 ```
 
 ### Configuration
@@ -29,6 +31,11 @@ store.set(null, {abc: true}).then(function (arg) {
 _Object_
 
 Default settings for `fetch()`.
+
+**index**
+_Array_
+
+Array of values to index
 
 **key**
 _String_
@@ -46,8 +53,14 @@ _Map_
 
 `Map` of records, updated by `del()` & `set()`
 
+**indexes**
+_Map_
+
+Map of indexes, which are Sets containing Map keys.
+
 **registry**
 _Array_
+
 Array representing the order of **data**
 
 **total**
@@ -91,6 +104,11 @@ _Tuple_
 
 Returns a `Tuple` of double `Tuples` with the shape `[key, value]` for records which returned `true` to `callbackFn(value, key)`.
 
+**find( where )**
+_Tuple_
+
+Returns a `Tuple` of double `Tuples` with found by indexed values matching the `where`.
+
 **forEach( callbackFn[, thisArg] )**
 _Undefined_
 
@@ -116,6 +134,12 @@ _Tuple_
 
 Returns a `Tuple` of double `Tuples` with the shape `[key, value]` of records with the returned `value` of `callbackFn(value, key)`.
 
+**reindex( [index] )**
+_Haro_
+
+Re-indexes the DataStore, to be called if changing the value of `index`.
+
+
 **request( input, config )**
 _Promise_
 
@@ -130,6 +154,21 @@ Returns a `Promise` for setting/amending a record in the DataStore, if `key` is 
 _Promise_
 
 Returns a `Promise` for wiring the DataStore to an API, with the retrieved record set as the `resolve()` argument.
+
+**sort( callbackFn )**
+_Array_
+
+Returns an Array of the DataStore, sorted by `callbackFn`.
+
+**sortBy( index )**
+_Array_
+
+Returns a `Tuple` of double `Tuples` with the shape `[key, value]` of records sorted by an index.
+
+**toArray()**
+_Array_
+
+Returns an Array of the DataStore.
 
 **values()**
 _MapIterator_
