@@ -151,7 +151,7 @@ exports["read (indexed)"] = {
 	test: function (test) {
 		var self = this;
 
-		test.expect(9);
+		test.expect(11);
 		this.store.batch(data, "set").then(function(args) {
 			test.equal( self.store.find( { name: "Decker Merrill" } ).length, 1, "Should be `1`" );
 			test.equal( self.store.find( { age: 20 } ).length, 2, "Should be `2`" );
@@ -160,6 +160,7 @@ exports["read (indexed)"] = {
 			test.equal( self.store.find( { gender: "male", age: 20 } ).length, 1, "Should be `1`" );
 			test.equal( self.store.find( { age: 50 } ).length, 0, "Should be `0`" );
 			test.equal( self.store.find( { agez: 1 } ).length, 0, "Should be `0`" );
+			test.equal( self.store.limit(0,3)[2][1].guid, "f34d994b-24eb-4553-adf7-8f61e7ef8741", "Should be `f34d994b-24eb-4553-adf7-8f61e7ef8741`" );
 			return args;
 		}, function (e) {
 			throw e;
@@ -170,6 +171,7 @@ exports["read (indexed)"] = {
 		}).then(function () {
 			test.equal( self.store.find({ age: 20, gender: "male" }).length, 0, "Should be `0`" );
 			test.equal( self.store.indexes.get("age").get("20").size, 1, "Should be `1`" );
+			test.equal( self.store.limit(0,3)[2][1].guid, "a94c8560-7bfd-42ec-a759-cbd5899b33c0", "Should be `a94c8560-7bfd-42ec-a759-cbd5899b33c0`" );
 			test.done();
 		}, function (e) {
 			console.log(e.stack);

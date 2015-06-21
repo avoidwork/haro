@@ -242,8 +242,7 @@ class Haro {
 			let ogdata;
 
 			if (method === "post") {
-				++this.total;
-				this.registry.push(key);
+				this.registry[this.total++] = key;
 				this.versions.set(key, new Set());
 			} else {
 				ogdata = this.data.get(key);
