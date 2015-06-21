@@ -198,14 +198,18 @@ class Haro {
 		return tuple.apply(tuple, result);
 	}
 
-	reindex () {
-		this.indexes.clear();
-		this.index.forEach(i => {
-			this.indexes.set(i, new Map());
-		});
+	reindex (index) {
+		if (!index) {
+			this.indexes.clear();
+			this.index.forEach(i => {
+				this.indexes.set(i, new Map());
+			});
+		} else {
+			this.indexes.set(index, new Map());
+		}
 
-		this.forEach((key, value) => {
-			this.setIndex(key, value);
+		this.forEach((data, key) => {
+			this.setIndex(key, data, index);
 		});
 
 		return this;
@@ -273,19 +277,24 @@ class Haro {
 		return defer.promise;
 	}
 
-	setIndex (key, data) {
-		this.index.forEach(i => {
-			let index = this.indexes.get(i),
-				value = this.keyIndex(i, data);
-
-			if (!index.has(value)) {
-				index.set(value, new Set());
-			}
-
-			index.get(value).add(key);
-		});
+	setIndex (key, data, index) {
+		if (!index) {
+			this.index.forEach(i => {
+				this.setIndexValue(this.indexes.get(i), this.keyIndex(i, data), key);
+			});
+		} else {
+			this.setIndexValue(this.indexes.get(index), this.keyIndex(index, data), key);
+		}
 
 		return this;
+	}
+
+	setIndexValue (index, key, value) {
+		if (!index.has(key)) {
+			index.set(key, new Set());
+		}
+
+		index.get(key).add(value);
 	}
 
 	setUri (uri) {
@@ -326,11 +335,35 @@ class Haro {
 		return this.toArray().sort(fn);
 	}
 
+	sortBy (index) {
+		let result = [],
+			keys = [],
+			lindex;
+
+		if (!this.indexes.has(index)) {
+			this.index.push(index);
+			this.reindex(index);
+		}
+
+		lindex = this.indexes.get(index);
+		lindex.forEach((idx, key) => {
+			keys.push(key);
+		});
+
+		keys.sort().forEach(i => {
+			lindex.get(i).forEach(key => {
+				result.push(this.get(key));
+			});
+		});
+
+		return tuple.apply(tuple, result);
+	}
+
 	toArray () {
 		let result = [];
 
-		this.forEach(function (value) {
-			result.push(clone(value));
+		this.forEach(function (data) {
+			result.push(clone(data));
 		});
 
 		return result;

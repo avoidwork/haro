@@ -160,6 +160,11 @@ _Array_
 
 Returns an Array of the DataStore, sorted by `callbackFn`.
 
+**sortBy( index )**
+_Array_
+
+Returns a `Tuple` of double `Tuples` with the shape `[key, value]` of records sorted by an index.
+
 **toArray()**
 _Array_
 

@@ -221,6 +221,25 @@ exports["read (sort)"] = {
 	}
 };
 
+exports["read (sortBy)"] = {
+	setUp: function (done) {
+		this.store = haro(null);
+		done();
+	},
+	test: function (test) {
+		var self = this;
+
+		test.expect(1);
+		this.store.batch(data, "set").then(function() {
+			test.equal(self.store.sortBy('company')[0][1].company, "Coash", "Should be `Coash`");
+			test.done();
+		}, function (e) {
+			console.log(e.stack);
+			test.done();
+		});
+	}
+};
+
 exports["update"] = {
 	setUp: function (done) {
 		this.store = haro();
