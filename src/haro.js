@@ -125,6 +125,21 @@ class Haro {
 		return this.data.entries();
 	}
 
+	find (where) {
+		let keys = Object.keys(where),
+			key = keys.join(this.delimiter),
+			value = this.keyIndex(key, where),
+			result = [];
+
+		if (this.indexes.has(key)) {
+			(this.indexes.get(key).get(value) || new Set()).forEach(i => {
+				result.push(this.get(i));
+			});
+		}
+
+		return tuple.apply(tuple, result);
+	}
+
 	filter (fn) {
 		let result = [];
 

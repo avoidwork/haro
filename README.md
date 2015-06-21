@@ -30,6 +30,11 @@ _Object_
 
 Default settings for `fetch()`.
 
+**index**
+_Array_
+
+Array of values to index
+
 **key**
 _String_
 
@@ -45,6 +50,11 @@ Optional `Object` key to retrieve data from API responses, see `setUri()`
 _Map_
 
 `Map` of records, updated by `del()` & `set()`
+
+**indexes**
+_Map_
+
+Map of indexes, which are Sets containing Map keys.
 
 **registry**
 _Array_
@@ -85,6 +95,11 @@ Deletes the record.
 _MapIterator_
 
 Returns returns a new `Iterator` object that contains an array of `[key, value]` for each element in the `Map` object in insertion order.
+
+**find( where )**
+_Tuple_
+
+Returns a `Tuple` of double `Tuples` with found by indexed values matching the `where`.
 
 **filter( callbackFn )**
 _Tuple_
