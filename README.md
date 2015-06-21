@@ -58,6 +58,7 @@ Map of indexes, which are Sets containing Map keys.
 
 **registry**
 _Array_
+
 Array representing the order of **data**
 
 **total**
