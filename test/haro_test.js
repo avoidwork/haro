@@ -143,6 +143,39 @@ exports["read (invalid)"] = {
 	}
 };
 
+exports["read (indexed)"] = {
+	setUp: function (done) {
+		this.store = haro(null, {index: ["name", "age", "age|gender"]});
+		done();
+	},
+	test: function (test) {
+		var self = this;
+
+		test.expect(7);
+		this.store.batch(data, "set").then(function(args) {
+			test.equal( self.store.find( { name: "Decker Merrill" } ).length, 1, "Should be `1`" );
+			test.equal( self.store.find( { age: 20 } ).length, 2, "Should be `2`" );
+			test.equal( self.store.find( { age: 20, gender: "male" } ).length, 1, "Should be `1`" );
+			test.equal( self.store.find( { gender: "male", age: 20 } ).length, 1, "Should be `1`" );
+			test.equal( self.store.find( { age: 50 } ).length, 0, "Should be `0`" );
+			test.equal( self.store.find( { agez: 1 } ).length, 0, "Should be `0`" );
+			return args;
+		}, function (e) {
+			throw e;
+		}).then(function () {
+			return self.store.del(self.store.find({age: 20, gender: "male"})[0][0]);
+		}, function (e) {
+			throw e;
+		}).then(function () {
+			test.equal( self.store.find({ age: 20, gender: "male" }).length, 0, "Should be `0`" );
+			test.done();
+		}, function (e) {
+			console.log(e.stack);
+			test.done();
+		});
+	}
+};
+
 exports["update"] = {
 	setUp: function (done) {
 		this.store = haro();
@@ -156,15 +189,14 @@ exports["update"] = {
 			test.equal(arg[1].name, "Decker Merrill", "Should be a match");
 			return arg;
 		}).then(function (arg) {
-			self.store.set(arg[0], {name: "John Doe"}).then(function (arg) {
-				test.equal(arg[1].name, "John Doe", "Should be a match");
-				test.equal(self.store.versions.get(arg[0]).size, 1, "Should be a '1'");
-				test.done();
-			}, function (e) {
-				console.log(e.stack);
-				test.done();
-			});
-		}).catch(function (e) {
+			return self.store.set(arg[0], {name: "John Doe"});
+		}, function (e) {
+			throw e;
+		}).then(function (arg) {
+			test.equal(arg[1].name, "John Doe", "Should be a match");
+			test.equal(self.store.versions.get(arg[0]).size, 1, "Should be a '1'");
+			test.done();
+		}, function (e) {
 			console.log(e.stack);
 			test.done();
 		});
@@ -184,15 +216,14 @@ exports["delete"] = {
 			test.equal(arg[1].name, "Decker Merrill", "Should be a match");
 			return arg;
 		}).then(function (arg) {
-			self.store.del(arg[0]).then(function () {
-				test.equal(self.store.total, 0, "Should be '0'");
-				test.equal(self.store.data.size, 0, "Should be '0'");
-				test.done();
-			}, function (e) {
-				console.log(e.stack);
-				test.done();
-			});
-		}).catch(function (e) {
+			return self.store.del(arg[0]);
+		}, function (e) {
+			throw e;
+		}).then(function () {
+			test.equal(self.store.total, 0, "Should be '0'");
+			test.equal(self.store.data.size, 0, "Should be '0'");
+			test.done();
+		}, function (e) {
 			console.log(e.stack);
 			test.done();
 		});
@@ -212,15 +243,14 @@ exports["delete (batch)"] = {
 			test.equal(arg[0][1].name, "Decker Merrill", "Should be a match");
 			return arg;
 		}).then(function (arg) {
-			self.store.batch([arg[0][0], arg[2][0]], "del").then(function () {
-				test.equal(self.store.total, 4, "Should be '4'");
-				test.equal(self.store.data.size, 4, "Should be '4'");
-				test.done();
-			}, function (e) {
-				console.log(e.stack);
-				test.done();
-			});
-		}).catch(function (e) {
+			return self.store.batch([arg[0][0], arg[2][0]], "del");
+		}, function (e) {
+			throw e;
+		}).then(function () {
+			test.equal(self.store.total, 4, "Should be '4'");
+			test.equal(self.store.data.size, 4, "Should be '4'");
+			test.done();
+		}, function (e) {
 			console.log(e.stack);
 			test.done();
 		});
@@ -266,13 +296,12 @@ exports["create (wired)"] = {
 
 		test.expect(1);
 		this.store.setUri("http://localhost:8000/data?page_size=10").then(function() {
-			self.store.set(null, self.record).then(function (arg) {
-				test.equal(arg[0], self.record.id, "Should be a match");
-				test.done();
-			}, function (e) {
-				console.log(e.stack);
-				test.done();
-			});
+			return self.store.set(null, self.record);
+		}, function (e) {
+			throw e;
+		}).then(function (arg) {
+			test.equal(arg[0], self.record.id, "Should be a match");
+			test.done();
 		}, function (e) {
 			console.log(e.stack);
 			test.done();
@@ -293,14 +322,13 @@ exports["delete (wired)"] = {
 		test.expect(3);
 		this.store.setUri("http://localhost:8000/data?page_size=10").then(function(args) {
 			test.equal(self.store.total, 6, "Should be a match");
-			self.store.del(args[0][0]).then(function () {
-				test.equal(self.store.total, self.store.data.size, "Should be a match");
-				test.equal(self.store.data.size, 5, "Should be a match");
-				test.done();
-			}, function (e) {
-				console.log(e.stack);
-				test.done();
-			});
+			return self.store.del(args[0][0]);
+		}, function (e) {
+			throw e;
+		}).then(function () {
+			test.equal(self.store.total, self.store.data.size, "Should be a match");
+			test.equal(self.store.data.size, 5, "Should be a match");
+			test.done();
 		}, function (e) {
 			console.log(e.stack);
 			test.done();
@@ -320,15 +348,12 @@ exports["update (wired / overwrite)"] = {
 
 		test.expect(1);
 		this.store.setUri("http://localhost:8000/data?page_size=10").then(function(args) {
-			var obj = args[0];
-
-			self.store.set(obj[0], {blah: true}, false, true).then(function (arg) {
-				test.equal(Object.keys(arg[1]).length, 1, "Should be a match");
-				test.done();
-			}, function (e) {
-				console.log(e.stack);
-				test.done();
-			});
+			return self.store.set(args[0][0], {blah: true}, false, true);
+		}, function (e) {
+			throw e;
+		}).then(function (arg) {
+			test.equal(Object.keys(arg[1]).length, 1, "Should be a match");
+			test.done();
 		}, function (e) {
 			console.log(e.stack);
 			test.done();
