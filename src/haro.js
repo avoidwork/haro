@@ -69,12 +69,11 @@ class Haro {
 		return this;
 	}
 
-	del (key, batch = false) {
+	del (key, batch=false) {
 		let defer = deferred();
 
 		let next = () => {
-			let index = this.registry.indexOf(key),
-				data = this.data.get(key);
+			let index = this.registry.indexOf(key);
 
 			if (index > -1) {
 				if (index === 0) {
@@ -85,10 +84,7 @@ class Haro {
 					this.registry.splice(index, 1);
 				}
 
-				this.index.forEach(i => {
-					this.delIndex(key, data, i);
-				});
-
+				this.delIndex(key, this.data.get(key));
 				this.data.delete(key);
 				this.versions.delete(key);
 				--this.total;
@@ -112,13 +108,15 @@ class Haro {
 		return defer.promise;
 	}
 
-	delIndex (key, data, index) {
-		let idx = this.indexes.get(index),
-			value = this.keyIndex(index, data);
+	delIndex (key, data) {
+		this.index.forEach(i => {
+			let idx = this.indexes.get(i),
+				value = this.keyIndex(i, data);
 
-		if (idx.has(value)) {
-			idx.get(value).delete(key);
-		}
+			if (idx.has(value)) {
+				idx.get(value).delete(key);
+			}
+		});
 	}
 
 	entries () {
@@ -170,7 +168,7 @@ class Haro {
 		return this.data.keys();
 	}
 
-	limit (start = 0, offset = 0) {
+	limit (start=0, offset=0) {
 		let i = start,
 			nth = start + offset,
 			list = [],
@@ -201,7 +199,7 @@ class Haro {
 		return tuple.apply(tuple, result);
 	}
 
-	request (input, config = {}) {
+	request (input, config={}) {
 		let cfg = merge(this.config, config);
 
 		return fetch(input, cfg).then(function (res) {
@@ -233,8 +231,8 @@ class Haro {
 				this.versions.get(key).add(tuple(this.data.get(key)));
 			}
 
+			this.delIndex(key, this.data.get(key));
 			this.data.set(key, ldata);
-			// @todo deal with updates by removing existing set values - somehow
 			this.setIndex(key, ldata);
 			defer.resolve(this.get(key));
 		};
