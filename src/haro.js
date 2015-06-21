@@ -1,6 +1,7 @@
 class Haro {
-	constructor (data, config={}, indexes=[]) {
+	constructor (data, config={}) {
 		this.data = new Map();
+		this.delimiter = "|";
 		this.config = {
 			method: "get",
 			credentials: false,
@@ -9,7 +10,7 @@ class Haro {
 				"content-type": "application/json"
 			}
 		};
-		this.index = clone(indexes);
+		this.index = [];
 		this.indexes = new Map();
 		this.registry = [];
 		this.key = "";
@@ -18,12 +19,12 @@ class Haro {
 		this.uri = "";
 		this.versions = new Map();
 
-		this.index.forEach(i => {
-			this.indexes.set(i, new Map());
-		});
-
 		Object.keys(config).forEach(i => {
 			this[i] = merge(this[i], config[i]);
+		});
+
+		this.index.forEach(i => {
+			this.indexes.set(i, new Map());
 		});
 
 		if (data) {
@@ -72,7 +73,8 @@ class Haro {
 		let defer = deferred();
 
 		let next = () => {
-			let index = this.registry.indexOf(key);
+			let index = this.registry.indexOf(key),
+				data = this.data.get(key);
 
 			if (index > -1) {
 				if (index === 0) {
@@ -83,7 +85,10 @@ class Haro {
 					this.registry.splice(index, 1);
 				}
 
-				this.removeIndex(key);
+				this.index.forEach(i => {
+					this.delIndex(key, data, i);
+				});
+
 				this.data.delete(key);
 				this.versions.delete(key);
 				--this.total;
@@ -105,6 +110,15 @@ class Haro {
 		}
 
 		return defer.promise;
+	}
+
+	delIndex (key, data, index) {
+		let idx = this.indexes.get(index),
+			value = this.keyIndex(index, data);
+
+		if (idx.has(value)) {
+			idx.get(value).delete(key);
+		}
 	}
 
 	entries () {
@@ -231,23 +245,22 @@ class Haro {
 		return defer.promise;
 	}
 
+	keyIndex (key, data) {
+		return key.split(this.delimiter).map(function (i) {
+			return data[i].toString() || "";
+		}).join(this.delimiter);
+	}
+
 	setIndex (key, data) {
-		let delimiter = "|";
-
 		this.index.forEach(i => {
-			let keys = i.split(delimiter),
-				values = "",
-				index = this.indexes.get(i);
+			let index = this.indexes.get(i),
+				value = this.keyIndex(i, data);
 
-			keys.forEach(function (k, kdx) {
-				values += (kdx > 0 ? delimiter : "") + data[k];
-			});
-
-			if (!index.has(values)) {
-				index.set(values, new Set());
+			if (!index.has(value)) {
+				index.set(value, new Set());
 			}
 
-			index.get(values).add(key);
+			index.get(value).add(key);
 		});
 
 		return this;
