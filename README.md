@@ -99,15 +99,15 @@ _MapIterator_
 
 Returns returns a new `Iterator` object that contains an array of `[key, value]` for each element in the `Map` object in insertion order.
 
-**find( where )**
-_Tuple_
-
-Returns a `Tuple` of double `Tuples` with found by indexed values matching the `where`.
-
 **filter( callbackFn )**
 _Tuple_
 
 Returns a `Tuple` of double `Tuples` with the shape `[key, value]` for records which returned `true` to `callbackFn(value, key)`.
+
+**find( where )**
+_Tuple_
+
+Returns a `Tuple` of double `Tuples` with found by indexed values matching the `where`.
 
 **forEach( callbackFn[, thisArg] )**
 _Undefined_
