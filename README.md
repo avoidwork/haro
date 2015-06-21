@@ -132,6 +132,12 @@ _Tuple_
 
 Returns a `Tuple` of double `Tuples` with the shape `[key, value]` of records with the returned `value` of `callbackFn(value, key)`.
 
+**reindex()**
+_Haro_
+
+Re-indexes the DataStore, to be called if changing the value of `index`.
+
+
 **request( input, config )**
 _Promise_
 
