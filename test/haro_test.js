@@ -151,10 +151,11 @@ exports["read (indexed)"] = {
 	test: function (test) {
 		var self = this;
 
-		test.expect(7);
+		test.expect(9);
 		this.store.batch(data, "set").then(function(args) {
 			test.equal( self.store.find( { name: "Decker Merrill" } ).length, 1, "Should be `1`" );
 			test.equal( self.store.find( { age: 20 } ).length, 2, "Should be `2`" );
+			test.equal( self.store.indexes.get("age").get("20").size, 2, "Should be `2`" );
 			test.equal( self.store.find( { age: 20, gender: "male" } ).length, 1, "Should be `1`" );
 			test.equal( self.store.find( { gender: "male", age: 20 } ).length, 1, "Should be `1`" );
 			test.equal( self.store.find( { age: 50 } ).length, 0, "Should be `0`" );
@@ -168,6 +169,7 @@ exports["read (indexed)"] = {
 			throw e;
 		}).then(function () {
 			test.equal( self.store.find({ age: 20, gender: "male" }).length, 0, "Should be `0`" );
+			test.equal( self.store.indexes.get("age").get("20").size, 1, "Should be `1`" );
 			test.done();
 		}, function (e) {
 			console.log(e.stack);
