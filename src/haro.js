@@ -233,6 +233,36 @@ class Haro {
 		});
 	}
 
+	search (value, index) {
+		let indexes = index ? (this.index.indexOf(index) > -1 ? [index] : []) : this.index,
+			result = [],
+			fn = typeof value === "function",
+			regex = value instanceof RegExp,
+			seen = new Set(),
+			lvalue = String(value);
+
+		if (lvalue) {
+			indexes.forEach(i => {
+				var idx = this.indexes.get(i);
+
+				if (idx) {
+					idx.forEach((lset, lkey) => {
+						if ((fn && value(lkey)) || (regex && value.test(lkey)) || (lkey === lvalue)) {
+							lset.forEach(key => {
+								if (!seen.has(key)) {
+									seen.add(key);
+									result.push(this.get(key));
+								}
+							});
+						}
+					});
+				}
+			});
+		}
+
+		return tuple.apply(tuple, result);
+	}
+
 	set (key, data, batch=false, override=false) {
 		let defer = deferred(),
 			method = "post",

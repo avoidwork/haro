@@ -145,6 +145,12 @@ _Promise_
 
 Returns a `Promise` for a `fetch()` with a double `Tuple` [`body`, `status`] as the `resolve()` argument.
 
+**search( arg, index )**
+_Array_
+
+Returns a `Tuple` of double `Tuples` with the shape `[key, value]` of records found matching `arg`.
+If `arg` is a `Function` a match is made if the result is `true`, if `arg` is a `RegExp` the field value must `.test()` as `true`, else the value must be an equality match. 
+
 **set( key, data, batch=false )**
 _Promise_
 

@@ -17,9 +17,13 @@ function merge (a, b) {
 	let c = clone(a),
 		d = clone(b);
 
-	Object.keys(d).forEach(function (i) {
-		c[i] = d[i];
-	});
+	if (typeof c === "object") {
+		Object.keys(d).forEach(function (i) {
+			c[i] = d[i];
+		});
+	} else {
+		c = d;
+	}
 
 	return c;
 }
