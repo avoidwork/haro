@@ -8,5 +8,4 @@ if (typeof exports !== "undefined") {
 } else {
 	global.haro = factory;
 }
-} )
-( typeof global !== "undefined" ? global : window );
+}(typeof global !== "undefined" ? global : window));

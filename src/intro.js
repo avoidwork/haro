@@ -1,3 +1,5 @@
+"use strict";
+
 (function (global) {
 const Promise = global.Promise || require("es6-promise").Promise;
 const Map = global.Map || require("es6-map");

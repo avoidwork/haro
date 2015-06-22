@@ -1,5 +1,5 @@
 class Haro {
-	constructor (data, config={}) {
+	constructor (data, config = {}) {
 		this.data = new Map();
 		this.delimiter = "|";
 		this.config = {
@@ -63,7 +63,7 @@ class Haro {
 		return this.reindex();
 	}
 
-	del (key, batch=false) {
+	del (key, batch = false) {
 		let defer = deferred();
 
 		let next = () => {
@@ -72,7 +72,7 @@ class Haro {
 			if (index > -1) {
 				if (index === 0) {
 					this.registry.shift();
-				} else if (index === ( this.registry.length - 1 )) {
+				} else if (index === (this.registry.length - 1)) {
 					this.registry.pop();
 				} else {
 					this.registry.splice(index, 1);
@@ -93,7 +93,7 @@ class Haro {
 					defer.reject(e[0] || e);
 				});
 			} else {
-				next()
+				next();
 			}
 		} else {
 			defer.reject(new Error("Record not found"));
@@ -167,7 +167,7 @@ class Haro {
 		return this.data.keys();
 	}
 
-	limit (start=0, offset=0) {
+	limit (start = 0, offset = 0) {
 		let i = start,
 			nth = start + offset,
 			list = [],
@@ -215,7 +215,7 @@ class Haro {
 		return this;
 	}
 
-	request (input, config={}) {
+	request (input, config = {}) {
 		let cfg = merge(this.config, config);
 
 		return fetch(input, cfg).then(function (res) {
@@ -236,37 +236,39 @@ class Haro {
 	set (key, data, batch=false, override=false) {
 		let defer = deferred(),
 			method = "post",
-			ldata = clone(data);
+			ldata = clone(data),
+			lkey = key;
 
 		let next = () => {
 			let ogdata;
 
 			if (method === "post") {
-				this.registry[this.total++] = key;
-				this.versions.set(key, new Set());
+				this.registry[this.total] = lkey;
+				++this.total;
+				this.versions.set(lkey, new Set());
 			} else {
-				ogdata = this.data.get(key);
-				this.versions.get(key).add(tuple(ogdata));
-				this.delIndex(key, ogdata);
+				ogdata = this.data.get(lkey);
+				this.versions.get(lkey).add(tuple(ogdata));
+				this.delIndex(lkey, ogdata);
 			}
 
-			this.data.set(key, ldata);
-			this.setIndex(key, ldata);
-			defer.resolve(this.get(key));
+			this.data.set(lkey, ldata);
+			this.setIndex(lkey, ldata);
+			defer.resolve(this.get(lkey));
 		};
 
-		if (key === undefined || key === null) {
-			key = this.key ? ldata[this.key] : uuid() || uuid();
-		} else if (this.data.has(key)) {
+		if (lkey === undefined || lkey === null) {
+			lkey = this.key ? (ldata[this.key] || uuid()) : uuid() || uuid();
+		} else if (this.data.has(lkey)) {
 			method = "put";
 
 			if (!override) {
-				ldata = merge(this.get(key)[1], ldata);
+				ldata = merge(this.get(lkey)[1], ldata);
 			}
 		}
 
 		if (!batch && this.uri) {
-			this.request(this.uri.replace(/\?.*/, "") + "/" + key, {method: method, body: JSON.stringify(ldata)}).then(next, function (e) {
+			this.request(this.uri.replace(/\?.*/, "") + "/" + lkey, {method: method, body: JSON.stringify(ldata)}).then(next, function (e) {
 				defer.reject(e[0] || e);
 			});
 		} else {
@@ -322,7 +324,7 @@ class Haro {
 				});
 			}, function (e) {
 				defer.reject(e[0] || e);
-			})
+			});
 		} else {
 			defer.resolve();
 		}
