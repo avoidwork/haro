@@ -1,5 +1,35 @@
 # Change Log
 
+## [1.2.1](https://github.com/avoidwork/haro/tree/1.2.1) (2015-06-23)
+
+[Full Changelog](https://github.com/avoidwork/haro/compare/1.2.0...1.2.1)
+
+**Implemented enhancements:**
+
+- Make the README better [\#22](https://github.com/avoidwork/haro/issues/22)
+
+- Versions by config? [\#21](https://github.com/avoidwork/haro/issues/21)
+
+**Fixed bugs:**
+
+- Singular index values shouldn't be cast to String [\#23](https://github.com/avoidwork/haro/issues/23)
+
+## [1.2.0](https://github.com/avoidwork/haro/tree/1.2.0) (2015-06-22)
+
+[Full Changelog](https://github.com/avoidwork/haro/compare/1.1.1...1.2.0)
+
+**Implemented enhancements:**
+
+- Needs tre based text search [\#18](https://github.com/avoidwork/haro/issues/18)
+
+## [1.1.1](https://github.com/avoidwork/haro/tree/1.1.1) (2015-06-22)
+
+[Full Changelog](https://github.com/avoidwork/haro/compare/1.1.0...1.1.1)
+
+**Implemented enhancements:**
+
+- Needs a lint step in the build process [\#20](https://github.com/avoidwork/haro/issues/20)
+
 ## [1.1.0](https://github.com/avoidwork/haro/tree/1.1.0) (2015-06-21)
 
 [Full Changelog](https://github.com/avoidwork/haro/compare/1.0.7...1.1.0)
