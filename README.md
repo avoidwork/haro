@@ -4,13 +4,13 @@
 
 Harō is a modern immutable DataStore built with ES6 features, which can be wired to an API for a complete feedback loop.
 It is un-opinionated, and offers a plug'n'play solution to modeling, searching, & managing data on the client, or server 
-(in RAM). It is a [partially persistent data structure](https://en.wikipedia.org/wiki/Persistent_data_structure), by maintaining version sets of records in `versions`.
+(in RAM). It is a [partially persistent data structure](https://en.wikipedia.org/wiki/Persistent_data_structure), by maintaining version sets of records in `versions` ([MVCC](https://en.wikipedia.org/wiki/Multiversion_concurrency_control)).
 
 Synchronous commands return instantly (`Array` or `Tuple`), while asynchronous commands return  `Promises` which will
 resolve or reject in the future. This allows you to build complex applications without worrying about managing async code.
 
 Harō indexes have the following structure `Map (field/property) > Map (value) > Set (PKs)` which allow for quick & easy searching, as well as inspection.
-Indexes can be managed independently of `del()` & `set()` operations, for example you can lazily create new indexes via `reindex([field])`, or `sortBy(index)`.
+Indexes can be managed independently of `del()` & `set()` operations, for example you can lazily create new indexes via `reindex(field)`, or `sortBy(field)`.
 
 ### Examples
 #### Piping Promises
