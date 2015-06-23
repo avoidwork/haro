@@ -1,14 +1,20 @@
 # haro
-Harō is a modern immutable DataStore that can be wired to an API. It is a
-partially persistent data structure, by maintaining version sets of records in `versions`.
+Harō is a modern immutable DataStore built with ES6 features, which can be wired to an API for a complete feedback loop.
+It is un-opinionated, and offers a plug'n'play solution to modeling, searching, & managing data on the client, or server 
+(in RAM). It is a [partially persistent data structure](https://en.wikipedia.org/wiki/Persistent_data_structure), by maintaining version sets of records in `versions`.
+
+Synchronous commands return instantly (`Array` or `Tuple`), while asynchronous commands return  `Promises` which will
+resolve or reject in the future. This allows you to build complex applications without worrying about managing async code. 
 
 [![build status](https://secure.travis-ci.org/avoidwork/haro.svg)](http://travis-ci.org/avoidwork/haro)
 
-### Example
+### Examples
+#### Piping Promises
 ```javascript
-var store = haro(null, {index: ["abc"]});
+var store = haro();
 
 console.log(store.total); // 0
+
 store.set(null, {abc: true}).then(function (arg) {
   console.log(arg); // [$uuid, {abc: true}];
   console.log(store.total); // 1
@@ -22,8 +28,38 @@ store.set(null, {abc: true}).then(function (arg) {
 }).catch(function (e) {
   console.error(e.stack || e.message || e);
 });
+```
 
-store.find({abc: true}); // [[$uuid, {abc: true}]]
+#### Indexes & Searching
+```javascript
+var store = haro(null, {index: ['name', 'age']}),
+    data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
+
+store.batch(data, 'set').then(function (records) {
+  console.log(records[0]); // [$uuid, {name: 'John Doe', age: 30}]
+  console.log(store.total); // 2
+}).then(function () {
+  console.log(store.find({age: 28})); // [[$uuid, {name: 'Jane Doe', age: 28}]]
+  console.log(store.search(/^ja/i, 'name'); // [[$uuid, {name: 'Jane Doe', age: 28}]]
+  console.log(store.search(function (i) { return i.age < 30; }, 'age'); // [[$uuid, {name: 'Jane Doe', age: 28}]]
+}).catch(function (e) {
+  console.error(e.stack || e.message || e);
+});
+```
+
+#### MVCC versioning
+```javascript
+var store = haro();
+
+store.set(null, {abc: true}).then(function (arg) {
+  return store.set(arg[0], {abc: false});
+}).then(function (arg) {
+  return store.set(arg[0], {abc: true});
+}).then(function (arg) {
+  store.versions.get(arg[0]).forEach(function (i) { console.log(i[0]); }); // {abc: true}, {abc: false}
+}).catch(function (e) {
+  console.error(e.stack || e.message || e);
+});
 ```
 
 ### Configuration
@@ -46,6 +82,11 @@ Optional `Object` key to utilize as `Map` key, defaults to a version 4 `UUID` if
 _String_
 
 Optional `Object` key to retrieve data from API responses, see `setUri()`
+
+**versioning**
+_Boolean_
+
+Enable/disable MVCC style versioning of records, default is `true`. Versions are stored in `Sets` for easy iteration.
 
 ### Properties
 **data**

@@ -18,6 +18,7 @@ class Haro {
 		this.total = 0;
 		this.uri = "";
 		this.versions = new Map();
+		this.versioning = true;
 
 		Object.keys(config).forEach(i => {
 			this[i] = merge(this[i], config[i]);
@@ -80,8 +81,11 @@ class Haro {
 
 				this.delIndex(key, this.data.get(key));
 				this.data.delete(key);
-				this.versions.delete(key);
 				--this.total;
+
+				if (this.versioning) {
+					this.versions.delete(key);
+				}
 			}
 
 			defer.resolve();
@@ -275,10 +279,17 @@ class Haro {
 			if (method === "post") {
 				this.registry[this.total] = lkey;
 				++this.total;
-				this.versions.set(lkey, new Set());
+
+				if (this.versioning) {
+					this.versions.set(lkey, new Set());
+				}
 			} else {
 				ogdata = this.data.get(lkey);
-				this.versions.get(lkey).add(tuple(ogdata));
+
+				if (this.versioning) {
+					this.versions.get(lkey).add(tuple(ogdata));
+				}
+
 				this.delIndex(lkey, ogdata);
 			}
 
