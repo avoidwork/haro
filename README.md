@@ -1,12 +1,16 @@
 # haro
+
+[![build status](https://secure.travis-ci.org/avoidwork/haro.svg)](http://travis-ci.org/avoidwork/haro)
+
 Harō is a modern immutable DataStore built with ES6 features, which can be wired to an API for a complete feedback loop.
 It is un-opinionated, and offers a plug'n'play solution to modeling, searching, & managing data on the client, or server 
 (in RAM). It is a [partially persistent data structure](https://en.wikipedia.org/wiki/Persistent_data_structure), by maintaining version sets of records in `versions`.
 
 Synchronous commands return instantly (`Array` or `Tuple`), while asynchronous commands return  `Promises` which will
-resolve or reject in the future. This allows you to build complex applications without worrying about managing async code. 
+resolve or reject in the future. This allows you to build complex applications without worrying about managing async code.
 
-[![build status](https://secure.travis-ci.org/avoidwork/haro.svg)](http://travis-ci.org/avoidwork/haro)
+Harō indexes have the following structure `Map (field/property) > Map (value) > Set (PKs)` which allow for quick & easy searching, as well as inspection.
+Indexes can be managed independently of `del()` & `set()` operations, for example you can lazily create new indexes via `reindex([field])`, or `sortBy(index)`.
 
 ### Examples
 #### Piping Promises
@@ -38,10 +42,9 @@ var store = haro(null, {index: ['name', 'age']}),
 store.batch(data, 'set').then(function (records) {
   console.log(records[0]); // [$uuid, {name: 'John Doe', age: 30}]
   console.log(store.total); // 2
-}).then(function () {
   console.log(store.find({age: 28})); // [[$uuid, {name: 'Jane Doe', age: 28}]]
-  console.log(store.search(/^ja/i, 'name'); // [[$uuid, {name: 'Jane Doe', age: 28}]]
-  console.log(store.search(function (i) { return i.age < 30; }, 'age'); // [[$uuid, {name: 'Jane Doe', age: 28}]]
+  console.log(store.search(/^ja/i, 'name')); // [[$uuid, {name: 'Jane Doe', age: 28}]]
+  console.log(store.search(function (age) { return age < 30; }, 'age')); // [[$uuid, {name: 'Jane Doe', age: 28}]]
 }).catch(function (e) {
   console.error(e.stack || e.message || e);
 });
