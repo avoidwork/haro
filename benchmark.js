@@ -20,7 +20,7 @@ store.batch(data, "set").then(function() {
   var i = -1,
       nth = 5;
 
-  console.log("testing time to look up a record (first one is cold):");
+  console.log("testing time to 'find()' a record (first one is cold):");
 
   while (++i < nth) {
     (function () {
@@ -30,4 +30,19 @@ store.batch(data, "set").then(function() {
   console.log((timer2.diff()/1000000)+"ms");
     }());
   }
+}).then(function () {
+  var i = -1,
+      nth = 5;
+
+  console.log("testing time to 'search(regex, index)' for a record (first one is cold):");
+
+  while (++i < nth) {
+    (function () {
+  var timer2 = precise().start();
+  var record = store.search(/abba 12345/, 'name');
+  timer2.stop();
+  console.log((timer2.diff()/1000000)+"ms");
+    }());
+  }
 });
+
