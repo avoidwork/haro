@@ -13,6 +13,21 @@ while (++i < nth) {
 timer = precise().start();
 store.batch(data, "set").then(function() {
   timer.stop();
-  console.log((timer.diff()/1000000)+"ms");
-});
+  console.log("time to load data: "+(timer.diff()/1000000)+"ms");
+  console.log("datastore record count: " + store.total);
+  console.log("name indexes: " + store.indexes.get("name").size);
+}).then(function () {
+  var i = -1,
+      nth = 5;
 
+  console.log("testing time to look up a record (first one is cold):");
+
+  while (++i < nth) {
+    (function () {
+  var timer2 = precise().start();
+  var record = store.find({name: 'abba 12345'});
+  timer2.stop();
+  console.log((timer2.diff()/1000000)+"ms");
+    }());
+  }
+});
