@@ -218,14 +218,16 @@ class Haro {
 			this.indexes.clear();
 			this.index.forEach(i => {
 				this.indexes.set(i, new Map());
+				this.forEach((data, key) => {
+					this.setIndex(key, data, i);
+				});
 			});
 		} else {
 			this.indexes.set(index, new Map());
+			this.forEach((data, key) => {
+				this.setIndex(key, data, index);
+			});
 		}
-
-		this.forEach((data, key) => {
-			this.setIndex(key, data, index);
-		});
 
 		return this;
 	}
