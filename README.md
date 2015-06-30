@@ -394,50 +394,137 @@ Example of mapping a DataStore:
 ```javascript
 var store = haro();
 
-// Data is added
-
-store.setUri('http://somedomain.com');
-
-// Data is added
-
-store.index();
+store.request('https://somedomain.com/api').then(function (res) {
+  console.log(res); // [body, status, headers]
+}, function (e) {
+  console.error(e.stack || e.message || e);
+});
 ```
 
 **search( arg, index )**
 _Tuple_
 
 Returns a `Tuple` of double `Tuples` with the shape `[key, value]` of records found matching `arg`.
-If `arg` is a `Function` a match is made if the result is `true`, if `arg` is a `RegExp` the field value must `.test()` as `true`, else the value must be an equality match. 
+If `arg` is a `Function` a match is made if the result is `true`, if `arg` is a `RegExp` the field value must `.test()` as `true`, else the value must be an equality match.
+
+Example of searching with a predicate function:
+```javascript
+var store = haro(null, {index: ['name', 'age']}),
+   data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
+
+store.batch(data, 'set').then(function (records) {
+ console.log(store.search(function (age) {
+   return age < 30;
+ }, 'age')); // [[$uuid, {name: 'Jane Doe', age: 28}]]
+}).catch(function (e) {
+ console.error(e.stack || e.message || e);
+});
+```
 
 **set( key, data, batch=false )**
 _Promise_
 
 Returns a `Promise` for setting/amending a record in the DataStore, if `key` is `false` a version 4 `UUID` will be generated.
 
+Example of creating a record:
+```javascript
+var store = haro(null, {key: "id"});
+
+store.set(null, {id: 1, name: "John Doe"}).then(function (record) {
+  console.log(record); // [1, {id: 1, name: 'Jane Doe'}]
+}, function (e) {
+  console.error(e.stack || e.message || e);
+});
+```
+
 **setUri( uri )**
 _Promise_
 
-Returns a `Promise` for wiring the DataStore to an API, with the retrieved record set as the `resolve()` argument.
+Returns a `Promise` for wiring the DataStore to an API, with the retrieved record set as the `resolve()` argument. This
+creates an implicit mapping of `$uri/{key}` for records.
+
+Example setting the URI of the DataStore:
+```javascript
+var store = haro(null, {key: "id"});
+
+store.setUri("https://api.somedomain.com").then(function (records) {
+ console.log(records); // [[$uuid, {...}], ...]
+}).catch(function (e) {
+ console.error(e.stack || e.message || e);
+});
+```
 
 **sort( callbackFn )**
 _Array_
 
 Returns an Array of the DataStore, sorted by `callbackFn`.
 
+Example of sorting like an `Array`:
+```javascript
+var store = haro(null, {index: ['name', 'age']}),
+   data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
+
+store.batch(data, 'set').then(function (records) {
+ console.log(store.sort(function (a, b) {
+   return a < b ? -1 : (a > b ? 1 : 0);
+ })); // [{name: 'Jane Doe', age: 28}, {name: 'John Doe', age: 30}]
+}).catch(function (e) {
+ console.error(e.stack || e.message || e);
+});
+```
+
 **sortBy( index )**
 _Tuple_
 
 Returns a `Tuple` of double `Tuples` with the shape `[key, value]` of records sorted by an index.
+
+Example of sorting by an index:
+```javascript
+var store = haro(null, {index: ['name', 'age']}),
+   data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
+
+store.batch(data, 'set').then(function (records) {
+ console.log(store.sortBy('age')); // [[$uuid, {name: 'Jane Doe', age: 28}], [$uuid, {name: 'John Doe', age: 30}]]
+}).catch(function (e) {
+ console.error(e.stack || e.message || e);
+});
+```
 
 **toArray()**
 _Array_
 
 Returns an Array of the DataStore.
 
+Example of casting to an `Array`:
+```javascript
+var store = haro(),
+   data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
+
+store.batch(data, 'set').then(function (records) {
+ console.log(store.toArray()); // [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}]
+}).catch(function (e) {
+ console.error(e.stack || e.message || e);
+});
+```
+
 **values()**
 _MapIterator_
 
 Returns a new `Iterator` object that contains the values for each element in the `Map` object in insertion order.
+
+Example of iterating the values:
+```javascript
+var store = haro(),
+   data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
+
+store.batch(data, 'set').then(function (records) {
+ store.values().forEach(function (value, key) {
+   console.log(key);
+ });
+}).catch(function (e) {
+ console.error(e.stack || e.message || e);
+});
+```
 
 ### Requirements
 - `Map`
