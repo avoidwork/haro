@@ -94,31 +94,62 @@ _Object_
 
 Default settings for `fetch()`.
 
+Example of specifying a bearer token authorization header:
+```javascript
+var store = haro(null, {
+  config: {
+    headers: {
+      authorization: "Bearer abcdef"
+    }
+  });
+```
+
 **index**
 _Array_
 
-Array of values to index
+Array of values to index. Composite indexes are supported, by using the default delimiter (`this.delimiter`).
+Non-matches within composites result in blank values.
+
+Example of fields/properties to index:
+```javascript
+var store = haro(null, {index: ["field1", "field2", "field1|field2|field3"]);
+```
 
 **key**
 _String_
 
-Optional `Object` key to utilize as `Map` key, defaults to a version 4 `UUID` if not specified, or found
+Optional `Object` key to utilize as `Map` key, defaults to a version 4 `UUID` if not specified, or found.
+
+Example of specifying the primary key:
+```javascript
+var store = haro(null, {key: "field"});
+```
 
 **source**
 _String_
 
-Optional `Object` key to retrieve data from API responses, see `setUri()`
+Optional `Object` key to retrieve data from API responses, see `setUri()`.
+
+Example of specifying the source of data:
+```javascript
+var store = haro(null, {source: "data"});
+```
 
 **versioning**
 _Boolean_
 
 Enable/disable MVCC style versioning of records, default is `true`. Versions are stored in `Sets` for easy iteration.
 
+Example of disabling versioning:
+```javascript
+var store = haro(null, {versioning: false});
+```
+
 ### Properties
 **data**
 _Map_
 
-`Map` of records, updated by `del()` & `set()`
+`Map` of records, updated by `del()` & `set()`.
 
 **indexes**
 _Map_
@@ -128,22 +159,22 @@ Map of indexes, which are Sets containing Map keys.
 **registry**
 _Array_
 
-Array representing the order of **data**
+Array representing the order of `this.data`.
 
 **total**
 _Number_
 
-Total records in the DataStore
+Total records in the DataStore.
 
 **uri**
 _String_
 
-URI of an API the DataStore is wired to, in a feedback loop (do not modify, use `setUri()`)
+API collection URI the DataStore is wired to, in a feedback loop (do not modify, use `setUri()`). Setting the value creates an implicit relationship with records, e.g. setting `/users` would an implicit URI structure of `/users/{key}`
 
 **versions**
 _Map_
 
-`Map` of `Sets` of records, updated by `set()`
+`Map` of `Sets` of records, updated by `set()`.
 
 ### API
 **batch( array, type )**
@@ -151,66 +182,226 @@ _Promise_
 
 The first argument must be an `Array`, and the second argument must be `del` or `set`.
 
+```javascript
+var haro = require("haro"),
+    store = haro(null, {key: "id", index: ["name"]}),
+    i = -1,
+    nth = 100,
+    data = [];
+
+while (++i < nth) {
+  data.push({id: i, name: "John Doe" + i});
+}
+
+store.batch(data, "set").then(function(records) {
+  // records is a Tuple of Tuples
+}, function (e) {
+  console.error(e.stack);
+});
+```
+
 **clear()**
 _self_
 
 Removes all key/value pairs from the DataStore.
+
+Example of clearing a DataStore:
+```javascript
+var store = haro();
+
+// Data is added
+
+store.clear();
+```
 
 **del( key )**
 _Promise_
 
 Deletes the record.
 
+Example of deleting a record:
+```javascript
+var store = haro();
+
+store.set(null, {abc: true}).then(function (rec) {
+  return store.del(rec[0]);
+}, function (e) {
+  throw e;
+}).then(function () {
+  console.log(store.total); // 0
+}, function (e) {
+  console.error(e.stack);
+});
+```
+
 **entries()**
 _MapIterator_
 
 Returns returns a new `Iterator` object that contains an array of `[key, value]` for each element in the `Map` object in insertion order.
+
+Example of deleting a record:
+```javascript
+var store = haro();
+
+// Data is added
+
+store.entries().forEach(function (key, value) {
+  console.log(key, ":", JSON.stringify(value);
+});
+```
 
 **filter( callbackFn )**
 _Tuple_
 
 Returns a `Tuple` of double `Tuples` with the shape `[key, value]` for records which returned `true` to `callbackFn(value, key)`.
 
+Example of filtering a DataStore:
+```javascript
+var store = haro();
+
+// Data is added
+
+store.filter(function (value) {
+  return value.something === true;
+});
+```
+
 **find( where )**
 _Tuple_
 
 Returns a `Tuple` of double `Tuples` with found by indexed values matching the `where`.
+
+Example of finding a record(s) with an identity match:
+```javascript
+var store = haro(null, {index: ["field1"]});
+
+// Data is added
+
+store.find({field1: "some value"});
+```
 
 **forEach( callbackFn[, thisArg] )**
 _Undefined_
 
 Calls `callbackFn` once for each key-value pair present in the `Map` object, in insertion order. If a `thisArg` parameter is provided to `forEach`, it will be used as the this value for each callback.
 
+Example of deleting a record:
+```javascript
+var store = haro();
+
+store.set(null, {abc: true}).then(function (rec) {
+  store.forEach(function (value, key) {
+    console.log(key);
+  });
+}, function (e) {
+  console.error(e.stack);
+});
+```
+
 **get( key )**
 _Tuple_
 
 Gets the record as a double `Tuple` with the shape `[key, value]`.
+
+Example of getting a record with a known primary key value:
+```javascript
+var store = haro();
+
+// Data is added
+
+store.get("keyValue");
+```
 
 **keys()**
 _MapIterator_
 
 Returns a new `Iterator` object that contains the keys for each element in the `Map` object in insertion order.`
 
+Example of getting an iterator, and logging the results:
+```javascript
+var store = haro();
+
+// Data is added
+
+store.keys().forEach(function (key) {
+  console.log(key);
+});
+```
+
 **limit( start, offset )**
 _Tuple_
 
 Returns a `Tuple` of double `Tuples` with the shape `[key, value]` for the corresponding range of records.
+
+Example of paginating a data set:
+```javascript
+var store = haro(), ds1, ds2;
+
+// Data is added
+
+console.log(store.total); // >10
+ds1 = store.limit(10, 0);
+ds2 = store.limit(10, 10);
+
+console.log(ds1.length === ds2.length); // true
+console.log(JSON.stringify(ds1[0][1]) === JSON.stringify(ds2[0][1])); // false
+```
 
 **map( callbackFn )**
 _Tuple_
 
 Returns a `Tuple` of double `Tuples` with the shape `[key, value]` of records with the returned `value` of `callbackFn(value, key)`.
 
+Example of mapping a DataStore:
+```javascript
+var store = haro();
+
+// Data is added
+
+store.map(function (key, value) {
+  var lobj = value;
+  
+  lobj.somethingNew = true;
+  return lobj;
+});
+```
+
 **reindex( [index] )**
 _Haro_
 
 Re-indexes the DataStore, to be called if changing the value of `index`.
+
+Example of mapping a DataStore:
+```javascript
+var store = haro();
+
+// Data is added
+
+// Creating a late index
+store.index('field3');
+
+// Recreating indexes, this should only happen if the store is out of sync caused by developer code.
+store.index();
+```
 
 
 **request( input, config )**
 _Promise_
 
 Returns a `Promise` for a `fetch()` with a double `Tuple` [`body`, `status`] as the `resolve()` argument.
+
+Example of mapping a DataStore:
+```javascript
+var store = haro();
+
+// Data is added
+
+store.setUri('http://somedomain.com');
+
+// Data is added
+
+store.index();
+```
 
 **search( arg, index )**
 _Tuple_
