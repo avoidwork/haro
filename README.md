@@ -457,7 +457,7 @@ Example setting the URI of the DataStore:
 var store = haro(null, {key: 'id'});
 
 store.setUri('https://api.somedomain.com').then(function (records) {
- console.log(records); // [[$uuid, {...}], ...]
+ console.log(records); // [[$id, {...}], ...]
 }).catch(function (e) {
  console.error(e.stack || e.message || e);
 });
