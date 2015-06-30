@@ -19,6 +19,7 @@ Harō takes two optional arguments, the first is an `Array` of records to set as
 var storeDefaults = haro();
 var storeRecords = haro([{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}]);
 var storeCustom = haro(null, {key: 'id'});
+```
 
 ### Examples
 #### Piping Promises
