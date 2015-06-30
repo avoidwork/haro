@@ -527,9 +527,13 @@ var store = haro(),
    data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
 
 store.batch(data, 'set').then(function (records) {
- store.values().forEach(function (value, key) {
-   console.log(key);
- });
+ var iterator = store.values(),
+     item = iterator.next();
+
+ do {
+   console.log(item.value);
+   item = iterator.next();
+ } while (!item.done);
 }).catch(function (e) {
  console.error(e.stack || e.message || e);
 });
