@@ -12,6 +12,14 @@ resolve or reject in the future. This allows you to build complex applications w
 Harō indexes have the following structure `Map (field/property) > Map (value) > Set (PKs)` which allow for quick & easy searching, as well as inspection.
 Indexes can be managed independently of `del()` & `set()` operations, for example you can lazily create new indexes via `reindex(field)`, or `sortBy(field)`.
 
+### How to use
+Harō takes two optional arguments, the first is an `Array` of records to set asynchronously, & the second is a configuration descriptor.
+
+```javascript
+var storeDefaults = haro();
+var storeRecords = haro([{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}]);
+var storeCustom = haro(null, {key: 'id'});
+
 ### Examples
 #### Piping Promises
 ```javascript
@@ -99,7 +107,7 @@ Example of specifying a bearer token authorization header:
 var store = haro(null, {
   config: {
     headers: {
-      authorization: "Bearer abcdef"
+      authorization: 'Bearer abcdef'
     }
   });
 ```
@@ -112,7 +120,7 @@ Non-matches within composites result in blank values.
 
 Example of fields/properties to index:
 ```javascript
-var store = haro(null, {index: ["field1", "field2", "field1|field2|field3"]);
+var store = haro(null, {index: ['field1', 'field2', 'field1|field2|field3']);
 ```
 
 **key**
@@ -122,7 +130,7 @@ Optional `Object` key to utilize as `Map` key, defaults to a version 4 `UUID` if
 
 Example of specifying the primary key:
 ```javascript
-var store = haro(null, {key: "field"});
+var store = haro(null, {key: 'field'});
 ```
 
 **source**
@@ -132,7 +140,7 @@ Optional `Object` key to retrieve data from API responses, see `setUri()`.
 
 Example of specifying the source of data:
 ```javascript
-var store = haro(null, {source: "data"});
+var store = haro(null, {source: 'data'});
 ```
 
 **versioning**
@@ -183,17 +191,17 @@ _Promise_
 The first argument must be an `Array`, and the second argument must be `del` or `set`.
 
 ```javascript
-var haro = require("haro"),
-    store = haro(null, {key: "id", index: ["name"]}),
+var haro = require('haro'),
+    store = haro(null, {key: 'id', index: ['name']}),
     i = -1,
     nth = 100,
     data = [];
 
 while (++i < nth) {
-  data.push({id: i, name: "John Doe" + i});
+  data.push({id: i, name: 'John Doe' + i});
 }
 
-store.batch(data, "set").then(function(records) {
+store.batch(data, 'set').then(function(records) {
   // records is a Tuple of Tuples
 }, function (e) {
   console.error(e.stack);
@@ -246,7 +254,7 @@ var store = haro();
 // Data is added
 
 store.entries().forEach(function (key, value) {
-  console.log(key, ":", JSON.stringify(value);
+  console.log(key, ':', JSON.stringify(value);
 });
 ```
 
@@ -273,11 +281,11 @@ Returns a `Tuple` of double `Tuples` with found by indexed values matching the `
 
 Example of finding a record(s) with an identity match:
 ```javascript
-var store = haro(null, {index: ["field1"]});
+var store = haro(null, {index: ['field1']});
 
 // Data is added
 
-store.find({field1: "some value"});
+store.find({field1: 'some value'});
 ```
 
 **forEach( callbackFn[, thisArg] )**
@@ -309,7 +317,7 @@ var store = haro();
 
 // Data is added
 
-store.get("keyValue");
+store.get('keyValue');
 ```
 
 **keys()**
@@ -428,9 +436,9 @@ Returns a `Promise` for setting/amending a record in the DataStore, if `key` is 
 
 Example of creating a record:
 ```javascript
-var store = haro(null, {key: "id"});
+var store = haro(null, {key: 'id'});
 
-store.set(null, {id: 1, name: "John Doe"}).then(function (record) {
+store.set(null, {id: 1, name: 'John Doe'}).then(function (record) {
   console.log(record); // [1, {id: 1, name: 'Jane Doe'}]
 }, function (e) {
   console.error(e.stack || e.message || e);
@@ -445,9 +453,9 @@ creates an implicit mapping of `$uri/{key}` for records.
 
 Example setting the URI of the DataStore:
 ```javascript
-var store = haro(null, {key: "id"});
+var store = haro(null, {key: 'id'});
 
-store.setUri("https://api.somedomain.com").then(function (records) {
+store.setUri('https://api.somedomain.com').then(function (records) {
  console.log(records); // [[$uuid, {...}], ...]
 }).catch(function (e) {
  console.error(e.stack || e.message || e);
