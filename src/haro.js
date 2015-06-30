@@ -1,5 +1,6 @@
 class Haro {
 	constructor (data, config = {}) {
+		this.buffer = new Set();
 		this.data = new Map();
 		this.delimiter = "|";
 		this.config = {
@@ -57,6 +58,7 @@ class Haro {
 	clear () {
 		this.total = 0;
 		this.registry = [];
+		this.buffer.clear();
 		this.data.clear();
 		this.indexes.clear();
 		this.versions.clear();
@@ -228,22 +230,35 @@ class Haro {
 		return this;
 	}
 
-	request (input, config = {}) {
-		let cfg = merge(this.config, config);
+	request (input, config={}, retry=false) {
+		let defer = deferred(),
+			cfg = merge(this.config, config);
 
-		return fetch(input, cfg).then(function (res) {
-			return res[res.headers.get("content-type").indexOf("application/json") > -1 ? "json" : "text"]().then(function (arg) {
-				if (res.status === 0 || res.status >= 400) {
-					throw tuple(arg, res.status);
+		fetch(input, cfg).then(res => {
+			res[res.headers.get("content-type").indexOf("application/json") > -1 ? "json" : "text"]().then(arg => {
+				let status = res.status;
+
+				if (status === 401 && retry) {
+					this.buffer.set("retry-" + (this.buffer.size + 1), {input: input, config: cfg, defer: defer});
+				} else if (status < 200 || status >= 400) {
+					defer.reject(tuple(arg, res.status));
+				} else {
+					defer.resolve(tuple(arg, res.status));
 				}
+			}, e => {
+				let status = res.status;
 
-				return tuple(arg, res.status);
-			}, function (e) {
-				throw tuple(e.message, res.status);
+				if (status === 401 && retry) {
+					this.buffer.set("retry-" + (this.buffer.size + 1), {input: input, config: cfg, defer: defer});
+				} else {
+					defer.reject(tuple(e.message, status));
+				}
 			});
 		}, function (e) {
-			throw tuple(e.message, 0);
+			defer.reject(tuple(e.message, 0));
 		});
+
+		return defer.promise;
 	}
 
 	search (value, index) {
