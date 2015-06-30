@@ -250,13 +250,18 @@ Returns returns a new `Iterator` object that contains an array of `[key, value]`
 
 Example of deleting a record:
 ```javascript
-var store = haro();
+var store = haro(),
+    item, iterator;
 
 // Data is added
 
-store.entries().forEach(function (key, value) {
-  console.log(key, ':', JSON.stringify(value);
-});
+iterator = store.entries();
+item = iterator.next();
+
+do {
+  console.log(item.value);
+  item = iterator.next();
+} while (!item.done);
 ```
 
 **filter( callbackFn )**
@@ -328,13 +333,18 @@ Returns a new `Iterator` object that contains the keys for each element in the `
 
 Example of getting an iterator, and logging the results:
 ```javascript
-var store = haro();
+var store = haro(),
+    item, iterator;
 
 // Data is added
 
-store.keys().forEach(function (key) {
-  console.log(key);
-});
+iterator = store.keys();
+item = iterator.next();
+
+do {
+  console.log(item.value);
+  item = iterator.next();
+} while (!item.done);
 ```
 
 **limit( start, offset )**
