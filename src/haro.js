@@ -16,13 +16,17 @@ class Haro {
 		this.registry = [];
 		this.key = "";
 		this.oauth = {
-			tokens: {
+			expires: 0,
+			token: {
 				auth: "",
+				id: "",
 				refresh: "",
 				secret: ""
 			},
 			uri: {
+				auth: "",
 				access: "",
+				redirect: "",
 				refresh: "",
 				request: ""
 			}
@@ -107,7 +111,7 @@ class Haro {
 
 		if (this.data.has(key)) {
 			if (!batch && this.uri) {
-				this.request(this.uri.replace(/\?.*/, "") + "/" + key, {method: "delete"}).then(next, function (e) {
+				this.request(this.uri.replace(/\?.*/, "") + "/" + key, {method: "delete"}, this.oauth.token.auth !== "").then(next, function (e) {
 					defer.reject(e[0] || e);
 				});
 			} else {
@@ -241,10 +245,9 @@ class Haro {
 			cfg = clone(this.config),
 			uri = this.oauth.uri[type];
 
-		cfg.headers["content-type"] = "application/x-www-form-urlencoded";
-
 		if (uri) {
-			this.request(uri, this.config).then(function (arg) {
+			cfg.headers["content-type"] = "application/x-www-form-urlencoded";
+			this.request(uri, cfg).then(function (arg) {
 				defer.resolve(arg);
 			}, function (e) {
 				defer.reject(e);
@@ -377,7 +380,7 @@ class Haro {
 		}
 
 		if (!batch && this.uri) {
-			this.request(this.uri.replace(/\?.*/, "") + "/" + lkey, {method: method, body: JSON.stringify(ldata)}).then(next, function (e) {
+			this.request(this.uri.replace(/\?.*/, "") + "/" + lkey, {method: method, body: JSON.stringify(ldata)}, this.oauth.token.auth !== "").then(next, function (e) {
 				defer.reject(e[0] || e);
 			});
 		} else {
@@ -456,7 +459,7 @@ class Haro {
 	sync (clear=false) {
 		let defer = deferred();
 
-		this.request(this.uri).then(arg => {
+		this.request(this.uri, this.config, this.oauth.token.auth !== "").then(arg => {
 			let data = arg[0];
 
 			if (this.source) {
