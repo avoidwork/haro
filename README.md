@@ -440,10 +440,12 @@ store.batch(data, 'set').then(function (records) {
 });
 ```
 
-**set( key, data, batch=false )**
+**set( key, data, batch=false, override=false )**
 _Promise_
 
 Returns a `Promise` for setting/amending a record in the DataStore, if `key` is `false` a version 4 `UUID` will be generated.
+
+If `override` is `true`, the existing record will be replaced instead of amended.
 
 Example of creating a record:
 ```javascript
@@ -456,17 +458,37 @@ store.set(null, {id: 1, name: 'John Doe'}).then(function (record) {
 });
 ```
 
-**setUri( uri )**
+**setUri( uri[, clear] )**
 _Promise_
 
 Returns a `Promise` for wiring the DataStore to an API, with the retrieved record set as the `resolve()` argument. This
 creates an implicit mapping of `$uri/{key}` for records.
+
+Pagination can be implemented by conditionally supplying `true` as the second argument. Doing so will `clear()` the DataStore 
+prior to a batch insertion.
 
 Example setting the URI of the DataStore:
 ```javascript
 var store = haro(null, {key: 'id'});
 
 store.setUri('https://api.somedomain.com').then(function (records) {
+ console.log(records); // [[$id, {...}], ...]
+}).catch(function (e) {
+ console.error(e.stack || e.message || e);
+});
+
+Example of pagination, by specifying `clear`:
+```javascript
+var store = haro(null, {key: 'id'});
+
+store.setUri('https://api.somedomain.com?page=1').then(function (records) {
+ console.log(records); // [[$id, {...}], ...]
+}).catch(function (e) {
+ console.error(e.stack || e.message || e);
+});
+
+// Later, based on user interaction, change the page
+store.setUri('https://api.somedomain.com?page=2', true).then(function (records) {
  console.log(records); // [[$id, {...}], ...]
 }).catch(function (e) {
  console.error(e.stack || e.message || e);
@@ -507,6 +529,29 @@ store.batch(data, 'set').then(function (records) {
 }).catch(function (e) {
  console.error(e.stack || e.message || e);
 });
+```
+
+**sync( clear )**
+_Promise_
+
+Synchronises the DataStore with an API collection. If `clear` is `true`, the DataStore will have `clear()` executed
+prior to `batch()` upon a successful retrieval of data.
+
+Example of sorting by an index:
+```javascript
+var store = haro(null, {key: 'id'}),
+    interval;
+
+store.setUri('https://api.somedomain.com').then(function (records) {
+ console.log(records); // [[$id, {...}], ...]
+}).catch(function (e) {
+ console.error(e.stack || e.message || e);
+});
+
+// Synchronizing the store every minute
+interval = setInterval(function () {
+  store.sync();
+}, 60000);
 ```
 
 **toArray()**
