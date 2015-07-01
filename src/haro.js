@@ -34,19 +34,19 @@ class Haro {
 
 	batch (args, type) {
 		let defer = deferred(),
-			promises = [];
+			fn;
 
 		if (type === "del") {
-			args.forEach(i => {
-				promises.push(this.del(i, true));
-			});
+			fn = i => {
+				return this.del(i, true);
+			};
 		} else {
-			args.forEach(i => {
-				promises.push(this.set(null, i, true));
-			});
+			fn = i => {
+				return this.set(null, i, true, true);
+			};
 		}
 
-		Promise.all(promises).then(function (arg) {
+		Promise.all(args.map(fn)).then(function (arg) {
 			defer.resolve(arg);
 		}, function (e) {
 			defer.reject(e);
