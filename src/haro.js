@@ -236,7 +236,7 @@ class Haro {
 	 * 2. Get the User's Authorization
 	 * 3. Exchange the Request Token for an Access Token
 	 */
-	oauthToken (type=request) {
+	oauthToken (type="request") {
 		let defer = deferred(),
 			cfg = clone(this.config),
 			uri = this.oauth.uri[type];
