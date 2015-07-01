@@ -15,6 +15,18 @@ class Haro {
 		this.indexes = new Map();
 		this.registry = [];
 		this.key = "";
+		this.oauth = {
+			tokens: {
+				auth: "",
+				refresh: "",
+				secret: ""
+			},
+			uri: {
+				access: "",
+				refresh: "",
+				request: ""
+			}
+		};
 		this.source = "";
 		this.total = 0;
 		this.uri = "";
@@ -215,6 +227,33 @@ class Haro {
 		});
 
 		return tuple.apply(tuple, result);
+	}
+
+	/**
+	 * The OAuth flow has 3 steps:
+	 *
+	 * 1. Get a Request Token
+	 * 2. Get the User's Authorization
+	 * 3. Exchange the Request Token for an Access Token
+	 */
+	oauthToken (type=request) {
+		let defer = deferred(),
+			cfg = clone(this.config),
+			uri = this.oauth.uri[type];
+
+		cfg.headers["content-type"] = "application/x-www-form-urlencoded";
+
+		if (uri) {
+			this.request(uri, this.config).then(function (arg) {
+				defer.resolve(arg);
+			}, function (e) {
+				defer.reject(e);
+			});
+		} else {
+			defer.reject(new Error("Invalid OAuth configuration"));
+		}
+
+		return defer.promise;
 	}
 
 	reindex (index) {
