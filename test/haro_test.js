@@ -97,7 +97,7 @@ exports["create (batch)"] = {
 			test.equal(self.store.map(function (i) {
 				i.name = 'John Doe';
 				return i;
-			})[0][1].name, 'John Doe', "Should be a match");
+			})[0].name, 'John Doe', "Should be a match");
 			test.done();
 		}, function (e) {
 			console.log(e.stack);

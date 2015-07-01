@@ -150,7 +150,11 @@ class Haro {
 	}
 
 	forEach (fn, ctx) {
-		return this.data.forEach(fn, ctx);
+		this.data.forEach(function (value, key) {
+			fn(clone(value), clone(key));
+		}, ctx);
+
+		return this;
 	}
 
 	get (key) {
@@ -207,7 +211,7 @@ class Haro {
 		let result = [];
 
 		this.forEach(function (value, key) {
-			result.push(tuple(key, fn(clone(value), clone(key))));
+			result.push(fn(value, key));
 		});
 
 		return tuple.apply(tuple, result);
