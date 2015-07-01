@@ -369,7 +369,7 @@ console.log(JSON.stringify(ds1[0][1]) === JSON.stringify(ds2[0][1])); // false
 **map( callbackFn )**
 _Tuple_
 
-Returns a `Tuple` with the returned `value` of `callbackFn(value, key)`.
+Returns a `Tuple` of the returns of `callbackFn(value, key)`.
 
 Example of mapping a DataStore:
 ```javascript
