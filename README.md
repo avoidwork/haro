@@ -458,7 +458,7 @@ store.set(null, {id: 1, name: 'John Doe'}).then(function (record) {
 });
 ```
 
-**setUri( uri[, clear] )**
+**setUri( uri, clear=false )**
 _Promise_
 
 Returns a `Promise` for wiring the DataStore to an API, with the retrieved record set as the `resolve()` argument. This
@@ -531,7 +531,7 @@ store.batch(data, 'set').then(function (records) {
 });
 ```
 
-**sync( clear )**
+**sync( clear=false )**
 _Promise_
 
 Synchronises the DataStore with an API collection. If `clear` is `true`, the DataStore will have `clear()` executed
