@@ -141,7 +141,7 @@ class Haro {
 		let result = [];
 
 		this.forEach(function (value, key) {
-			if (fn(clone(value), clone(key)) === true) {
+			if (fn(value, key) === true) {
 				result.push(tuple(key, value));
 			}
 		});
@@ -449,8 +449,8 @@ class Haro {
 	toArray () {
 		let result = [];
 
-		this.forEach(function (data) {
-			result.push(clone(data));
+		this.forEach(function (value) {
+			result.push(value);
 		});
 
 		return result;
