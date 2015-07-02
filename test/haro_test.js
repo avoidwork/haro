@@ -77,16 +77,17 @@ exports["create (batch)"] = {
 	test: function (test) {
 		var self = this;
 
-		test.expect(11);
+		test.expect(12);
 		test.equal(this.store.total, 0, "Should be '0'");
 		test.equal(this.store.data.size, 0, "Should be '0'");
 		this.store.batch(data, "set").then(function () {
 			test.equal(self.store.total, 6, "Should be '6'");
 			test.equal(self.store.data.size, 6, "Should be '6'");
 			test.equal(self.store.registry.length, 6, "Should be '6'");
-			test.equal(self.store.limit(2, 1)[0][0], self.store.get(self.store.registry[2])[0], "Should be a match");
-			test.equal(self.store.limit(2, 2)[1][0], self.store.get(self.store.registry[3])[0], "Should be a match");
-			test.equal(self.store.limit(10, 5).length, 0, "Should be '0'");
+			test.equal(self.store.limit(1)[0][0], self.store.get(self.store.registry[0])[0], "Should be a match");
+			test.equal(self.store.limit(2)[1][0], self.store.get(self.store.registry[1])[0], "Should be a match");
+			test.equal(self.store.limit(1, 1)[0][0], self.store.get(self.store.registry[1])[0], "Should be a match");
+			test.equal(self.store.limit(5, 10).length, 0, "Should be '0'");
 			test.equal(self.store.filter(function (i) {
 				return /decker/i.test(i.name);
 			}).length, 1, "Should be '1'");
@@ -168,7 +169,7 @@ exports["read (indexed)"] = {
 			test.equal(self.store.find({gender: "male", age: 20}).length, 1, "Should be `1`");
 			test.equal(self.store.find({age: 50}).length, 0, "Should be `0`");
 			test.equal(self.store.find({agez: 1}).length, 0, "Should be `0`");
-			test.equal(self.store.limit(0, 3)[2][1].guid, "f34d994b-24eb-4553-adf7-8f61e7ef8741", "Should be `f34d994b-24eb-4553-adf7-8f61e7ef8741`");
+			test.equal(self.store.limit(3)[2][1].guid, "f34d994b-24eb-4553-adf7-8f61e7ef8741", "Should be `f34d994b-24eb-4553-adf7-8f61e7ef8741`");
 			return args;
 		}, function (e) {
 			throw e;
@@ -179,7 +180,7 @@ exports["read (indexed)"] = {
 		}).then(function () {
 			test.equal(self.store.find({age: 20, gender: "male"}).length, 0, "Should be `0`");
 			test.equal(self.store.indexes.get("age").get(20).size, 1, "Should be `1`");
-			test.equal(self.store.limit(0, 3)[2][1].guid, "a94c8560-7bfd-42ec-a759-cbd5899b33c0", "Should be `a94c8560-7bfd-42ec-a759-cbd5899b33c0`");
+			test.equal(self.store.limit(3)[2][1].guid, "a94c8560-7bfd-42ec-a759-cbd5899b33c0", "Should be `a94c8560-7bfd-42ec-a759-cbd5899b33c0`");
 			test.done();
 		}, function (e) {
 			console.log(e.stack);

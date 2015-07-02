@@ -169,9 +169,9 @@ class Haro {
 		return this.data.keys();
 	}
 
-	limit (start=0, offset=0) {
-		let i = start,
-			nth = start + offset,
+	limit (max=1, offset=0) {
+		let i = offset,
+			nth = max + offset,
 			list = [],
 			k;
 

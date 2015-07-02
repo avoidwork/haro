@@ -347,7 +347,7 @@ do {
 } while (!item.done);
 ```
 
-**limit( start, offset )**
+**limit( max, offset )**
 _Tuple_
 
 Returns a `Tuple` of double `Tuples` with the shape `[key, value]` for the corresponding range of records.
@@ -359,8 +359,8 @@ var store = haro(), ds1, ds2;
 // Data is added
 
 console.log(store.total); // >10
-ds1 = store.limit(10, 0);
-ds2 = store.limit(10, 10);
+ds1 = store.limit(10);     // [0-9]
+ds2 = store.limit(10, 10); // [10-19]
 
 console.log(ds1.length === ds2.length); // true
 console.log(JSON.stringify(ds1[0][1]) === JSON.stringify(ds2[0][1])); // false
