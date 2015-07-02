@@ -21,6 +21,21 @@ function deferred () {
 	return {resolve: resolver, reject: rejecter, promise: promise};
 }
 
+function keyIndex (key, data, delimiter) {
+	let keys = key.split(delimiter).sort(),
+		result;
+
+	if (keys.length > 1) {
+		result = keys.map(function (i) {
+			return String(data[i]);
+		}).join(delimiter);
+	} else {
+		result = data[key];
+	}
+
+	return result;
+}
+
 function merge (a, b) {
 	let c = clone(a),
 		d = clone(b);

@@ -109,7 +109,7 @@ class Haro {
 	delIndex (key, data) {
 		this.index.forEach(i => {
 			let idx = this.indexes.get(i),
-				value = this.keyIndex(i, data);
+				value = keyIndex(i, data, this.delimiter);
 
 			if (idx.has(value)) {
 				idx.get(value).delete(key);
@@ -123,7 +123,7 @@ class Haro {
 
 	find (where) {
 		let key = Object.keys(where).sort().join(this.delimiter),
-			value = this.keyIndex(key, where),
+			value = keyIndex(key, where, this.delimiter),
 			result = [];
 
 		if (this.indexes.has(key)) {
@@ -163,21 +163,6 @@ class Haro {
 		}
 
 		return output;
-	}
-
-	keyIndex (key, data) {
-		let keys = key.split(this.delimiter).sort(),
-			result;
-
-		if (keys.length > 1) {
-			result = keys.map(function (i) {
-				return String(data[i]);
-			}).join(this.delimiter);
-		} else {
-			result = data[key];
-		}
-
-		return result;
 	}
 
 	keys () {
@@ -337,10 +322,10 @@ class Haro {
 	setIndex (key, data, index) {
 		if (!index) {
 			this.index.forEach(i => {
-				this.setIndexValue(this.indexes.get(i), this.keyIndex(i, data), key);
+				this.setIndexValue(this.indexes.get(i), keyIndex(i, data, this.delimiter), key);
 			});
 		} else {
-			this.setIndexValue(this.indexes.get(index), this.keyIndex(index, data), key);
+			this.setIndexValue(this.indexes.get(index), keyIndex(index, data, this.delimiter), key);
 		}
 
 		return this;
