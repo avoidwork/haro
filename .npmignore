@@ -4,6 +4,7 @@
 /lib/haro.min.js.map
 /src/
 /test/
+.eslintrc
 .git
 .gitignore
 .travis.yml
