@@ -413,7 +413,7 @@ exports["create (wired)"] = {
 		var self = this;
 
 		test.expect(1);
-		this.store.setUri("http://localhost:8000/data?page_size=10").then(function () {
+		this.store.setUri("http://localhost:8000/data/?page_size=10").then(function () {
 			return self.store.set(null, self.record);
 		}, function (e) {
 			throw e;
@@ -436,7 +436,7 @@ exports["delete (wired)"] = {
 		var self = this;
 
 		test.expect(3);
-		this.store.setUri("http://localhost:8000/data?page_size=10").then(function (args) {
+		this.store.setUri("http://localhost:8000/data/?page_size=10").then(function (args) {
 			test.equal(self.store.total, 6, "Should be a match");
 			return self.store.del(args[0][0]);
 		}, function (e) {

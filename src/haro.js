@@ -242,7 +242,7 @@ class Haro {
 		let indexes = index ? (this.index.indexOf(index) > -1 ? [index] : []) : this.index,
 			result = [],
 			fn = typeof value === "function",
-			regex = value instanceof RegExp,
+			rgex = value instanceof RegExp,
 			seen = new Set();
 
 		if (value) {
@@ -251,7 +251,7 @@ class Haro {
 
 				if (idx) {
 					idx.forEach((lset, lkey) => {
-						if ((fn && value(lkey)) || (regex && value.test(lkey)) || (lkey === value)) {
+						if ((fn && value(lkey)) || (rgex && value.test(lkey)) || (lkey === value)) {
 							lset.forEach(key => {
 								if (!seen.has(key)) {
 									seen.add(key);

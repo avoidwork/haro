@@ -3,11 +3,7 @@ function clone (arg) {
 }
 
 function concatURI (left, right) {
-	let result;
-
-	result = left.replace(/\?.*/, "") + "/" + right;
-
-	return result;
+	return left.replace(regex.querystring, "").replace(regex.endslash, "") + "/" + right;
 }
 
 function deferred () {
