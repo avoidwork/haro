@@ -432,8 +432,8 @@ store.batch(data, 'set').then(function (records) {
  console.log(store.search(function (age) {
    return age < 30;
  }, 'age')); // [[$uuid, {name: 'Jane Doe', age: 28}]]
-}).catch(function (e) {
- console.error(e.stack || e.message || e);
+}, function (e) {
+  console.error(e.stack || e.message || e);
 });
 ```
 
@@ -469,26 +469,27 @@ Example setting the URI of the DataStore:
 var store = haro(null, {key: 'id'});
 
 store.setUri('https://api.somedomain.com').then(function (records) {
- console.log(records); // [[$id, {...}], ...]
-}).catch(function (e) {
- console.error(e.stack || e.message || e);
+  console.log(records); // [[$id, {...}], ...]
+}, function (arg) {
+  console.error(arg[0]); // [body, statusCode]
 });
+```
 
 Example of pagination, by specifying `clear`:
 ```javascript
 var store = haro(null, {key: 'id'});
 
 store.setUri('https://api.somedomain.com?page=1').then(function (records) {
- console.log(records); // [[$id, {...}], ...]
-}).catch(function (e) {
- console.error(e.stack || e.message || e);
+  console.log(records); // [[$id, {...}], ...]
+}, function (arg) {
+  console.log(arg[0]); // [body, statusCode]
 });
 
 // Later, based on user interaction, change the page
 store.setUri('https://api.somedomain.com?page=2', true).then(function (records) {
- console.log(records); // [[$id, {...}], ...]
-}).catch(function (e) {
- console.error(e.stack || e.message || e);
+  console.log(records); // [[$id, {...}], ...]
+}, function (arg) {
+  console.error(arg[0]); // [body, statusCode]
 });
 ```
 
@@ -503,11 +504,11 @@ var store = haro(null, {index: ['name', 'age']}),
    data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
 
 store.batch(data, 'set').then(function (records) {
- console.log(store.sort(function (a, b) {
-   return a < b ? -1 : (a > b ? 1 : 0);
- })); // [{name: 'Jane Doe', age: 28}, {name: 'John Doe', age: 30}]
-}).catch(function (e) {
- console.error(e.stack || e.message || e);
+  console.log(store.sort(function (a, b) {
+    return a < b ? -1 : (a > b ? 1 : 0);
+  })); // [{name: 'Jane Doe', age: 28}, {name: 'John Doe', age: 30}]
+}, function (e) {
+  console.error(e.stack || e.message || e);
 });
 ```
 
@@ -522,9 +523,9 @@ var store = haro(null, {index: ['name', 'age']}),
    data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
 
 store.batch(data, 'set').then(function (records) {
- console.log(store.sortBy('age')); // [[$uuid, {name: 'Jane Doe', age: 28}], [$uuid, {name: 'John Doe', age: 30}]]
-}).catch(function (e) {
- console.error(e.stack || e.message || e);
+  console.log(store.sortBy('age')); // [[$uuid, {name: 'Jane Doe', age: 28}], [$uuid, {name: 'John Doe', age: 30}]]
+}, function (e) {
+  console.error(e.stack || e.message || e);
 });
 ```
 
@@ -540,9 +541,9 @@ var store = haro(null, {key: 'id'}),
     interval;
 
 store.setUri('https://api.somedomain.com').then(function (records) {
- console.log(records); // [[$id, {...}], ...]
-}).catch(function (e) {
- console.error(e.stack || e.message || e);
+  console.log(records); // [[$id, {...}], ...]
+}, function (arg) {
+  console.error(arg[0]); // [body, statusCode]
 });
 
 // Synchronizing the store every minute
@@ -562,9 +563,9 @@ var store = haro(),
    data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
 
 store.batch(data, 'set').then(function (records) {
- console.log(store.toArray()); // [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}]
-}).catch(function (e) {
- console.error(e.stack || e.message || e);
+  console.log(store.toArray()); // [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}]
+}, function (e) {
+  console.error(e.stack || e.message || e);
 });
 ```
 
@@ -579,15 +580,15 @@ var store = haro(),
    data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
 
 store.batch(data, 'set').then(function (records) {
- var iterator = store.values(),
-     item = iterator.next();
+  var iterator = store.values(),
+      item = iterator.next();
 
- do {
-   console.log(item.value);
-   item = iterator.next();
- } while (!item.done);
-}).catch(function (e) {
- console.error(e.stack || e.message || e);
+  do {
+    console.log(item.value);
+    item = iterator.next();
+  } while (!item.done);
+}, function (e) {
+  console.error(e.stack || e.message || e);
 });
 ```
 
