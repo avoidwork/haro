@@ -1,6 +1,5 @@
 class Haro {
 	constructor (data, config={}) {
-		this.buffer = new Set();
 		this.data = new Map();
 		this.delimiter = "|";
 		this.config = {
@@ -15,22 +14,6 @@ class Haro {
 		this.indexes = new Map();
 		this.registry = [];
 		this.key = "";
-		this.oauth = {
-			expires: 0,
-			token: {
-				auth: "",
-				id: "",
-				refresh: "",
-				secret: ""
-			},
-			uri: {
-				auth: "",
-				access: "",
-				redirect: "",
-				refresh: "",
-				request: ""
-			}
-		};
 		this.source = "";
 		this.total = 0;
 		this.uri = "";
@@ -74,7 +57,6 @@ class Haro {
 	clear () {
 		this.total = 0;
 		this.registry = [];
-		this.buffer.clear();
 		this.data.clear();
 		this.indexes.clear();
 		this.versions.clear();
@@ -111,7 +93,7 @@ class Haro {
 
 		if (this.data.has(key)) {
 			if (!batch && this.uri) {
-				this.request(this.uri.replace(/\?.*/, "") + "/" + key, {method: "delete"}, this.oauth.token.auth !== "").then(next, function (e) {
+				this.request(concatURI(this.uri, key), {method: "delete"}).then(next, function (e) {
 					defer.reject(e[0] || e);
 				});
 			} else {
@@ -233,32 +215,6 @@ class Haro {
 		return tuple.apply(tuple, result);
 	}
 
-	/**
-	 * The OAuth flow has 3 steps:
-	 *
-	 * 1. Get a Request Token
-	 * 2. Get the User's Authorization
-	 * 3. Exchange the Request Token for an Access Token
-	 */
-	oauthToken (type="request") {
-		let defer = deferred(),
-			cfg = clone(this.config),
-			uri = this.oauth.uri[type];
-
-		if (uri) {
-			cfg.headers["content-type"] = "application/x-www-form-urlencoded";
-			this.request(uri, cfg).then(function (arg) {
-				defer.resolve(arg);
-			}, function (e) {
-				defer.reject(e);
-			});
-		} else {
-			defer.reject(new Error("Invalid OAuth configuration"));
-		}
-
-		return defer.promise;
-	}
-
 	reindex (index) {
 		if (!index) {
 			this.indexes.clear();
@@ -278,29 +234,17 @@ class Haro {
 		return this;
 	}
 
-	request (input, config={}, retry=false) {
+	request (input, config={}) {
 		let defer = deferred(),
 			cfg = merge(this.config, config);
 
-		fetch(input, cfg).then(res => {
-			res[res.headers.get("content-type").indexOf("application/json") > -1 ? "json" : "text"]().then(arg => {
-				let status = res.status;
+		fetch(input, cfg).then(function (res) {
+			let status = res.status;
 
-				if (status === 401 && retry) {
-					this.buffer.set("retry-" + (this.buffer.size + 1), {input: input, config: cfg, defer: defer});
-				} else if (status < 200 || status >= 400) {
-					defer.reject(tuple(arg, res.status));
-				} else {
-					defer.resolve(tuple(arg, res.status));
-				}
-			}, e => {
-				let status = res.status;
-
-				if (status === 401 && retry) {
-					this.buffer.set("retry-" + (this.buffer.size + 1), {input: input, config: cfg, defer: defer});
-				} else {
-					defer.reject(tuple(e.message, status));
-				}
+			res[res.headers.get("content-type").indexOf("application/json") > -1 ? "json" : "text"]().then(function (arg) {
+				defer[status < 200 || status >= 400 ? "reject" : "resolve"](tuple(arg, status));
+			}, function (e) {
+				defer.reject(tuple(e.message, status));
 			});
 		}, function (e) {
 			defer.reject(tuple(e.message, 0));
@@ -380,7 +324,7 @@ class Haro {
 		}
 
 		if (!batch && this.uri) {
-			this.request(this.uri.replace(/\?.*/, "") + "/" + lkey, {method: method, body: JSON.stringify(ldata)}, this.oauth.token.auth !== "").then(next, function (e) {
+			this.request(concatURI(this.uri, lkey), {method: method, body: JSON.stringify(ldata)}).then(next, function (e) {
 				defer.reject(e[0] || e);
 			});
 		} else {
@@ -459,7 +403,7 @@ class Haro {
 	sync (clear=false) {
 		let defer = deferred();
 
-		this.request(this.uri, this.config, this.oauth.token.auth !== "").then(arg => {
+		this.request(this.uri).then(arg => {
 			let data = arg[0];
 
 			if (this.source) {

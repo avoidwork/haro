@@ -3,7 +3,7 @@
 [![build status](https://secure.travis-ci.org/avoidwork/haro.svg)](http://travis-ci.org/avoidwork/haro)
 
 Harō is a modern immutable DataStore built with ES6 features, which can be wired to an API for a complete feedback loop.
-It is un-opinionated, and offers a plug'n'play solution to modeling, searching, & managing data on the client, or server 
+It is un-opinionated, and offers a plug'n'play solution to modeling, searching, & managing data on the client, or server
 (in RAM). It is a [partially persistent data structure](https://en.wikipedia.org/wiki/Persistent_data_structure), by maintaining version sets of records in `versions` ([MVCC](https://en.wikipedia.org/wiki/Multiversion_concurrency_control)).
 
 Synchronous commands return instantly (`Array` or `Tuple`), while asynchronous commands return  `Promises` which will
@@ -410,10 +410,10 @@ Example of mapping a DataStore:
 ```javascript
 var store = haro();
 
-store.request('https://somedomain.com/api').then(function (res) {
-  console.log(res); // [body, status, headers]
-}, function (e) {
-  console.error(e.stack || e.message || e);
+store.request('https://somedomain.com/api').then(function (arg) {
+  console.log(arg); // [body, status]
+}, function (arg) {
+  console.error(arg[0]);
 });
 ```
 
@@ -461,7 +461,7 @@ _Promise_
 Returns a `Promise` for wiring the DataStore to an API, with the retrieved record set as the `resolve()` argument. This
 creates an implicit mapping of `$uri/{key}` for records.
 
-Pagination can be implemented by conditionally supplying `true` as the second argument. Doing so will `clear()` the DataStore 
+Pagination can be implemented by conditionally supplying `true` as the second argument. Doing so will `clear()` the DataStore
 prior to a batch insertion.
 
 Example setting the URI of the DataStore:

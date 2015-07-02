@@ -2,6 +2,14 @@ function clone (arg) {
 	return JSON.parse(JSON.stringify(arg));
 }
 
+function concatURI (left, right) {
+	let result;
+
+	result = left.replace(/\?.*/, "") + "/" + right;
+
+	return result;
+}
+
 function deferred () {
 	let promise, resolver, rejecter;
 
