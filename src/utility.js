@@ -38,9 +38,9 @@ function merge (a, b) {
 
 	if ((c instanceof Object) && (d instanceof Object)) {
 		Object.keys(d).forEach(function (i) {
-			if (c[i] instanceof Object) {
+			if ((c[i] instanceof Object) && (d[i] instanceof Object)) {
 				c[i] = merge(c[i], d[i]);
-			} else if (c[i] instanceof Array) {
+			} else if ((c[i] instanceof Array) && (d[i] instanceof Array)) {
 				c[i] = c[i].concat(d[i]);
 			} else {
 				c[i] = d[i];
