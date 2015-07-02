@@ -169,11 +169,19 @@ class Haro {
 		return this.data.keys();
 	}
 
-	limit (max=1, offset=0) {
-		let i = offset,
-			nth = max + offset,
+	limit (offset=0, max) {
+		let loffset = offset,
+			lmax = max,
 			list = [],
-			k;
+			i, k, nth;
+
+		if (lmax === undefined) {
+			lmax = loffset;
+			loffset = 0;
+		}
+
+		i = loffset;
+		nth = loffset + lmax;
 
 		if (i < 0 || i >= nth) {
 			throw new Error("Invalid range");

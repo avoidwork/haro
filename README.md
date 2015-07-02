@@ -347,7 +347,7 @@ do {
 } while (!item.done);
 ```
 
-**limit( max=1, offset=0 )**
+**limit( offset=0, max )**
 _Tuple_
 
 Returns a `Tuple` of double `Tuples` with the shape `[key, value]` for the corresponding range of records.
