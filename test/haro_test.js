@@ -84,7 +84,7 @@ exports["create (batch)"] = {
 			test.equal(self.store.total, 6, "Should be '6'");
 			test.equal(self.store.data.size, 6, "Should be '6'");
 			test.equal(self.store.registry.length, 6, "Should be '6'");
-			test.equal(self.store.limit(2)[0][0], self.store.get(self.store.registry[2])[0], "Should be a match");
+			test.equal(self.store.limit(2)[1][0], self.store.get(self.store.registry[1])[0], "Should be a match");
 			test.equal(self.store.limit(2, 2)[1][0], self.store.get(self.store.registry[3])[0], "Should be a match");
 			test.equal(self.store.limit(10, 5).length, 0, "Should be '0'");
 			test.equal(self.store.filter(function (i) {
