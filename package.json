@@ -1,7 +1,7 @@
 {
   "name": "haro",
-  "version": "1.2.0",
-  "description": "Harō is modern DataStore that can be wired to an API",
+  "version": "1.2.1",
+  "description": "Harō is modern immutable DataStore using Maps, Sets, Promises, & Tuples",
   "main": "lib/haro.js",
   "scripts": {
     "test": "grunt test"
