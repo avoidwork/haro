@@ -580,7 +580,7 @@ var store = haro(null, {key: 'guid'}),
    data = [{guid: 'abc', name: 'John Doe', age: 30}, {guid: 'def', name: 'Jane Doe', age: 28}];
 
 store.batch(data, 'set').then(function (records) {
-  console.log(store.toObject()); // {abc: {guid: 'abc'name: 'John Doe', age: 30}, def: {guid: 'def', name: 'Jane Doe', age: 28}}
+  console.log(store.toObject()); // {abc: {guid: 'abc', name: 'John Doe', age: 30}, def: {guid: 'def', name: 'Jane Doe', age: 28}}
 }, function (e) {
   console.error(e.stack || e.message || e);
 });
