@@ -35,7 +35,7 @@ class Haro {
 	batch (args, type) {
 		let defer = deferred(),
 			del = type === "del",
-			data, fn;
+			data, fn, hash;
 
 		function next () {
 			Promise.all(args.map(fn)).then(function (arg) {
@@ -61,8 +61,18 @@ class Haro {
 					return i[this.key];
 				}), args, true);
 			} else {
-				// @todo implement this
 				data = [];
+				hash = {};
+				args.forEach(i => {
+					let key = i[this.key];
+
+					if (key) {
+						hash[key] = i;
+					} else {
+						data.push({op: "add", path: "/", value: i});
+					}
+				});
+				data = data.concat(patch(this.toObject(), hash, true));
 			}
 
 			if (data.length > 0) {
@@ -485,6 +495,16 @@ class Haro {
 
 		this.forEach(function (value) {
 			result.push(value);
+		});
+
+		return result;
+	}
+
+	toObject () {
+		let result = {};
+
+		this.forEach(function (value, key) {
+			result[key] = value;
 		});
 
 		return result;
