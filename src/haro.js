@@ -275,15 +275,25 @@ class Haro {
 			cfg = merge(this.config, config);
 
 		fetch(input, cfg).then(function (res) {
-			let status = res.status;
+			let status = res.status,
+				headers;
+
+			if (res.headers._headers) {
+				headers = {};
+				Object.keys(res.headers._headers).forEach(function (i) {
+					headers[i] = res.headers._headers[i].join(", ");
+				});
+			} else {
+				headers = toObjekt(res.headers);
+			}
 
 			res[res.headers.get("content-type").indexOf("application/json") > -1 ? "json" : "text"]().then(function (arg) {
-				defer[status < 200 || status >= 400 ? "reject" : "resolve"](tuple(arg, status, res.headers));
+				defer[status < 200 || status >= 400 ? "reject" : "resolve"](tuple(arg, status, headers));
 			}, function (e) {
-				defer.reject(tuple(e.message, status, res.headers));
+				defer.reject(tuple(e.message, status, headers));
 			});
 		}, function (e) {
-			defer.reject(tuple(e.message, 0, null));
+			defer.reject(tuple(e.message, 0, {}));
 		});
 
 		return defer.promise;
@@ -434,6 +444,8 @@ class Haro {
 		this.request(this.uri).then(arg => {
 			let data = arg[0];
 
+			this.patch = (arg[2].Allow || arg[2].allow || "").indexOf("PATCH") > -1;
+
 			if (this.source) {
 				try {
 					this.source.split(".").forEach(function (i) {
@@ -471,13 +483,7 @@ class Haro {
 	}
 
 	toObject () {
-		let result = {};
-
-		this.forEach(function (value, key) {
-			result[key] = value;
-		});
-
-		return result;
+		return toObjekt(this);
 	}
 
 	values () {

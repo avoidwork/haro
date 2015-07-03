@@ -126,6 +126,16 @@ function setIndex (index, indexes, delimiter, key, data, indice) {
 	}
 }
 
+function toObjekt (arg) {
+	let result = {};
+
+	arg.forEach(function (value, key) {
+		result[key] = value;
+	});
+
+	return result;
+}
+
 function uuid () {
 	return (s() + s() + "-" + s() + "-4" + s().substr(0, 3) + "-" + r[Math.floor(Math.random() * 4)] + s().substr(0, 3) + "-" + s() + s() + s());
 }
