@@ -62,8 +62,7 @@ exports["create"] = {
 			test.equal(self.store.total, 1, "Should be '1'");
 			test.equal(self.store.data.size, 1, "Should be '1'");
 			test.done();
-		}, function (e) {
-			console.log(e.stack);
+		}, function () {
 			test.done();
 		});
 	}
@@ -99,8 +98,7 @@ exports["create (batch)"] = {
 				return i;
 			})[0].name, 'John Doe', "Should be a match");
 			test.done();
-		}, function (e) {
-			console.log(e.stack);
+		}, function () {
 			test.done();
 		});
 	}
@@ -123,8 +121,7 @@ exports["read (valid)"] = {
 			test.equal(Object.keys(record[1]).length, 19, "Should be a '19'");
 			test.equal(record[1].name, "Decker Merrill", "Should be a match");
 			test.done();
-		}, function (e) {
-			console.log(e.stack);
+		}, function () {
 			test.done();
 		});
 	}
@@ -144,8 +141,7 @@ exports["read (invalid)"] = {
 			test.equal(self.store.data.size, 1, "Should be '1'");
 			test.equal(self.store.get('abc'), undefined, "Should be 'undefined'");
 			test.done();
-		}, function (e) {
-			console.log(e.stack);
+		}, function () {
 			test.done();
 		});
 	}
@@ -181,8 +177,7 @@ exports["read (indexed)"] = {
 			test.equal(self.store.indexes.get("age").get(20).size, 1, "Should be `1`");
 			test.equal(self.store.limit(3)[2][1].guid, "a94c8560-7bfd-42ec-a759-cbd5899b33c0", "Should be `a94c8560-7bfd-42ec-a759-cbd5899b33c0`");
 			test.done();
-		}, function (e) {
-			console.log(e.stack);
+		}, function () {
 			test.done();
 		});
 	}
@@ -200,8 +195,7 @@ exports["read (toArray)"] = {
 		this.store.batch(data, "set").then(function (args) {
 			test.equal(self.store.toArray().length, 6, "Should be `6`");
 			test.done();
-		}, function (e) {
-			console.log(e.stack);
+		}, function () {
 			test.done();
 		});
 	}
@@ -226,8 +220,7 @@ exports["read (sort)"] = {
 		}).then(function (arg) {
 			test.equal(arg[0].guid, "a94c8560-7bfd-42ec-a759-cbd5899b33c0", "Should be `a94c8560-7bfd-42ec-a759-cbd5899b33c0`");
 			test.done();
-		}, function (e) {
-			console.log(e.stack);
+		}, function () {
 			test.done();
 		});
 	}
@@ -245,8 +238,7 @@ exports["read (sortBy)"] = {
 		this.store.batch(data, "set").then(function () {
 			test.equal(self.store.sortBy('company')[0][1].company, "Coash", "Should be `Coash`");
 			test.done();
-		}, function (e) {
-			console.log(e.stack);
+		}, function () {
 			test.done();
 		});
 	}
@@ -266,8 +258,7 @@ exports["read (search - un-indexed)"] = {
 
 			test.equal(result.length, "0", "Should be `0`");
 			test.done();
-		}, function (e) {
-			console.log(e.stack);
+		}, function () {
 			test.done();
 		});
 	}
@@ -291,8 +282,7 @@ exports["read (search - indexed)"] = {
 			test.equal(result2.length, "2", "Should be `2`");
 			test.equal(result2[0][1].name, "Decker Merrill", "Should be `Decker Merrill`");
 			test.done();
-		}, function (e) {
-			console.log(e.stack);
+		}, function () {
 			test.done();
 		});
 	}
@@ -318,8 +308,7 @@ exports["update"] = {
 			test.equal(arg[1].name, "John Doe", "Should be a match");
 			test.equal(self.store.versions.get(arg[0]).size, 1, "Should be a '1'");
 			test.done();
-		}, function (e) {
-			console.log(e.stack);
+		}, function () {
 			test.done();
 		});
 	}
@@ -345,8 +334,7 @@ exports["delete"] = {
 			test.equal(self.store.total, 0, "Should be '0'");
 			test.equal(self.store.data.size, 0, "Should be '0'");
 			test.done();
-		}, function (e) {
-			console.log(e.stack);
+		}, function () {
 			test.done();
 		});
 	}
@@ -372,8 +360,7 @@ exports["delete (batch)"] = {
 			test.equal(self.store.total, 4, "Should be '4'");
 			test.equal(self.store.data.size, 4, "Should be '4'");
 			test.done();
-		}, function (e) {
-			console.log(e.stack);
+		}, function () {
 			test.done();
 		});
 	}
@@ -395,8 +382,7 @@ exports["setUri"] = {
 			test.equal(self.store.total, 6, "Should be '6'");
 			test.equal(self.store.data.size, 6, "Should be '6'");
 			test.done();
-		}, function (e) {
-			console.log(e.stack);
+		}, function () {
 			test.done();
 		});
 	}
@@ -420,8 +406,7 @@ exports["create (wired)"] = {
 		}).then(function (arg) {
 			test.equal(arg[0], self.record.id, "Should be a match");
 			test.done();
-		}, function (e) {
-			console.log(e.stack);
+		}, function () {
 			test.done();
 		});
 	}
@@ -445,8 +430,7 @@ exports["delete (wired)"] = {
 			test.equal(self.store.total, self.store.data.size, "Should be a match");
 			test.equal(self.store.data.size, 5, "Should be a match");
 			test.done();
-		}, function (e) {
-			console.log(e.stack);
+		}, function () {
 			test.done();
 		});
 	}
@@ -468,8 +452,7 @@ exports["update (wired / overwrite)"] = {
 		}).then(function (arg) {
 			test.equal(Object.keys(arg[1]).length, 1, "Should be a match");
 			test.done();
-		}, function (e) {
-			console.log(e.stack);
+		}, function () {
 			test.done();
 		});
 	}
