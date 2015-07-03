@@ -415,14 +415,14 @@ store.index();
 **request( input, config )**
 _Promise_
 
-Returns a `Promise` for a `fetch()` with a double `Tuple` [`body`, `status`] as the `resolve()` argument.
+Returns a `Promise` for a `fetch()` with a triple `Tuple` [`body`, `status`, `headers`] as the `resolve()` & `reject()` argument.
 
 Example of mapping a DataStore:
 ```javascript
 var store = haro();
 
 store.request('https://somedomain.com/api').then(function (arg) {
-  console.log(arg); // [body, status]
+  console.log(arg); // [body, status, headers]
 }, function (arg) {
   console.error(arg[0]);
 });

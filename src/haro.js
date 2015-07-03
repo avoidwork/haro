@@ -76,7 +76,7 @@ class Haro {
 			}
 
 			if (data.length > 0) {
-				this.request(this.uri, {
+				this.request(concatURI(this.uri, null), {
 					method: "patch",
 					body: JSON.stringify(data)
 				}).then(function () {
