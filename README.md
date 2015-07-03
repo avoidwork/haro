@@ -165,6 +165,11 @@ _Map_
 
 Map of indexes, which are Sets containing Map keys.
 
+**patch**
+_Boolean_
+
+Set from the success handler of `sync()`, infers `PATCH` requests are supported by the API collection.
+
 **registry**
 _Array_
 
@@ -178,7 +183,7 @@ Total records in the DataStore.
 **uri**
 _String_
 
-API collection URI the DataStore is wired to, in a feedback loop (do not modify, use `setUri()`). Setting the value creates an implicit relationship with records, e.g. setting `/users` would an implicit URI structure of `/users/{key}`
+API collection URI the DataStore is wired to, in a feedback loop (do not modify, use `setUri()`). Setting the value creates an implicit relationship with records, e.g. setting `/users` would imply a URI structure of `/users/{key}`. Trailing slashes may be stripped.
 
 **versions**
 _Map_
@@ -189,7 +194,10 @@ _Map_
 **batch( array, type )**
 _Promise_
 
-The first argument must be an `Array`, and the second argument must be `del` or `set`.
+The first argument must be an `Array`, and the second argument must be `del` or `set`. Batch operations with a DataStore 
+that is wired to an API with pagination enabled & `PATCH` support may create erroneous operations, such as `add` where
+`replace` is appropriate; this will happen because the DataStore will not have the entire data set to generate it's 
+[JSONPatch](http://jsonpatchjs.com/) request.
 
 ```javascript
 var haro = require('haro'),
@@ -246,7 +254,8 @@ store.set(null, {abc: true}).then(function (rec) {
 **entries()**
 _MapIterator_
 
-Returns returns a new `Iterator` object that contains an array of `[key, value]` for each element in the `Map` object in insertion order.
+Returns returns a new `Iterator` object that contains an array of `[key, value]` for each element in the `Map` object in 
+insertion order.
 
 Example of deleting a record:
 ```javascript
@@ -267,7 +276,8 @@ do {
 **filter( callbackFn )**
 _Tuple_
 
-Returns a `Tuple` of double `Tuples` with the shape `[key, value]` for records which returned `true` to `callbackFn(value, key)`.
+Returns a `Tuple` of double `Tuples` with the shape `[key, value]` for records which returned `true` to 
+`callbackFn(value, key)`.
 
 Example of filtering a DataStore:
 ```javascript
@@ -297,7 +307,8 @@ store.find({field1: 'some value'});
 **forEach( callbackFn[, thisArg] )**
 _Undefined_
 
-Calls `callbackFn` once for each key-value pair present in the `Map` object, in insertion order. If a `thisArg` parameter is provided to `forEach`, it will be used as the this value for each callback.
+Calls `callbackFn` once for each key-value pair present in the `Map` object, in insertion order. If a `thisArg` 
+parameter is provided to `forEach`, it will be used as the this value for each callback.
 
 Example of deleting a record:
 ```javascript
@@ -421,7 +432,8 @@ store.request('https://somedomain.com/api').then(function (arg) {
 _Tuple_
 
 Returns a `Tuple` of double `Tuples` with the shape `[key, value]` of records found matching `arg`.
-If `arg` is a `Function` a match is made if the result is `true`, if `arg` is a `RegExp` the field value must `.test()` as `true`, else the value must be an equality match.
+If `arg` is a `Function` a match is made if the result is `true`, if `arg` is a `RegExp` the field value must `.test()` 
+as `true`, else the value must be an equality match.
 
 Example of searching with a predicate function:
 ```javascript
@@ -440,7 +452,8 @@ store.batch(data, 'set').then(function (records) {
 **set( key, data, batch=false, override=false )**
 _Promise_
 
-Returns a `Promise` for setting/amending a record in the DataStore, if `key` is `false` a version 4 `UUID` will be generated.
+Returns a `Promise` for setting/amending a record in the DataStore, if `key` is `false` a version 4 `UUID` will be 
+generated.
 
 If `override` is `true`, the existing record will be replaced instead of amended.
 
@@ -461,8 +474,10 @@ _Promise_
 Returns a `Promise` for wiring the DataStore to an API, with the retrieved record set as the `resolve()` argument. This
 creates an implicit mapping of `$uri/{key}` for records.
 
-Pagination can be implemented by conditionally supplying `true` as the second argument. Doing so will `clear()` the DataStore
-prior to a batch insertion.
+Pagination can be implemented by conditionally supplying `true` as the second argument. Doing so will `clear()` the 
+DataStore prior to a batch insertion.
+
+If `PATCH` requests are supported by the collection `batch()`, `del()` & `set()` will make `JSONPatch` requests.
 
 Example setting the URI of the DataStore:
 ```javascript

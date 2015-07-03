@@ -17,16 +17,6 @@ function deferred () {
 	return {resolve: resolver, reject: rejecter, promise: promise};
 }
 
-function iterate (obj, fn) {
-	if (obj instanceof Object) {
-		Object.keys(obj).forEach(function (i) {
-			fn.call(obj, obj[i], i);
-		});
-	} else {
-		obj.forEach(fn);
-	}
-}
-
 function keyIndex (key, data, delimiter) {
 	let keys = key.split(delimiter).sort(),
 		result;
@@ -40,6 +30,27 @@ function keyIndex (key, data, delimiter) {
 	}
 
 	return result;
+}
+
+function delIndex (index, indexes, delimiter, key, data) {
+	index.forEach(function (i) {
+		let idx = indexes.get(i),
+			value = keyIndex(i, data, delimiter);
+
+		if (idx.has(value)) {
+			idx.get(value).delete(key);
+		}
+	});
+}
+
+function iterate (obj, fn) {
+	if (obj instanceof Object) {
+		Object.keys(obj).forEach(function (i) {
+			fn.call(obj, obj[i], i);
+		});
+	} else {
+		obj.forEach(fn);
+	}
 }
 
 function merge (a, b) {
@@ -65,32 +76,48 @@ function merge (a, b) {
 	return c;
 }
 
-function patch (ogdata = {}, data = {}, overwrite = false) {
+function patch (ogdata = {}, data = {}, key = "", overwrite = false) {
 	let result = [];
 
 	if (overwrite) {
-		iterate(ogdata, (value, key) => {
-			if (key !== this.key && data[key] === undefined) {
-				result.push({op: "remove", path: "/" + key});
+		iterate(ogdata, function (v, k) {
+			if (k !== key && data[k] === undefined) {
+				result.push({op: "remove", path: "/" + k});
 			}
 		});
 	}
 
-	iterate(data, (value, key) => {
-		if (key !== this.key && ogdata[key] === undefined) {
-			result.push({op: "add", path: "/" + key, value: value});
-		} else if (JSON.stringify(ogdata[key]) !== JSON.stringify(value)) {
-			result.push({op: "replace", path: "/" + key, value: value});
+	iterate(data, function (v, k) {
+		if (k !== key && ogdata[k] === undefined) {
+			result.push({op: "add", path: "/" + k, value: v});
+		} else if (JSON.stringify(ogdata[k]) !== JSON.stringify(v)) {
+			result.push({op: "replace", path: "/" + k, value: v});
 		}
 	});
 
 	return result;
 }
 
-const r = [8, 9, "a", "b"];
-
 function s () {
 	return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+}
+
+function setIndexValue (index, key, value) {
+	if (!index.has(key)) {
+		index.set(key, new Set());
+	}
+
+	index.get(key).add(value);
+}
+
+function setIndex (index, indexes, delimiter, key, data, indice) {
+	if (!indice) {
+		index.forEach(function (i) {
+			setIndexValue(indexes.get(i), keyIndex(i, data, delimiter), key);
+		});
+	} else {
+		setIndexValue(indexes.get(indice), keyIndex(indice, data, delimiter), key);
+	}
 }
 
 function uuid () {

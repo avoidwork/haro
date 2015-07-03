@@ -59,7 +59,7 @@ class Haro {
 			if (del) {
 				data = patch(this.toArray().map(i => {
 					return i[this.key];
-				}), args, true);
+				}), args, this.key, true);
 			} else {
 				data = [];
 				hash = {};
@@ -72,7 +72,7 @@ class Haro {
 						data.push({op: "add", path: "/", value: i});
 					}
 				});
-				data = data.concat(patch(this.toObject(), hash, true));
+				data = data.concat(patch(this.toObject(), hash, this.key, true));
 			}
 
 			if (data.length > 0) {
@@ -105,9 +105,10 @@ class Haro {
 	}
 
 	del (key, batch = false) {
-		let defer = deferred();
+		let defer = deferred(),
+			next;
 
-		let next = () => {
+		next = () => {
 			let index = this.registry.indexOf(key);
 
 			if (index > -1) {
@@ -119,7 +120,7 @@ class Haro {
 					this.registry.splice(index, 1);
 				}
 
-				this.delIndex(key, this.data.get(key));
+				delIndex(this.index, this.indexes, this.delimiter, key, this.data.get(key));
 				this.data.delete(key);
 				--this.total;
 
@@ -134,10 +135,9 @@ class Haro {
 		if (this.data.has(key)) {
 			if (!batch && this.uri) {
 				if (this.patch) {
-					// @todo implement this!
 					this.request(concatURI(this.uri, null), {
 						method: "patch",
-						body: null
+						body: JSON.stringify([{op: "remove", path: "/" + key}])
 					}).then(next, function (e) {
 						defer.reject(e[0] || e);
 					});
@@ -156,17 +156,6 @@ class Haro {
 		}
 
 		return defer.promise;
-	}
-
-	delIndex (key, data) {
-		this.index.forEach(i => {
-			let idx = this.indexes.get(i),
-				value = keyIndex(i, data, this.delimiter);
-
-			if (idx.has(value)) {
-				idx.get(value).delete(key);
-			}
-		});
 	}
 
 	entries () {
@@ -265,14 +254,16 @@ class Haro {
 			this.indexes.clear();
 			this.index.forEach(i => {
 				this.indexes.set(i, new Map());
-				this.forEach((data, key) => {
-					this.setIndex(key, data, i);
+			});
+			this.forEach((data, key) => {
+				this.index.forEach(i => {
+					setIndex(this.index, this.indexes, this.delimiter, key, data, i);
 				});
 			});
 		} else {
 			this.indexes.set(index, new Map());
 			this.forEach((data, key) => {
-				this.setIndex(key, data, index);
+				setIndex(this.index, this.indexes, this.delimiter, key, data, index);
 			});
 		}
 
@@ -350,11 +341,11 @@ class Haro {
 					this.versions.get(lkey).add(tuple(ogdata));
 				}
 
-				this.delIndex(lkey, ogdata);
+				delIndex(this.index, this.indexes, this.delimiter, lkey, ogdata);
 			}
 
 			this.data.set(lkey, ldata);
-			this.setIndex(lkey, ldata);
+			setIndex(this.index, this.indexes, this.delimiter, lkey, ldata);
 			defer.resolve(this.get(lkey));
 		};
 
@@ -370,10 +361,9 @@ class Haro {
 
 		if (!batch && this.uri) {
 			if (this.patch) {
-				// @todo implement this!
 				this.request(concatURI(this.uri, null), {
 					method: "patch",
-					body: JSON.stringify(ldata)
+					body: JSON.stringify([{op: method === "post" ? "add" : "replace", path: "/" + lkey, value: ldata}])
 				}).then(next, function (e) {
 					defer.reject(e[0] || e);
 				});
@@ -390,26 +380,6 @@ class Haro {
 		}
 
 		return defer.promise;
-	}
-
-	setIndex (key, data, index) {
-		if (!index) {
-			this.index.forEach(i => {
-				this.setIndexValue(this.indexes.get(i), keyIndex(i, data, this.delimiter), key);
-			});
-		} else {
-			this.setIndexValue(this.indexes.get(index), keyIndex(index, data, this.delimiter), key);
-		}
-
-		return this;
-	}
-
-	setIndexValue (index, key, value) {
-		if (!index.has(key)) {
-			index.set(key, new Set());
-		}
-
-		index.get(key).add(value);
 	}
 
 	setUri (uri, clear = false) {
