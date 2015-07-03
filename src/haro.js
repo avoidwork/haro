@@ -34,27 +34,51 @@ class Haro {
 
 	batch (args, type) {
 		let defer = deferred(),
-			fn;
+			del = type === "del",
+			data, fn;
 
-		if (this.patch) {
-			// @todo implement this!
-			console.log(undefined);
-		} else {
-			if (type === "del") {
-				fn = i => {
-					return this.del(i, true);
-				};
-			} else {
-				fn = i => {
-					return this.set(null, i, true, true);
-				};
-			}
-
+		function next () {
 			Promise.all(args.map(fn)).then(function (arg) {
 				defer.resolve(arg);
 			}, function (e) {
 				defer.reject(e);
 			});
+		}
+
+		if (del) {
+			fn = i => {
+				return this.del(i, true);
+			};
+		} else {
+			fn = i => {
+				return this.set(null, i, true, true);
+			};
+		}
+
+		if (this.patch) {
+			if (del) {
+				data = patch(this.toArray().map(i => {
+					return i[this.key];
+				}), args, true);
+			} else {
+				// @todo implement this
+				data = [];
+			}
+
+			if (data.length > 0) {
+				this.request(this.uri, {
+					method: "patch",
+					body: JSON.stringify(data)
+				}).then(function () {
+					next();
+				}, function (e) {
+					defer.reject(e);
+				});
+			} else {
+				defer.resolve();
+			}
+		} else {
+			next();
 		}
 
 		return defer.promise;

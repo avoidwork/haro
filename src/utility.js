@@ -18,9 +18,13 @@ function deferred () {
 }
 
 function iterate (obj, fn) {
-	Object.keys(obj).forEach(function (i) {
-		fn.call(obj, obj[i], i);
-	});
+	if (obj instanceof Object) {
+		Object.keys(obj).forEach(function (i) {
+			fn.call(obj, obj[i], i);
+		});
+	} else {
+		obj.forEach(fn);
+	}
 }
 
 function keyIndex (key, data, delimiter) {
@@ -61,7 +65,7 @@ function merge (a, b) {
 	return c;
 }
 
-function patch (data = {}, ogdata = {}, overwrite = false) {
+function patch (ogdata = {}, data = {}, overwrite = false) {
 	let result = [];
 
 	if (overwrite) {
