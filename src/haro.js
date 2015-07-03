@@ -138,14 +138,23 @@ class Haro {
 					this.request(concatURI(this.uri, null), {
 						method: "patch",
 						body: JSON.stringify([{op: "remove", path: "/" + key}])
-					}).then(next, function (e) {
-						defer.reject(e[0] || e);
+					}).then(next, e => {
+						if (e[1] === 405) {
+							this.patch = false;
+							this.request(concatURI(this.uri, key), {
+								method: "delete"
+							}).then(next, function (err) {
+								defer.reject(err);
+							});
+						} else {
+							defer.reject(e);
+						}
 					});
 				} else {
 					this.request(concatURI(this.uri, key), {
 						method: "delete"
 					}).then(next, function (e) {
-						defer.reject(e[0] || e);
+						defer.reject(e);
 					});
 				}
 			} else {
@@ -398,8 +407,18 @@ class Haro {
 				this.request(concatURI(this.uri, lkey), {
 					method: "patch",
 					body: JSON.stringify(body)
-				}).then(next, function (e) {
-					defer.reject(e);
+				}).then(next, e => {
+					if (e[1] === 405) {
+						this.patch = false;
+						this.request(concatURI(this.uri, lkey), {
+							method: method,
+							body: JSON.stringify(ldata)
+						}).then(next, function (err) {
+							defer.reject(err);
+						});
+					} else {
+						defer.reject(e);
+					}
 				});
 			} else {
 				this.request(concatURI(this.uri, lkey), {
