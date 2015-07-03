@@ -574,7 +574,7 @@ _Object_
 
 Returns an Object of the DataStore.
 
-Example of casting to an `Array`:
+Example of casting to an `Object`:
 ```javascript
 var store = haro(null, {key: 'guid'}),
    data = [{guid: 'abc', name: 'John Doe', age: 30}, {guid: 'def', name: 'Jane Doe', age: 28}];
