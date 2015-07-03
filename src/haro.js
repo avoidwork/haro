@@ -1,5 +1,5 @@
 class Haro {
-	constructor (data, config={}) {
+	constructor (data, config = {}) {
 		this.data = new Map();
 		this.delimiter = "|";
 		this.config = {
@@ -12,6 +12,7 @@ class Haro {
 		};
 		this.index = [];
 		this.indexes = new Map();
+		this.patch = false;
 		this.registry = [];
 		this.key = "";
 		this.source = "";
@@ -35,21 +36,26 @@ class Haro {
 		let defer = deferred(),
 			fn;
 
-		if (type === "del") {
-			fn = i => {
-				return this.del(i, true);
-			};
+		if (this.patch) {
+			// @todo implement this!
+			console.log(undefined);
 		} else {
-			fn = i => {
-				return this.set(null, i, true, true);
-			};
-		}
+			if (type === "del") {
+				fn = i => {
+					return this.del(i, true);
+				};
+			} else {
+				fn = i => {
+					return this.set(null, i, true, true);
+				};
+			}
 
-		Promise.all(args.map(fn)).then(function (arg) {
-			defer.resolve(arg);
-		}, function (e) {
-			defer.reject(e);
-		});
+			Promise.all(args.map(fn)).then(function (arg) {
+				defer.resolve(arg);
+			}, function (e) {
+				defer.reject(e);
+			});
+		}
 
 		return defer.promise;
 	}
@@ -64,7 +70,7 @@ class Haro {
 		return this.reindex();
 	}
 
-	del (key, batch=false) {
+	del (key, batch = false) {
 		let defer = deferred();
 
 		let next = () => {
@@ -93,9 +99,21 @@ class Haro {
 
 		if (this.data.has(key)) {
 			if (!batch && this.uri) {
-				this.request(concatURI(this.uri, key), {method: "delete"}).then(next, function (e) {
-					defer.reject(e[0] || e);
-				});
+				if (this.patch) {
+					// @todo implement this!
+					this.request(concatURI(this.uri, null), {
+						method: "patch",
+						body: null
+					}).then(next, function (e) {
+						defer.reject(e[0] || e);
+					});
+				} else {
+					this.request(concatURI(this.uri, key), {
+						method: "delete"
+					}).then(next, function (e) {
+						defer.reject(e[0] || e);
+					});
+				}
 			} else {
 				next();
 			}
@@ -169,7 +187,7 @@ class Haro {
 		return this.data.keys();
 	}
 
-	limit (offset=0, max) {
+	limit (offset = 0, max) {
 		let loffset = offset,
 			lmax = max,
 			list = [],
@@ -227,7 +245,7 @@ class Haro {
 		return this;
 	}
 
-	request (input, config={}) {
+	request (input, config = {}) {
 		let defer = deferred(),
 			cfg = merge(this.config, config);
 
@@ -235,12 +253,12 @@ class Haro {
 			let status = res.status;
 
 			res[res.headers.get("content-type").indexOf("application/json") > -1 ? "json" : "text"]().then(function (arg) {
-				defer[status < 200 || status >= 400 ? "reject" : "resolve"](tuple(arg, status));
+				defer[status < 200 || status >= 400 ? "reject" : "resolve"](tuple(arg, status, res.headers));
 			}, function (e) {
-				defer.reject(tuple(e.message, status));
+				defer.reject(tuple(e.message, status, res.headers));
 			});
 		}, function (e) {
-			defer.reject(tuple(e.message, 0));
+			defer.reject(tuple(e.message, 0, null));
 		});
 
 		return defer.promise;
@@ -275,7 +293,7 @@ class Haro {
 		return tuple.apply(tuple, result);
 	}
 
-	set (key, data, batch=false, override=false) {
+	set (key, data, batch = false, override = false) {
 		let defer = deferred(),
 			method = "post",
 			ldata = clone(data),
@@ -317,9 +335,22 @@ class Haro {
 		}
 
 		if (!batch && this.uri) {
-			this.request(concatURI(this.uri, lkey), {method: method, body: JSON.stringify(ldata)}).then(next, function (e) {
-				defer.reject(e[0] || e);
-			});
+			if (this.patch) {
+				// @todo implement this!
+				this.request(concatURI(this.uri, null), {
+					method: "patch",
+					body: JSON.stringify(ldata)
+				}).then(next, function (e) {
+					defer.reject(e[0] || e);
+				});
+			} else {
+				this.request(concatURI(this.uri, lkey), {
+					method: method,
+					body: JSON.stringify(ldata)
+				}).then(next, function (e) {
+					defer.reject(e[0] || e);
+				});
+			}
 		} else {
 			next();
 		}
@@ -347,7 +378,7 @@ class Haro {
 		index.get(key).add(value);
 	}
 
-	setUri (uri, clear=false) {
+	setUri (uri, clear = false) {
 		let defer = deferred();
 
 		this.uri = uri;
@@ -393,7 +424,7 @@ class Haro {
 		return tuple.apply(tuple, result);
 	}
 
-	sync (clear=false) {
+	sync (clear = false) {
 		let defer = deferred();
 
 		this.request(this.uri).then(arg => {

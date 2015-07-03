@@ -1,4 +1,4 @@
-function factory (data=null, config={}, indexes=[]) {
+function factory (data = null, config = {}, indexes = []) {
 	return new Haro(data, config, indexes);
 }
 

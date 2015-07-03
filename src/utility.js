@@ -3,7 +3,7 @@ function clone (arg) {
 }
 
 function concatURI (left, right) {
-	return left.replace(regex.querystring, "").replace(regex.endslash, "") + "/" + right;
+	return left.replace(regex.querystring, "").replace(regex.endslash, "") + (right ? "/" + right : "");
 }
 
 function deferred () {
@@ -15,6 +15,12 @@ function deferred () {
 	});
 
 	return {resolve: resolver, reject: rejecter, promise: promise};
+}
+
+function iterate (obj, fn) {
+	Object.keys(obj).forEach(function (i) {
+		fn.call(obj, obj[i], i);
+	});
 }
 
 function keyIndex (key, data, delimiter) {
@@ -53,6 +59,28 @@ function merge (a, b) {
 	}
 
 	return c;
+}
+
+function patch (data = {}, ogdata = {}, overwrite = false) {
+	let result = [];
+
+	if (overwrite) {
+		iterate(ogdata, (value, key) => {
+			if (key !== this.key && data[key] === undefined) {
+				result.push({op: "remove", path: "/" + key});
+			}
+		});
+	}
+
+	iterate(data, (value, key) => {
+		if (key !== this.key && ogdata[key] === undefined) {
+			result.push({op: "add", path: "/" + key, value: value});
+		} else if (JSON.stringify(ogdata[key]) !== JSON.stringify(value)) {
+			result.push({op: "replace", path: "/" + key, value: value});
+		}
+	});
+
+	return result;
 }
 
 const r = [8, 9, "a", "b"];
