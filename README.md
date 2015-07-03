@@ -477,7 +477,9 @@ creates an implicit mapping of `$uri/{key}` for records.
 Pagination can be implemented by conditionally supplying `true` as the second argument. Doing so will `clear()` the 
 DataStore prior to a batch insertion.
 
-If `PATCH` requests are supported by the collection `batch()`, `del()` & `set()` will make `JSONPatch` requests.
+If `PATCH` requests are supported by the collection `batch()`, `del()` & `set()` will make `JSONPatch` requests. If a 
+`405` / `Method not Allowed` response occurs from a `PATCH` request, the DataStore will fallback to the appropriate 
+method & disable `PATCH` for subsequent requests.
 
 Example setting the URI of the DataStore:
 ```javascript
