@@ -654,6 +654,11 @@ store.batch(data, 'set').then(function (records) {
 });
 ```
 
+**unload( [adapter] )**
+_Promise_
+
+Unloads the DataStore from persistent storage (delete).
+
 **unregister( key )**
 _Haro_
 

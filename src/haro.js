@@ -283,7 +283,16 @@ class Haro {
 
 	load (type = "mongo") {
 		this.clear();
-		return this.cmd(type, "get");
+
+		return this.cmd(type, "get").then(() => {
+			if (this.logging) {
+				console.log("Loaded " + this.id + " from " + type + " persistent storage");
+			}
+		}, e => {
+			if (this.logging) {
+				console.error("Error loading " + this.id + " from " + type + " persistent storage: " + (e.message || e.stack || e));
+			}
+		});
 	}
 
 	map (fn) {
@@ -374,7 +383,15 @@ class Haro {
 	}
 
 	save (type = "mongo") {
-		return this.cmd(type, "set");
+		return this.cmd(type, "set").then(() => {
+			if (this.logging) {
+				console.log("Saved " + this.id + " to " + type + " persistent storage");
+			}
+		}, e => {
+			if (this.logging) {
+				console.error("Error saving " + this.id + " to " + type + " persistent storage: " + (e.message || e.stack || e));
+			}
+		});
 	}
 
 	search (value, index) {
@@ -604,6 +621,18 @@ class Haro {
 
 	toObject () {
 		return toObjekt(this);
+	}
+
+	unload (type = "mongo") {
+		return this.cmd(type, "remove").then(() => {
+			if (this.logging) {
+				console.log("Unloaded " + this.id + " from " + type + " persistent storage");
+			}
+		}, e => {
+			if (this.logging) {
+				console.error("Error unloading " + this.id + " from " + type + " persistent storage: " + (e.message || e.stack || e));
+			}
+		});
 	}
 
 	unregister (key) {
