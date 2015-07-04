@@ -104,6 +104,10 @@ class Haro {
 		this.indexes.clear();
 		this.versions.clear();
 
+		if (this.logging) {
+			console.log("Cleared " + this.id);
+		}
+
 		return this.reindex();
 	}
 
@@ -284,14 +288,18 @@ class Haro {
 	load (type = "mongo") {
 		this.clear();
 
-		return this.cmd(type, "get").then(() => {
+		return this.cmd(type, "get").then(arg => {
 			if (this.logging) {
 				console.log("Loaded " + this.id + " from " + type + " persistent storage");
 			}
+
+			return arg;
 		}, e => {
 			if (this.logging) {
 				console.error("Error loading " + this.id + " from " + type + " persistent storage: " + (e.message || e.stack || e));
 			}
+
+			throw e;
 		});
 	}
 
@@ -383,14 +391,18 @@ class Haro {
 	}
 
 	save (type = "mongo") {
-		return this.cmd(type, "set").then(() => {
+		return this.cmd(type, "set").then(arg => {
 			if (this.logging) {
 				console.log("Saved " + this.id + " to " + type + " persistent storage");
 			}
+
+			return arg;
 		}, e => {
 			if (this.logging) {
 				console.error("Error saving " + this.id + " to " + type + " persistent storage: " + (e.message || e.stack || e));
 			}
+
+			throw e;
 		});
 	}
 
@@ -624,14 +636,18 @@ class Haro {
 	}
 
 	unload (type = "mongo") {
-		return this.cmd(type, "remove").then(() => {
+		return this.cmd(type, "remove").then(arg => {
 			if (this.logging) {
 				console.log("Unloaded " + this.id + " from " + type + " persistent storage");
 			}
+
+			return arg;
 		}, e => {
 			if (this.logging) {
 				console.error("Error unloading " + this.id + " from " + type + " persistent storage: " + (e.message || e.stack || e));
 			}
+
+			throw e;
 		});
 	}
 
