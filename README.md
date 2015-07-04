@@ -432,6 +432,26 @@ store.index('field3');
 store.index();
 ```
 
+**register( key, fn )**
+_Haro_
+
+Registers a persistent storage adapter.
+
+Example of registering an adapter:
+```javascript
+var haro = require('haro'),
+    store;
+
+// Register the adapter
+haro.register('mongo', require('haro-mongo'));
+
+// Configure a store to utilize the adapter
+store = haro(null, {
+  adapters: {
+    mongo: "mongo://localhost/mydb"
+  }
+});
+```
 
 **request( input, config )**
 _Promise_
@@ -622,6 +642,30 @@ store.batch(data, 'set').then(function (records) {
 }, function (e) {
   console.error(e.stack || e.message || e);
 });
+```
+
+**unregister( key )**
+_Haro_
+
+Un-registers a persistent storage adapter.
+
+Example of unregistering an adapter:
+```javascript
+var haro = require('haro'),
+    store;
+
+// Register the adapter
+haro.register('mongo', require('haro-mongo'));
+
+// Configure a store to utilize the adapter
+store = haro(null, {
+  adapters: {
+    mongo: "mongo://localhost/mydb"
+  }
+});
+
+// Later...
+store.unregister('haro');
 ```
 
 **values()**

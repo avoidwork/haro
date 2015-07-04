@@ -107,6 +107,22 @@ class Haro {
 		return this.reindex();
 	}
 
+	cmd (type, ...args) {
+		let defer = deferred();
+
+		if (!this.adapters[type]) {
+			defer.reject(new Error(type + " not configured for persistent storage"));
+		} else {
+			adapter[type].apply(this, [this].concat(args)).then(function (arg) {
+				defer.resolve(arg);
+			}, function (e) {
+				defer.reject(e);
+			});
+		}
+
+		return defer.promise;
+	}
+
 	del (key, batch = false) {
 		let defer = deferred(),
 			next;
@@ -266,7 +282,7 @@ class Haro {
 	}
 
 	load (type = "mongo") {
-		return adapters.cmd(type, this, "get");
+		return this.cmd(type, "get");
 	}
 
 	map (fn) {
@@ -284,7 +300,7 @@ class Haro {
 			deferreds = [];
 
 		Object.keys(this.adapters).forEach(i => {
-			deferreds.push(adapters.cmd.apply(adapters, [i, this].concat(args)));
+			deferreds.push(this.cmd.apply(this, [i].concat(args)));
 		});
 
 		if (deferreds.length > 0) {
@@ -298,6 +314,10 @@ class Haro {
 		}
 
 		return defer.promise;
+	}
+
+	register (key, fn) {
+		adapter[key] = fn;
 	}
 
 	reindex (index) {
@@ -353,7 +373,7 @@ class Haro {
 	}
 
 	save (type = "mongo") {
-		return adapters.cmd(type, this, "set");
+		return this.cmd(type, "set");
 	}
 
 	search (value, index) {
@@ -583,6 +603,10 @@ class Haro {
 
 	toObject () {
 		return toObjekt(this);
+	}
+
+	unregister (key) {
+		delete adapter[key];
 	}
 
 	values () {

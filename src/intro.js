@@ -11,4 +11,4 @@ const regex = {
 	querystring: /\?.*/,
 	endslash: /\/$/
 };
-const mongodb = typeof process !== "undefined" ? require("mongodb") : null;
+let adapter = {};

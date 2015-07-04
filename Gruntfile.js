@@ -17,7 +17,6 @@ module.exports = function (grunt) {
 				src : [
 					"src/intro.js",
 					"src/utility.js",
-					"src/adapters.js",
 					"src/haro.js",
 					"src/factory.js",
 					"src/outro.js"
