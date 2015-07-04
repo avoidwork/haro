@@ -447,15 +447,15 @@ Example of registering an adapter:
 var haro = require('haro'),
     store;
 
-// Register the adapter
-haro.register('mongo', require('haro-mongo'));
-
 // Configure a store to utilize the adapter
 store = haro(null, {
   adapters: {
     mongo: "mongo://localhost/mydb"
   }
 });
+
+// Register the adapter
+store.register('mongo', require('haro-mongo'));
 ```
 
 **request( input, config )**
