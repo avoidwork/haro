@@ -110,7 +110,7 @@ class Haro {
 	cmd (type, ...args) {
 		let defer = deferred();
 
-		if (!this.adapters[type]) {
+		if (!this.adapters[type] || !adapter[type]) {
 			defer.reject(new Error(type + " not configured for persistent storage"));
 		} else {
 			adapter[type].apply(this, [this].concat(args)).then(function (arg) {
@@ -282,6 +282,7 @@ class Haro {
 	}
 
 	load (type = "mongo") {
+		this.clear();
 		return this.cmd(type, "get");
 	}
 
