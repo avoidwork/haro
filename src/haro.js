@@ -293,7 +293,7 @@ class Haro {
 				console.log("Loaded " + this.id + " from " + type + " persistent storage");
 			}
 
-			return arg;
+			return this.batch(arg, "set");
 		}, e => {
 			if (this.logging) {
 				console.error("Error loading " + this.id + " from " + type + " persistent storage: " + (e.message || e.stack || e));
