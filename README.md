@@ -398,6 +398,11 @@ console.log(ds1.length === ds2.length); // true
 console.log(JSON.stringify(ds1[0][1]) === JSON.stringify(ds2[0][1])); // false
 ```
 
+**load( [adapter] )**
+_Promise_
+
+Loads the DataStore from persistent storage.
+
 **map( callbackFn )**
 _Tuple_
 
@@ -468,6 +473,11 @@ store.request('https://somedomain.com/api').then(function (arg) {
   console.error(arg[0]);
 });
 ```
+
+**save( [adapter] )**
+_Promise_
+
+Saves the DataStore to persistent storage.
 
 **search( arg, index )**
 _Tuple_
