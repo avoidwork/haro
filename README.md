@@ -98,6 +98,22 @@ testing time to 'search(regex, index)' for a record (first one is cold):
 ```
 
 ### Configuration
+**adapters**
+_Object_
+
+Object of {(storage): (connection string)} pairs. Collection/table name is the value of `this.id`.
+
+Available adapters: _mongo_
+
+Example of specifying MongoDB as persistent storage:
+```javascript
+var store = haro(null, {
+  adapters: {
+    mongo: "mongo://localhost/mine"
+  }
+});
+```
+
 **config**
 _Object_
 
@@ -133,6 +149,11 @@ Example of specifying the primary key:
 ```javascript
 var store = haro(null, {key: 'field'});
 ```
+
+**logging**
+_Boolean_
+
+Logs persistent storage messages to `console`, default is `true`.
 
 **source**
 _String_

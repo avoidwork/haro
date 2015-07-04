@@ -1,5 +1,6 @@
 class Haro {
 	constructor (data, config = {}) {
+		this.adapters = {};
 		this.data = new Map();
 		this.delimiter = "|";
 		this.config = {
@@ -10,11 +11,13 @@ class Haro {
 				"content-type": "application/json"
 			}
 		};
+		this.id = uuid();
 		this.index = [];
 		this.indexes = new Map();
+		this.key = "";
+		this.logging = true;
 		this.patch = false;
 		this.registry = [];
-		this.key = "";
 		this.source = "";
 		this.total = 0;
 		this.uri = "";
@@ -127,6 +130,16 @@ class Haro {
 				if (this.versioning) {
 					this.versions.delete(key);
 				}
+
+				this.storage("remove", key).then(success => {
+					if (success && this.logging) {
+						console.log("Deleted", key, "from persistent storage");
+					}
+				}, e => {
+					if (this.logging) {
+						console.error("Error deleting", key, "from persistent storage:", (e.message || e.stack || e));
+					}
+				});
 			}
 
 			defer.resolve();
@@ -215,6 +228,10 @@ class Haro {
 		return output;
 	}
 
+	has (key) {
+		return this.data.has(key);
+	}
+
 	keys () {
 		return this.data.keys();
 	}
@@ -248,6 +265,10 @@ class Haro {
 		return tuple.apply(tuple, list);
 	}
 
+	load (type = "mongo") {
+		return adapters.cmd(type, this, "get");
+	}
+
 	map (fn) {
 		let result = [];
 
@@ -256,6 +277,27 @@ class Haro {
 		});
 
 		return tuple.apply(tuple, result);
+	}
+
+	storage (...args) {
+		let defer = deferred(),
+			deferreds = [];
+
+		Object.keys(this.adapters).forEach(i => {
+			deferreds.push(adapters.cmd.apply(adapters, [i, this].concat(args)));
+		});
+
+		if (deferreds.length > 0) {
+			Promise.all(deferreds).then(function () {
+				defer.resolve(true);
+			}, function (e) {
+				defer.reject(e);
+			});
+		} else {
+			defer.resolve(false);
+		}
+
+		return defer.promise;
 	}
 
 	reindex (index) {
@@ -308,6 +350,10 @@ class Haro {
 		});
 
 		return defer.promise;
+	}
+
+	save (type = "mongo") {
+		return adapters.cmd(type, this, "set");
 	}
 
 	search (value, index) {
@@ -381,6 +427,16 @@ class Haro {
 			this.data.set(lkey, ldata);
 			setIndex(this.index, this.indexes, this.delimiter, lkey, ldata);
 			defer.resolve(this.get(lkey));
+
+			this.storage("set", lkey, ldata).then(success => {
+				if (success && this.logging) {
+					console.log("Saved", lkey, "to persistent storage");
+				}
+			}, e => {
+				if (this.logging) {
+					console.error("Error saving", lkey, "to persistent storage:", (e.message || e.stack || e));
+				}
+			});
 		};
 
 		if (lkey === undefined || lkey === null) {
@@ -390,7 +446,7 @@ class Haro {
 			ogdata = this.data.get(lkey);
 
 			if (!override) {
-				ldata = merge(this.get(lkey)[1], ldata);
+				ldata = merge(ogdata, ldata);
 			}
 		}
 
