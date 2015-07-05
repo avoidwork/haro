@@ -1,5 +1,7 @@
 # haro
 
+[![Join the chat at https://gitter.im/avoidwork/haro](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/avoidwork/haro?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 [![build status](https://secure.travis-ci.org/avoidwork/haro.svg)](http://travis-ci.org/avoidwork/haro)
 
 Harō is a modern immutable DataStore built with ES6 features, which can be wired to an API for a complete feedback loop.
