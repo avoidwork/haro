@@ -7,19 +7,35 @@ It is un-opinionated, and offers a plug'n'play solution to modeling, searching, 
 (in RAM). It is a [partially persistent data structure](https://en.wikipedia.org/wiki/Persistent_data_structure), by maintaining version sets of records in `versions` ([MVCC](https://en.wikipedia.org/wiki/Multiversion_concurrency_control)).
 
 Synchronous commands return instantly (`Array` or `Tuple`), while asynchronous commands return  `Promises` which will
-resolve or reject in the future. This allows you to build complex applications without worrying about managing async code.
+resolve or reject in the future. This allows you to build complex applications without worrying about managing async 
+code.
 
-Harō indexes have the following structure `Map (field/property) > Map (value) > Set (PKs)` which allow for quick & easy searching, as well as inspection.
-Indexes can be managed independently of `del()` & `set()` operations, for example you can lazily create new indexes via `reindex(field)`, or `sortBy(field)`.
+Harō indexes have the following structure `Map (field/property) > Map (value) > Set (PKs)` which allow for quick & easy 
+searching, as well as inspection. Indexes can be managed independently of `del()` & `set()` operations, for example you 
+can lazily create new indexes via `reindex(field)`, or `sortBy(field)`.
 
 ### How to use
-Harō takes two optional arguments, the first is an `Array` of records to set asynchronously, & the second is a configuration descriptor.
+Harō takes two optional arguments, the first is an `Array` of records to set asynchronously, & the second is a 
+configuration descriptor.
 
 ```javascript
 var storeDefaults = haro();
 var storeRecords = haro([{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}]);
 var storeCustom = haro(null, {key: 'id'});
 ```
+
+### Persistent Storage
+Harō is an in RAM only DataStore, so state could be lost if your program unexpectedly restarted, or some kind of 
+machine failure were to occur. To handle this serious problem, Harō affords a 1-n relationship with persistent storage 
+adapters. You can register one or many adapters, and data updates will asynchronously persist to the various long term 
+storage systems.
+
+DataStore records will be stored separate of the DataStore snapshot itself (if you decide to leverage it), meaning you 
+are responsible for doing a `load()` & `save()` at startup & shutdown. This is a manual process because it could be a 
+time bottleneck in the middle of using your application. Loading an individual record will update the DataStore with 
+value from persistent storage.
+
+DataStore snapshots & individual records can be removed from persistent storage with `unload()`.
 
 ### Examples
 #### Piping Promises
@@ -398,10 +414,11 @@ console.log(ds1.length === ds2.length); // true
 console.log(JSON.stringify(ds1[0][1]) === JSON.stringify(ds2[0][1])); // false
 ```
 
-**load( [adapter] )**
+**load( [adapter=mongo, key] )**
 _Promise_
 
-Loads the DataStore from persistent storage.
+Loads the DataStore, or a record from a specific persistent storage & updates the DataStore. The DataStore will be cleared 
+prior to loading if `key` is omitted.
 
 **map( callbackFn )**
 _Tuple_
@@ -654,10 +671,10 @@ store.batch(data, 'set').then(function (records) {
 });
 ```
 
-**unload( [adapter] )**
+**unload( [adapter=mongo, key] )**
 _Promise_
 
-Unloads the DataStore from persistent storage (delete).
+Unloads the DataStore, or a record from a specific persistent storage (delete).
 
 **unregister( key )**
 _Haro_

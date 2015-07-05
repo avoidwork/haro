@@ -105,7 +105,7 @@ class Haro {
 		this.versions.clear();
 
 		if (this.logging) {
-			console.log("Cleared " + this.id);
+			console.log("Cleared", this.id);
 		}
 
 		return this.reindex();
@@ -285,18 +285,23 @@ class Haro {
 		return tuple.apply(tuple, list);
 	}
 
-	load (type = "mongo") {
-		this.clear();
+	load (type = "mongo", key) {
+		let batch = key === undefined,
+			id = !batch ? key : this.id;
 
-		return this.cmd(type, "get").then(arg => {
+		if (batch) {
+			this.clear();
+		}
+
+		return this.cmd(type, "get", key).then(arg => {
 			if (this.logging) {
-				console.log("Loaded " + this.id + " from " + type + " persistent storage");
+				console.log("Loaded", id, "from", type, "persistent storage");
 			}
 
-			return this.batch(arg, "set");
+			return batch ? this.batch(arg, "set") : this.set(key, arg);
 		}, e => {
 			if (this.logging) {
-				console.error("Error loading " + this.id + " from " + type + " persistent storage: " + (e.message || e.stack || e));
+				console.error("Error loading", id, "from", type, "persistent storage:", (e.message || e.stack || e));
 			}
 
 			throw e;
@@ -311,27 +316,6 @@ class Haro {
 		});
 
 		return tuple.apply(tuple, result);
-	}
-
-	storage (...args) {
-		let defer = deferred(),
-			deferreds = [];
-
-		Object.keys(this.adapters).forEach(i => {
-			deferreds.push(this.cmd.apply(this, [i].concat(args)));
-		});
-
-		if (deferreds.length > 0) {
-			Promise.all(deferreds).then(function () {
-				defer.resolve(true);
-			}, function (e) {
-				defer.reject(e);
-			});
-		} else {
-			defer.resolve(false);
-		}
-
-		return defer.promise;
 	}
 
 	register (key, fn) {
@@ -393,13 +377,13 @@ class Haro {
 	save (type = "mongo") {
 		return this.cmd(type, "set").then(arg => {
 			if (this.logging) {
-				console.log("Saved " + this.id + " to " + type + " persistent storage");
+				console.log("Saved", this.id, "to", type, "persistent storage");
 			}
 
 			return arg;
 		}, e => {
 			if (this.logging) {
-				console.error("Error saving " + this.id + " to " + type + " persistent storage: " + (e.message || e.stack || e));
+				console.error("Error saving ", this.id, "to", type, "persistent storage:", (e.message || e.stack || e));
 			}
 
 			throw e;
@@ -587,6 +571,27 @@ class Haro {
 		return tuple.apply(tuple, result);
 	}
 
+	storage (...args) {
+		let defer = deferred(),
+			deferreds = [];
+
+		Object.keys(this.adapters).forEach(i => {
+			deferreds.push(this.cmd.apply(this, [i].concat(args)));
+		});
+
+		if (deferreds.length > 0) {
+			Promise.all(deferreds).then(function () {
+				defer.resolve(true);
+			}, function (e) {
+				defer.reject(e);
+			});
+		} else {
+			defer.resolve(false);
+		}
+
+		return defer.promise;
+	}
+
 	sync (clear = false) {
 		let defer = deferred();
 
@@ -635,16 +640,18 @@ class Haro {
 		return toObjekt(this);
 	}
 
-	unload (type = "mongo") {
-		return this.cmd(type, "remove").then(arg => {
+	unload (type = "mongo", key) {
+		let id = key !== undefined ? key : this.id;
+
+		return this.cmd(type, "remove", key).then(arg => {
 			if (this.logging) {
-				console.log("Unloaded " + this.id + " from " + type + " persistent storage");
+				console.log("Unloaded", id, "from", type, "persistent storage");
 			}
 
 			return arg;
 		}, e => {
 			if (this.logging) {
-				console.error("Error unloading " + this.id + " from " + type + " persistent storage: " + (e.message || e.stack || e));
+				console.error("Error unloading", id, "from", type, "persistent storage:", (e.message || e.stack || e));
 			}
 
 			throw e;
