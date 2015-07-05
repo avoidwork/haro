@@ -37,7 +37,8 @@ are responsible for doing a `load()` & `save()` at startup & shutdown. This is a
 time bottleneck in the middle of using your application. Loading an individual record will update the DataStore with 
 value from persistent storage.
 
-DataStore snapshots & individual records can be removed from persistent storage with `unload()`.
+DataStore snapshots & individual records can be removed from persistent storage with `unload()`; it is not recommended 
+to do this for an individual record, and to instead rely on `del()`, but it's afforded because it may be required.
 
 ### Examples
 #### Piping Promises
