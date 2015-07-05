@@ -40,6 +40,73 @@ value from persistent storage.
 DataStore snapshots & individual records can be removed from persistent storage with `unload()`; it is not recommended 
 to do this for an individual record, and to instead rely on `del()`, but it's afforded because it may be required.
 
+#### Creating an Adapter
+Adapters are simple in nature (can be isomorphic), and pretty easy to create! Follow the template below, fill in the 
+gaps for your adapter as needed, such as handling multiple connection pools, etc.. The input parameters should not be 
+mutated. The return must be a `Promise`.
+
+```javascript
+"use strict";
+
+const Promise = require("es6-promise").Promise;
+
+function deferred () {
+	let promise, resolver, rejecter;
+
+	promise = new Promise(function (resolve, reject) {
+		resolver = resolve;
+		rejecter = reject;
+	});
+
+	return {resolve: resolver, reject: rejecter, promise: promise};
+}
+
+function adapter (store, op, key, data) {
+	let defer = deferred(),
+		record = key !== undefined,
+		config = store.adapters.myAdapterName,
+		prefix = config.prefix || store.id,
+		lkey = prefix + (record ? "_" + key : "")),
+		client = "Your driver instance";
+
+	if (op === "get") {
+		client.get(lkey, function (e, reply) {
+			let result = JSON.parse(reply || null);
+
+			if (e) {
+				defer.reject(e);
+			} else if (result) {
+				defer.resolve(result);
+			} else if (record) {
+				defer.reject(new Error("Record not found in myAdapterName"));
+			} else {
+				defer.reject([]);
+			}
+		});
+	} else if (op === "remove") {
+		client.del(lkey, function (e) {
+			if (e) {
+				defer.reject(e);
+			} else {
+				defer.resolve(true);
+			}
+		});
+	} else if (op === "set") {
+		client.set(lkey, JSON.stringify(data), function (e) {
+			if (e) {
+				defer.reject(e);
+			} else {
+				defer.resolve(true);
+			}
+		});
+	}
+
+	return defer.promise;
+}
+
+module.exports = adapter;
+```
+
 ### Examples
 #### Piping Promises
 ```javascript

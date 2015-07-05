@@ -1,6 +1,6 @@
 {
   "name": "haro",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "Harō is a modern immutable DataStore using Maps, Sets, Promises, & Tuples",
   "main": "lib/haro.js",
   "scripts": {
@@ -15,7 +15,8 @@
     "data",
     "store",
     "datastore",
-    "api"
+    "api",
+    "haro"
   ],
   "author": "Jason Mulligan <jason.mulligan@avoidwork.com>",
   "license": "BSD-3-Clause",
