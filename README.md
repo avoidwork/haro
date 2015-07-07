@@ -92,7 +92,7 @@ function adapter (store, op, key, data) {
 			}
 		});
 	} else if (op === "set") {
-		client.set(lkey, JSON.stringify(data), function (e) {
+		client.set(lkey, JSON.stringify(record ? data : store.toArray()), function (e) {
 			if (e) {
 				defer.reject(e);
 			} else {
