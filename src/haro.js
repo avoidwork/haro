@@ -256,15 +256,14 @@ class Haro {
 		return this.data.keys();
 	}
 
-	limit (offset = 0, max) {
-		let loffset = offset,
-			lmax = max,
+	limit (max, offset = 0) {
+		let lmax = max,
+			loffset = offset,
 			list = [],
 			i, k, nth;
 
 		if (lmax === undefined) {
-			lmax = loffset;
-			loffset = 0;
+			lmax = -1;
 		}
 
 		i = loffset;

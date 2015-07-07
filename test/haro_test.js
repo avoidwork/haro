@@ -85,7 +85,7 @@ exports["create (batch)"] = {
 			test.equal(self.store.registry.length, 6, "Should be '6'");
 			test.equal(self.store.limit(2)[1][0], self.store.get(self.store.registry[1])[0], "Should be a match");
 			test.equal(self.store.limit(2, 2)[1][0], self.store.get(self.store.registry[3])[0], "Should be a match");
-			test.equal(self.store.limit(10, 5).length, 0, "Should be '0'");
+			test.equal(self.store.limit(10, 5).length, 1, "Should be '1'");
 			test.equal(self.store.filter(function (i) {
 				return /decker/i.test(i.name);
 			}).length, 1, "Should be '1'");
