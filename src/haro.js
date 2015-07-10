@@ -402,13 +402,19 @@ class Haro {
 
 				if (idx) {
 					idx.forEach((lset, lkey) => {
-						if ((fn && value(lkey)) || (rgex && value.test(lkey)) || (lkey === value)) {
-							lset.forEach(key => {
-								if (!seen.has(key)) {
-									seen.add(key);
-									result.push(this.get(key));
-								}
-							});
+						switch (true) {
+							case fn && value(lkey):
+							case rgex && value.test(lkey):
+							case lkey === value:
+								lset.forEach(key => {
+									if (!seen.has(key)) {
+										seen.add(key);
+										result.push(this.get(key));
+									}
+								});
+								break;
+							default:
+								void 0;
 						}
 					});
 				}

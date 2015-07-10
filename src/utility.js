@@ -23,7 +23,7 @@ function keyIndex (key, data, delimiter) {
 
 	if (keys.length > 1) {
 		result = keys.map(function (i) {
-			return String(data[i]);
+			return String(data[i]).replace(/\.|-|\s*|\t*/g, "").toLowerCase();
 		}).join(delimiter);
 	} else {
 		result = data[key];
