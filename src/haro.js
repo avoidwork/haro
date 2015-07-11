@@ -393,7 +393,7 @@ class Haro {
 		let indexes = index ? (this.index.indexOf(index) > -1 ? [index] : []) : this.index,
 			result = [],
 			fn = typeof value === "function",
-			rgex = value instanceof RegExp,
+			rgex = typeof value.test === "function",
 			seen = new Set();
 
 		if (value) {
