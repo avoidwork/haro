@@ -390,13 +390,21 @@ class Haro {
 	}
 
 	search (value, index) {
-		let indexes = index ? (this.index.indexOf(index) > -1 ? [index] : []) : this.index,
-			result = [],
+		let result = [],
 			fn = typeof value === "function",
-			rgex = typeof value.test === "function",
-			seen = new Set();
+			rgex = value && typeof value.test === "function",
+			seen = new Set(),
+			lindex, indexes;
 
 		if (value) {
+			lindex = clone(index || this.index);
+
+			if (lindex instanceof Array) {
+				indexes = lindex;
+			} else if (typeof lindex === "string") {
+				indexes = [lindex];
+			}
+
 			indexes.forEach(i => {
 				let idx = this.indexes.get(i);
 

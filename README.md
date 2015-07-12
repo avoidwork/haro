@@ -566,12 +566,13 @@ _Promise_
 
 Saves the DataStore to persistent storage.
 
-**search( arg, index )**
+**search( arg[, index=this.index] )**
 _Tuple_
 
 Returns a `Tuple` of double `Tuples` with the shape `[key, value]` of records found matching `arg`.
 If `arg` is a `Function` a match is made if the result is `true`, if `arg` is a `RegExp` the field value must `.test()` 
-as `true`, else the value must be an equality match.
+as `true`, else the value must be an equality match. The `index` parameter can be a `String` or `Array` of `Strings`; 
+if not supplied it defaults to `this.index`.
 
 Example of searching with a predicate function:
 ```javascript

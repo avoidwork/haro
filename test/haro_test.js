@@ -294,7 +294,7 @@ exports["read (search - indexed)"] = {
 
 		test.expect(4);
 		this.store.batch(data, "set").then(function () {
-			var result1 = self.store.search(/.*de.*/i, 'name');
+			var result1 = self.store.search(/.*de.*/i);
 			var result2 = self.store.search(20, 'age');
 
 			test.equal(result1.length, "1", "Should be `1`");
