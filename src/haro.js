@@ -631,12 +631,31 @@ class Haro {
 		return defer.promise;
 	}
 
-	toArray () {
-		let result = [];
+	toArray (data, frozen = true) {
+		let func, result;
 
-		this.forEach(function (value) {
-			result.push(value);
-		});
+		if (frozen) {
+			func = function (arg) {
+				return arg;
+			};
+		} else {
+			func = function (arg) {
+				return clone(arg);
+			};
+		}
+
+		if (data) {
+			result = data.reduce(function (a, b) {
+				a.push(func(b[1]));
+
+				return a;
+			}, []);
+		} else {
+			result = [];
+			this.forEach(function (value) {
+				result.push(func(value));
+			});
+		}
 
 		return result;
 	}

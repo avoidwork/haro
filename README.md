@@ -707,10 +707,10 @@ interval = setInterval(function () {
 }, 60000);
 ```
 
-**toArray()**
+**toArray( [data, freeze=true] )**
 _Array_
 
-Returns an Array of the DataStore.
+Returns an Array of the DataStore, or a subset.
 
 Example of casting to an `Array`:
 ```javascript
@@ -719,6 +719,7 @@ var store = haro(),
 
 store.batch(data, 'set').then(function (records) {
   console.log(store.toArray()); // [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}]
+  console.log(store.toArray(store.limit(1))); // [{name: 'John Doe', age: 30}]
 }, function (e) {
   console.error(e.stack || e.message || e);
 });
