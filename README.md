@@ -725,7 +725,7 @@ store.batch(data, 'set').then(function (records) {
 });
 ```
 
-**toObject()**
+**toObject( [data, freeze=true] )**
 _Object_
 
 Returns an Object of the DataStore.
@@ -737,6 +737,7 @@ var store = haro(null, {key: 'guid'}),
 
 store.batch(data, 'set').then(function (records) {
   console.log(store.toObject()); // {abc: {guid: 'abc', name: 'John Doe', age: 30}, def: {guid: 'def', name: 'Jane Doe', age: 28}}
+  console.log(store.toObject(store.limit(1)); // {abc: {guid: 'abc', name: 'John Doe', age: 30}}}
 }, function (e) {
   console.error(e.stack || e.message || e);
 });

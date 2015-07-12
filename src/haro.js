@@ -660,8 +660,24 @@ class Haro {
 		return result;
 	}
 
-	toObject () {
-		return toObjekt(this);
+	toObject (data, frozen = true) {
+		let func;
+
+		if (frozen) {
+			func = function (arg) {
+				return arg;
+			};
+		} else {
+			func = function (arg) {
+				return clone(arg);
+			};
+		}
+
+		return func(!data ? toObjekt(this) : data.reduce(function (a, b) {
+			a[b[0]] = b[1];
+
+			return a;
+		}, {}));
 	}
 
 	unload (type = "mongo", key) {

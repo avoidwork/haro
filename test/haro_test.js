@@ -191,9 +191,29 @@ exports["read (toArray)"] = {
 	test: function (test) {
 		var self = this;
 
-		test.expect(1);
-		this.store.batch(data, "set").then(function (args) {
+		test.expect(2);
+		this.store.batch(data, "set").then(function () {
 			test.equal(self.store.toArray().length, 6, "Should be `6`");
+			test.equal(self.store.toArray(self.store.limit(5)).length, 5, "Should be `5`");
+			test.done();
+		}, function () {
+			test.done();
+		});
+	}
+};
+
+exports["read (toObject)"] = {
+	setUp: function (done) {
+		this.store = haro(null, {key: "guid"});
+		done();
+	},
+	test: function (test) {
+		var self = this;
+
+		test.expect(2);
+		this.store.batch(data, "set").then(function () {
+			test.equal(self.store.toObject()["2a30000f-92dc-405c-b1e0-7c416d766b39"].isActive, false, "Should be `false`");
+			test.equal(self.store.toObject(self.store.limit(5))["2a30000f-92dc-405c-b1e0-7c416d766b39"].isActive, false, "Should be `false`");
 			test.done();
 		}, function () {
 			test.done();
