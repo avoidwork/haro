@@ -556,8 +556,18 @@ class Haro {
 		return defer.promise;
 	}
 
-	sort (fn) {
-		return this.toArray().sort(fn);
+	sort (fn, frozen = true) {
+		let result;
+
+		if (frozen) {
+			result = Object.freeze(this.toArray(null, false).sort(fn).map(function (i) {
+				return Object.freeze(i);
+			}));
+		} else {
+			result = this.toArray(null, false).sort(fn);
+		}
+
+		return result;
 	}
 
 	sortBy (index) {
@@ -640,32 +650,55 @@ class Haro {
 	}
 
 	toArray (data, frozen = true) {
-		let func, result;
-
-		if (frozen) {
-			func = function (arg) {
-				return arg;
-			};
-		} else {
-			func = function (arg) {
-				return clone(arg);
-			};
-		}
+		let key = this.key,
+			fn, result;
 
 		if (data) {
-			result = data.reduce(function (a, b) {
-				a.push(func(b[1]));
+			fn = (() => {
+				if (key) {
+					return function (a, b) {
+						let obj = clone(b[1]);
 
-				return a;
-			}, []);
+						if (obj[key] === undefined) {
+							obj[key] = clone(b[0]);
+						}
+
+						a.push(obj);
+
+						return a;
+					};
+				} else {
+					return function (a, b) {
+						a.push(clone(b[1]));
+
+						return a;
+					};
+				}
+			})();
+			result = data.reduce(fn, []);
 		} else {
+			fn = (() => {
+				if (key) {
+					return function (val, id) {
+						let obj = clone(val);
+
+						if (obj[key] === undefined) {
+							obj[key] = clone(id);
+						}
+
+						result.push(obj);
+					};
+				} else {
+					return function (val) {
+						result.push(clone(val));
+					};
+				}
+			})();
 			result = [];
-			this.forEach(function (value) {
-				result.push(func(value));
-			});
+			this.forEach(fn);
 		}
 
-		return result;
+		return frozen ? Object.freeze(result) : result;
 	}
 
 	toObject (data, frozen = true) {

@@ -649,7 +649,7 @@ store.setUri('https://api.somedomain.com?page=2', true).then(function (records) 
 });
 ```
 
-**sort( callbackFn )**
+**sort( callbackFn, [frozen = true] )**
 _Array_
 
 Returns an Array of the DataStore, sorted by `callbackFn`.
