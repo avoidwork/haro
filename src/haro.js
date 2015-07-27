@@ -35,7 +35,7 @@ class Haro {
 		}
 	}
 
-	batch (args, type) {
+	batch (args, type, lload = false) {
 		let defer = deferred(),
 			del = type === "del",
 			data, fn, hash;
@@ -54,7 +54,7 @@ class Haro {
 			};
 		} else {
 			fn = i => {
-				return this.set(null, i, true, true);
+				return this.set(null, i, true, true, lload);
 			};
 		}
 
@@ -297,7 +297,7 @@ class Haro {
 				console.log("Loaded", id, "from", type, "persistent storage");
 			}
 
-			return batch ? this.batch(arg, "set") : this.set(key, arg);
+			return batch ? this.batch(arg, "set", true) : this.set(key, arg, true, true, true);
 		}, e => {
 			if (this.logging) {
 				console.error("Error loading", id, "from", type, "persistent storage:", (e.message || e.stack || e));
@@ -432,7 +432,7 @@ class Haro {
 		return tuple.apply(tuple, result);
 	}
 
-	set (key, data, batch = false, override = false) {
+	set (key, data, batch = false, override = false, lload = false) {
 		let defer = deferred(),
 			method = "post",
 			ldata = clone(data),
@@ -475,15 +475,17 @@ class Haro {
 			setIndex(this.index, this.indexes, this.delimiter, lkey, ldata);
 			defer.resolve(this.get(lkey));
 
-			this.storage("set", lkey, ldata).then(success => {
-				if (success && this.logging) {
-					console.log("Saved", lkey, "to persistent storage");
-				}
-			}, e => {
-				if (this.logging) {
-					console.error("Error saving", lkey, "to persistent storage:", (e.message || e.stack || e));
-				}
-			});
+			if (!lload) {
+				this.storage("set", lkey, ldata).then(success => {
+					if (success && this.logging) {
+						console.log("Saved", lkey, "to persistent storage");
+					}
+				}, e => {
+					if (this.logging) {
+						console.error("Error saving", lkey, "to persistent storage:", (e.message || e.stack || e));
+					}
+				});
+			}
 		};
 
 		if (lkey === undefined || lkey === null) {
