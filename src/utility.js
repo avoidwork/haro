@@ -60,8 +60,8 @@ function iterate (obj, fn) {
 }
 
 function merge (a, b) {
-	let c = clone(a),
-		d = clone(b);
+	let c = a !== undefined ? clone(a) : a,
+		d = b !== undefined ? clone(b) : b;
 
 	if ((c instanceof Object) && (d instanceof Object)) {
 		Object.keys(d).forEach(function (i) {
