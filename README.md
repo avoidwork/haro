@@ -166,21 +166,21 @@ Please consider that `batch()`, & `set()` use `Promises` and incur time as a cos
 MacBook Air (Early 2014) / 8GB RAM / 512GB SSD / OS X Yosemite:
 
 ```
-time to load data: 595.13794ms
+time to load data: 523.421068ms
 datastore record count: 15000
 name indexes: 15000
 testing time to 'find()' a record (first one is cold):
-0.333202ms
-0.15953ms
-0.091702ms
-0.091607ms
-0.077321ms
+0.31272ms
+0.123786ms
+0.051086ms
+0.053974ms
+0.045515ms
 testing time to 'search(regex, index)' for a record (first one is cold):
-2.22693ms
-1.339148ms
-1.59494ms
-1.28051ms
-1.191318ms
+2.676046ms
+1.760155ms
+2.087627ms
+1.558766ms
+1.568192ms
 ```
 
 ### Configuration
