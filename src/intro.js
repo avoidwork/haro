@@ -1,7 +1,7 @@
 "use strict";
 
 (function (global) {
-const server = process !== undefined && typeof process.nextTick === "function";
+const server = typeof process !== "undefined" && typeof process.nextTick === "function";
 const Promise = !server ? global.Promise : require("es6-promise").Promise;
 const Map = !server ? global.Map : require("es6-map");
 const Set = !server ? global.Set : require("es6-set");
