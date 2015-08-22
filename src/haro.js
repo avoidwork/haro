@@ -17,6 +17,7 @@ class Haro {
 		this.key = "";
 		this.logging = true;
 		this.patch = false;
+		this.pattern = "\\.|-|\\s*|\\t*";
 		this.registry = [];
 		this.source = "";
 		this.total = 0;
@@ -143,7 +144,7 @@ class Haro {
 					this.registry.splice(index, 1);
 				}
 
-				delIndex(this.index, this.indexes, this.delimiter, key, this.data.get(key));
+				delIndex(this.index, this.indexes, this.delimiter, key, this.data.get(key), this.pattern);
 				this.data.delete(key);
 				--this.total;
 
@@ -284,7 +285,7 @@ class Haro {
 		return tuple.apply(tuple, list);
 	}
 
-	load (type = "mongo", key) {
+	load (type = "mongo", key = undefined) {
 		let batch = key === undefined,
 			id = !batch ? key : this.id;
 
@@ -329,13 +330,13 @@ class Haro {
 			});
 			this.forEach((data, key) => {
 				this.index.forEach(i => {
-					setIndex(this.index, this.indexes, this.delimiter, key, data, i);
+					setIndex(this.index, this.indexes, this.delimiter, key, data, i, this.pattern);
 				});
 			});
 		} else {
 			this.indexes.set(index, new Map());
 			this.forEach((data, key) => {
-				setIndex(this.index, this.indexes, this.delimiter, key, data, index);
+				setIndex(this.index, this.indexes, this.delimiter, key, data, index, this.pattern);
 			});
 		}
 
@@ -468,11 +469,11 @@ class Haro {
 					this.versions.get(lkey).add(tuple(ogdata));
 				}
 
-				delIndex(this.index, this.indexes, this.delimiter, lkey, ogdata);
+				delIndex(this.index, this.indexes, this.delimiter, lkey, ogdata, this.pattern);
 			}
 
 			this.data.set(lkey, ldata);
-			setIndex(this.index, this.indexes, this.delimiter, lkey, ldata);
+			setIndex(this.index, this.indexes, this.delimiter, lkey, ldata, null, this.pattern);
 			defer.resolve(this.get(lkey));
 
 			if (!lload) {
@@ -723,7 +724,7 @@ class Haro {
 		}, {}));
 	}
 
-	unload (type = "mongo", key) {
+	unload (type = "mongo", key = undefined) {
 		let id = key !== undefined ? key : this.id;
 
 		return this.cmd(type, "remove", key).then(arg => {

@@ -17,13 +17,13 @@ function deferred () {
 	return {resolve: resolver, reject: rejecter, promise: promise};
 }
 
-function keyIndex (key, data, delimiter) {
+function keyIndex (key, data, delimiter, pattern) {
 	let keys = key.split(delimiter).sort(),
 		result;
 
 	if (keys.length > 1) {
 		result = keys.map(function (i) {
-			return String(data[i]).replace(/\.|-|\s*|\t*/g, "").toLowerCase();
+			return String(data[i]).replace(new RegExp(pattern, "g"), "").toLowerCase();
 		}).join(delimiter);
 	} else {
 		result = data[key];
@@ -32,10 +32,10 @@ function keyIndex (key, data, delimiter) {
 	return result;
 }
 
-function delIndex (index, indexes, delimiter, key, data) {
+function delIndex (index, indexes, delimiter, key, data, pattern) {
 	index.forEach(function (i) {
 		let idx = indexes.get(i),
-			value = keyIndex(i, data, delimiter),
+			value = keyIndex(i, data, delimiter, pattern),
 			o;
 
 		if (idx.has(value)) {
@@ -116,13 +116,13 @@ function setIndexValue (index, key, value) {
 	index.get(key).add(value);
 }
 
-function setIndex (index, indexes, delimiter, key, data, indice) {
+function setIndex (index, indexes, delimiter, key, data, indice, pattern) {
 	if (!indice) {
 		index.forEach(function (i) {
-			setIndexValue(indexes.get(i), keyIndex(i, data, delimiter), key);
+			setIndexValue(indexes.get(i), keyIndex(i, data, delimiter, pattern), key);
 		});
 	} else {
-		setIndexValue(indexes.get(indice), keyIndex(indice, data, delimiter), key);
+		setIndexValue(indexes.get(indice), keyIndex(indice, data, delimiter, pattern), key);
 	}
 }
 
