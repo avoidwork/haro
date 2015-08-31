@@ -13,3 +13,7 @@ const regex = {
 	endslash: /\/$/
 };
 let adapter = {};
+
+if (!server && !global.Promise) {
+	fetch.Promise = require("es6-promise").Promise;
+}
