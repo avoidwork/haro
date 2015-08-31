@@ -801,6 +801,7 @@ store.batch(data, 'set').then(function (records) {
 - `Promise`
 - `Set`
 - `fetch()`
+- `deferred()` see [tiny-defer](https://github.com/avoidwork/tiny-defer) for loading in a browser
 - `tuple()` see [tiny-tuple](https://github.com/avoidwork/tiny-tuple) for loading in a browser
 
 ## License

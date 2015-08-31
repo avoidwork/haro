@@ -6,17 +6,6 @@ function concatURI (left, right) {
 	return left.replace(regex.querystring, "").replace(regex.endslash, "") + (right ? "/" + right : "");
 }
 
-function deferred () {
-	let promise, resolver, rejecter;
-
-	promise = new Promise(function (resolve, reject) {
-		resolver = resolve;
-		rejecter = reject;
-	});
-
-	return {resolve: resolver, reject: rejecter, promise: promise};
-}
-
 function keyIndex (key, data, delimiter, pattern) {
 	let keys = key.split(delimiter).sort(),
 		result;

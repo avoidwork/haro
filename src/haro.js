@@ -17,7 +17,7 @@ class Haro {
 		this.key = "";
 		this.logging = true;
 		this.patch = false;
-		this.pattern = "\\.|-|\\s*|\\t*";
+		this.pattern = "\\s*|\\t*";
 		this.registry = [];
 		this.source = "";
 		this.total = 0;
