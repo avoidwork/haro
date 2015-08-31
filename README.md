@@ -48,18 +48,7 @@ mutated. The return must be a `Promise`.
 ```javascript
 "use strict";
 
-const Promise = require("es6-promise").Promise;
-
-function deferred () {
-	let promise, resolver, rejecter;
-
-	promise = new Promise(function (resolve, reject) {
-		resolver = resolve;
-		rejecter = reject;
-	});
-
-	return {resolve: resolver, reject: rejecter, promise: promise};
-}
+const deferred = require("tiny-defer");
 
 function adapter (store, op, key, data) {
 	let defer = deferred(),
