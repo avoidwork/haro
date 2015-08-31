@@ -14,6 +14,6 @@ const regex = {
 };
 let adapter = {};
 
-if (!server && !global.Promise) {
+if (server && !global.Promise) {
 	fetch.Promise = require("es6-promise").Promise;
 }
