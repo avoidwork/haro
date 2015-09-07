@@ -16,6 +16,16 @@ Harō indexes have the following structure `Map (field/property) > Map (value) >
 searching, as well as inspection. Indexes can be managed independently of `del()` & `set()` operations, for example you 
 can lazily create new indexes via `reindex(field)`, or `sortBy(field)`.
 
+### Requirements
+Harō is built with ES6+ features, and requires polyfills for ES5 or earlier environments.
+
+- `Map`
+- `Set`
+- `Promise`
+- `fetch()`
+- `deferred()` see [tiny-defer](https://github.com/avoidwork/tiny-defer) for loading in a browser
+- `tuple()` see [tiny-tuple](https://github.com/avoidwork/tiny-tuple) for loading in a browser
+
 ### How to use
 Harō takes two optional arguments, the first is an `Array` of records to set asynchronously, & the second is a 
 configuration descriptor.
@@ -784,14 +794,6 @@ store.batch(data, 'set').then(function (records) {
   console.error(e.stack || e.message || e);
 });
 ```
-
-### Requirements
-- `Map`
-- `Promise`
-- `Set`
-- `fetch()`
-- `deferred()` see [tiny-defer](https://github.com/avoidwork/tiny-defer) for loading in a browser
-- `tuple()` see [tiny-tuple](https://github.com/avoidwork/tiny-tuple) for loading in a browser
 
 ## License
 Copyright (c) 2015 Jason Mulligan
