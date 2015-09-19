@@ -362,7 +362,6 @@ _Array_ or _Object_
 
 Returns the records or indexes of the DataStore as mutable `Array` or `Object`, for the intention of reuse/persistent storage without relying on an adapter which would break up the data set.
 
-Example of deleting a record:
 ```javascript
 var store = haro();
 
