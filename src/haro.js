@@ -337,6 +337,8 @@ class Haro {
 			this.indexes = this.transform(data);
 			defer.resolve(true);
 		} else if (type === "records") {
+			this.data = new Map();
+			this.registry = [];
 			data.forEach(datum => {
 				let key = datum[this.key] || uuid();
 
