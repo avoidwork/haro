@@ -357,6 +357,23 @@ store.set(null, {abc: true}).then(function (rec) {
 });
 ```
 
+**dump( type="records" )**
+_Array_ or _Object_
+
+Returns the records or indexes of the DataStore as mutable `Array` or `Object`, for the intention of reuse/persistent storage without relying on an adapter which would break up the data set.
+
+Example of deleting a record:
+```javascript
+var store = haro();
+
+// Data is loaded
+
+var records = store.dump();
+var indexes = store.dump('indexes');
+
+// Save records & indexes
+```
+
 **entries()**
 _MapIterator_
 
@@ -483,7 +500,7 @@ console.log(ds1.length === ds2.length); // true
 console.log(JSON.stringify(ds1[0][1]) === JSON.stringify(ds2[0][1])); // false
 ```
 
-**load( [adapter=mongo, key] )**
+**load( [adapter="mongo", key] )**
 _Promise_
 
 Loads the DataStore, or a record from a specific persistent storage & updates the DataStore. The DataStore will be cleared 
@@ -502,6 +519,23 @@ var store = haro();
 
 store.map(function (value) {
   return value.property;
+});
+```
+
+**override( data[, type="records"] )**
+_Promise_
+
+Returns a `Promise` for the new state. This is meant to be used in a paired override of the indexes & records, such that
+you can avoid the `Promise` based code path of a `batch()` insert or `load()`.
+
+Example of mapping a DataStore:
+```javascript
+var store = haro();
+
+store.override({'field': {'value': ['pk']}}, "indexes").then(function () {
+ // Indexes have been overridden, no records though! override as well?
+}, function (e) {
+  console.error(e.stack);
 });
 ```
 
@@ -738,6 +772,22 @@ var store = haro(null, {key: 'guid'}),
 store.batch(data, 'set').then(function (records) {
   console.log(store.toObject()); // {abc: {guid: 'abc', name: 'John Doe', age: 30}, def: {guid: 'def', name: 'Jane Doe', age: 28}}
   console.log(store.toObject(store.limit(1)); // {abc: {guid: 'abc', name: 'John Doe', age: 30}}}
+}, function (e) {
+  console.error(e.stack || e.message || e);
+});
+```
+
+**transform( input )**
+_Mixed_
+
+Transforms `Map` to `Object`, `Object` to `Map`, `Set` to `Array`, & `Array` to `Set`.
+
+```javascript
+var store = haro(null, {key: 'guid', index: ['name'}),
+   data = [{guid: 'abc', name: 'John Doe', age: 30}, {guid: 'def', name: 'Jane Doe', age: 28}];
+
+store.batch(data, 'set').then(function (records) {
+  console.log(store.transform(store.indexes)); // {age: {'28': ['def'], '30': ['abc']}, name: {'John Doe': ['abc'], 'Jane Doe': ['def']}}
 }, function (e) {
   console.error(e.stack || e.message || e);
 });

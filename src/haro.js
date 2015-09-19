@@ -201,6 +201,18 @@ class Haro {
 		return defer.promise;
 	}
 
+	dump (type = "records") {
+		let result;
+
+		if (type === "records") {
+			result = this.toArray(null, false);
+		} else {
+			result = this.transform(this.indexes);
+		}
+
+		return result;
+	}
+
 	entries () {
 		return this.data.entries();
 	}
@@ -316,6 +328,28 @@ class Haro {
 		});
 
 		return tuple.apply(tuple, result);
+	}
+
+	override (data, type = "records") {
+		let defer = deferred();
+
+		if (type === "indexes") {
+			this.indexes = this.transform(data);
+			defer.resolve(true);
+		} else if (type === "records") {
+			data.forEach(datum => {
+				let key = datum[this.key] || uuid();
+
+				this.data.set(key, datum);
+				this.registry.push(key);
+			});
+			this.total = this.data.size;
+			defer.resolve(true);
+		} else {
+			defer.reject(new Error("Invalid type"));
+		}
+
+		return defer.promise;
 	}
 
 	register (key, fn) {
@@ -722,6 +756,41 @@ class Haro {
 
 			return a;
 		}, {}));
+	}
+
+	transform (input) {
+		let result;
+
+		switch (true) {
+			case input instanceof Map:
+				result = {};
+				input.forEach((value, key) => {
+					result[key] = this.transform(value);
+				});
+				break;
+			case input instanceof Set:
+				result = [];
+				input.forEach(i => {
+					result.push(this.transform(i));
+				});
+				break;
+			case input instanceof Array:
+				result = new Set();
+				input.forEach(i => {
+					result.add(this.transform(i));
+				});
+				break;
+			case input instanceof Object:
+				result = new Map();
+				Object.keys(input).forEach(i => {
+					result.set(i, this.transform(input[i]));
+				});
+				break;
+			default:
+				result = input;
+		}
+
+		return result;
 	}
 
 	unload (type = "mongo", key = undefined) {
