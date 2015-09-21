@@ -776,10 +776,11 @@ store.batch(data, 'set').then(function (records) {
 });
 ```
 
-**transform( input )**
+**transform( input[, fn] )**
 _Mixed_
 
-Transforms `Map` to `Object`, `Object` to `Map`, `Set` to `Array`, & `Array` to `Set`.
+Transforms `Map` to `Object`, `Object` to `Map`, `Set` to `Array`, & `Array` to `Set`. Accepts an optional second parameter to perform the
+transformation to simplify cross domain issues.
 
 ```javascript
 var store = haro(null, {key: 'guid', index: ['name'}),

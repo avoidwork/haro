@@ -760,36 +760,40 @@ class Haro {
 		}, {}));
 	}
 
-	transform (input) {
+	transform (input, fn) {
 		let result;
 
-		switch (true) {
-			case input instanceof Map:
-				result = {};
-				input.forEach((value, key) => {
-					result[key] = this.transform(value);
-				});
-				break;
-			case input instanceof Set:
-				result = [];
-				input.forEach(i => {
-					result.push(this.transform(i));
-				});
-				break;
-			case input instanceof Array:
-				result = new Set();
-				input.forEach(i => {
-					result.add(this.transform(i));
-				});
-				break;
-			case input instanceof Object:
-				result = new Map();
-				Object.keys(input).forEach(i => {
-					result.set(i, this.transform(input[i]));
-				});
-				break;
-			default:
-				result = input;
+		if (typeof fn === "function") {
+			result = fn(input);
+		} else {
+			switch (true) {
+				case input instanceof Map:
+					result = {};
+					input.forEach((value, key) => {
+						result[key] = this.transform(value);
+					});
+					break;
+				case input instanceof Set:
+					result = [];
+					input.forEach(i => {
+						result.push(this.transform(i));
+					});
+					break;
+				case input instanceof Array:
+					result = new Set();
+					input.forEach(i => {
+						result.add(this.transform(i));
+					});
+					break;
+				case input instanceof Object:
+					result = new Map();
+					Object.keys(input).forEach(i => {
+						result.set(i, this.transform(input[i]));
+					});
+					break;
+				default:
+					result = input;
+			}
 		}
 
 		return result;
