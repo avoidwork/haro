@@ -330,11 +330,11 @@ class Haro {
 		return tuple.apply(tuple, result);
 	}
 
-	override (data, type = "records") {
+	override (data, type = "records", fn = undefined) {
 		let defer = deferred();
 
 		if (type === "indexes") {
-			this.indexes = this.transform(data);
+			this.indexes = this.transform(data, fn);
 			defer.resolve(true);
 		} else if (type === "records") {
 			this.data = new Map();

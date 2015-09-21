@@ -521,11 +521,12 @@ store.map(function (value) {
 });
 ```
 
-**override( data[, type="records"] )**
+**override( data[, type="records", fn] )**
 _Promise_
 
 Returns a `Promise` for the new state. This is meant to be used in a paired override of the indexes & records, such that
-you can avoid the `Promise` based code path of a `batch()` insert or `load()`.
+you can avoid the `Promise` based code path of a `batch()` insert or `load()`. Accepts an optional third parameter to perform the
+transformation to simplify cross domain issues.
 
 Example of mapping a DataStore:
 ```javascript
