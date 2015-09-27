@@ -42,11 +42,7 @@ class Haro {
 			data, fn, hash;
 
 		function next () {
-			Promise.all(args.map(fn)).then(function (arg) {
-				defer.resolve(arg);
-			}, function (e) {
-				defer.reject(e);
-			});
+			Promise.all(args.map(fn)).then(defer.resolve, defer.reject);
 		}
 
 		if (del) {
@@ -85,9 +81,7 @@ class Haro {
 					body: JSON.stringify(data)
 				}).then(function () {
 					next();
-				}, function (e) {
-					defer.reject(e);
-				});
+				}, defer.reject);
 			} else {
 				defer.resolve();
 			}
@@ -118,11 +112,7 @@ class Haro {
 		if (!this.adapters[type] || !adapter[type]) {
 			defer.reject(new Error(type + " not configured for persistent storage"));
 		} else {
-			adapter[type].apply(this, [this].concat(args)).then(function (arg) {
-				defer.resolve(arg);
-			}, function (e) {
-				defer.reject(e);
-			});
+			adapter[type].apply(this, [this].concat(args)).then(defer.resolve, defer.reject);
 		}
 
 		return defer.promise;
@@ -177,9 +167,7 @@ class Haro {
 							this.patch = false;
 							this.request(concatURI(this.uri, key), {
 								method: "delete"
-							}).then(next, function (err) {
-								defer.reject(err);
-							});
+							}).then(next, defer.reject);
 						} else {
 							defer.reject(e);
 						}
@@ -187,9 +175,7 @@ class Haro {
 				} else {
 					this.request(concatURI(this.uri, key), {
 						method: "delete"
-					}).then(next, function (e) {
-						defer.reject(e);
-					});
+					}).then(next, defer.reject);
 				}
 			} else {
 				next();
@@ -585,11 +571,7 @@ class Haro {
 		this.uri = uri;
 
 		if (this.uri) {
-			this.sync(clear).then(function (arg) {
-				defer.resolve(arg);
-			}, function (e) {
-				defer.reject(e);
-			});
+			this.sync(clear).then(defer.resolve, defer.reject);
 		} else {
 			defer.resolve([]);
 		}
@@ -646,9 +628,7 @@ class Haro {
 		if (deferreds.length > 0) {
 			Promise.all(deferreds).then(function () {
 				defer.resolve(true);
-			}, function (e) {
-				defer.reject(e);
-			});
+			}, defer.reject);
 		} else {
 			defer.resolve(false);
 		}
@@ -678,11 +658,7 @@ class Haro {
 				this.clear();
 			}
 
-			this.batch(data, "set").then(function (records) {
-				defer.resolve(records);
-			}, function (e) {
-				defer.reject(e);
-			});
+			this.batch(data, "set").then(defer.resolve, defer.reject);
 		}, function (e) {
 			defer.reject(e[0] || e);
 		});
