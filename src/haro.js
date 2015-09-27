@@ -474,7 +474,7 @@ class Haro {
 			method = "post",
 			ldata = clone(data),
 			lkey = key,
-			body, ogdata;
+			body, ogdata, luri;
 
 		let next = (arg) => {
 			let xdata = arg ? arg[0] : {};
@@ -537,6 +537,8 @@ class Haro {
 		}
 
 		if (!batch && this.uri) {
+			luri = concatURI(this.uri, lkey);
+
 			if (this.patch) {
 				if (method === "post") {
 					body = [{op: "add", path: "/", value: ldata}];
@@ -546,13 +548,13 @@ class Haro {
 					body = patch(ogdata, ldata, this.key);
 				}
 
-				this.request(concatURI(this.uri, lkey), {
+				this.request(luri, {
 					method: "patch",
 					body: JSON.stringify(body)
 				}).then(next, e => {
 					if (e[1] === 405) {
 						this.patch = false;
-						this.request(concatURI(this.uri, lkey), {
+						this.request(luri, {
 							method: method,
 							body: JSON.stringify(ldata)
 						}).then(next, function (err) {
@@ -563,7 +565,7 @@ class Haro {
 					}
 				});
 			} else {
-				this.request(concatURI(this.uri, lkey), {
+				this.request(luri, {
 					method: method,
 					body: JSON.stringify(ldata)
 				}).then(next, function (e) {
