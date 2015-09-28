@@ -1,3 +1,19 @@
+function blob (arg) {
+	let obj;
+
+	try {
+		obj = new Blob([arg], {type: "application/javascript"});
+	} catch (e) {
+		if (!global.BlobBuilder) {
+			global.BlobBuilder = global.MSBlobBuilder || global.WebKitBlobBuilder || global.MozBlobBuilder;
+		}
+
+		obj = new global.BlobBuilder().append(arg).getBlob();
+	}
+
+	return obj;
+}
+
 function clone (arg) {
 	return JSON.parse(JSON.stringify(arg));
 }

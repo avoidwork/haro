@@ -13,4 +13,5 @@ const regex = {
 	querystring: /\?.*/,
 	endslash: /\/$/
 };
+const webWorker = typeof Blob !== "undefined" && typeof Worker !== "undefined";
 let adapter = {};
