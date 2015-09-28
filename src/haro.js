@@ -22,7 +22,7 @@ class Haro {
 		this.source = "";
 		this.total = 0;
 		this.uri = "";
-		this.worker = undefined;
+		this.worker = null;
 		this.versions = new Map();
 		this.versioning = true;
 
