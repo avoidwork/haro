@@ -740,7 +740,7 @@ class Haro {
 	}
 
 	transform (input, fn) {
-		return typeof fn === "function" ? fn(input) : transform(input);
+		return typeof fn === "function" ? fn(input) : cast(input);
 	}
 
 	unload (type = "mongo", key = undefined) {
@@ -767,5 +767,27 @@ class Haro {
 
 	values () {
 		return this.data.values();
+	}
+
+	useWorker (defer) {
+		let obj;
+
+		if (this.worker) {
+			obj = new Worker(this.worker);
+
+			obj.onerror = function (err) {
+				defer.reject(err);
+				obj.terminate();
+			};
+
+			obj.onmessage = function (ev) {
+				defer.resolve(ev.data);
+				obj.terminate();
+			};
+		} else {
+			defer.reject(new Error("Worker not supported"));
+		}
+
+		return obj;
 	}
 }

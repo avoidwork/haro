@@ -1,29 +1,29 @@
-function transform (input) {
+function cast (input) {
 	let result;
 
 	switch (true) {
 		case input instanceof Map:
 			result = {};
 			input.forEach((value, key) => {
-				result[key] = transform(value);
+				result[key] = cast(value);
 			});
 			break;
 		case input instanceof Set:
 			result = [];
 			input.forEach(i => {
-				result.push(transform(i));
+				result.push(cast(i));
 			});
 			break;
 		case input instanceof Array:
 			result = new Set();
 			input.forEach(i => {
-				result.add(transform(i));
+				result.add(cast(i));
 			});
 			break;
 		case input instanceof Object:
 			result = new Map();
 			Object.keys(input).forEach(i => {
-				result.set(i, transform(input[i]));
+				result.set(i, cast(input[i]));
 			});
 			break;
 		default:
@@ -102,7 +102,7 @@ function createIndexes (args, indexes, key, delimiter, pattern) {
 		}
 	});
 
-	return transform(result);
+	return cast(result);
 }
 
 function iterate (obj, fn) {
@@ -136,6 +136,20 @@ function merge (a, b) {
 	}
 
 	return c;
+}
+
+function onmessage (ev) {
+	let records = ev.data.records,
+		indices = ev.data.indices,
+		cmd = ev.data.cmd || "index",
+		result;
+
+	if (cmd === "index") {
+		// temp, sending the input back
+		result = {records: records, indices: indices};
+	}
+
+	postMessage(result);
 }
 
 function patch (ogdata = {}, data = {}, key = "", overwrite = false) {

@@ -11,7 +11,8 @@ function factory (data = null, config = {}, indexes = []) {
 			merge.toString(),
 			setIndexValue.toString(),
 			setIndex.toString(),
-			transform.toString()
+			cast.toString(),
+			"onmessage = " + onmessage.toString() + ";"
 		];
 
 		try {
@@ -24,5 +25,5 @@ function factory (data = null, config = {}, indexes = []) {
 	return obj;
 }
 
-factory.transform = transform;
+factory.transform = cast;
 factory.version = "{{VERSION}}";
