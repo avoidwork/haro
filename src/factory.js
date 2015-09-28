@@ -24,4 +24,5 @@ function factory (data = null, config = {}, indexes = []) {
 	return obj;
 }
 
+factory.transform = transform;
 factory.version = "{{VERSION}}";
