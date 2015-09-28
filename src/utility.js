@@ -141,6 +141,41 @@ function toObjekt (arg) {
 	return result;
 }
 
+function transform (input) {
+	let result;
+
+	switch (true) {
+		case input instanceof Map:
+			result = {};
+			input.forEach((value, key) => {
+				result[key] = transform(value);
+			});
+			break;
+		case input instanceof Set:
+			result = [];
+			input.forEach(i => {
+				result.push(transform(i));
+			});
+			break;
+		case input instanceof Array:
+			result = new Set();
+			input.forEach(i => {
+				result.add(transform(i));
+			});
+			break;
+		case input instanceof Object:
+			result = new Map();
+			Object.keys(input).forEach(i => {
+				result.set(i, transform(input[i]));
+			});
+			break;
+		default:
+			result = input;
+	}
+
+	return result;
+}
+
 function uuid () {
 	return (s() + s() + "-" + s() + "-4" + s().substr(0, 3) + "-" + r[Math.floor(Math.random() * 4)] + s().substr(0, 3) + "-" + s() + s() + s());
 }
