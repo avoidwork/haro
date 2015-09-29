@@ -527,7 +527,7 @@ _Promise_
 Returns a `Promise` for an offloaded work load, such as preparing indexes in a `Worker`. This method is ideal for dealing 
 with large data sets which could block a UI thread. This method requires `Blob` & `Worker`. 
 
-Example of mapping a DataStore:
+Example of offloading index creation:
 ```javascript
 var store = haro(null, {index: ['name', 'age'], key: 'guid'}),
     data = [{guid: 'abc', name: 'Jason Mulligan', age: 35}];
@@ -547,7 +547,7 @@ Returns a `Promise` for the new state. This is meant to be used in a paired over
 you can avoid the `Promise` based code path of a `batch()` insert or `load()`. Accepts an optional third parameter to perform the
 transformation to simplify cross domain issues.
 
-Example of mapping a DataStore:
+Example of overriding a DataStore:
 ```javascript
 var store = haro();
 
