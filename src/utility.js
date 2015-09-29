@@ -140,13 +140,13 @@ function merge (a, b) {
 
 function onmessage (ev) {
 	let records = ev.data.records,
-		indices = ev.data.indices,
-		cmd = ev.data.cmd || "index",
+		indexes = ev.data.indexes,
+		cmd = ev.data.cmd,
 		result;
 
 	if (cmd === "index") {
 		// temp, sending the input back
-		result = {records: records, indices: indices};
+		result = {records: records, indexes: indexes};
 	}
 
 	postMessage(result);

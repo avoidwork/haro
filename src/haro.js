@@ -317,6 +317,25 @@ class Haro {
 		return tuple.apply(tuple, result);
 	}
 
+	offload (data, cmd = "index", indexes = this.indexes) {
+		let defer = deferred(),
+			worker;
+
+		if (webWorker) {
+			worker = this.useWorker(defer);
+			worker.postMessage({
+				cmd: cmd,
+				data: data,
+				indexes: indexes,
+				records: data
+			});
+		} else {
+			defer.reject(new Error("Workers and/or Blobs not supported"));
+		}
+
+		return defer.promise;
+	}
+
 	override (data, type = "records", fn = undefined) {
 		let defer = deferred();
 
