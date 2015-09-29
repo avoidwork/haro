@@ -1,6 +1,6 @@
 {
   "name": "haro",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "description": "Harō is a modern immutable DataStore using Maps, Sets, Promises, & Tuples",
   "main": "lib/haro.js",
   "scripts": {
@@ -39,11 +39,13 @@
     "tenso": "^1.5.1"
   },
   "dependencies": {
+    "Blob": "^0.10.0",
     "es6-map": "^0.1.1",
     "es6-promise": "^3.0.2",
     "es6-set": "^0.1.1",
     "node-fetch": "^1.2.1",
     "tiny-defer": "^1.0.2",
-    "tiny-tuple": "^1.0.5"
+    "tiny-tuple": "^1.0.5",
+    "webworker-threads": "^0.6.0"
   }
 }

@@ -9,11 +9,11 @@ function factory (data = null, config = {}, indexes = []) {
 			setIndexValue.toString(),
 			setIndex.toString(),
 			cast.toString(),
-			"onmessage = " + onmessage.toString() + ";"
+			(!server ? "" : "this.") + "onmessage = " + onmessage.toString() + ";"
 		];
 
 		try {
-			obj.worker = global.URL.createObjectURL(blob(functions.join("\n")));
+			obj.worker = !server ? global.URL.createObjectURL(blob(functions.join("\n"))) : new Function(functions.join("\n"));
 		} catch (e) {
 			obj.worker = null;
 		}

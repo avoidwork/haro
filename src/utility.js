@@ -157,6 +157,10 @@ function onmessage (ev) {
 	}
 
 	postMessage(JSON.stringify(result));
+
+	if (server && typeof self !== "undefined") {
+		self.close();
+	}
 }
 
 function patch (ogdata = {}, data = {}, key = "", overwrite = false) {
