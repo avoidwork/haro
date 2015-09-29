@@ -1,0 +1,31 @@
+{
+  "name": "haro",
+  "version": "1.7.0",
+  "homepage": "http://haro.rocks",
+  "authors": [
+    "Jason Mulligan <jason.mulligan@avoidwork.com>"
+  ],
+  "description": "Harō is a modern immutable DataStore using Maps, Sets, Promises, & Tuples",
+  "main": "lib/haro.js",
+  "moduleType": [
+    "amd",
+    "globals",
+    "node"
+  ],
+  "keywords": [
+    "immutable",
+    "data",
+    "store",
+    "datastore",
+    "api",
+    "haro"
+  ],
+  "license": "BSD-3-Clause",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
