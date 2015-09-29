@@ -521,6 +521,25 @@ store.map(function (value) {
 });
 ```
 
+**offload( data[, cmd="index", index=this.index] )**
+_Promise_
+
+Returns a `Promise` for an offloaded work load, such as preparing indexes in a `Worker`. This method is ideal for dealing 
+with large data sets which could block a UI thread. This method requires `Blob` & `Worker`. 
+
+Example of mapping a DataStore:
+```javascript
+var store = haro(null, {index: ['name', 'age'], key: 'guid'}),
+    data = [{guid: 'abc', name: 'Jason Mulligan', age: 35}];
+
+store.offload(data).then(function (args) {
+  store.override(data);
+  store.override(args, 'indexes');
+}, function (e) {
+  console.error(e);
+});
+```
+
 **override( data[, type="records", fn] )**
 _Promise_
 

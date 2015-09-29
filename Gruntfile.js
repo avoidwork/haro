@@ -53,7 +53,7 @@ module.exports = function (grunt) {
 				sourceMap: true,
 				sourceMapIncludeSources: true,
 				mangle: {
-					except: ["Haro"]
+					except: ["Map", "Set", "Haro", "cast", "createIndexes", "keyIndex", "setIndexValue", "setIndex"]
 				}
 			},
 			target: {

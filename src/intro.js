@@ -14,4 +14,5 @@ const regex = {
 	endslash: /\/$/
 };
 const webWorker = typeof Blob !== "undefined" && typeof Worker !== "undefined";
+const webWorkerError = "Web Worker not supported";
 let adapter = {};

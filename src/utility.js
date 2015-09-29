@@ -93,7 +93,7 @@ function createIndexes (args, indexes, key, delimiter, pattern) {
 	let result = new Map();
 
 	indexes.forEach(function (i) {
-		result.add(i, new Map());
+		result.set(i, new Map());
 	});
 
 	args.forEach(function (i) {
@@ -102,7 +102,7 @@ function createIndexes (args, indexes, key, delimiter, pattern) {
 		}
 	});
 
-	return cast(result);
+	return result;
 }
 
 function iterate (obj, fn) {
@@ -139,17 +139,24 @@ function merge (a, b) {
 }
 
 function onmessage (ev) {
-	let records = ev.data.records,
-		indexes = ev.data.indexes,
-		cmd = ev.data.cmd,
+	let data = JSON.parse(ev.data),
+		records = data.records,
+		index = data.index,
+		cmd = data.cmd,
+		key = data.key,
+		delimiter = data.delimiter,
+		pattern = data.pattern,
 		result;
 
-	if (cmd === "index") {
-		// temp, sending the input back
-		result = {records: records, indexes: indexes};
+	try {
+		if (cmd === "index") {
+			result = cast(createIndexes(records, index, key, delimiter, pattern));
+		}
+	} catch (e) {
+		result = e.stack;
 	}
 
-	postMessage(result);
+	postMessage(JSON.stringify(result));
 }
 
 function patch (ogdata = {}, data = {}, key = "", overwrite = false) {

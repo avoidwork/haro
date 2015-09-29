@@ -317,20 +317,25 @@ class Haro {
 		return tuple.apply(tuple, result);
 	}
 
-	offload (data, cmd = "index", indexes = this.indexes) {
+	offload (data, cmd = "index", index = this.index) {
 		let defer = deferred(),
-			worker;
+			obj;
 
-		if (webWorker) {
-			worker = this.useWorker(defer);
-			worker.postMessage({
-				cmd: cmd,
-				data: data,
-				indexes: indexes,
-				records: data
-			});
+		if (this.worker) {
+			obj = this.useWorker(defer);
+
+			if (obj) {
+				obj.postMessage(JSON.stringify({
+					cmd: cmd,
+					index: index,
+					records: data,
+					key: this.key,
+					delimiter: this.delimiter,
+					pattern: this.pattern
+				}));
+			}
 		} else {
-			defer.reject(new Error("Workers and/or Blobs not supported"));
+			defer.reject(new Error(webWorkerError));
 		}
 
 		return defer.promise;
@@ -793,18 +798,17 @@ class Haro {
 
 		if (this.worker) {
 			obj = new Worker(this.worker);
-
 			obj.onerror = function (err) {
 				defer.reject(err);
 				obj.terminate();
 			};
 
 			obj.onmessage = function (ev) {
-				defer.resolve(ev.data);
+				defer.resolve(JSON.parse(ev.data));
 				obj.terminate();
 			};
 		} else {
-			defer.reject(new Error("Worker not supported"));
+			defer.reject(new Error(webWorkerError));
 		}
 
 		return obj;

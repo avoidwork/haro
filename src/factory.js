@@ -4,11 +4,8 @@ function factory (data = null, config = {}, indexes = []) {
 
 	if (webWorker) {
 		functions = [
-			clone.toString(),
 			createIndexes.toString(),
 			keyIndex.toString(),
-			iterate.toString(),
-			merge.toString(),
 			setIndexValue.toString(),
 			setIndex.toString(),
 			cast.toString(),
