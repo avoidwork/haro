@@ -430,6 +430,27 @@ exports["dump (records)"] = {
 	}
 };
 
+exports["offload (indexes)"] = {
+	setUp: function (done) {
+		this.store = haro(null, {key: "guid", index: ["name", "age"]});
+		done();
+	},
+	test: function (test) {
+		var self = this;
+
+		test.expect(3);
+		this.store.offload(data).then(function (args) {
+			test.equal(Object.keys(args).length, self.store.index.length, "Should be a match");
+			test.equal(Object.keys(args.name).length, 6, "Should be '6'");
+			test.equal(args.age['20'].length, 2, "Should be '2'");
+			test.done();
+		}, function (e) {
+			throw e;
+			test.done();
+		});
+	}
+};
+
 exports["override (indexes)"] = {
 	setUp: function (done) {
 		this.store = haro();

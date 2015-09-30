@@ -9,7 +9,7 @@ const fetch = !server ? global.fetch : require("node-fetch");
 const deferred = !server ? global.deferred : require("tiny-defer");
 const tuple = !server ? global.tuple : require("tiny-tuple");
 const Blob = !server ? global.Blob : require("Blob");
-const Worker = !server ? global.Worker : require("webworker-threads").Worker;
+const Worker = !server ? global.Worker : require("tiny-worker");
 const r = [8, 9, "a", "b"];
 const regex = {
 	querystring: /\?.*/,

@@ -9,7 +9,7 @@ function factory (data = null, config = {}, indexes = []) {
 			setIndexValue.toString(),
 			setIndex.toString(),
 			cast.toString(),
-			(!server ? "" : "this.") + "onmessage = " + onmessage.toString() + ";"
+			(!server ? "" : "self.") + "onmessage = " + onmessage.toString() + ";"
 		];
 
 		try {
