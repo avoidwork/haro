@@ -89,14 +89,14 @@ function delIndex (index, indexes, delimiter, key, data, pattern) {
 	});
 }
 
-function createIndexes (args, indexes, key, delimiter, pattern) {
+function createIndexes (records, indexes, key, delimiter, pattern) {
 	let result = {};
 
 	indexes.forEach(function (i) {
 		result[i] = {};
 	});
 
-	args.forEach(function (i) {
+	records.forEach(function (i) {
 		let lkey = i[key];
 
 		if (lkey !== undefined) {
@@ -158,12 +158,8 @@ function onmessage (ev) {
 		pattern = data.pattern,
 		result;
 
-	try {
-		if (cmd === "index") {
-			result = cast(createIndexes(records, index, key, delimiter, pattern));
-		}
-	} catch (e) {
-		result = e.stack;
+	if (cmd === "index") {
+		result = createIndexes(records, index, key, delimiter, pattern);
 	}
 
 	postMessage(JSON.stringify(result));
