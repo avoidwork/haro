@@ -440,11 +440,13 @@ exports["offload (indexes)"] = {
 
 		test.expect(3);
 		this.store.offload(data).then(function (args) {
+			console.log(args);
 			test.equal(Object.keys(args).length, self.store.index.length, "Should be a match");
 			test.equal(Object.keys(args.name).length, 6, "Should be '6'");
 			test.equal(args.age['20'].length, 2, "Should be '2'");
 			test.done();
 		}, function (e) {
+			console.log(e);
 			throw e;
 			test.done();
 		});

@@ -90,15 +90,25 @@ function delIndex (index, indexes, delimiter, key, data, pattern) {
 }
 
 function createIndexes (args, indexes, key, delimiter, pattern) {
-	let result = new Map();
+	let result = {};
 
 	indexes.forEach(function (i) {
-		result.set(i, new Map());
+		result[i] = {};
 	});
 
 	args.forEach(function (i) {
-		if (i[key] !== undefined) {
-			setIndex(indexes, result, delimiter, i[key], i, undefined, pattern);
+		let lkey = i[key];
+
+		if (lkey !== undefined) {
+			indexes.forEach(function (index) {
+				let lindex = keyIndex(index, i, delimiter, pattern);
+
+				if (result[index][lindex] === undefined) {
+					result[index][lindex] = [];
+				}
+
+				result[index][lindex].push(lkey);
+			});
 		}
 	});
 
