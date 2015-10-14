@@ -200,12 +200,22 @@ function setIndexValue (index, key, value) {
 }
 
 function setIndex (index, indexes, delimiter, key, data, indice, pattern) {
+	let idx;
+
 	if (!indice) {
 		index.forEach(function (i) {
-			setIndexValue(indexes.get(i), keyIndex(i, data, delimiter, pattern), key);
+			let lidx = keyIndex(i, data, delimiter, pattern);
+
+			if (lidx !== undefined && lidx !== null) {
+				setIndexValue(indexes.get(i), lidx, key);
+			}
 		});
 	} else {
-		setIndexValue(indexes.get(indice), keyIndex(indice, data, delimiter, pattern), key);
+		idx = keyIndex(indice, data, delimiter, pattern);
+
+		if (idx !== undefined && idx !== null) {
+			setIndexValue(indexes.get(indice), idx, key);
+		}
 	}
 }
 
