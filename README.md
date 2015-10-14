@@ -297,7 +297,7 @@ _Map_
 `Map` of `Sets` of records, updated by `set()`.
 
 ### API
-**batch( array, type )**
+**batch(array, type)**
 _Promise_
 
 The first argument must be an `Array`, and the second argument must be `del` or `set`. Batch operations with a DataStore 
@@ -337,7 +337,7 @@ var store = haro();
 store.clear();
 ```
 
-**del( key )**
+**del(key)**
 _Promise_
 
 Deletes the record.
@@ -357,7 +357,7 @@ store.set(null, {abc: true}).then(function (rec) {
 });
 ```
 
-**dump( type="records" )**
+**dump(type="records")**
 _Array_ or _Object_
 
 Returns the records or indexes of the DataStore as mutable `Array` or `Object`, for the intention of reuse/persistent storage without relying on an adapter which would break up the data set.
@@ -395,7 +395,7 @@ do {
 } while (!item.done);
 ```
 
-**filter( callbackFn )**
+**filter(callbackFn)**
 _Tuple_
 
 Returns a `Tuple` of double `Tuples` with the shape `[key, value]` for records which returned `true` to 
@@ -412,7 +412,7 @@ store.filter(function (value) {
 });
 ```
 
-**find( where )**
+**find(where)**
 _Tuple_
 
 Returns a `Tuple` of double `Tuples` with found by indexed values matching the `where`.
@@ -426,7 +426,7 @@ var store = haro(null, {index: ['field1']});
 store.find({field1: 'some value'});
 ```
 
-**forEach( callbackFn[, thisArg] )**
+**forEach(callbackFn[, thisArg])**
 _Undefined_
 
 Calls `callbackFn` once for each key-value pair present in the `Map` object, in insertion order. If a `thisArg` 
@@ -445,7 +445,7 @@ store.set(null, {abc: true}).then(function (rec) {
 });
 ```
 
-**get( key )**
+**get(key)**
 _Tuple_
 
 Gets the record as a double `Tuple` with the shape `[key, value]`.
@@ -480,7 +480,7 @@ do {
 } while (!item.done);
 ```
 
-**limit( max, offset=0 )**
+**limit(max, offset=0)**
 _Tuple_
 
 Returns a `Tuple` of double `Tuples` with the shape `[key, value]` for the corresponding range of records.
@@ -499,13 +499,13 @@ console.log(ds1.length === ds2.length); // true
 console.log(JSON.stringify(ds1[0][1]) === JSON.stringify(ds2[0][1])); // false
 ```
 
-**load( [adapter="mongo", key] )**
+**load([adapter="mongo", key])**
 _Promise_
 
 Loads the DataStore, or a record from a specific persistent storage & updates the DataStore. The DataStore will be cleared 
 prior to loading if `key` is omitted.
 
-**map( callbackFn )**
+**map(callbackFn)**
 _Tuple_
 
 Returns a `Tuple` of the returns of `callbackFn(value, key)`.
@@ -521,7 +521,7 @@ store.map(function (value) {
 });
 ```
 
-**offload( data[, cmd="index", index=this.index] )**
+**offload(data[, cmd="index", index=this.index])**
 _Promise_
 
 Returns a `Promise` for an offloaded work load, such as preparing indexes in a `Worker`. This method is ideal for dealing 
@@ -540,7 +540,7 @@ store.offload(data).then(function (args) {
 });
 ```
 
-**override( data[, type="records", fn] )**
+**override(data[, type="records", fn])**
 _Promise_
 
 Returns a `Promise` for the new state. This is meant to be used in a paired override of the indexes & records, such that
@@ -558,7 +558,7 @@ store.override({'field': {'value': ['pk']}}, "indexes").then(function () {
 });
 ```
 
-**reindex( [index] )**
+**reindex([index])**
 _Haro_
 
 Re-indexes the DataStore, to be called if changing the value of `index`.
@@ -576,7 +576,7 @@ store.index('field3');
 store.index();
 ```
 
-**register( key, fn )**
+**register(key, fn)**
 _Haro_
 
 Registers a persistent storage adapter.
@@ -597,7 +597,7 @@ store = haro(null, {
 store.register('mongo', require('haro-mongo'));
 ```
 
-**request( input, config )**
+**request(input, config)**
 _Promise_
 
 Returns a `Promise` for a `fetch()` with a triple `Tuple` [`body`, `status`, `headers`] as the `resolve()` & `reject()` argument.
@@ -613,12 +613,12 @@ store.request('https://somedomain.com/api').then(function (arg) {
 });
 ```
 
-**save( [adapter] )**
+**save([adapter])**
 _Promise_
 
 Saves the DataStore to persistent storage.
 
-**search( arg[, index=this.index] )**
+**search(arg[, index=this.index])**
 _Tuple_
 
 Returns a `Tuple` of double `Tuples` with the shape `[key, value]` of records found matching `arg`.
@@ -640,7 +640,7 @@ store.batch(data, 'set').then(function (records) {
 });
 ```
 
-**set( key, data, batch=false, override=false )**
+**set(key, data, batch=false, override=false)**
 _Promise_
 
 Returns a `Promise` for setting/amending a record in the DataStore, if `key` is `false` a version 4 `UUID` will be 
@@ -659,7 +659,7 @@ store.set(null, {id: 1, name: 'John Doe'}).then(function (record) {
 });
 ```
 
-**setUri( uri, clear=false )**
+**setUri(uri, clear=false)**
 _Promise_
 
 Returns a `Promise` for wiring the DataStore to an API, with the retrieved record set as the `resolve()` argument. This
@@ -701,7 +701,7 @@ store.setUri('https://api.somedomain.com?page=2', true).then(function (records) 
 });
 ```
 
-**sort( callbackFn, [frozen = true] )**
+**sort(callbackFn, [frozen = true])**
 _Array_
 
 Returns an Array of the DataStore, sorted by `callbackFn`.
@@ -720,7 +720,7 @@ store.batch(data, 'set').then(function (records) {
 });
 ```
 
-**sortBy( index )**
+**sortBy(index)**
 _Tuple_
 
 Returns a `Tuple` of double `Tuples` with the shape `[key, value]` of records sorted by an index.
@@ -737,7 +737,7 @@ store.batch(data, 'set').then(function (records) {
 });
 ```
 
-**sync( clear=false )**
+**sync(clear=false)**
 _Promise_
 
 Synchronises the DataStore with an API collection. If `clear` is `true`, the DataStore will have `clear()` executed
@@ -760,7 +760,7 @@ interval = setInterval(function () {
 }, 60000);
 ```
 
-**toArray( [data, freeze=true] )**
+**toArray([data, freeze=true])**
 _Array_
 
 Returns an Array of the DataStore, or a subset.
@@ -778,7 +778,7 @@ store.batch(data, 'set').then(function (records) {
 });
 ```
 
-**toObject( [data, freeze=true] )**
+**toObject([data, freeze=true])**
 _Object_
 
 Returns an Object of the DataStore.
@@ -796,7 +796,7 @@ store.batch(data, 'set').then(function (records) {
 });
 ```
 
-**transform( input[, fn] )**
+**transform(input[, fn])**
 _Mixed_
 
 Transforms `Map` to `Object`, `Object` to `Map`, `Set` to `Array`, & `Array` to `Set`. Accepts an optional second parameter to perform the
@@ -816,12 +816,12 @@ store.batch(data, 'set').then(function (records) {
 });
 ```
 
-**unload( [adapter=mongo, key] )**
+**unload([adapter=mongo, key])**
 _Promise_
 
 Unloads the DataStore, or a record from a specific persistent storage (delete).
 
-**unregister( key )**
+**unregister(key)**
 _Haro_
 
 Un-registers a persistent storage adapter.

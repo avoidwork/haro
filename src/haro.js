@@ -204,18 +204,18 @@ class Haro {
 		return this.data.entries();
 	}
 
-	find (where) {
+	find (where, raw = false) {
 		let key = Object.keys(where).sort().join(this.delimiter),
 			value = keyIndex(key, where, this.delimiter),
 			result = [];
 
 		if (this.indexes.has(key)) {
 			(this.indexes.get(key).get(value) || new Set()).forEach(i => {
-				result.push(this.get(i));
+				result.push(this.get(i, raw));
 			});
 		}
 
-		return tuple.apply(tuple, result);
+		return !raw ? tuple.apply(tuple, result) : clone(result);
 	}
 
 	filter (fn) {
@@ -238,11 +238,11 @@ class Haro {
 		return this;
 	}
 
-	get (key) {
+	get (key, raw = false) {
 		let output;
 
 		if (this.data.has(key)) {
-			output = tuple(key, this.data.get(key));
+			output = !raw ? tuple(key, this.data.get(key)) : this.data.get(key);
 		}
 
 		return output;
@@ -250,6 +250,26 @@ class Haro {
 
 	has (key) {
 		return this.data.has(key);
+	}
+
+	join (other = [], on = this.key, type = "inner", where = {}) {
+		let defer = deferred();
+
+		if (other.length > 0) {
+			if (Object.keys(where).length > 0) {
+				this.find(where, true).then(function (data) {
+					return data.length > 0 ? offload([data, other, on, type], "join") : [];
+				}, function (e) {
+					throw e;
+				}).then(defer.resolve, defer.reject);
+			} else {
+				offload([data, other, on, type], "join").then(defer.resolve, defer.reject);
+			}
+		} else {
+			defer.resolve([]);
+		}
+
+		return defer.promise;
 	}
 
 	keys () {
@@ -319,20 +339,33 @@ class Haro {
 
 	offload (data, cmd = "index", index = this.index) {
 		let defer = deferred(),
-			obj;
+			payload, obj;
 
 		if (this.worker) {
 			obj = this.useWorker(defer);
 
 			if (obj) {
-				obj.postMessage(JSON.stringify({
-					cmd: cmd,
-					index: index,
-					records: data,
-					key: this.key,
-					delimiter: this.delimiter,
-					pattern: this.pattern
-				}));
+				if (cmd === "index") {
+					payload = {
+						cmd: cmd,
+						index: index,
+						records: data,
+						key: this.key,
+						delimiter: this.delimiter,
+						pattern: this.pattern
+					};
+				}
+
+				if (cmd === "join") {
+					payload = {
+						cmd: cmd,
+						records: [data[0], data[1]],
+						on: data[2],
+						type: data[3]
+					};
+				}
+
+				obj.postMessage(JSON.stringify(payload));
 			}
 		} else {
 			defer.reject(new Error(webWorkerError));

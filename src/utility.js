@@ -150,19 +150,40 @@ function merge (a, b) {
 
 function onmessage (ev) {
 	let data = JSON.parse(ev.data),
-		records = data.records,
-		index = data.index,
 		cmd = data.cmd,
-		key = data.key,
-		delimiter = data.delimiter,
-		pattern = data.pattern,
 		result;
 
 	if (cmd === "index") {
-		result = createIndexes(records, index, key, delimiter, pattern);
+		result = createIndexes(data.records, data.index, data.key, data.delimiter, data.pattern);
+	}
+
+	if (cmd === "join") {
+		result = joinData(data.records[0], data.records[1], data.on, data.type);
 	}
 
 	postMessage(JSON.stringify(result));
+}
+
+function joinData (a, b, on, type = "inner") {
+	let result;
+
+	if (type === "inner") {
+		result = [];
+	}
+
+	if (type === "outer") {
+		result = [];
+	}
+
+	if (type === "left") {
+		result = [];
+	}
+
+	if (type === "right") {
+		result = [];
+	}
+
+	return result;
 }
 
 function patch (ogdata = {}, data = {}, key = "", overwrite = false) {
