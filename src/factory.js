@@ -5,6 +5,7 @@ function factory (data = null, config = {}, indexes = []) {
 	if (webWorker) {
 		functions = [
 			createIndexes.toString(),
+			each.toString(),
 			keyIndex.toString(),
 			setIndexValue.toString(),
 			setIndex.toString(),

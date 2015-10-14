@@ -257,13 +257,25 @@ class Haro {
 
 		if (other.length > 0) {
 			if (Object.keys(where).length > 0) {
-				this.find(where, true).then(function (data) {
-					return data.length > 0 ? offload([data, other, on, type], "join") : [];
+				this.find(where, true).then(data => {
+					return data.length > 0 ? this.offload([data, other, on, type], "join") : [];
 				}, function (e) {
 					throw e;
-				}).then(defer.resolve, defer.reject);
+				}).then(function (result) {
+					if (typeof result === "string") {
+						defer.reject(new Error(result));
+					} else {
+						defer.resolve(result);
+					}
+				}, defer.reject);
 			} else {
-				offload([data, other, on, type], "join").then(defer.resolve, defer.reject);
+				this.offload([this.toArray(null, true), other, on, type], "join").then(function (result) {
+					if (typeof result === "string") {
+						defer.reject(new Error(result));
+					} else {
+						defer.resolve(result);
+					}
+				}, defer.reject);
 			}
 		} else {
 			defer.resolve([]);

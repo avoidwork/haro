@@ -115,6 +115,17 @@ function createIndexes (records, indexes, key, delimiter, pattern) {
 	return result;
 }
 
+function each (arg, fn) {
+	let i = -1,
+		nth = arg.length;
+
+	while (++i < nth) {
+		if (fn(arg[i]) === false) {
+			break;
+		}
+	}
+}
+
 function iterate (obj, fn) {
 	if (obj instanceof Object) {
 		Object.keys(obj).forEach(function (i) {
@@ -165,10 +176,25 @@ function onmessage (ev) {
 }
 
 function joinData (a, b, on, type = "inner") {
-	let result;
+	let error = false,
+		errorMsg, result;
 
 	if (type === "inner") {
 		result = [];
+
+		each(a, function (i) {
+			let c = b.filter(function (x) {
+				return x[on] === i[on];
+			});
+
+			if (c.length > 1) {
+				error = true;
+				errorMsg = "More than one record found on " + i[on];
+				return false;
+			} else if (c.length === 1) {
+				result.push(merge(i, c[0]));
+			}
+		});
 	}
 
 	if (type === "outer") {
@@ -183,7 +209,7 @@ function joinData (a, b, on, type = "inner") {
 		result = [];
 	}
 
-	return result;
+	return !error ? result : errorMsg;
 }
 
 function patch (ogdata = {}, data = {}, key = "", overwrite = false) {
