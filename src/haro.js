@@ -252,13 +252,16 @@ class Haro {
 		return this.data.has(key);
 	}
 
-	join (other = [], on = this.key, type = "inner", where = {}) {
+	join (other, on = this.key, type = "inner", where = {}) {
 		let defer = deferred();
 
-		if (other.length > 0) {
+		if (other.total > 0) {
 			if (Object.keys(where).length > 0) {
-				this.find(where, true).then(data => {
-					return data.length > 0 ? this.offload([data, other, on, type], "join") : [];
+				Promise.all([
+					this.find(where, true),
+					other.find(where, true)
+				]).then(data => {
+					return data[0].length > 0 && data[1].length > 1 ? this.offload([data[0], data[1], this.key, on, type], "join") : [];
 				}, function (e) {
 					throw e;
 				}).then(function (result) {
@@ -269,7 +272,7 @@ class Haro {
 					}
 				}, defer.reject);
 			} else {
-				this.offload([this.toArray(null, true), other, on, type], "join").then(function (result) {
+				this.offload([this.toArray(null, true), other.toArray(null, true), this.key, on, type], "join").then(function (result) {
 					if (typeof result === "string") {
 						defer.reject(new Error(result));
 					} else {
@@ -372,8 +375,9 @@ class Haro {
 					payload = {
 						cmd: cmd,
 						records: [data[0], data[1]],
-						on: data[2],
-						type: data[3]
+						key: data[2],
+						on: data[3],
+						type: data[4]
 					};
 				}
 

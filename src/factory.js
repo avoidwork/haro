@@ -4,13 +4,15 @@ function factory (data = null, config = {}, indexes = []) {
 
 	if (webWorker) {
 		functions = [
+			cast.toString(),
+			clone.toString(),
 			createIndexes.toString(),
 			each.toString(),
+			joinData.toString(),
 			keyIndex.toString(),
+			merge.toString(),
 			setIndexValue.toString(),
 			setIndex.toString(),
-			cast.toString(),
-			joinData.toString(),
 			(!server ? "" : "self.") + "onmessage = " + onmessage.toString() + ";"
 		];
 

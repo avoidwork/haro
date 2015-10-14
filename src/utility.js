@@ -169,13 +169,13 @@ function onmessage (ev) {
 	}
 
 	if (cmd === "join") {
-		result = joinData(data.records[0], data.records[1], data.on, data.type);
+		result = joinData(data.records[0], data.records[1], data.key, data.on, data.type);
 	}
 
 	postMessage(JSON.stringify(result));
 }
 
-function joinData (a, b, on, type = "inner") {
+function joinData (a, b, key, on, type = "inner") {
 	let error = false,
 		errorMsg, result;
 
@@ -184,7 +184,7 @@ function joinData (a, b, on, type = "inner") {
 
 		each(a, function (i) {
 			let c = b.filter(function (x) {
-				return x[on] === i[on];
+				return x[on] === i[key];
 			});
 
 			if (c.length > 1) {
