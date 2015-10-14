@@ -8,7 +8,6 @@
 .git
 .gitignore
 .travis.yml
-CHANGELOG.md
 Gruntfile.js
 benchmark.js
 bower.json
