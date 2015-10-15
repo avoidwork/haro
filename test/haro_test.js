@@ -36,7 +36,7 @@ server = tenso({
 
 exports["empty"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -49,7 +49,7 @@ exports["empty"] = {
 
 exports["create"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -70,7 +70,7 @@ exports["create"] = {
 
 exports["create (batch)"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -106,7 +106,7 @@ exports["create (batch)"] = {
 
 exports["update (batch)"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -150,7 +150,7 @@ exports["update (batch)"] = {
 
 exports["read (valid)"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -173,7 +173,7 @@ exports["read (valid)"] = {
 
 exports["read (invalid)"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -229,7 +229,7 @@ exports["read (indexed)"] = {
 
 exports["read (toArray)"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -267,7 +267,7 @@ exports["read (toObject)"] = {
 
 exports["read (sort)"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -292,7 +292,7 @@ exports["read (sort)"] = {
 
 exports["read (sortBy)"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -310,7 +310,7 @@ exports["read (sortBy)"] = {
 
 exports["read (search - un-indexed)"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -354,7 +354,7 @@ exports["read (search - indexed)"] = {
 
 exports["update"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -380,7 +380,7 @@ exports["update"] = {
 
 exports["delete"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -406,7 +406,7 @@ exports["delete"] = {
 
 exports["delete (batch)"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -497,7 +497,7 @@ exports["offload (indexes)"] = {
 
 exports["override (indexes)"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		this.indexes = {
 			name: {
 				'Decker Merrill': ['cfbfe5d1-451d-47b1-96c4-8e8e83fe9cfd'],
@@ -551,7 +551,7 @@ exports["override (indexes)"] = {
 
 exports["override (records)"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {

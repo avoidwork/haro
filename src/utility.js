@@ -83,6 +83,7 @@ function delIndex (index, indexes, delimiter, key, data, pattern) {
 			o.delete(key);
 
 			if (o.size === 0) {
+				o = null;
 				idx.delete(value);
 			}
 		}
