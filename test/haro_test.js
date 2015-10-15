@@ -104,6 +104,50 @@ exports["create (batch)"] = {
 	}
 };
 
+exports["update (batch)"] = {
+	setUp: function (done) {
+		this.store = haro();
+		done();
+	},
+	test: function (test) {
+		var self = this;
+
+		test.expect(14);
+		test.equal(this.store.total, 0, "Should be '0'");
+		test.equal(this.store.data.size, 0, "Should be '0'");
+		this.store.batch(data, "set").then(function () {
+			test.equal(self.store.total, 6, "Should be '6'");
+			test.equal(self.store.data.size, 6, "Should be '6'");
+			test.equal(self.store.registry.length, 6, "Should be '6'");
+			return self.store.batch(data, "set");
+		}, function (e) {
+			throw e;
+		}).then(function () {
+			test.equal(self.store.total, 6, "Should be '6'");
+			test.equal(self.store.data.size, 6, "Should be '6'");
+			test.equal(self.store.registry.length, 6, "Should be '6'");
+			test.equal(self.store.limit(2)[1][0], self.store.get(self.store.registry[1])[0], "Should be a match");
+			test.equal(self.store.limit(2, 2)[1][0], self.store.get(self.store.registry[3])[0], "Should be a match");
+			test.equal(self.store.limit(10, 5).length, 1, "Should be '1'");
+			test.equal(self.store.filter(function (i) {
+				return /decker/i.test(i.name);
+			}).length, 1, "Should be '1'");
+			test.equal(self.store.map(function (i) {
+				i.name = 'John Doe';
+				return i;
+			}).length, 6, "Should be '6'");
+			test.equal(self.store.map(function (i) {
+				i.name = 'John Doe';
+				return i;
+			})[0].name, 'John Doe', "Should be a match");
+			test.done();
+		}, function (e) {
+			console.log(e.stack);
+			test.done();
+		});
+	}
+};
+
 exports["read (valid)"] = {
 	setUp: function (done) {
 		this.store = haro();

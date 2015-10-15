@@ -1,6 +1,6 @@
 {
   "name": "haro",
-  "version": "1.7.7",
+  "version": "1.7.8",
   "description": "Harō is a modern immutable DataStore using Maps, Sets, Promises, & Tuples",
   "main": "lib/haro.js",
   "scripts": {

@@ -505,10 +505,8 @@ class Haro {
 			}
 
 			if (method === "post") {
-				if (!this.data.has(lkey)) {
-					this.registry[this.total] = lkey;
-					++this.total;
-				}
+				this.registry[this.total] = lkey;
+				++this.total;
 
 				if (this.versioning) {
 					this.versions.set(lkey, new Set());
