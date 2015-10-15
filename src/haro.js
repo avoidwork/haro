@@ -586,8 +586,10 @@ class Haro {
 		};
 
 		if (lkey === undefined || lkey === null) {
-			lkey = null;
-		} else if (this.data.has(lkey)) {
+			lkey = ldata[this.key] || null;
+		}
+
+		if (lkey && this.data.has(lkey)) {
 			method = "put";
 			ogdata = this.data.get(lkey);
 

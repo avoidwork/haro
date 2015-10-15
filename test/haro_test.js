@@ -36,7 +36,7 @@ server = tenso({
 
 exports["empty"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -49,7 +49,7 @@ exports["empty"] = {
 
 exports["create"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -70,7 +70,7 @@ exports["create"] = {
 
 exports["create (batch)"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -104,9 +104,53 @@ exports["create (batch)"] = {
 	}
 };
 
+exports["update (batch)"] = {
+	setUp: function (done) {
+		this.store = haro(null, {key: 'guid'});
+		done();
+	},
+	test: function (test) {
+		var self = this;
+
+		test.expect(14);
+		test.equal(this.store.total, 0, "Should be '0'");
+		test.equal(this.store.data.size, 0, "Should be '0'");
+		this.store.batch(data, "set").then(function () {
+			test.equal(self.store.total, 6, "Should be '6'");
+			test.equal(self.store.data.size, 6, "Should be '6'");
+			test.equal(self.store.registry.length, 6, "Should be '6'");
+			return self.store.batch(data, "set");
+		}, function (e) {
+			throw e;
+		}).then(function () {
+			test.equal(self.store.total, 6, "Should be '6'");
+			test.equal(self.store.data.size, 6, "Should be '6'");
+			test.equal(self.store.registry.length, 6, "Should be '6'");
+			test.equal(self.store.limit(2)[1][0], self.store.get(self.store.registry[1])[0], "Should be a match");
+			test.equal(self.store.limit(2, 2)[1][0], self.store.get(self.store.registry[3])[0], "Should be a match");
+			test.equal(self.store.limit(10, 5).length, 1, "Should be '1'");
+			test.equal(self.store.filter(function (i) {
+				return /decker/i.test(i.name);
+			}).length, 1, "Should be '1'");
+			test.equal(self.store.map(function (i) {
+				i.name = 'John Doe';
+				return i;
+			}).length, 6, "Should be '6'");
+			test.equal(self.store.map(function (i) {
+				i.name = 'John Doe';
+				return i;
+			})[0].name, 'John Doe', "Should be a match");
+			test.done();
+		}, function (e) {
+			console.log(e.stack);
+			test.done();
+		});
+	}
+};
+
 exports["read (valid)"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -129,7 +173,7 @@ exports["read (valid)"] = {
 
 exports["read (invalid)"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -185,7 +229,7 @@ exports["read (indexed)"] = {
 
 exports["read (toArray)"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -223,7 +267,7 @@ exports["read (toObject)"] = {
 
 exports["read (sort)"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -248,7 +292,7 @@ exports["read (sort)"] = {
 
 exports["read (sortBy)"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -266,7 +310,7 @@ exports["read (sortBy)"] = {
 
 exports["read (search - un-indexed)"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -310,7 +354,7 @@ exports["read (search - indexed)"] = {
 
 exports["update"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -336,7 +380,7 @@ exports["update"] = {
 
 exports["delete"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -362,7 +406,7 @@ exports["delete"] = {
 
 exports["delete (batch)"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
@@ -453,7 +497,7 @@ exports["offload (indexes)"] = {
 
 exports["override (indexes)"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		this.indexes = {
 			name: {
 				'Decker Merrill': ['cfbfe5d1-451d-47b1-96c4-8e8e83fe9cfd'],
@@ -507,7 +551,7 @@ exports["override (indexes)"] = {
 
 exports["override (records)"] = {
 	setUp: function (done) {
-		this.store = haro();
+		this.store = haro(null, {key: 'guid'});
 		done();
 	},
 	test: function (test) {
