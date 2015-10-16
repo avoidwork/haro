@@ -459,6 +459,48 @@ var store = haro();
 store.get('keyValue');
 ```
 
+**join(other, on[, type="inner"])**
+_Array_
+
+Joins `this` instance of `Haro` with another, on a field/property. Supports "inner", "left", & "right" joins. Resulting 
+composite records implement a `storeId_field` convention for fields/properties.
+
+```javascript
+var store1 = haro(null, {id: 'users', key: 'id', index: ['name', 'age']});
+var store2 = haro(null, {id: 'values', key: 'id', index: ['user', 'value']});
+
+// Data is added to both stores
+store1.set(null, {id: "abc", name: "jason", age: 35});
+store1.set(null, {id: "def", name: "jen", age: 31});
+
+// Creating a related record in `store2`
+store2.set(null, {id: 'ghi', user: store1.limit(1)[0][0], value: 40});
+
+// Join results
+store1.join(store2, "user", "inner").then(function (records) {
+  console.log(records);
+  // [{"users_id":"abc","users_name":"jason","users_age":35,"values_id":"ghi","values_user":"abc","values_value":40}]
+}, function (e) {
+  console.error(e.stack || e.message || e);
+});
+
+store1.join(store2, "user", "left").then(function (records) {
+  console.log(records);
+  // [{"users_id":"abc","users_name":"jason","users_age":35,"values_id":"ghi","values_user":"abc","values_value":40},
+  //  {"users_id":"def","users_name":"jen","users_age":31,"values_id":null,"values_user":null,"values_value":null}]
+}, function (e) {
+  console.error(e.stack || e.message || e);
+});
+
+store1.join(store2, "user", "right").then(function (records) {
+  console.log(records);
+  // [{"users_id":"def","users_name":"jen","users_age":31,"values_id":null,"values_user":null,"values_value":null}]
+}, function (e) {
+  console.error(e.stack || e.message || e);
+});
+
+```
+
 **keys()**
 _MapIterator_
 
