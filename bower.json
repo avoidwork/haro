@@ -1,6 +1,6 @@
 {
   "name": "haro",
-  "version": "1.7.8",
+  "version": "1.8.0",
   "homepage": "http://haro.rocks",
   "authors": [
     "Jason Mulligan <jason.mulligan@avoidwork.com>"
@@ -25,6 +25,9 @@
     "**/.*",
     "node_modules",
     "bower_components",
+    "lib/haro.es6.js",
+    "lib/haro.min.*",
+    "src",
     "test",
     "tests"
   ]

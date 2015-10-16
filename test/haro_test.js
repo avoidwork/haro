@@ -1,4 +1,5 @@
-var haro = require("../lib/haro"),
+var Promise = require("es6-promise").Promise,
+	haro = require("../lib/haro"),
 	data = require("./data.json"),
 	tenso = require("tenso"),
 	server;
@@ -347,6 +348,65 @@ exports["read (search - indexed)"] = {
 			test.equal(result2[0][1].name, "Decker Merrill", "Should be `Decker Merrill`");
 			test.done();
 		}, function () {
+			test.done();
+		});
+	}
+};
+
+exports["read (inner join)"] = {
+	setUp: function (done) {
+		this.store1 = haro([{id: "abc", name: "jason", age: 35}, {id: "def", name: "jen", age: 31}], {id: "users", key: "id", index: ["name", "age"]});
+		this.store2 = haro([{id: "ghi", user: "abc", value: 40}], {id: "values", key: "id", index: ["user", "value"]});
+		done();
+	},
+	test: function (test) {
+		test.expect(2);
+		this.store1.join(this.store2, "user", "inner").then(function (result) {
+			test.equal(result.length, "1", "Should be `1`");
+			test.equal(result[0].users_id, "abc", "Should be `abc`");
+			test.done();
+		}, function (e) {
+			console.error(e);
+			test.done();
+		});
+	}
+};
+
+exports["read (left join)"] = {
+	setUp: function (done) {
+		this.store1 = haro([{id: "abc", name: "jason", age: 35}, {id: "def", name: "jen", age: 31}], {id: "users", key: "id", index: ["name", "age"]});
+		this.store2 = haro([{id: "ghi", user: "abc", value: 40}], {id: "values", key: "id", index: ["user", "value"]});
+		done();
+	},
+	test: function (test) {
+		test.expect(4);
+		this.store1.join(this.store2, "user", "left").then(function (result) {
+			test.equal(result.length, "2", "Should be `2`");
+			test.equal(result[0].users_id, "abc", "Should be `abc`");
+			test.equal(result[1].users_id, "def", "Should be `def`");
+			test.equal(result[1].values_value, null, "Should be `null`");
+			test.done();
+		}, function (e) {
+			console.error(e);
+			test.done();
+		});
+	}
+};
+
+exports["read (right join)"] = {
+	setUp: function (done) {
+		this.store1 = haro([{id: "abc", name: "jason", age: 35}, {id: "def", name: "jen", age: 31}], {id: "users", key: "id", index: ["name", "age"]});
+		this.store2 = haro([{id: "ghi", user: "abc", value: 40}], {id: "values", key: "id", index: ["user", "value"]});
+		done();
+	},
+	test: function (test) {
+		test.expect(2);
+		this.store1.join(this.store2, "user", "right").then(function (result) {
+			test.equal(result.length, "1", "Should be `1`");
+			test.equal(result[0].users_id, "abc", "Should be `abc`");
+			test.done();
+		}, function (e) {
+			console.error(e);
 			test.done();
 		});
 	}

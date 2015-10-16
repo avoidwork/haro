@@ -204,18 +204,18 @@ class Haro {
 		return this.data.entries();
 	}
 
-	find (where) {
+	find (where, raw = false) {
 		let key = Object.keys(where).sort().join(this.delimiter),
 			value = keyIndex(key, where, this.delimiter),
 			result = [];
 
 		if (this.indexes.has(key)) {
 			(this.indexes.get(key).get(value) || new Set()).forEach(i => {
-				result.push(this.get(i));
+				result.push(this.get(i, raw));
 			});
 		}
 
-		return tuple.apply(tuple, result);
+		return !raw ? tuple.apply(tuple, result) : clone(result);
 	}
 
 	filter (fn) {
@@ -238,11 +238,11 @@ class Haro {
 		return this;
 	}
 
-	get (key) {
+	get (key, raw = false) {
 		let output;
 
 		if (this.data.has(key)) {
-			output = tuple(key, this.data.get(key));
+			output = !raw ? tuple(key, this.data.get(key)) : this.data.get(key);
 		}
 
 		return output;
@@ -250,6 +250,41 @@ class Haro {
 
 	has (key) {
 		return this.data.has(key);
+	}
+
+	join (other, on = this.key, type = "inner", where = {}) {
+		let defer = deferred();
+
+		if (other.total > 0) {
+			if (Object.keys(where).length > 0) {
+				Promise.all([
+					this.find(where, true),
+					other.find(where, true)
+				]).then(data => {
+					return data[0].length > 0 && data[1].length > 1 ? this.offload([[this.id, other.id], data[0], data[1], this.key, on, type], "join") : [];
+				}, function (e) {
+					throw e;
+				}).then(function (result) {
+					if (typeof result === "string") {
+						defer.reject(new Error(result));
+					} else {
+						defer.resolve(result);
+					}
+				}, defer.reject);
+			} else {
+				this.offload([[this.id, other.id], this.toArray(null, true), other.toArray(null, true), this.key, on, type], "join").then(function (result) {
+					if (typeof result === "string") {
+						defer.reject(new Error(result));
+					} else {
+						defer.resolve(result);
+					}
+				}, defer.reject);
+			}
+		} else {
+			defer.resolve([]);
+		}
+
+		return defer.promise;
 	}
 
 	keys () {
@@ -319,20 +354,35 @@ class Haro {
 
 	offload (data, cmd = "index", index = this.index) {
 		let defer = deferred(),
-			obj;
+			payload, obj;
 
 		if (this.worker) {
 			obj = this.useWorker(defer);
 
 			if (obj) {
-				obj.postMessage(JSON.stringify({
-					cmd: cmd,
-					index: index,
-					records: data,
-					key: this.key,
-					delimiter: this.delimiter,
-					pattern: this.pattern
-				}));
+				if (cmd === "index") {
+					payload = {
+						cmd: cmd,
+						index: index,
+						records: data,
+						key: this.key,
+						delimiter: this.delimiter,
+						pattern: this.pattern
+					};
+				}
+
+				if (cmd === "join") {
+					payload = {
+						cmd: cmd,
+						ids: data[0],
+						records: [data[1], data[2]],
+						key: data[3],
+						on: data[4],
+						type: data[5]
+					};
+				}
+
+				obj.postMessage(JSON.stringify(payload));
 			}
 		} else {
 			defer.reject(new Error(webWorkerError));

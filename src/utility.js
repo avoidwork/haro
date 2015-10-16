@@ -116,6 +116,17 @@ function createIndexes (records, indexes, key, delimiter, pattern) {
 	return result;
 }
 
+function each (arg, fn) {
+	let i = -1,
+		nth = arg.length;
+
+	while (++i < nth) {
+		if (fn(arg[i]) === false) {
+			break;
+		}
+	}
+}
+
 function iterate (obj, fn) {
 	if (obj instanceof Object) {
 		Object.keys(obj).forEach(function (i) {
@@ -151,19 +162,82 @@ function merge (a, b) {
 
 function onmessage (ev) {
 	let data = JSON.parse(ev.data),
-		records = data.records,
-		index = data.index,
 		cmd = data.cmd,
-		key = data.key,
-		delimiter = data.delimiter,
-		pattern = data.pattern,
 		result;
 
 	if (cmd === "index") {
-		result = createIndexes(records, index, key, delimiter, pattern);
+		result = createIndexes(data.records, data.index, data.key, data.delimiter, data.pattern);
+	}
+
+	if (cmd === "join") {
+		result = joinData(data.ids, data.records[0], data.records[1], data.key, data.on, data.type);
 	}
 
 	postMessage(JSON.stringify(result));
+}
+
+function joinData (id, a, b, key, on, type = "inner") {
+	let error = false,
+		result = [],
+		errorMsg;
+
+	function join (left, right, ids, include = false, reverse = false) {
+		let keys = Object.keys(right[0]),
+			fn;
+
+		fn = !reverse ? function (x, i) {
+			return x[on] === i[key];
+		} : function (x, i) {
+			return x[key] === i[on];
+		};
+
+		each(left, function (i) {
+			let comp = {},
+				c;
+
+			c = right.filter(function (x) {
+				return fn(x, i);
+			});
+
+			if (c.length > 1) {
+				error = true;
+				errorMsg = "More than one record found on " + i[on];
+				return false;
+			} else if (c.length === 1) {
+				[i, c[0]].forEach(function (x, idx) {
+					iterate(x, function (v, k) {
+						comp[ids[idx] + "_" + k] = v;
+					});
+				});
+			} else if (include) {
+				iterate(i, function (v, k) {
+					comp[ids[0] + "_" + k] = v;
+				});
+
+				keys.forEach(function (k) {
+					comp[ids[1] + "_" + k] = null;
+				});
+			}
+
+			if (Object.keys(comp).length > 0) {
+				result.push(comp);
+			}
+		});
+	}
+
+	if (type === "inner") {
+		join(a, b, id);
+	}
+
+	if (type === "left") {
+		join(a, b, id, true);
+	}
+
+	if (type === "right") {
+		join(b, a, clone(id).reverse(), true, true);
+	}
+
+	return !error ? result : errorMsg;
 }
 
 function patch (ogdata = {}, data = {}, key = "", overwrite = false) {
