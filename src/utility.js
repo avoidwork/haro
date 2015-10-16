@@ -181,15 +181,22 @@ function joinData (id, a, b, key, on, type = "inner") {
 		result = [],
 		errorMsg;
 
-	function join (left, right, ids, include) {
-		let keys = Object.keys(right[0]);
+	function join (left, right, ids, include = false, reverse = false) {
+		let keys = Object.keys(right[0]),
+			fn;
+
+		fn = !reverse ? function (x, i) {
+			return x[on] === i[key];
+		} : function (x, i) {
+			return x[key] === i[on];
+		};
 
 		each(left, function (i) {
 			let comp = {},
 				c;
 
 			c = right.filter(function (x) {
-				return x[on] === i[key];
+				return fn(x, i);
 			});
 
 			if (c.length > 1) {
@@ -219,7 +226,7 @@ function joinData (id, a, b, key, on, type = "inner") {
 	}
 
 	if (type === "inner") {
-		join(a, b, id, false);
+		join(a, b, id);
 	}
 
 	if (type === "left") {
@@ -227,7 +234,7 @@ function joinData (id, a, b, key, on, type = "inner") {
 	}
 
 	if (type === "right") {
-		join(b, a, clone(id).reverse(), true);
+		join(b, a, clone(id).reverse(), true, true);
 	}
 
 	return !error ? result : errorMsg;
