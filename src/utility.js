@@ -178,16 +178,17 @@ function onmessage (ev) {
 
 function joinData (id, a, b, key, on, type = "inner") {
 	let error = false,
-		errorMsg, result;
+		result = [],
+		errorMsg;
 
-	if (type === "inner") {
-		result = [];
+	function join (left, right, ids, include) {
+		let keys = Object.keys(right[0]);
 
-		each(a, function (i) {
+		each(left, function (i) {
 			let comp = {},
 				c;
 
-			c = b.filter(function (x) {
+			c = right.filter(function (x) {
 				return x[on] === i[key];
 			});
 
@@ -198,25 +199,33 @@ function joinData (id, a, b, key, on, type = "inner") {
 			} else if (c.length === 1) {
 				[i, c[0]].forEach(function (x, idx) {
 					iterate(x, function (v, k) {
-						comp[id[idx] + "_" + k] = v;
+						comp[ids[idx] + "_" + k] = v;
 					});
 				});
+			} else if (include) {
+				iterate(i, function (v, k) {
+					comp[ids[0] + "_" + k] = v;
+				});
 
-				result.push(comp);
+				keys.forEach(function (k) {
+					comp[ids[1] + "_" + k] = null;
+				});
 			}
+
+			result.push(comp);
 		});
 	}
 
-	if (type === "outer") {
-		result = [];
+	if (type === "inner") {
+		join(a, b, id, false);
 	}
 
 	if (type === "left") {
-		result = [];
+		join(a, b, id, true);
 	}
 
 	if (type === "right") {
-		result = [];
+		join(b, a, clone(id).reverse(), true);
 	}
 
 	return !error ? result : errorMsg;
