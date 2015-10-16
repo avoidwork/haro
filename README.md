@@ -494,7 +494,7 @@ store1.join(store2, "user", "left").then(function (records) {
 
 store1.join(store2, "user", "right").then(function (records) {
   console.log(records);
-  // [{"users_id":"def","users_name":"jen","users_age":31,"values_id":null,"values_user":null,"values_value":null}]
+  // [{"values_id":"ghi","values_user":"abc","values_value":40,"users_id":null,"users_name":null,"users_age":null}]
 }, function (e) {
   console.error(e.stack || e.message || e);
 });

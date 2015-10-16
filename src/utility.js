@@ -212,7 +212,9 @@ function joinData (id, a, b, key, on, type = "inner") {
 				});
 			}
 
-			result.push(comp);
+			if (Object.keys(comp).length > 0) {
+				result.push(comp);
+			}
 		});
 	}
 
