@@ -61,9 +61,9 @@ module.exports = function (grunt) {
 						"clone",
 						"createIndexes",
 						"each",
+						"iterate",
 						"keyIndex",
 						"joinData",
-						"merge",
 						"setIndexValue",
 						"setIndex"
 					]

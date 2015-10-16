@@ -8,9 +8,9 @@ function factory (data = null, config = {}, indexes = []) {
 			clone.toString(),
 			createIndexes.toString(),
 			each.toString(),
+			iterate.toString(),
 			joinData.toString(),
 			keyIndex.toString(),
-			merge.toString(),
 			setIndexValue.toString(),
 			setIndex.toString(),
 			(!server ? "" : "self.") + "onmessage = " + onmessage.toString() + ";"

@@ -170,13 +170,13 @@ function onmessage (ev) {
 	}
 
 	if (cmd === "join") {
-		result = joinData(data.records[0], data.records[1], data.key, data.on, data.type);
+		result = joinData(data.ids, data.records[0], data.records[1], data.key, data.on, data.type);
 	}
 
 	postMessage(JSON.stringify(result));
 }
 
-function joinData (a, b, key, on, type = "inner") {
+function joinData (id, a, b, key, on, type = "inner") {
 	let error = false,
 		errorMsg, result;
 
@@ -184,7 +184,10 @@ function joinData (a, b, key, on, type = "inner") {
 		result = [];
 
 		each(a, function (i) {
-			let c = b.filter(function (x) {
+			let comp = {},
+				c;
+
+			c = b.filter(function (x) {
 				return x[on] === i[key];
 			});
 
@@ -193,7 +196,13 @@ function joinData (a, b, key, on, type = "inner") {
 				errorMsg = "More than one record found on " + i[on];
 				return false;
 			} else if (c.length === 1) {
-				result.push(merge(i, c[0]));
+				[i, c[0]].forEach(function (x, idx) {
+					iterate(x, function (v, k) {
+						comp[id[idx] + "_" + k] = v;
+					});
+				});
+
+				result.push(comp);
 			}
 		});
 	}

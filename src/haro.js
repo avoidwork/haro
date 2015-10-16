@@ -261,7 +261,7 @@ class Haro {
 					this.find(where, true),
 					other.find(where, true)
 				]).then(data => {
-					return data[0].length > 0 && data[1].length > 1 ? this.offload([data[0], data[1], this.key, on, type], "join") : [];
+					return data[0].length > 0 && data[1].length > 1 ? this.offload([[this.id, other.id], data[0], data[1], this.key, on, type], "join") : [];
 				}, function (e) {
 					throw e;
 				}).then(function (result) {
@@ -272,7 +272,7 @@ class Haro {
 					}
 				}, defer.reject);
 			} else {
-				this.offload([this.toArray(null, true), other.toArray(null, true), this.key, on, type], "join").then(function (result) {
+				this.offload([[this.id, other.id], this.toArray(null, true), other.toArray(null, true), this.key, on, type], "join").then(function (result) {
 					if (typeof result === "string") {
 						defer.reject(new Error(result));
 					} else {
@@ -374,10 +374,11 @@ class Haro {
 				if (cmd === "join") {
 					payload = {
 						cmd: cmd,
-						records: [data[0], data[1]],
-						key: data[2],
-						on: data[3],
-						type: data[4]
+						ids: data[0],
+						records: [data[1], data[2]],
+						key: data[3],
+						on: data[4],
+						type: data[5]
 					};
 				}
 
