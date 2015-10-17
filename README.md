@@ -466,15 +466,8 @@ Joins `this` instance of `Haro` with another, on a field/property. Supports "inn
 composite records implement a `storeId_field` convention for fields/properties.
 
 ```javascript
-var store1 = haro(null, {id: 'users', key: 'id', index: ['name', 'age']});
-var store2 = haro(null, {id: 'values', key: 'id', index: ['user', 'value']});
-
-// Data is added to both stores
-store1.set(null, {id: "abc", name: "jason", age: 35});
-store1.set(null, {id: "def", name: "jen", age: 31});
-
-// Creating a related record in `store2`
-store2.set(null, {id: 'ghi', user: store1.limit(1)[0][0], value: 40});
+var store1 = haro([{id: "abc", name: "jason", age: 35}, {id: "def", name: "jen", age: 31}], {id: 'users', key: 'id', index: ['name', 'age']});
+var store2 = haro([{id: 'ghi', user: "abc", value: 40}], {id: 'values', key: 'id', index: ['user', 'value']});
 
 // Join results
 store1.join(store2, "user", "inner").then(function (records) {
