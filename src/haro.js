@@ -90,7 +90,13 @@ class Haro {
 			next();
 		}
 
-		return defer.promise;
+		return defer.promise.then(arg => {
+			this.onbatch(arg);
+
+			return arg;
+		}, e => {
+			this.onerror("batch", e);
+		});
 	}
 
 	clear () {
@@ -99,12 +105,13 @@ class Haro {
 		this.data.clear();
 		this.indexes.clear();
 		this.versions.clear();
+		this.reindex().onclear();
 
 		if (this.logging) {
 			console.log("Cleared", this.id);
 		}
 
-		return this.reindex();
+		return this;
 	}
 
 	cmd (type, ...args) {
@@ -154,7 +161,7 @@ class Haro {
 				});
 			}
 
-			defer.resolve();
+			defer.resolve(key);
 		};
 
 		if (this.data.has(key)) {
@@ -185,7 +192,13 @@ class Haro {
 			defer.reject(new Error("Record not found"));
 		}
 
-		return defer.promise;
+		return defer.promise.then(arg => {
+			this.ondelete(arg);
+
+			return arg;
+		}, e => {
+			this.onerror("delete", e);
+		});
 	}
 
 	dump (type = "records") {
@@ -390,6 +403,13 @@ class Haro {
 
 		return defer.promise;
 	}
+
+	onbatch () {}
+	onclear () {}
+	ondelete () {}
+	onerror () {}
+	onset () {}
+	onsync () {}
 
 	override (data, type = "records", fn = undefined) {
 		let defer = deferred();
@@ -639,7 +659,13 @@ class Haro {
 			next();
 		}
 
-		return defer.promise;
+		return defer.promise.then(arg => {
+			this.onset(arg);
+
+			return arg;
+		}, e => {
+			this.onerror("set", e);
+		});
 	}
 
 	setUri (uri, clear = false) {
@@ -740,7 +766,13 @@ class Haro {
 			defer.reject(e[0] || e);
 		});
 
-		return defer.promise;
+		return defer.promise.then(arg => {
+			this.onsync(arg);
+
+			return arg;
+		}, e => {
+			this.onerror("sync", e);
+		});
 	}
 
 	toArray (data, frozen = true) {

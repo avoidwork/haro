@@ -240,6 +240,36 @@ _Boolean_
 
 Logs persistent storage messages to `console`, default is `true`.
 
+**onbatch**
+_Function_
+
+Event listener which receives a `Tuple` of records after a batch set, receives a `Tuple` of `Tuples`.
+
+**onclear**
+_Function_
+
+Event listener for clearing the data store.
+
+**ondelete**
+_Function_
+
+Event listener for when a record is deleted, receives the record key.
+
+**onerror**
+_Function_
+
+Event listener for errors which occur during common operations, receives two arguments ['type', `Error`]
+
+**onset**
+_Function_
+
+Event listener for when a record is set, receives a `Tuple`.
+
+**onsync**
+_Function_
+
+Event listener for synchronizing with an API, receives a `Tuple` of `Tuples`.
+
 **source**
 _String_
 
