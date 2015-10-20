@@ -96,6 +96,7 @@ class Haro {
 			return arg;
 		}, e => {
 			this.onerror("batch", e);
+			throw e;
 		});
 	}
 
@@ -198,6 +199,7 @@ class Haro {
 			return arg;
 		}, e => {
 			this.onerror("delete", e);
+			throw e;
 		});
 	}
 
@@ -665,6 +667,7 @@ class Haro {
 			return arg;
 		}, e => {
 			this.onerror("set", e);
+			throw e;
 		});
 	}
 
@@ -772,6 +775,7 @@ class Haro {
 			return arg;
 		}, e => {
 			this.onerror("sync", e);
+			throw e;
 		});
 	}
 
