@@ -243,7 +243,7 @@ Logs persistent storage messages to `console`, default is `true`.
 **onbatch**
 _Function_
 
-Event listener which receives a `Tuple` of records after a batch set, receives a `Tuple` of `Tuples`.
+Event listener for a batch operation, receives two arguments ['type', `Tuple`].
 
 **onclear**
 _Function_

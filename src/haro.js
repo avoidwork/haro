@@ -91,7 +91,7 @@ class Haro {
 		}
 
 		return defer.promise.then(arg => {
-			this.onbatch(arg);
+			this.onbatch(type, arg);
 
 			return arg;
 		}, e => {
