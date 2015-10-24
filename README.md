@@ -508,6 +508,13 @@ store1.join(store2, "user", "inner").then(function (records) {
   console.error(e.stack || e.message || e);
 });
 
+store1.join(store2, "user", "inner", [{age: 31}]).then(function (records) {
+  console.log(records);
+  // []
+}, function (e) {
+  console.error(e.stack || e.message || e);
+});
+
 store1.join(store2, "user", "left").then(function (records) {
   console.log(records);
   // [{"users_id":"abc","users_name":"jason","users_age":35,"values_id":"ghi","values_user":"abc","values_value":40},
