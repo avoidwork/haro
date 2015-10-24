@@ -267,34 +267,28 @@ class Haro {
 		return this.data.has(key);
 	}
 
-	join (other, on = this.key, type = "inner", where = {}) {
-		let defer = deferred();
+	join (other, on = this.key, type = "inner", where = []) {
+		let defer = deferred(),
+			promise;
 
 		if (other.total > 0) {
-			if (Object.keys(where).length > 0) {
-				Promise.all([
-					this.find(where, true),
-					other.find(where, true)
-				]).then(data => {
-					return data[0].length > 0 && data[1].length > 1 ? this.offload([[this.id, other.id], data[0], data[1], this.key, on, type], "join") : [];
-				}, function (e) {
-					throw e;
-				}).then(function (result) {
-					if (typeof result === "string") {
-						defer.reject(new Error(result));
-					} else {
-						defer.resolve(result);
-					}
-				}, defer.reject);
+			if (where.length > 0) {
+				if (!where[1]) {
+					promise = this.offload([[this.id, other.id], this.find(where[0], true), other.toArray(null, true), this.key, on, type], "join");
+				} else {
+					promise = this.offload([[this.id, other.id], this.find(where, true), other.find(where, true), this.key, on, type], "join");
+				}
 			} else {
-				this.offload([[this.id, other.id], this.toArray(null, true), other.toArray(null, true), this.key, on, type], "join").then(function (result) {
-					if (typeof result === "string") {
-						defer.reject(new Error(result));
-					} else {
-						defer.resolve(result);
-					}
-				}, defer.reject);
+				promise = this.offload([[this.id, other.id], this.toArray(null, true), other.toArray(null, true), this.key, on, type], "join");
 			}
+
+			promise.then(function (result) {
+				if (typeof result === "string") {
+					defer.reject(new Error(result));
+				} else {
+					defer.resolve(result);
+				}
+			}, defer.reject);
 		} else {
 			defer.resolve([]);
 		}

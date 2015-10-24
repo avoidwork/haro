@@ -489,11 +489,12 @@ var store = haro();
 store.get('keyValue');
 ```
 
-**join(other, on[, type="inner"])**
+**join(other, on[, type="inner", where=[]])**
 _Array_
 
-Joins `this` instance of `Haro` with another, on a field/property. Supports "inner", "left", & "right" joins. Resulting 
-composite records implement a `storeId_field` convention for fields/properties.
+Joins `this` instance of `Haro` with another, on a field/property. Supports "inner", "left", & "right" JOINs. Resulting 
+composite records implement a `storeId_field` convention for fields/properties. The optional forth parameter is an Array 
+which can be used for WHERE clauses, similar to `find()`, `[store1, store2]`. 
 
 ```javascript
 var store1 = haro([{id: "abc", name: "jason", age: 35}, {id: "def", name: "jen", age: 31}], {id: 'users', key: 'id', index: ['name', 'age']});

@@ -372,6 +372,24 @@ exports["read (inner join)"] = {
 	}
 };
 
+exports["read (inner join - where)"] = {
+	setUp: function (done) {
+		this.store1 = haro([{id: "abc", name: "jason", age: 35}, {id: "def", name: "jen", age: 31}], {id: "users", key: "id", index: ["name", "age"]});
+		this.store2 = haro([{id: "ghi", user: "abc", value: 40}], {id: "values", key: "id", index: ["user", "value"]});
+		done();
+	},
+	test: function (test) {
+		test.expect(1);
+		this.store1.join(this.store2, "user", "inner", [{age:31}]).then(function (result) {
+			test.equal(result.length, "0", "Should be `0`");
+			test.done();
+		}, function (e) {
+			console.error(e);
+			test.done();
+		});
+	}
+};
+
 exports["read (left join)"] = {
 	setUp: function (done) {
 		this.store1 = haro([{id: "abc", name: "jason", age: 35}, {id: "def", name: "jen", age: 31}], {id: "users", key: "id", index: ["name", "age"]});
