@@ -273,7 +273,7 @@ class Haro {
 
 		if (other.total > 0) {
 			if (where.length > 0) {
-				promise = this.offload([[this.id, other.id], this.find(where[0], true), !where[1] ? other.toArray(null, true) : other.find(where, true), this.key, on, type], "join");
+				promise = this.offload([[this.id, other.id], this.find(where[0], true), !where[1] ? other.toArray(null, true) : other.find(where[1], true), this.key, on, type], "join");
 			} else {
 				promise = this.offload([[this.id, other.id], this.toArray(null, true), other.toArray(null, true), this.key, on, type], "join");
 			}
