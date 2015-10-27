@@ -4,25 +4,25 @@ function cast (input) {
 	switch (true) {
 		case input instanceof Map:
 			result = {};
-			input.forEach((value, key) => {
+			input.forEach(function (value, key) {
 				result[key] = cast(value);
 			});
 			break;
 		case input instanceof Set:
 			result = [];
-			input.forEach(i => {
+			input.forEach(function (i) {
 				result.push(cast(i));
 			});
 			break;
 		case input instanceof Array:
 			result = new Set();
-			input.forEach(i => {
+			input.forEach(function (i) {
 				result.add(cast(i));
 			});
 			break;
 		case input instanceof Object:
 			result = new Map();
-			Object.keys(input).forEach(i => {
+			Object.keys(input).forEach(function (i) {
 				result.set(i, cast(input[i]));
 			});
 			break;
