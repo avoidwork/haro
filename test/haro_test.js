@@ -192,6 +192,25 @@ exports["read (invalid)"] = {
 	}
 };
 
+exports["read (raw/immutable)"] = {
+	setUp: function (done) {
+		this.store = haro(null, {key: 'guid'});
+		done();
+	},
+	test: function (test) {
+		var self = this;
+
+		test.expect(1);
+		this.store.set(null, data[0]).then(function (arg) {
+			self.store.get(arg[0], true).guid += 'a';
+			test.equal(self.store.get(arg[0])[1].guid, arg[0], "Should match");
+			test.done();
+		}, function () {
+			test.done();
+		});
+	}
+};
+
 exports["read (indexed)"] = {
 	setUp: function (done) {
 		this.store = haro(null, {index: ["name", "age", "age|gender"]});

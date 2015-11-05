@@ -257,7 +257,7 @@ class Haro {
 		let output;
 
 		if (this.data.has(key)) {
-			output = !raw ? tuple(key, this.data.get(key)) : this.data.get(key);
+			output = !raw ? tuple(key, this.data.get(key)) : clone(this.data.get(key));
 		}
 
 		return output;
