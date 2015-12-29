@@ -91,9 +91,11 @@ class Haro {
 		}
 
 		return defer.promise.then(arg => {
-			this.onbatch(type, arg);
+			let larg = tuple.apply(tuple, arg);
 
-			return arg;
+			this.onbatch(type, larg);
+
+			return larg;
 		}, e => {
 			this.onerror("batch", e);
 			throw e;
@@ -760,9 +762,11 @@ class Haro {
 		});
 
 		return defer.promise.then(arg => {
-			this.onsync(arg);
+			let larg = tuple.apply(tuple, arg);
 
-			return arg;
+			this.onsync(larg);
+
+			return larg;
 		}, e => {
 			this.onerror("sync", e);
 			throw e;
