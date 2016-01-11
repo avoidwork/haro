@@ -1,8 +1,5 @@
 {
 	"parser": "babel-eslint",
-	"rules": {
-		"strict": 0
-	},
 	"env": {
 		"browser": true,
 		"node": true,
@@ -165,7 +162,7 @@
 		"space-return-throw-case": [2],
 		"space-unary-ops": [2, { "words": true, "nonwords": false }],
 		"spaced-line-comment": [0, "always"],
-		"strict": [1],
+		"strict": [0],
 		"use-isnan": [2],
 		"valid-jsdoc": [0],
 		"valid-typeof": [2],
