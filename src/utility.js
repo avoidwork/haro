@@ -138,42 +138,23 @@ function iterate (obj, fn) {
 }
 
 function merge (a, b) {
-	let c = a !== undefined ? clone(a) : a,
-		d = b !== undefined ? clone(b) : b;
-
-	if ((c instanceof Object) && (d instanceof Object)) {
-		Object.keys(d).forEach(function (i) {
-			if ((c[i] instanceof Object) && (d[i] instanceof Object)) {
-				c[i] = merge(c[i], d[i]);
-			} else if ((c[i] instanceof Array) && (d[i] instanceof Array)) {
-				c[i] = c[i].concat(d[i]);
+	if (a instanceof Object && b instanceof Object) {
+		Object.keys(b).forEach(function (i) {
+			if (a[i] instanceof Object && b[i] instanceof Object) {
+				a[i] = merge(a[i], b[i]);
+			} else if (a[i] instanceof Array && b[i] instanceof Array) {
+				a[i] = a[i].concat(b[i]);
 			} else {
-				c[i] = d[i];
+				a[i] = b[i];
 			}
 		});
-	} else if ((c instanceof Array) && (d instanceof Array)) {
-		c = c.concat(d);
+	} else if (a instanceof Array && b instanceof Array) {
+		a = a.concat(b);
 	} else {
-		c = d;
+		a = b;
 	}
 
-	return c;
-}
-
-function onmessage (ev) {
-	let data = JSON.parse(ev.data),
-		cmd = data.cmd,
-		result;
-
-	if (cmd === "index") {
-		result = createIndexes(data.records, data.index, data.key, data.delimiter, data.pattern);
-	}
-
-	if (cmd === "join") {
-		result = joinData(data.ids, data.records[0], data.records[1], data.key, data.on, data.type);
-	}
-
-	postMessage(JSON.stringify(result));
+	return a;
 }
 
 function joinData (id, a, b, key, on, type = "inner") {
@@ -240,6 +221,22 @@ function joinData (id, a, b, key, on, type = "inner") {
 	return !error ? result : errorMsg;
 }
 
+function onmessage (ev) {
+	let data = JSON.parse(ev.data),
+		cmd = data.cmd,
+		result;
+
+	if (cmd === "index") {
+		result = createIndexes(data.records, data.index, data.key, data.delimiter, data.pattern);
+	}
+
+	if (cmd === "join") {
+		result = joinData(data.ids, data.records[0], data.records[1], data.key, data.on, data.type);
+	}
+
+	postMessage(JSON.stringify(result));
+}
+
 function patch (ogdata = {}, data = {}, key = "", overwrite = false) {
 	let result = [];
 
@@ -263,7 +260,7 @@ function patch (ogdata = {}, data = {}, key = "", overwrite = false) {
 }
 
 function s () {
-	return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+	return ((Math.random() + 1) * 0x10000 | 0).toString(16).substring(1);
 }
 
 function setIndexValue (index, key, value) {
@@ -305,5 +302,5 @@ function toObjekt (arg) {
 }
 
 function uuid () {
-	return (s() + s() + "-" + s() + "-4" + s().substr(0, 3) + "-" + r[Math.floor(Math.random() * 4)] + s().substr(0, 3) + "-" + s() + s() + s());
+	return s() + s() + "-" + s() + "-4" + s().substr(0, 3) + "-" + r[Math.floor(Math.random() * 4)] + s().substr(0, 3) + "-" + s() + s() + s();
 }

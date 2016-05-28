@@ -442,7 +442,7 @@ store.filter(function (value) {
 });
 ```
 
-**find(where)**
+**find(where[, raw=false])**
 _Tuple_
 
 Returns a `Tuple` of double `Tuples` with found by indexed values matching the `where`.
@@ -487,6 +487,20 @@ var store = haro();
 // Data is added
 
 store.get('keyValue');
+```
+
+**has(key)**
+_Boolean_
+
+Returns a `Boolean` indicating if the data store contains `key`.
+
+Example of checking for a record with a known primary key value:
+```javascript
+var store = haro();
+
+// Data is added
+
+store.has('keyValue'); // true or false
 ```
 
 **join(other, on[, type="inner", where=[]])**
@@ -691,7 +705,7 @@ _Promise_
 
 Saves the DataStore to persistent storage.
 
-**search(arg[, index=this.index])**
+**search(arg[, index=this.index, raw=false])**
 _Tuple_
 
 Returns a `Tuple` of double `Tuples` with the shape `[key, value]` of records found matching `arg`.
@@ -942,5 +956,5 @@ store.batch(data, 'set').then(function (records) {
 ```
 
 ## License
-Copyright (c) 2015 Jason Mulligan
+Copyright (c) 2016 Jason Mulligan
 Licensed under the BSD-3 license

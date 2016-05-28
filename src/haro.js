@@ -139,7 +139,7 @@ class Haro {
 			if (index > -1) {
 				if (index === 0) {
 					this.registry.shift();
-				} else if (index === (this.registry.length - 1)) {
+				} else if (index === this.registry.length - 1) {
 					this.registry.pop();
 				} else {
 					this.registry.splice(index, 1);
@@ -159,7 +159,7 @@ class Haro {
 					}
 				}, e => {
 					if (this.logging) {
-						console.error("Error deleting", key, "from persistent storage:", (e.message || e.stack || e));
+						console.error("Error deleting", key, "from persistent storage:", e.message || e.stack || e);
 					}
 				});
 			}
@@ -342,7 +342,7 @@ class Haro {
 			return batch ? this.batch(arg, "set", true) : this.set(key, arg, true, true, true);
 		}, e => {
 			if (this.logging) {
-				console.error("Error loading", id, "from", type, "persistent storage:", (e.message || e.stack || e));
+				console.error("Error loading", id, "from", type, "persistent storage:", e.message || e.stack || e);
 			}
 
 			throw e;
@@ -494,14 +494,14 @@ class Haro {
 			return arg;
 		}, e => {
 			if (this.logging) {
-				console.error("Error saving ", this.id, "to", type, "persistent storage:", (e.message || e.stack || e));
+				console.error("Error saving ", this.id, "to", type, "persistent storage:", e.message || e.stack || e);
 			}
 
 			throw e;
 		});
 	}
 
-	search (value, index) {
+	search (value, index, raw = false) {
 		let result = [],
 			fn = typeof value === "function",
 			rgex = value && typeof value.test === "function",
@@ -529,7 +529,7 @@ class Haro {
 								lset.forEach(key => {
 									if (!seen.has(key)) {
 										seen.add(key);
-										result.push(this.get(key));
+										result.push(this.get(key, raw));
 									}
 								});
 								break;
@@ -541,7 +541,7 @@ class Haro {
 			});
 		}
 
-		return tuple.apply(tuple, result);
+		return !raw ? tuple.apply(tuple, result) : clone(result);
 	}
 
 	set (key, data, batch = false, override = false, lload = false) {
@@ -594,7 +594,7 @@ class Haro {
 					}
 				}, e => {
 					if (this.logging) {
-						console.error("Error saving", lkey, "to persistent storage:", (e.message || e.stack || e));
+						console.error("Error saving", lkey, "to persistent storage:", e.message || e.stack || e);
 					}
 				});
 			}
@@ -860,7 +860,7 @@ class Haro {
 			return arg;
 		}, e => {
 			if (this.logging) {
-				console.error("Error unloading", id, "from", type, "persistent storage:", (e.message || e.stack || e));
+				console.error("Error unloading", id, "from", type, "persistent storage:", e.message || e.stack || e);
 			}
 
 			throw e;
