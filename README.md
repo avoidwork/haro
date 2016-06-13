@@ -475,7 +475,7 @@ store.set(null, {abc: true}).then(function (rec) {
 });
 ```
 
-**get(key)**
+**get(key[, raw=false])**
 _Tuple_
 
 Gets the record as a double `Tuple` with the shape `[key, value]`.
@@ -504,7 +504,7 @@ store.has('keyValue'); // true or false
 ```
 
 **join(other, on[, type="inner", where=[]])**
-_Array_
+_Promise_
 
 Joins `this` instance of `Haro` with another, on a field/property. Supports "inner", "left", & "right" JOINs. Resulting 
 composite records implement a `storeId_field` convention for fields/properties. The optional forth parameter is an Array 
