@@ -80,7 +80,7 @@ class Haro {
 				this.request(concatURI(this.uri, null), {
 					method: "patch",
 					body: JSON.stringify(data)
-				}).then(function () {
+				}).then(() => {
 					next();
 				}, defer.reject);
 			} else {
@@ -238,7 +238,7 @@ class Haro {
 	filter (fn) {
 		let result = [];
 
-		this.forEach(function (value, key) {
+		this.forEach((value, key) => {
 			if (fn(value, key) === true) {
 				result.push(tuple(key, value));
 			}
@@ -248,7 +248,7 @@ class Haro {
 	}
 
 	forEach (fn, ctx) {
-		this.data.forEach(function (value, key) {
+		this.data.forEach((value, key) => {
 			fn(clone(value), clone(key));
 		}, ctx);
 
@@ -280,7 +280,7 @@ class Haro {
 				promise = this.offload([[this.id, other.id], this.toArray(null, true), other.toArray(null, true), this.key, on, type], "join");
 			}
 
-			promise.then(function (result) {
+			promise.then(result => {
 				if (typeof result === "string") {
 					defer.reject(new Error(result));
 				} else {
@@ -352,7 +352,7 @@ class Haro {
 	map (fn) {
 		let result = [];
 
-		this.forEach(function (value, key) {
+		this.forEach((value, key) => {
 			result.push(fn(value, key));
 		});
 
@@ -460,25 +460,25 @@ class Haro {
 
 		cfg.method = cfg.method.toUpperCase();
 
-		fetch(input, cfg).then(function (res) {
+		fetch(input, cfg).then(res => {
 			let status = res.status,
 				headers;
 
 			if (res.headers._headers) {
 				headers = {};
-				Object.keys(res.headers._headers).forEach(function (i) {
+				Object.keys(res.headers._headers).forEach(i => {
 					headers[i] = res.headers._headers[i].join(", ");
 				});
 			} else {
 				headers = toObjekt(res.headers);
 			}
 
-			res[res.headers.get("content-type").indexOf("application/json") > -1 ? "json" : "text"]().then(function (arg) {
+			res[res.headers.get("content-type").indexOf("application/json") > -1 ? "json" : "text"]().then(arg => {
 				defer[status < 200 || status >= 400 ? "reject" : "resolve"](tuple(arg, status, headers));
-			}, function (e) {
+			}, e => {
 				defer.reject(tuple(e.message, status, headers));
 			});
-		}, function (e) {
+		}, e => {
 			defer.reject(tuple(e.message, 0, {}));
 		});
 
@@ -557,7 +557,7 @@ class Haro {
 			if (lkey === null) {
 				if (this.key) {
 					if (this.source) {
-						this.source.split(".").forEach(function (i) {
+						this.source.split(".").forEach(i => {
 							xdata = xdata[i] || {};
 						});
 					}
@@ -634,9 +634,7 @@ class Haro {
 						this.request(luri, {
 							method: method,
 							body: JSON.stringify(ldata)
-						}).then(next, function (err) {
-							defer.reject(err);
-						});
+						}).then(next, defer.reject);
 					} else {
 						defer.reject(e);
 					}
@@ -645,9 +643,7 @@ class Haro {
 				this.request(luri, {
 					method: method,
 					body: JSON.stringify(ldata)
-				}).then(next, function (e) {
-					defer.reject(e);
-				});
+				}).then(next, defer.reject);
 			}
 		} else {
 			next();
@@ -681,7 +677,7 @@ class Haro {
 		let result;
 
 		if (frozen) {
-			result = Object.freeze(this.toArray(null, false).sort(fn).map(function (i) {
+			result = Object.freeze(this.toArray(null, false).sort(fn).map(i => {
 				return Object.freeze(i);
 			}));
 		} else {
@@ -724,7 +720,7 @@ class Haro {
 		});
 
 		if (deferreds.length > 0) {
-			Promise.all(deferreds).then(function () {
+			Promise.all(deferreds).then(() => {
 				defer.resolve(true);
 			}, defer.reject);
 		} else {
@@ -744,7 +740,7 @@ class Haro {
 
 			if (this.source) {
 				try {
-					this.source.split(".").forEach(function (i) {
+					this.source.split(".").forEach(i => {
 						data = data[i];
 					});
 				} catch (e) {
@@ -757,7 +753,7 @@ class Haro {
 			}
 
 			this.batch(data, "set").then(defer.resolve, defer.reject);
-		}, function (e) {
+		}, e => {
 			defer.reject(e[0] || e);
 		});
 
@@ -829,16 +825,16 @@ class Haro {
 		let func;
 
 		if (frozen) {
-			func = function (arg) {
+			func = arg => {
 				return arg;
 			};
 		} else {
-			func = function (arg) {
+			func = arg => {
 				return clone(arg);
 			};
 		}
 
-		return func(!data ? toObjekt(this) : data.reduce(function (a, b) {
+		return func(!data ? toObjekt(this) : data.reduce((a, b) => {
 			a[b[0]] = b[1];
 
 			return a;
@@ -880,12 +876,12 @@ class Haro {
 
 		if (this.worker) {
 			obj = new Worker(this.worker);
-			obj.onerror = function (err) {
+			obj.onerror = err => {
 				defer.reject(err);
 				obj.terminate();
 			};
 
-			obj.onmessage = function (ev) {
+			obj.onmessage = ev => {
 				defer.resolve(JSON.parse(ev.data));
 				obj.terminate();
 			};

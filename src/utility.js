@@ -4,25 +4,25 @@ function cast (input) {
 	switch (true) {
 		case input instanceof Map:
 			result = {};
-			input.forEach(function (value, key) {
+			input.forEach((value, key) => {
 				result[key] = cast(value);
 			});
 			break;
 		case input instanceof Set:
 			result = [];
-			input.forEach(function (i) {
+			input.forEach(i => {
 				result.push(cast(i));
 			});
 			break;
 		case input instanceof Array:
 			result = new Set();
-			input.forEach(function (i) {
+			input.forEach(i => {
 				result.add(cast(i));
 			});
 			break;
 		case input instanceof Object:
 			result = new Map();
-			Object.keys(input).forEach(function (i) {
+			Object.keys(input).forEach(i => {
 				result.set(i, cast(input[i]));
 			});
 			break;
@@ -62,7 +62,7 @@ function keyIndex (key, data, delimiter, pattern) {
 		result;
 
 	if (keys.length > 1) {
-		result = keys.map(function (i) {
+		result = keys.map(i => {
 			return String(data[i]).replace(new RegExp(pattern, "g"), "").toLowerCase();
 		}).join(delimiter);
 	} else {
@@ -73,7 +73,7 @@ function keyIndex (key, data, delimiter, pattern) {
 }
 
 function delIndex (index, indexes, delimiter, key, data, pattern) {
-	index.forEach(function (i) {
+	index.forEach(i => {
 		let idx = indexes.get(i),
 			value = keyIndex(i, data, delimiter, pattern),
 			o;
@@ -93,15 +93,15 @@ function delIndex (index, indexes, delimiter, key, data, pattern) {
 function createIndexes (records, indexes, key, delimiter, pattern) {
 	let result = {};
 
-	indexes.forEach(function (i) {
+	indexes.forEach(i => {
 		result[i] = {};
 	});
 
-	records.forEach(function (i) {
+	records.forEach(i => {
 		let lkey = i[key];
 
 		if (lkey !== undefined) {
-			indexes.forEach(function (index) {
+			indexes.forEach(index => {
 				let lindex = keyIndex(index, i, delimiter, pattern);
 
 				if (result[index][lindex] === undefined) {
@@ -129,7 +129,7 @@ function each (arg, fn) {
 
 function iterate (obj, fn) {
 	if (obj instanceof Object) {
-		Object.keys(obj).forEach(function (i) {
+		Object.keys(obj).forEach(i => {
 			fn.call(obj, obj[i], i);
 		});
 	} else {
@@ -139,7 +139,7 @@ function iterate (obj, fn) {
 
 function merge (a, b) {
 	if (a instanceof Object && b instanceof Object) {
-		Object.keys(b).forEach(function (i) {
+		Object.keys(b).forEach(i => {
 			if (a[i] instanceof Object && b[i] instanceof Object) {
 				a[i] = merge(a[i], b[i]);
 			} else if (a[i] instanceof Array && b[i] instanceof Array) {
@@ -166,17 +166,17 @@ function joinData (id, a, b, key, on, type = "inner") {
 		let keys = Object.keys(right[0]),
 			fn;
 
-		fn = !reverse ? function (x, i) {
+		fn = !reverse ? (x, i) => {
 			return x[on] === i[key];
-		} : function (x, i) {
+		} : (x, i) => {
 			return x[key] === i[on];
 		};
 
-		each(left, function (i) {
+		each(left, i => {
 			let comp = {},
 				c;
 
-			c = right.filter(function (x) {
+			c = right.filter(x => {
 				return fn(x, i);
 			});
 
@@ -185,17 +185,17 @@ function joinData (id, a, b, key, on, type = "inner") {
 				errorMsg = "More than one record found on " + i[on];
 				return false;
 			} else if (c.length === 1) {
-				[i, c[0]].forEach(function (x, idx) {
-					iterate(x, function (v, k) {
+				[i, c[0]].forEach((x, idx) => {
+					iterate(x, (v, k) => {
 						comp[ids[idx] + "_" + k] = v;
 					});
 				});
 			} else if (include) {
-				iterate(i, function (v, k) {
+				iterate(i, (v, k) => {
 					comp[ids[0] + "_" + k] = v;
 				});
 
-				keys.forEach(function (k) {
+				keys.forEach(k => {
 					comp[ids[1] + "_" + k] = null;
 				});
 			}
@@ -241,14 +241,14 @@ function patch (ogdata = {}, data = {}, key = "", overwrite = false) {
 	let result = [];
 
 	if (overwrite) {
-		iterate(ogdata, function (v, k) {
+		iterate(ogdata, (v, k) => {
 			if (k !== key && data[k] === undefined) {
 				result.push({op: "remove", path: "/" + k});
 			}
 		});
 	}
 
-	iterate(data, function (v, k) {
+	iterate(data, (v, k) => {
 		if (k !== key && ogdata[k] === undefined) {
 			result.push({op: "add", path: "/" + k, value: v});
 		} else if (JSON.stringify(ogdata[k]) !== JSON.stringify(v)) {
@@ -275,7 +275,7 @@ function setIndex (index, indexes, delimiter, key, data, indice, pattern) {
 	let idx;
 
 	if (!indice) {
-		index.forEach(function (i) {
+		index.forEach(i => {
 			let lidx = keyIndex(i, data, delimiter, pattern);
 
 			if (lidx !== undefined && lidx !== null) {
@@ -294,7 +294,7 @@ function setIndex (index, indexes, delimiter, key, data, indice, pattern) {
 function toObjekt (arg) {
 	let result = {};
 
-	arg.forEach(function (value, key) {
+	arg.forEach((value, key) => {
 		result[key] = value;
 	});
 

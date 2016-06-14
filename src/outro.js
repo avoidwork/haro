@@ -2,10 +2,9 @@
 if (typeof exports !== "undefined") {
 	module.exports = factory;
 } else if (typeof define === "function" && define.amd) {
-	define(function () {
+	define(() => {
 		return factory;
 	});
 } else {
 	global.haro = factory;
-}
-}(typeof window !== "undefined" ? window : global));
+}}(typeof window !== "undefined" ? window : global));
