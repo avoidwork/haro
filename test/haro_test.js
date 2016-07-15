@@ -1,5 +1,4 @@
-var Promise = require("es6-promise").Promise,
-	haro = require("../lib/haro"),
+var haro = require("../lib/haro"),
 	data = require("./data.json"),
 	tenso = require("tenso"),
 	server;
@@ -37,7 +36,7 @@ server = tenso({
 
 exports["empty"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: 'guid'});
+		this.store = haro(null, {key: "guid", logging: false});
 		done();
 	},
 	test: function (test) {
@@ -50,7 +49,7 @@ exports["empty"] = {
 
 exports["create"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: 'guid'});
+		this.store = haro(null, {key: "guid", logging: false});
 		done();
 	},
 	test: function (test) {
@@ -59,7 +58,7 @@ exports["create"] = {
 		test.expect(4);
 		test.equal(this.store.total, 0, "Should be '0'");
 		test.equal(this.store.data.size, 0, "Should be '0'");
-		this.store.set(null, data[0]).then(function (arg) {
+		this.store.set(null, data[0]).then(function () {
 			test.equal(self.store.total, 1, "Should be '1'");
 			test.equal(self.store.data.size, 1, "Should be '1'");
 			test.done();
@@ -71,7 +70,7 @@ exports["create"] = {
 
 exports["create (batch)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: 'guid'});
+		this.store = haro(null, {key: "guid", logging: false});
 		done();
 	},
 	test: function (test) {
@@ -107,7 +106,7 @@ exports["create (batch)"] = {
 
 exports["update (batch)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: 'guid'});
+		this.store = haro(null, {key: "guid", logging: false});
 		done();
 	},
 	test: function (test) {
@@ -151,7 +150,7 @@ exports["update (batch)"] = {
 
 exports["read (valid)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: 'guid'});
+		this.store = haro(null, {key: "guid", logging: false});
 		done();
 	},
 	test: function (test) {
@@ -174,7 +173,7 @@ exports["read (valid)"] = {
 
 exports["read (invalid)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: 'guid'});
+		this.store = haro(null, {key: "guid", logging: false});
 		done();
 	},
 	test: function (test) {
@@ -194,7 +193,7 @@ exports["read (invalid)"] = {
 
 exports["read (raw/immutable)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: 'guid'});
+		this.store = haro(null, {key: "guid", logging: false});
 		done();
 	},
 	test: function (test) {
@@ -213,7 +212,7 @@ exports["read (raw/immutable)"] = {
 
 exports["read (indexed)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {index: ["name", "age", "age|gender"]});
+		this.store = haro(null, {index: ["name", "age", "age|gender"], logging: false});
 		done();
 	},
 	test: function (test) {
@@ -249,7 +248,7 @@ exports["read (indexed)"] = {
 
 exports["read (toArray)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: 'guid'});
+		this.store = haro(null, {key: "guid", logging: false});
 		done();
 	},
 	test: function (test) {
@@ -268,7 +267,7 @@ exports["read (toArray)"] = {
 
 exports["read (toObject)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: "guid"});
+		this.store = haro(null, {key: "guid", logging: false});
 		done();
 	},
 	test: function (test) {
@@ -287,7 +286,7 @@ exports["read (toObject)"] = {
 
 exports["read (sort)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: 'guid'});
+		this.store = haro(null, {key: "guid", logging: false});
 		done();
 	},
 	test: function (test) {
@@ -312,7 +311,7 @@ exports["read (sort)"] = {
 
 exports["read (sortBy)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: 'guid'});
+		this.store = haro(null, {key: "guid", logging: false});
 		done();
 	},
 	test: function (test) {
@@ -330,7 +329,7 @@ exports["read (sortBy)"] = {
 
 exports["read (search - un-indexed)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: 'guid'});
+		this.store = haro(null, {key: "guid", logging: false});
 		done();
 	},
 	test: function (test) {
@@ -350,7 +349,7 @@ exports["read (search - un-indexed)"] = {
 
 exports["read (search - indexed)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {index: ['name', 'age']});
+		this.store = haro(null, {index: ['name', 'age'], logging: false});
 		done();
 	},
 	test: function (test) {
@@ -374,8 +373,8 @@ exports["read (search - indexed)"] = {
 
 exports["read (inner join)"] = {
 	setUp: function (done) {
-		this.store1 = haro([{id: "abc", name: "jason", age: 35}, {id: "def", name: "jen", age: 31}], {id: "users", key: "id", index: ["name", "age"]});
-		this.store2 = haro([{id: "ghi", user: "abc", value: 40}], {id: "values", key: "id", index: ["user", "value"]});
+		this.store1 = haro([{id: "abc", name: "jason", age: 35}, {id: "def", name: "jen", age: 31}], {id: "users", key: "id", index: ["name", "age"], logging: false});
+		this.store2 = haro([{id: "ghi", user: "abc", value: 40}], {id: "values", key: "id", index: ["user", "value"], logging: false});
 		done();
 	},
 	test: function (test) {
@@ -393,8 +392,8 @@ exports["read (inner join)"] = {
 
 exports["read (inner join - where)"] = {
 	setUp: function (done) {
-		this.store1 = haro([{id: "abc", name: "jason", age: 35}, {id: "def", name: "jen", age: 31}], {id: "users", key: "id", index: ["name", "age"]});
-		this.store2 = haro([{id: "ghi", user: "abc", value: 40}], {id: "values", key: "id", index: ["user", "value"]});
+		this.store1 = haro([{id: "abc", name: "jason", age: 35}, {id: "def", name: "jen", age: 31}], {id: "users", key: "id", index: ["name", "age"], logging: false});
+		this.store2 = haro([{id: "ghi", user: "abc", value: 40}], {id: "values", key: "id", index: ["user", "value"], logging: false});
 		done();
 	},
 	test: function (test) {
@@ -411,8 +410,8 @@ exports["read (inner join - where)"] = {
 
 exports["read (left join)"] = {
 	setUp: function (done) {
-		this.store1 = haro([{id: "abc", name: "jason", age: 35}, {id: "def", name: "jen", age: 31}], {id: "users", key: "id", index: ["name", "age"]});
-		this.store2 = haro([{id: "ghi", user: "abc", value: 40}], {id: "values", key: "id", index: ["user", "value"]});
+		this.store1 = haro([{id: "abc", name: "jason", age: 35}, {id: "def", name: "jen", age: 31}], {id: "users", key: "id", index: ["name", "age"], logging: false});
+		this.store2 = haro([{id: "ghi", user: "abc", value: 40}], {id: "values", key: "id", index: ["user", "value"], logging: false});
 		done();
 	},
 	test: function (test) {
@@ -432,8 +431,8 @@ exports["read (left join)"] = {
 
 exports["read (right join)"] = {
 	setUp: function (done) {
-		this.store1 = haro([{id: "abc", name: "jason", age: 35}, {id: "def", name: "jen", age: 31}], {id: "users", key: "id", index: ["name", "age"]});
-		this.store2 = haro([{id: "ghi", user: "abc", value: 40}], {id: "values", key: "id", index: ["user", "value"]});
+		this.store1 = haro([{id: "abc", name: "jason", age: 35}, {id: "def", name: "jen", age: 31}], {id: "users", key: "id", index: ["name", "age"], logging: false});
+		this.store2 = haro([{id: "ghi", user: "abc", value: 40}], {id: "values", key: "id", index: ["user", "value"], logging: false});
 		done();
 	},
 	test: function (test) {
@@ -451,7 +450,7 @@ exports["read (right join)"] = {
 
 exports["update"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: 'guid'});
+		this.store = haro(null, {key: "guid", logging: false});
 		done();
 	},
 	test: function (test) {
@@ -477,7 +476,7 @@ exports["update"] = {
 
 exports["delete"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: 'guid'});
+		this.store = haro(null, {key: "guid", logging: false});
 		done();
 	},
 	test: function (test) {
@@ -503,7 +502,7 @@ exports["delete"] = {
 
 exports["delete (batch)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: 'guid'});
+		this.store = haro(null, {key: "guid", logging: false});
 		done();
 	},
 	test: function (test) {
@@ -529,7 +528,7 @@ exports["delete (batch)"] = {
 
 exports["dump (indexes)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {index: ["name", "age", "age|gender"]});
+		this.store = haro(null, {index: ["name", "age", "age|gender"], logging: false});
 		done();
 	},
 	test: function (test) {
@@ -544,14 +543,13 @@ exports["dump (indexes)"] = {
 			test.done();
 		}, function (e) {
 			throw e;
-			test.done();
 		});
 	}
 };
 
 exports["dump (records)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {index: ["name", "age", "age|gender"]});
+		this.store = haro(null, {index: ["name", "age", "age|gender"], logging: false});
 		done();
 	},
 	test: function (test) {
@@ -566,14 +564,13 @@ exports["dump (records)"] = {
 			test.done();
 		}, function (e) {
 			throw e;
-			test.done();
 		});
 	}
 };
 
 exports["offload (indexes)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: "guid", index: ["name", "age"]});
+		this.store = haro(null, {key: "guid", index: ["name", "age"], logging: false});
 		done();
 	},
 	test: function (test) {
@@ -587,14 +584,13 @@ exports["offload (indexes)"] = {
 			test.done();
 		}, function (e) {
 			throw e;
-			test.done();
 		});
 	}
 };
 
 exports["override (indexes)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: 'guid'});
+		this.store = haro(null, {key: "guid", logging: false});
 		this.indexes = {
 			name: {
 				'Decker Merrill': ['cfbfe5d1-451d-47b1-96c4-8e8e83fe9cfd'],
@@ -641,14 +637,13 @@ exports["override (indexes)"] = {
 			test.done();
 		}, function (e) {
 			throw e;
-			test.done();
 		});
 	}
 };
 
 exports["override (records)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: 'guid'});
+		this.store = haro(null, {key: "guid", logging: false});
 		done();
 	},
 	test: function (test) {
@@ -662,14 +657,13 @@ exports["override (records)"] = {
 			test.done();
 		}, function (e) {
 			throw e;
-			test.done();
 		});
 	}
 };
 
 exports["setUri"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: "guid", source: "data.result"});
+		this.store = haro(null, {key: "guid", source: "data.result", logging: false});
 		done();
 	},
 	test: function (test) {
@@ -691,7 +685,7 @@ exports["setUri"] = {
 
 exports["create (wired)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: "guid", source: "data.result"});
+		this.store = haro(null, {key: "guid", source: "data.result", logging: false});
 		this.record = JSON.parse(JSON.stringify(data[0]));
 		this.record.id = "8385ac94-0ebf-4a83-a6ba-25b54ce343be";
 		done();
@@ -715,7 +709,7 @@ exports["create (wired)"] = {
 
 exports["delete (wired)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: "guid", source: "data.result"});
+		this.store = haro(null, {key: "guid", source: "data.result", logging: false});
 		done();
 	},
 	test: function (test) {
@@ -739,7 +733,7 @@ exports["delete (wired)"] = {
 
 exports["update (wired / overwrite)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: "guid", source: "data.result"});
+		this.store = haro(null, {key: "guid", source: "data.result", logging: false});
 		done();
 	},
 	test: function (test) {

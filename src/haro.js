@@ -15,6 +15,7 @@ class Haro {
 		this.index = [];
 		this.indexes = new Map();
 		this.key = "";
+		this.loading = false;
 		this.logging = true;
 		this.patch = false;
 		this.pattern = "\\s*|\\t*";
@@ -45,6 +46,8 @@ class Haro {
 		function next () {
 			Promise.all(args.map(fn)).then(defer.resolve, defer.reject);
 		}
+
+		this.loading = true;
 
 		if (del) {
 			fn = i => {
@@ -93,10 +96,16 @@ class Haro {
 		return defer.promise.then(arg => {
 			let larg = tuple.apply(tuple, arg);
 
+			this.loading = false;
 			this.onbatch(type, larg);
+
+			if (this.logging) {
+				console.log("Batch inserted data into", this.id);
+			}
 
 			return larg;
 		}, e => {
+			this.loading = false;
 			this.onerror("batch", e);
 			throw e;
 		});
@@ -104,7 +113,7 @@ class Haro {
 
 	clear () {
 		this.total = 0;
-		this.registry = [];
+		this.registry.length = 0;
 		this.data.clear();
 		this.indexes.clear();
 		this.versions.clear();
@@ -168,6 +177,10 @@ class Haro {
 		};
 
 		if (this.data.has(key)) {
+			if (!batch) {
+				this.loading = true;
+			}
+
 			if (!batch && this.uri) {
 				if (this.patch) {
 					this.request(concatURI(this.uri, null), {
@@ -196,10 +209,18 @@ class Haro {
 		}
 
 		return defer.promise.then(arg => {
+			if (!batch) {
+				this.loading = false;
+			}
+
 			this.ondelete(arg);
 
 			return arg;
 		}, e => {
+			if (!batch) {
+				this.loading = false;
+			}
+
 			this.onerror("delete", e);
 			throw e;
 		});
@@ -613,6 +634,10 @@ class Haro {
 			}
 		}
 
+		if (!batch) {
+			this.loading = true;
+		}
+
 		if (!batch && this.uri) {
 			luri = concatURI(this.uri, lkey);
 
@@ -650,10 +675,18 @@ class Haro {
 		}
 
 		return defer.promise.then(arg => {
+			if (!batch) {
+				this.loading = false;
+			}
+
 			this.onset(arg);
 
 			return arg;
 		}, e => {
+			if (!batch) {
+				this.loading = false;
+			}
+
 			this.onerror("set", e);
 			throw e;
 		});
