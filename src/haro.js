@@ -532,7 +532,7 @@ class Haro {
 		if (value) {
 			lindex = clone(index || this.index);
 
-			if (lindex instanceof Array) {
+			if (Array.isArray(lindex)) {
 				indexes = lindex;
 			} else if (typeof lindex === "string") {
 				indexes = [lindex];
@@ -545,7 +545,7 @@ class Haro {
 					idx.forEach((lset, lkey) => {
 						switch (true) {
 							case fn && value(lkey, i):
-							case rgex && value.test(lkey):
+							case rgex && value.test(Array.isArray(lkey) ? lkey.join(", ") : lkey):
 							case lkey === value:
 								lset.forEach(key => {
 									if (!seen.has(key)) {

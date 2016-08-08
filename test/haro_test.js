@@ -352,7 +352,7 @@ exports["read (search - un-indexed)"] = {
 
 exports["read (search - indexed)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {index: ['name', 'age'], logging: false});
+		this.store = haro(null, {index: ['name', 'age', 'tags'], logging: false});
 		done();
 	},
 	test: function (test) {
@@ -362,11 +362,14 @@ exports["read (search - indexed)"] = {
 		this.store.batch(data, "set").then(function () {
 			var result1 = self.store.search(/.*de.*/i);
 			var result2 = self.store.search(20, 'age');
+			var result3 = self.store.search(/velit/, 'tags');
 
 			test.equal(result1.length, "1", "Should be `1`");
 			test.equal(result1[0][1].name, "Decker Merrill", "Should be `Decker Merrill`");
 			test.equal(result2.length, "2", "Should be `2`");
 			test.equal(result2[0][1].name, "Decker Merrill", "Should be `Decker Merrill`");
+			test.equal(result3.length, "1", "Should be `1`");
+			test.equal(result3[0][1].name, "Decker Merrill", "Should be `Decker Merrill`");
 			test.done();
 		}, function () {
 			test.done();

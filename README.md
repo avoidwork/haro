@@ -719,6 +719,8 @@ If `arg` is a `Function` (parameters are `value` & `index`) a match is made if t
 as `true`, else the value must be an identity match. The `index` parameter can be a `String` or `Array` of `Strings`; 
 if not supplied it defaults to `this.index`.
 
+Indexed `Arrays` which are tested with a `RegExp` will be treated as a comma delimited `String`, e.g. `['hockey', 'football']` becomes `'hockey, football'` for the `RegExp`.
+
 Example of searching with a predicate function:
 ```javascript
 var store = haro(null, {index: ['name', 'age']}),
