@@ -364,7 +364,7 @@ exports["read (search - indexed)"] = {
 			var result2 = self.store.search(20, 'age');
 			var result3 = self.store.search(/velit/, 'tags');
 
-			test.equal(result1.length, "1", "Should be `1`");
+			test.equal(result1.length, "2", "Should be `2`");
 			test.equal(result1[0][1].name, "Decker Merrill", "Should be `Decker Merrill`");
 			test.equal(result2.length, "2", "Should be `2`");
 			test.equal(result2[0][1].name, "Decker Merrill", "Should be `Decker Merrill`");

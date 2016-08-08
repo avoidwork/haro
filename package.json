@@ -23,7 +23,7 @@
   "bugs": {
     "url": "https://github.com/avoidwork/haro/issues"
   },
-  "homepage": "http://haro.rocks",
+  "homepage": "http://avoidwork.github.io/haro/",
   "devDependencies": {
      "babel-eslint": "^4.1.4",
     "babel-preset-es2015": "^6.1.2",
