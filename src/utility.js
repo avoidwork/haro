@@ -58,12 +58,13 @@ function concatURI (left, right) {
 }
 
 function keyIndex (key, data, delimiter, pattern) {
-	let keys = key.split(delimiter).sort(),
-		result;
+	let result;
 
-	if (keys.length > 1) {
-		result = keys.map(i => {
-			return String(data[i]).replace(new RegExp(pattern, "g"), "").toLowerCase();
+	if (key.indexOf(delimiter) > -1) {
+		result = key.split(delimiter).sort((a, b) => {
+			return a.localeCompare(b);
+		}).map(i => {
+			return data[i].toString().replace(new RegExp(pattern, "g"), "").toLowerCase();
 		}).join(delimiter);
 	} else {
 		result = data[key];
