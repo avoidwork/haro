@@ -2,9 +2,9 @@
 
 (function (global) {
 const server = typeof process !== "undefined" && typeof process.nextTick === "function";
-const Promise = global.Promise || require("es6-promise").Promise;
-const Map = global.Map || require("es6-map");
-const Set = global.Set || require("es6-set");
+const Promise = global.Promise;
+const Map = global.Map;
+const Set = global.Set;
 const fetch = global.fetch || require("node-fetch");
 const deferred = global.deferred || require("tiny-defer");
 const tuple = global.tuple || require("tiny-tuple");

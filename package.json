@@ -1,6 +1,6 @@
 {
   "name": "haro",
-  "version": "1.9.13",
+  "version": "2.0.0",
   "description": "Harō is a modern immutable DataStore using Maps, Sets, Promises, & Tuples",
   "main": "lib/haro.js",
   "scripts": {
@@ -23,9 +23,13 @@
   "bugs": {
     "url": "https://github.com/avoidwork/haro/issues"
   },
-  "homepage": "http://avoidwork.github.io/haro/",
+  "homepage": "https://github.com/avoidwork/haro",
+  "engineStrict": true,
+  "engines": {
+    "node": ">=4.0.0"
+  },
   "devDependencies": {
-     "babel-eslint": "^4.1.4",
+    "babel-eslint": "^4.1.4",
     "babel-preset-es2015": "^6.1.2",
     "grunt": "^0.4.5",
     "grunt-babel": "^6.0.0",
@@ -40,13 +44,10 @@
     "tenso": "^1.5.1"
   },
   "dependencies": {
-    "Blob": "^0.10.0",
-    "es6-map": "^0.1.1",
-    "es6-promise": "^3.0.2",
-    "es6-set": "^0.1.1",
-    "node-fetch": "^1.2.1",
-    "tiny-defer": "^1.0.2",
-    "tiny-tuple": "^1.0.5",
-    "tiny-worker": "^1.0.3"
+    "Blob": "~0.10.0",
+    "node-fetch": "~1.6.1",
+    "tiny-defer": "~2.0.0",
+    "tiny-tuple": "~1.0.8",
+    "tiny-worker": "~1.1.5"
   }
 }
