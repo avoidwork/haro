@@ -319,32 +319,12 @@ class Haro {
 		return this.data.keys();
 	}
 
-	limit (max, offset = 0) {
-		let lmax = max,
-			loffset = offset,
-			list = [],
-			i, k, nth;
+	limit (offset = 0, max = 0, raw = false) {
+		let result = this.registry.slice(offset, max).map(i => {
+			return this.get(i, raw);
+		});
 
-		if (lmax === undefined) {
-			lmax = -1;
-		}
-
-		i = loffset;
-		nth = loffset + lmax;
-
-		if (i < 0 || i >= nth) {
-			throw new Error("Invalid range");
-		}
-
-		do {
-			k = this.registry[i];
-
-			if (k) {
-				list.push(this.get(k));
-			}
-		} while (++i < nth);
-
-		return tuple.apply(tuple, list);
+		return !raw ? tuple.apply(tuple, result) : result;
 	}
 
 	load (type = "mongo", key = undefined) {
@@ -527,15 +507,13 @@ class Haro {
 			fn = typeof value === "function",
 			rgex = value && typeof value.test === "function",
 			seen = new Set(),
-			lindex, indexes;
+			indexes;
 
 		if (value) {
-			lindex = clone(index || this.index);
-
-			if (Array.isArray(lindex)) {
-				indexes = lindex;
-			} else if (typeof lindex === "string") {
-				indexes = [lindex];
+			if (index) {
+				indexes = Array.isArray(index) ? index : [index];
+			} else {
+				indexes = this.index;
 			}
 
 			indexes.forEach(i => {
@@ -710,11 +688,11 @@ class Haro {
 		let result;
 
 		if (frozen) {
-			result = Object.freeze(this.toArray(null, false).sort(fn).map(i => {
+			result = Object.freeze(this.limit(0, this.total, true).sort(fn).map(i => {
 				return Object.freeze(i);
 			}));
 		} else {
-			result = this.toArray(null, false).sort(fn);
+			result = this.limit(0, this.total, true).sort(fn);
 		}
 
 		return result;
