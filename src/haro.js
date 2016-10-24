@@ -794,13 +794,23 @@ class Haro {
 							obj[key] = clone(b[0]);
 						}
 
+						if (frozen) {
+							Object.freeze(obj);
+						}
+
 						a.push(obj);
 
 						return a;
 					};
 				} else {
 					return function (a, b) {
-						a.push(clone(b[1]));
+						let obj = clone(b[1]);
+
+						if (frozen) {
+							Object.freeze(obj);
+						}
+
+						a.push(obj);
 
 						return a;
 					};
@@ -817,11 +827,21 @@ class Haro {
 							obj[key] = clone(id);
 						}
 
+						if (frozen) {
+							Object.freeze(obj);
+						}
+
 						result.push(obj);
 					};
 				} else {
 					return function (val) {
-						result.push(clone(val));
+						let obj = clone(val);
+
+						if (frozen) {
+							Object.freeze(obj);
+						}
+
+						result.push(obj);
 					};
 				}
 			})();
