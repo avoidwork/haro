@@ -292,12 +292,22 @@ function setIndex (index, indexes, delimiter, key, data, indice, pattern) {
 	}
 }
 
-function toObjekt (arg) {
+function toObjekt (arg, frozen = true) {
 	let result = {};
 
 	arg.forEach((value, key) => {
-		result[key] = value;
+		let obj = clone(value);
+
+		if (frozen) {
+			Object.freeze(obj);
+		}
+
+		result[clone(key)] = obj;
 	});
+
+	if (frozen) {
+		Object.freeze(result);
+	}
 
 	return result;
 }

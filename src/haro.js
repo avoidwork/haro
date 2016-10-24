@@ -61,7 +61,7 @@ class Haro {
 
 		if (this.patch) {
 			if (del) {
-				data = patch(this.toArray().map(i => {
+				data = patch(this.limit(0, this.total, true).map(i => {
 					return i[this.key];
 				}), args, this.key, true);
 			} else {
@@ -76,7 +76,7 @@ class Haro {
 						data.push({op: "add", path: "/", value: i});
 					}
 				});
-				data = data.concat(patch(this.toObject(), hash, this.key, true));
+				data = data.concat(patch(this.toObject(undefined, false), hash, this.key, true));
 			}
 
 			if (data.length > 0) {
@@ -853,23 +853,25 @@ class Haro {
 	}
 
 	toObject (data, frozen = true) {
-		let func;
+		let result;
 
-		if (frozen) {
-			func = arg => {
-				return arg;
-			};
-		} else {
-			func = arg => {
-				return clone(arg);
-			};
-		}
+		result = !data ? toObjekt(this, frozen) : data.reduce((a, b) => {
+			let obj = clone(b[1]);
 
-		return func(!data ? toObjekt(this) : data.reduce((a, b) => {
-			a[b[0]] = b[1];
+			if (frozen) {
+				Object.freeze(obj);
+			}
+
+			a[b[0]] = obj;
 
 			return a;
-		}, {}));
+		}, {});
+
+		if (frozen) {
+			Object.freeze(result);
+		}
+
+		return result;
 	}
 
 	transform (input, fn) {

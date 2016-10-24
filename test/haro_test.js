@@ -257,10 +257,12 @@ exports["read (toArray)"] = {
 	test: function (test) {
 		var self = this;
 
-		test.expect(2);
+		test.expect(4);
 		this.store.batch(data, "set").then(function () {
 			test.equal(self.store.toArray().length, 6, "Should be `6`");
 			test.equal(self.store.toArray(self.store.limit(0, 5)).length, 5, "Should be `5`");
+			test.equal(Object.isFrozen(self.store.toArray(undefined)), true, "Should be `true`");
+			test.equal(Object.isFrozen(self.store.toArray(undefined, false)), false, "Should be `false`");
 			test.done();
 		}, function () {
 			test.done();
@@ -276,10 +278,12 @@ exports["read (toObject)"] = {
 	test: function (test) {
 		var self = this;
 
-		test.expect(2);
+		test.expect(4);
 		this.store.batch(data, "set").then(function () {
 			test.equal(self.store.toObject()["2a30000f-92dc-405c-b1e0-7c416d766b39"].isActive, false, "Should be `false`");
 			test.equal(self.store.toObject(self.store.limit(0, 5))["2a30000f-92dc-405c-b1e0-7c416d766b39"].isActive, false, "Should be `false`");
+			test.equal(Object.isFrozen(self.store.toObject()), true, "Should be `true`");
+			test.equal(Object.isFrozen(self.store.toObject(undefined, false)), false, "Should be `false`");
 			test.done();
 		}, function () {
 			test.done();
