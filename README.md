@@ -598,10 +598,10 @@ _Promise_
 Loads the DataStore, or a record from a specific persistent storage & updates the DataStore. The DataStore will be cleared 
 prior to loading if `key` is omitted.
 
-**map(callbackFn)**
+**map(callbackFn, raw=false)**
 _Tuple_
 
-Returns a `Tuple` of the returns of `callbackFn(value, key)`.
+Returns a `Tuple` of the returns of `callbackFn(value, key)`. If `raw` is `true` an `Array` is returned.
 
 Example of mapping a DataStore:
 ```javascript

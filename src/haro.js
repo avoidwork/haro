@@ -350,14 +350,14 @@ class Haro {
 		});
 	}
 
-	map (fn) {
+	map (fn, raw = false) {
 		let result = [];
 
 		this.forEach((value, key) => {
 			result.push(fn(value, key));
 		});
 
-		return tuple.apply(tuple, result);
+		return !raw ? tuple.apply(tuple, result) : result;
 	}
 
 	offload (data, cmd = "index", index = this.index) {
@@ -413,8 +413,8 @@ class Haro {
 			this.indexes = this.transform(data, fn);
 			defer.resolve(true);
 		} else if (type === "records") {
-			this.data = new Map();
-			this.registry = [];
+			this.data.clear();
+			this.registry.length = 0;
 			data.forEach(datum => {
 				let key = datum[this.key] || uuid();
 
