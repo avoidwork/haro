@@ -781,72 +781,20 @@ class Haro {
 	}
 
 	toArray (data, frozen = true) {
-		let key = this.key,
-			fn, result;
+		let result;
 
 		if (data) {
-			fn = (() => {
-				if (key) {
-					return function (a, b) {
-						let obj = clone(b[1]);
-
-						if (obj[key] === undefined) {
-							obj[key] = clone(b[0]);
-						}
-
-						if (frozen) {
-							Object.freeze(obj);
-						}
-
-						a.push(obj);
-
-						return a;
-					};
-				} else {
-					return function (a, b) {
-						let obj = clone(b[1]);
-
-						if (frozen) {
-							Object.freeze(obj);
-						}
-
-						a.push(obj);
-
-						return a;
-					};
-				}
-			})();
-			result = data.reduce(fn, []);
+			result = data.map(i => {
+				return frozen ? i[1] : clone(i[1]);
+			});
 		} else {
-			fn = (() => {
-				if (key) {
-					return function (val, id) {
-						let obj = clone(val);
+			result = this.limit(0, this.total, true);
 
-						if (obj[key] === undefined) {
-							obj[key] = clone(id);
-						}
-
-						if (frozen) {
-							Object.freeze(obj);
-						}
-
-						result.push(obj);
-					};
-				} else {
-					return function (val) {
-						let obj = clone(val);
-
-						if (frozen) {
-							Object.freeze(obj);
-						}
-
-						result.push(obj);
-					};
-				}
-			})();
-			result = [];
-			this.forEach(fn);
+			if (frozen) {
+				result.forEach(i => {
+					Object.freeze(i);
+				});
+			}
 		}
 
 		return frozen ? Object.freeze(result) : result;
