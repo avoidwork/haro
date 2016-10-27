@@ -320,9 +320,10 @@ class Haro {
 	}
 
 	limit (offset = 0, max = 0, raw = false) {
-		let result = this.registry.slice(offset, max).map(i => {
-			return this.get(i, raw);
-		});
+		const end = offset + max,
+			result = this.registry.slice(offset, end).map(i => {
+				return this.get(i, raw);
+			});
 
 		return !raw ? tuple.apply(tuple, result) : result;
 	}
