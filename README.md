@@ -431,7 +431,7 @@ do {
 } while (!item.done);
 ```
 
-**filter(callbackFn)**
+**filter(callbackFn[, raw=false])**
 _Tuple_
 
 Returns a `Tuple` of double `Tuples` with the shape `[key, value]` for records which returned `true` to 

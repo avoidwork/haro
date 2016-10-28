@@ -256,16 +256,27 @@ class Haro {
 		return !raw ? tuple.apply(tuple, result) : clone(result);
 	}
 
-	filter (fn) {
-		let result = [];
+	filter (fn, raw = false) {
+		let result = [],
+			lfn;
 
-		this.forEach((value, key) => {
-			if (fn(value, key) === true) {
-				result.push(tuple(key, value));
-			}
-		});
+		if (!raw) {
+			lfn = (value, key) => {
+				if (fn(value, key) === true) {
+					result.push(tuple(key, value));
+				}
+			};
+		} else {
+			lfn = (value, key) => {
+				if (fn(value, key) === true) {
+					result.push(value);
+				}
+			};
+		}
 
-		return tuple.apply(tuple, result);
+		this.forEach(lfn);
+
+		return !raw ? tuple.apply(tuple, result) : result;
 	}
 
 	forEach (fn, ctx) {
@@ -320,10 +331,9 @@ class Haro {
 	}
 
 	limit (offset = 0, max = 0, raw = false) {
-		const end = offset + max,
-			result = this.registry.slice(offset, end).map(i => {
-				return this.get(i, raw);
-			});
+		const result = this.registry.slice(offset, offset + max).map(i => {
+			return this.get(i, raw);
+		});
 
 		return !raw ? tuple.apply(tuple, result) : result;
 	}
