@@ -26,6 +26,7 @@
   },
   "homepage": "https://github.com/avoidwork/haro",
   "engineStrict": true,
+  "engine-strict": true,
   "engines": {
     "node": ">=4.0.0"
   },
