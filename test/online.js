@@ -37,7 +37,7 @@ require("tenso")({
 
 exports.setUri = {
 	setUp: function (done) {
-		this.store = haro(null, {key: "guid", source: "data", logging: false});
+		this.store = haro(null, {key: "guid", source: "data", logging: false, versioning: false});
 		done();
 	},
 	test: function (test) {
@@ -59,7 +59,7 @@ exports.setUri = {
 
 exports["create (wired)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: "guid", source: "data", logging: false});
+		this.store = haro(null, {key: "guid", source: "data", logging: false, versioning: false});
 		this.record = JSON.parse(JSON.stringify(data[0]));
 		this.record.id = "8385ac94-0ebf-4a83-a6ba-25b54ce343be";
 		done();
@@ -83,7 +83,7 @@ exports["create (wired)"] = {
 
 exports["delete (wired)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: "guid", source: "data", logging: false});
+		this.store = haro(null, {key: "guid", source: "data", logging: false, versioning: false});
 		done();
 	},
 	test: function (test) {
@@ -108,7 +108,7 @@ exports["delete (wired)"] = {
 
 exports["update (wired / overwrite)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: "guid", source: "data", logging: false});
+		this.store = haro(null, {key: "guid", source: "data", logging: false, versioning: false});
 		done();
 	},
 	test: function (test) {
