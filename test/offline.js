@@ -1,5 +1,5 @@
-var path = require("path"),
-	haro = require(path.join(__dirname, "..", "index")),
+const path = require("path"),
+	haro = require(path.join(__dirname, "..", "lib", "haro.es6")),
 	data = require(path.join(__dirname, "data.json"));
 
 exports.empty = {

@@ -28,3 +28,6 @@ node_modules
 
 .idea
 yarn.lock
+lib/haro.js
+lib/haro.min.js
+lib/haro.min.js.map
