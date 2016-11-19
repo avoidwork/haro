@@ -39,9 +39,10 @@
 		}
 
 		batch (args, type, lload = false) {
-			let defer = deferred(),
-				del = type === "del",
-				data, fn, hash;
+			const defer = deferred(),
+				del = type === "del";
+
+			let data, fn, hash;
 
 			function next () {
 				Promise.all(args.map(fn)).then(defer.resolve, defer.reject);
@@ -83,9 +84,7 @@
 					this.request(concatURI(this.uri, null), {
 						method: "patch",
 						body: JSON.stringify(data)
-					}).then(() => {
-						next();
-					}, defer.reject);
+					}).then(next, defer.reject);
 				} else {
 					defer.resolve();
 				}
@@ -94,7 +93,7 @@
 			}
 
 			return defer.promise.then(arg => {
-				let larg = tuple.apply(tuple, arg);
+				const larg = tuple.apply(tuple, arg);
 
 				this.loading = false;
 				this.onbatch(type, larg);
@@ -127,7 +126,7 @@
 		}
 
 		cmd (type, ...args) {
-			let defer = deferred();
+			const defer = deferred();
 
 			if (!this.adapters[type] || !adapter[type]) {
 				defer.reject(new Error(type + " not configured for persistent storage"));
@@ -149,11 +148,10 @@
 		}
 
 		del (key, batch = false) {
-			let defer = deferred(),
-				next;
+			const defer = deferred();
 
-			next = () => {
-				let index = this.registry.indexOf(key);
+			let next = () => {
+				const index = this.registry.indexOf(key);
 
 				if (index > -1) {
 					if (index === 0) {
@@ -253,7 +251,7 @@
 		}
 
 		find (where, raw = false) {
-			let key = Object.keys(where).sort().join(this.delimiter),
+			const key = Object.keys(where).sort().join(this.delimiter),
 				value = keyIndex(key, where, this.delimiter),
 				result = [];
 
@@ -267,7 +265,7 @@
 		}
 
 		filter (fn, raw = false) {
-			let result = [];
+			const result = [];
 
 			this.forEach((function () {
 				if (!raw) {
@@ -297,7 +295,7 @@
 		}
 
 		get (key, raw = false) {
-			let output = clone(this.data.get(key) || null);
+			const output = clone(this.data.get(key) || null);
 
 			return output && !raw ? tuple(key, output) : output;
 		}
@@ -307,8 +305,9 @@
 		}
 
 		join (other, on = this.key, type = "inner", where = []) {
-			let defer = deferred(),
-				promise;
+			const defer = deferred();
+
+			let promise;
 
 			if (other.total > 0) {
 				if (where.length > 0) {
@@ -344,7 +343,7 @@
 		}
 
 		load (type = "mongo", key = undefined) {
-			let batch = key === undefined,
+			const batch = key === undefined,
 				id = !batch ? key : this.id;
 
 			if (batch) {
@@ -367,7 +366,7 @@
 		}
 
 		map (fn, raw = false) {
-			let result = [];
+			const result = [];
 
 			this.forEach((value, key) => {
 				result.push(fn(value, key));
@@ -377,8 +376,9 @@
 		}
 
 		offload (data, cmd = "index", index = this.index) {
-			let defer = deferred(),
-				payload, obj;
+			const defer = deferred();
+
+			let payload, obj;
 
 			if (this.worker) {
 				obj = this.useWorker(defer);
@@ -423,7 +423,7 @@
 		onsync () {}
 
 		override (data, type = "records", fn = undefined) {
-			let defer = deferred();
+			const defer = deferred();
 
 			if (type === "indexes") {
 				this.indexes = this.transform(data, fn);
@@ -433,7 +433,7 @@
 				this.indexes.clear();
 				this.registry.length = 0;
 				data.forEach(datum => {
-					let key = datum[this.key] || uuid();
+					const key = datum[this.key] || uuid();
 
 					this.data.set(key, datum);
 					this.registry.push(key);
@@ -479,7 +479,7 @@
 		}
 
 		request (input, config = {}) {
-			let defer = deferred(),
+			const defer = deferred(),
 				cfg = merge(clone(this.config), config);
 
 			cfg.method = cfg.method.toUpperCase();
@@ -526,11 +526,12 @@
 		}
 
 		search (value, index, raw = false) {
-			let result = [],
+			const result = [],
 				fn = typeof value === "function",
 				rgex = value && typeof value.test === "function",
-				seen = new Set(),
-				indexes;
+				seen = new Set();
+
+			let indexes;
 
 			if (value) {
 				if (index) {
@@ -567,8 +568,9 @@
 		}
 
 		set (key, data, batch = false, override = false, lload = false) {
-			let defer = deferred(),
-				method = "post",
+			const defer = deferred();
+
+			let method = "post",
 				ldata = clone(data),
 				lkey = key,
 				body, ogdata, luri;
@@ -689,7 +691,7 @@
 		}
 
 		setUri (uri, clear = false) {
-			let defer = deferred();
+			const defer = deferred();
 
 			this.uri = uri;
 
@@ -717,9 +719,10 @@
 		}
 
 		sortBy (index) {
-			let result = [],
-				keys = [],
-				lindex;
+			const result = [],
+				keys = [];
+
+			let lindex;
 
 			if (!this.indexes.has(index)) {
 				this.reindex(index);
@@ -740,7 +743,7 @@
 		}
 
 		storage (...args) {
-			let defer = deferred(),
+			const defer = deferred(),
 				deferreds = Object.keys(this.adapters).map(i => {
 					return this.cmd.apply(this, [i].concat(args));
 				});
@@ -757,8 +760,9 @@
 		}
 
 		sync (clear = false) {
-			let defer = deferred(),
-				valid = true;
+			const defer = deferred();
+
+			let valid = true;
 
 			this.request(this.uri).then(arg => {
 				let data;
@@ -784,7 +788,7 @@
 			});
 
 			return defer.promise.then(arg => {
-				let larg = tuple.apply(tuple, arg);
+				const larg = tuple.apply(tuple, arg);
 
 				this.onsync(larg);
 
@@ -820,7 +824,7 @@
 			let result;
 
 			result = !data ? toObjekt(this, frozen) : data.reduce((a, b) => {
-				let obj = clone(b[1]);
+				const obj = clone(b[1]);
 
 				if (frozen) {
 					Object.freeze(obj);
@@ -843,7 +847,7 @@
 		}
 
 		unload (type = "mongo", key = undefined) {
-			let id = key !== undefined ? key : this.id;
+			const id = key !== undefined ? key : this.id;
 
 			return this.cmd(type, "remove", key).then(arg => {
 				if (this.logging) {

@@ -75,9 +75,10 @@
 
 	function delIndex (index, indexes, delimiter, key, data, pattern) {
 		index.forEach(i => {
-			let idx = indexes.get(i),
-				value = keyIndex(i, data, delimiter, pattern),
-				o;
+			const idx = indexes.get(i),
+				value = keyIndex(i, data, delimiter, pattern);
+
+			let o;
 
 			if (idx.has(value)) {
 				o = idx.get(value);
@@ -92,18 +93,18 @@
 	}
 
 	function createIndexes (records, indexes, key, delimiter, pattern) {
-		let result = {};
+		const result = {};
 
 		indexes.forEach(i => {
 			result[i] = {};
 		});
 
 		records.forEach(i => {
-			let lkey = i[key];
+			const lkey = i[key];
 
 			if (lkey !== undefined) {
 				indexes.forEach(index => {
-					let lindex = keyIndex(index, i, delimiter, pattern);
+					const lindex = keyIndex(index, i, delimiter, pattern);
 
 					if (result[index][lindex] === undefined) {
 						result[index][lindex] = [];
@@ -118,8 +119,9 @@
 	}
 
 	function each (arg, fn) {
-		let i = -1,
-			nth = arg.length;
+		const nth = arg.length;
+
+		let i = -1;
 
 		while (++i < nth) {
 			if (fn(arg[i]) === false) {
@@ -159,18 +161,20 @@
 	}
 
 	function joinData (id, a, b, key, on, type = "inner") {
+		const result = [];
+
 		let error = false,
-			result = [],
 			errorMsg;
 
 		function join (left, right, ids, include = false, reverse = false) {
-			let keys = Object.keys(right[0]),
+			const keys = Object.keys(right[0]),
 				fn = !reverse ? (x, i) => x[on] === i[key] : (x, i) => x[key] === i[on];
 
 			each(left, i => {
-				let comp = {},
-					valid = true,
+				const comp = {},
 					c = right.filter(x => fn(x, i));
+
+				let valid = true;
 
 				if (c.length > 1) {
 					error = true;
@@ -216,9 +220,10 @@
 	}
 
 	function onmessage (ev) {
-		let data = JSON.parse(ev.data),
-			cmd = data.cmd,
-			result;
+		const data = JSON.parse(ev.data),
+			cmd = data.cmd;
+
+		let result;
 
 		if (cmd === "index") {
 			result = createIndexes(data.records, data.index, data.key, data.delimiter, data.pattern);
@@ -232,7 +237,7 @@
 	}
 
 	function patch (ogdata = {}, data = {}, key = "", overwrite = false) {
-		let result = [];
+		const result = [];
 
 		if (overwrite) {
 			iterate(ogdata, (v, k) => {
@@ -286,10 +291,10 @@
 	}
 
 	function toObjekt (arg, frozen = true) {
-		let result = {};
+		const result = {};
 
 		arg.forEach((value, key) => {
-			let obj = clone(value);
+			const obj = clone(value);
 
 			if (frozen) {
 				Object.freeze(obj);
