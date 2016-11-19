@@ -1,5 +1,6 @@
-var haro = require("../lib/haro"),
-	data = require("./data.json");
+var path = require("path"),
+	haro = require(path.join(__dirname, "..", "index")),
+	data = require(path.join(__dirname, "data.json"));
 
 exports.empty = {
 	setUp: function (done) {
