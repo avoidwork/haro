@@ -36,7 +36,7 @@ module.exports = function (grunt) {
 			}
 		},
 		eslint: {
-			target: ["lib/<%= pkg.name %>.es6.js", "test/haro_test.js"]
+			target: ["lib/<%= pkg.name %>.es6.js", "test/*.js"]
 		},
 		nodeunit : {
 			all : ["test/*.js"]

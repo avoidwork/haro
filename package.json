@@ -31,7 +31,7 @@
   },
   "devDependencies": {
     "babel-preset-es2015": "~6.18.0",
-    "grunt": "~1.0.1",
+    "grunt": "~0.4.5",
     "grunt-babel": "^6.0.0",
     "grunt-cli": "^0.1.13",
     "grunt-contrib-concat": "~1.0.1",
@@ -41,11 +41,11 @@
     "grunt-eslint": "~19.0.0",
     "grunt-sed": "^0.1.1",
     "precise": "^1.0.1",
-    "tenso": "~1.5.1"
+    "tenso": "~4.0.6"
   },
   "dependencies": {
     "Blob": "~0.10.0",
-    "node-fetch": "~1.6.1",
+    "node-fetch": "~1.6.3",
     "tiny-defer": "~2.0.0",
     "tiny-tuple": "~1.0.8",
     "tiny-worker": "~1.1.5"
