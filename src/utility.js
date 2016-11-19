@@ -50,7 +50,7 @@
 	}
 
 	function clone (arg) {
-		return JSON.parse(JSON.stringify(arg));
+		return JSON.parse(JSON.stringify(arg, null, 0));
 	}
 
 	function concatURI (left, right) {

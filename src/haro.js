@@ -138,6 +138,16 @@
 			return defer.promise;
 		}
 
+		crawl (arg) {
+			let result = clone(arg);
+
+			(this.source || "").split(".").forEach(i => {
+				result = result[i];
+			});
+
+			return result;
+		}
+
 		del (key, batch = false) {
 			let defer = deferred(),
 				next;
@@ -257,24 +267,23 @@
 		}
 
 		filter (fn, raw = false) {
-			let result = [],
-				lfn;
+			let result = [];
 
-			if (!raw) {
-				lfn = (value, key) => {
-					if (fn(value, key) === true) {
-						result.push(tuple(key, value));
-					}
-				};
-			} else {
-				lfn = (value, key) => {
-					if (fn(value, key) === true) {
-						result.push(value);
-					}
-				};
-			}
-
-			this.forEach(lfn);
+			this.forEach((function () {
+				if (!raw) {
+					return (value, key) => {
+						if (fn(value, key) === true) {
+							result.push(tuple(key, value));
+						}
+					};
+				} else {
+					return (value, key) => {
+						if (fn(value, key) === true) {
+							result.push(value);
+						}
+					};
+				}
+			}()));
 
 			return !raw ? tuple.apply(tuple, result) : result;
 		}
@@ -288,13 +297,9 @@
 		}
 
 		get (key, raw = false) {
-			let output;
+			let output = clone(this.data.get(key) || null);
 
-			if (this.data.has(key)) {
-				output = !raw ? tuple(key, this.data.get(key)) : clone(this.data.get(key));
-			}
-
-			return output;
+			return output && !raw ? tuple(key, output) : output;
 		}
 
 		has (key) {
@@ -312,11 +317,11 @@
 					promise = this.offload([[this.id, other.id], this.toArray(null, true), other.toArray(null, true), this.key, on, type], "join");
 				}
 
-				promise.then(result => {
-					if (typeof result === "string") {
-						defer.reject(new Error(result));
+				promise.then(arg => {
+					if (typeof arg === "string") {
+						defer.reject(new Error(arg));
 					} else {
-						defer.resolve(result);
+						defer.resolve(arg);
 					}
 				}, defer.reject);
 			} else {
@@ -425,6 +430,7 @@
 				defer.resolve(true);
 			} else if (type === "records") {
 				this.data.clear();
+				this.indexes.clear();
 				this.registry.length = 0;
 				data.forEach(datum => {
 					let key = datum[this.key] || uuid();
@@ -443,6 +449,8 @@
 
 		register (key, fn) {
 			adapter[key] = fn;
+
+			return this;
 		}
 
 		reindex (index) {
@@ -472,7 +480,7 @@
 
 		request (input, config = {}) {
 			let defer = deferred(),
-				cfg = merge(this.config, config);
+				cfg = merge(clone(this.config), config);
 
 			cfg.method = cfg.method.toUpperCase();
 
@@ -570,12 +578,7 @@
 
 				if (lkey === null) {
 					if (this.key) {
-						if (this.source) {
-							this.source.split(".").forEach(i => {
-								xdata = xdata[i] || {};
-							});
-						}
-
+						xdata = this.crawl(xdata);
 						lkey = xdata[this.key] || ldata[this.key] || uuid();
 					} else {
 						lkey = uuid();
@@ -620,7 +623,7 @@
 
 			if (lkey && this.data.has(lkey)) {
 				method = "put";
-				ogdata = this.data.get(lkey);
+				ogdata = clone(this.data.get(lkey) || {});
 
 				if (!override) {
 					ldata = merge(ogdata, ldata);
@@ -645,13 +648,13 @@
 
 					this.request(luri, {
 						method: "patch",
-						body: JSON.stringify(body)
+						body: JSON.stringify(body, null, 0)
 					}).then(next, e => {
 						if (e[1] === 405) {
 							this.patch = false;
 							this.request(luri, {
 								method: method,
-								body: JSON.stringify(ldata)
+								body: JSON.stringify(ldata, null, 0)
 							}).then(next, defer.reject);
 						} else {
 							defer.reject(e);
@@ -719,7 +722,6 @@
 				lindex;
 
 			if (!this.indexes.has(index)) {
-				this.index.push(index);
 				this.reindex(index);
 			}
 
@@ -739,11 +741,9 @@
 
 		storage (...args) {
 			let defer = deferred(),
-				deferreds = [];
-
-			Object.keys(this.adapters).forEach(i => {
-				deferreds.push(this.cmd.apply(this, [i].concat(args)));
-			});
+				deferreds = Object.keys(this.adapters).map(i => {
+					return this.cmd.apply(this, [i].concat(args));
+				});
 
 			if (deferreds.length > 0) {
 				Promise.all(deferreds).then(() => {
@@ -761,19 +761,15 @@
 				valid = true;
 
 			this.request(this.uri).then(arg => {
-				let data = arg[0];
+				let data;
 
 				this.patch = (arg[2].Allow || arg[2].allow || "").indexOf("PATCH") > -1;
 
-				if (this.source) {
-					try {
-						this.source.split(".").forEach(i => {
-							data = data[i];
-						});
-					} catch (e) {
-						valid = false;
-						defer.reject(e);
-					}
+				try {
+					data = this.crawl(arg[0]);
+				} catch (e) {
+					valid = false;
+					defer.reject(e);
 				}
 
 				if (valid) {
@@ -795,6 +791,7 @@
 				return larg;
 			}, e => {
 				this.onerror("sync", e);
+
 				throw e;
 			});
 		}
