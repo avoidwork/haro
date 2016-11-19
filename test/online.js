@@ -5,28 +5,31 @@ require("tenso")({
 	security: {
 		csrf: false
 	},
-	logs: {
-		level: "warn"
+	logging: {
+		enabled: false
 	},
 	routes: {
 		get: {
+			"/": function (req, res) {
+				res.send(["data"]);
+			},
 			"/data.*": function (req, res) {
-				res.respond(data);
+				res.send(data);
 			}
 		},
 		put: {
 			"/data.*": function (req, res) {
-				res.respond(req.body);
+				res.send(req.body);
 			}
 		},
 		post: {
 			"/data.*": function (req, res) {
-				res.respond(req.body, 201);
+				res.send(req.body, 201);
 			}
 		},
 		"delete": {
 			"/data.*": function (req, res) {
-				res.respond({success: true});
+				res.send({success: true});
 			}
 		}
 	}
@@ -34,7 +37,7 @@ require("tenso")({
 
 exports.setUri = {
 	setUp: function (done) {
-		this.store = haro(null, {key: "guid", source: "data.result", logging: false});
+		this.store = haro(null, {key: "guid", source: "data", logging: false});
 		done();
 	},
 	test: function (test) {
@@ -56,7 +59,7 @@ exports.setUri = {
 
 exports["create (wired)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: "guid", source: "data.result", logging: false});
+		this.store = haro(null, {key: "guid", source: "data", logging: false});
 		this.record = JSON.parse(JSON.stringify(data[0]));
 		this.record.id = "8385ac94-0ebf-4a83-a6ba-25b54ce343be";
 		done();
@@ -80,7 +83,7 @@ exports["create (wired)"] = {
 
 exports["delete (wired)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: "guid", source: "data.result", logging: false});
+		this.store = haro(null, {key: "guid", source: "data", logging: false});
 		done();
 	},
 	test: function (test) {
@@ -105,7 +108,7 @@ exports["delete (wired)"] = {
 
 exports["update (wired / overwrite)"] = {
 	setUp: function (done) {
-		this.store = haro(null, {key: "guid", source: "data.result", logging: false});
+		this.store = haro(null, {key: "guid", source: "data", logging: false});
 		done();
 	},
 	test: function (test) {
