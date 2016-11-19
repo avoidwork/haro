@@ -261,7 +261,7 @@
 				});
 			}
 
-			return !raw ? tuple.apply(tuple, result) : clone(result);
+			return output(result, raw);
 		}
 
 		filter (fn, raw = false) {
@@ -283,7 +283,7 @@
 				}
 			}()));
 
-			return !raw ? tuple.apply(tuple, result) : result;
+			return output(result, raw);
 		}
 
 		forEach (fn, ctx) {
@@ -295,9 +295,9 @@
 		}
 
 		get (key, raw = false) {
-			const output = clone(this.data.get(key) || null);
+			const result = clone(this.data.get(key) || null);
 
-			return output && !raw ? tuple(key, output) : output;
+			return result && !raw ? tuple(key, result) : result;
 		}
 
 		has (key) {
@@ -335,11 +335,9 @@
 		}
 
 		limit (offset = 0, max = 0, raw = false) {
-			const result = this.registry.slice(offset, offset + max).map(i => {
+			return output(this.registry.slice(offset, offset + max).map(i => {
 				return this.get(i, raw);
-			});
-
-			return !raw ? tuple.apply(tuple, result) : result;
+			}), raw);
 		}
 
 		load (type = "mongo", key = undefined) {
@@ -372,7 +370,7 @@
 				result.push(fn(value, key));
 			});
 
-			return !raw ? tuple.apply(tuple, result) : result;
+			return output(result, raw);
 		}
 
 		offload (data, cmd = "index", index = this.index) {
@@ -432,12 +430,14 @@
 				this.data.clear();
 				this.indexes.clear();
 				this.registry.length = 0;
+
 				data.forEach(datum => {
 					const key = datum[this.key] || uuid();
 
 					this.data.set(key, datum);
 					this.registry.push(key);
 				});
+
 				this.total = this.data.size;
 				defer.resolve(true);
 			} else {
@@ -564,7 +564,7 @@
 				});
 			}
 
-			return !raw ? tuple.apply(tuple, result) : clone(result);
+			return output(result, raw);
 		}
 
 		set (key, data, batch = false, override = false, lload = false) {

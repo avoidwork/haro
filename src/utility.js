@@ -236,6 +236,10 @@
 		postMessage(JSON.stringify(result));
 	}
 
+	function output (arg, raw = false) {
+		return !raw ? tuple.apply(tuple, arg) : clone(arg);
+	}
+
 	function patch (ogdata = {}, data = {}, key = "", overwrite = false) {
 		const result = [];
 
