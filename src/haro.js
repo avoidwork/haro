@@ -27,7 +27,7 @@
 			this.versions = new Map();
 			this.versioning = true;
 
-			Object.keys(config).forEach(i => {
+			each(Object.keys(config), i => {
 				this[i] = merge(this[i], config[i]);
 			});
 
@@ -68,7 +68,7 @@
 				} else {
 					data = [];
 					hash = {};
-					args.forEach(i => {
+					each(args, i => {
 						let key = i[this.key];
 
 						if (key) {
@@ -140,7 +140,7 @@
 		crawl (arg) {
 			let result = clone(arg);
 
-			(this.source || "").split(".").forEach(i => {
+			each((this.source || "").split("."), i => {
 				result = result[i];
 			});
 
@@ -490,7 +490,7 @@
 
 				if (res.headers._headers) {
 					headers = {};
-					Object.keys(res.headers._headers).forEach(i => {
+					each(Object.keys(res.headers._headers), i => {
 						headers[i] = res.headers._headers[i].join(", ");
 					});
 				} else {
@@ -733,7 +733,7 @@
 				keys.push(key);
 			});
 
-			keys.sort().forEach(i => {
+			each(keys.sort(), i => {
 				lindex.get(i).forEach(key => {
 					result.push(this.get(key));
 				});
@@ -811,7 +811,7 @@
 				result = this.limit(0, this.total, true);
 
 				if (frozen) {
-					result.forEach(i => {
+					each(result, i => {
 						Object.freeze(i);
 					});
 				}

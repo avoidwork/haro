@@ -1,3 +1,21 @@
+	function each (arg, fn, exit = false) {
+		const nth = arg.length;
+
+		let i = -1;
+
+		if (exit) {
+			while (++i < nth) {
+				if (fn(arg[i], i, arg) === false) {
+					break;
+				}
+			}
+		} else {
+			while (++i < nth) {
+				fn(arg[i], i, arg);
+			}
+		}
+	}
+
 	function cast (input) {
 		let result;
 
@@ -16,13 +34,13 @@
 				break;
 			case Array.isArray(input):
 				result = new Set();
-				input.forEach(i => {
+				each(input, i => {
 					result.add(cast(i));
 				});
 				break;
 			case input instanceof Object:
 				result = new Map();
-				Object.keys(input).forEach(i => {
+				each(Object.keys(input), i => {
 					result.set(i, cast(input[i]));
 				});
 				break;
@@ -95,11 +113,11 @@
 	function createIndexes (records, indexes, key, delimiter, pattern) {
 		const result = {};
 
-		indexes.forEach(i => {
+		each(indexes, i => {
 			result[i] = {};
 		});
 
-		records.forEach(i => {
+		each(records, i => {
 			const lkey = i[key];
 
 			if (lkey !== undefined) {
@@ -118,31 +136,19 @@
 		return result;
 	}
 
-	function each (arg, fn) {
-		const nth = arg.length;
-
-		let i = -1;
-
-		while (++i < nth) {
-			if (fn(arg[i]) === false) {
-				break;
-			}
-		}
-	}
-
 	function iterate (obj, fn) {
 		if (obj instanceof Object) {
-			Object.keys(obj).forEach(i => {
+			each(Object.keys(obj), i => {
 				fn.call(obj, obj[i], i);
 			});
 		} else {
-			obj.forEach(fn);
+			each(obj, fn);
 		}
 	}
 
 	function merge (a, b) {
 		if (a instanceof Object && b instanceof Object) {
-			Object.keys(b).forEach(i => {
+			each(Object.keys(b), i => {
 				if (a[i] instanceof Object && b[i] instanceof Object) {
 					a[i] = merge(a[i], b[i]);
 				} else if (Array.isArray(a[i]) && Array.isArray(b[i])) {
@@ -181,7 +187,7 @@
 					errorMsg = "More than one record found on " + i[on];
 					valid = false;
 				} else if (c.length === 1) {
-					[i, c[0]].forEach((x, idx) => {
+					each([i, c[0]], (x, idx) => {
 						iterate(x, (v, k) => {
 							comp[ids[idx] + "_" + k] = v;
 						});
@@ -191,7 +197,7 @@
 						comp[ids[0] + "_" + k] = v;
 					});
 
-					keys.forEach(k => {
+					each(keys, k => {
 						comp[ids[1] + "_" + k] = null;
 					});
 				}
@@ -201,7 +207,7 @@
 				}
 
 				return valid;
-			});
+			}, true);
 		}
 
 		if (type === "inner") {
@@ -275,23 +281,13 @@
 	}
 
 	function setIndex (index, indexes, delimiter, key, data, indice, pattern) {
-		let idx;
+		each(!indice ? index : [indice], i => {
+			let lidx = keyIndex(i, data, delimiter, pattern);
 
-		if (!indice) {
-			index.forEach(i => {
-				let lidx = keyIndex(i, data, delimiter, pattern);
-
-				if (lidx !== undefined && lidx !== null) {
-					setIndexValue(indexes.get(i), lidx, key);
-				}
-			});
-		} else {
-			idx = keyIndex(indice, data, delimiter, pattern);
-
-			if (idx !== undefined && idx !== null) {
-				setIndexValue(indexes.get(indice), idx, key);
+			if (lidx !== undefined && lidx !== null) {
+				setIndexValue(indexes.get(i), lidx, key);
 			}
-		}
+		});
 	}
 
 	function toObjekt (arg, frozen = true) {
