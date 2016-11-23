@@ -5,13 +5,13 @@
 
 		if (exit) {
 			while (++i < nth) {
-				if (fn(arg[i], i, arg) === false) {
+				if (fn(arg[i], i) === false) {
 					break;
 				}
 			}
 		} else {
 			while (++i < nth) {
-				fn(arg[i], i, arg);
+				fn(arg[i], i);
 			}
 		}
 	}
