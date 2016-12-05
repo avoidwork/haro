@@ -266,6 +266,11 @@ _Function_
 
 Event listener for errors which occur during common operations, receives two arguments ['type', `Error`]
 
+**onrequest**
+_Function_
+
+Event listener for transforming an API response, receives `body`, `status` & `headers`.
+
 **onset**
 _Function_
 

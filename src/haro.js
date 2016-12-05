@@ -414,10 +414,19 @@
 		}
 
 		onbatch () {}
+
 		onclear () {}
+
 		ondelete () {}
+
 		onerror () {}
+
+		onrequest (arg) {
+			return arg;
+		}
+
 		onset () {}
+
 		onsync () {}
 
 		override (data, type = "records", fn = undefined) {
@@ -498,7 +507,7 @@
 				}
 
 				res[res.headers.get("content-type").indexOf("application/json") > -1 ? "json" : "text"]().then(arg => {
-					defer[status < 200 || status >= 400 ? "reject" : "resolve"](tuple(arg, status, headers));
+					defer[status < 200 || status >= 400 ? "reject" : "resolve"](tuple(this.onrequest(arg, status, headers), status, headers));
 				}, e => {
 					defer.reject(tuple(e.message, status, headers));
 				});
