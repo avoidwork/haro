@@ -29,28 +29,28 @@ Harō takes two optional arguments, the first is an `Array` of records to set as
 configuration descriptor.
 
 ```javascript
-var storeDefaults = haro();
-var storeRecords = haro([{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}]);
-var storeCustom = haro(null, {key: 'id'});
+const storeDefaults = haro();
+const storeRecords = haro([{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}]);
+const storeCustom = haro(null, {key: 'id'});
 ```
 
 ### Persistent Storage
-Harō is an in RAM only DataStore, so state could be lost if your program unexpectedly restarted, or some kind of 
-machine failure were to occur. To handle this serious problem, Harō affords a 1-n relationship with persistent storage 
-adapters. You can register one or many adapters, and data updates will asynchronously persist to the various long term 
+Harō is an in RAM only DataStore, so state could be lost if your program unexpectedly restarted, or some kind of
+machine failure were to occur. To handle this serious problem, Harō affords a 1-n relationship with persistent storage
+adapters. You can register one or many adapters, and data updates will asynchronously persist to the various long term
 storage systems.
 
-DataStore records will be stored separate of the DataStore snapshot itself (if you decide to leverage it), meaning you 
-are responsible for doing a `load()` & `save()` at startup & shutdown. This is a manual process because it could be a 
-time bottleneck in the middle of using your application. Loading an individual record will update the DataStore with 
+DataStore records will be stored separate of the DataStore snapshot itself (if you decide to leverage it), meaning you
+are responsible for doing a `load()` & `save()` at startup & shutdown. This is a manual process because it could be a
+time bottleneck in the middle of using your application. Loading an individual record will update the DataStore with
 value from persistent storage.
 
-DataStore snapshots & individual records can be removed from persistent storage with `unload()`; it is not recommended 
+DataStore snapshots & individual records can be removed from persistent storage with `unload()`; it is not recommended
 to do this for an individual record, and to instead rely on `del()`, but it's afforded because it may be required.
 
 #### Creating an Adapter
-Adapters are simple in nature (can be isomorphic), and pretty easy to create! Follow the template below, fill in the 
-gaps for your adapter as needed, such as handling multiple connection pools, etc.. The input parameters should not be 
+Adapters are simple in nature (can be isomorphic), and pretty easy to create! Follow the template below, fill in the
+gaps for your adapter as needed, such as handling multiple connection pools, etc.. The input parameters should not be
 mutated. The return must be a `Promise`.
 
 ```javascript
@@ -104,7 +104,7 @@ module.exports = adapter;
 ### Examples
 #### Piping Promises
 ```javascript
-var store = haro();
+const store = haro();
 
 console.log(store.total); // 0
 
@@ -125,7 +125,7 @@ store.set(null, {abc: true}).then(function (arg) {
 
 #### Indexes & Searching
 ```javascript
-var store = haro(null, {index: ['name', 'age']}),
+const store = haro(null, {index: ['name', 'age']}),
     data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
 
 store.batch(data, 'set').then(function (records) {
@@ -141,7 +141,7 @@ store.batch(data, 'set').then(function (records) {
 
 #### MVCC versioning
 ```javascript
-var store = haro();
+const store = haro();
 
 store.set(null, {abc: true}).then(function (arg) {
   return store.set(arg[0], {abc: false});
@@ -187,7 +187,7 @@ Available adapters: _mongo_
 
 Example of specifying MongoDB as persistent storage:
 ```javascript
-var store = haro(null, {
+const store = haro(null, {
   adapters: {
     mongo: "mongo://localhost/mine"
   }
@@ -201,7 +201,7 @@ Default settings for `fetch()`.
 
 Example of specifying a bearer token authorization header:
 ```javascript
-var store = haro(null, {
+const store = haro(null, {
   config: {
     headers: {
       authorization: 'Bearer abcdef'
@@ -217,7 +217,7 @@ Non-matches within composites result in blank values.
 
 Example of fields/properties to index:
 ```javascript
-var store = haro(null, {index: ['field1', 'field2', 'field1|field2|field3']);
+const store = haro(null, {index: ['field1', 'field2', 'field1|field2|field3']);
 ```
 
 **key**
@@ -227,7 +227,7 @@ Optional `Object` key to utilize as `Map` key, defaults to a version 4 `UUID` if
 
 Example of specifying the primary key:
 ```javascript
-var store = haro(null, {key: 'field'});
+const store = haro(null, {key: 'field'});
 ```
 
 **loading**
@@ -283,7 +283,7 @@ Optional `Object` key to retrieve data from API responses, see `setUri()`.
 
 Example of specifying the source of data:
 ```javascript
-var store = haro(null, {source: 'data'});
+const store = haro(null, {source: 'data'});
 ```
 
 **versioning**
@@ -293,7 +293,7 @@ Enable/disable MVCC style versioning of records, default is `true`. Versions are
 
 Example of disabling versioning:
 ```javascript
-var store = haro(null, {versioning: false});
+const store = haro(null, {versioning: false});
 ```
 
 ### Properties
@@ -336,13 +336,13 @@ _Map_
 **batch(array, type)**
 _Promise_
 
-The first argument must be an `Array`, and the second argument must be `del` or `set`. Batch operations with a DataStore 
+The first argument must be an `Array`, and the second argument must be `del` or `set`. Batch operations with a DataStore
 that is wired to an API with pagination enabled & `PATCH` support may create erroneous operations, such as `add` where
-`replace` is appropriate; this will happen because the DataStore will not have the entire data set to generate it's 
+`replace` is appropriate; this will happen because the DataStore will not have the entire data set to generate it's
 [JSONPatch](http://jsonpatchjs.com/) request.
 
 ```javascript
-var haro = require('haro'),
+const haro = require('haro'),
     store = haro(null, {key: 'id', index: ['name']}),
     i = -1,
     nth = 100,
@@ -366,7 +366,7 @@ Removes all key/value pairs from the DataStore.
 
 Example of clearing a DataStore:
 ```javascript
-var store = haro();
+const store = haro();
 
 // Data is added
 
@@ -380,7 +380,7 @@ Deletes the record.
 
 Example of deleting a record:
 ```javascript
-var store = haro();
+const store = haro();
 
 store.set(null, {abc: true}).then(function (rec) {
   return store.del(rec[0]);
@@ -399,12 +399,12 @@ _Array_ or _Object_
 Returns the records or indexes of the DataStore as mutable `Array` or `Object`, for the intention of reuse/persistent storage without relying on an adapter which would break up the data set.
 
 ```javascript
-var store = haro();
+const store = haro();
 
 // Data is loaded
 
-var records = store.dump();
-var indexes = store.dump('indexes');
+const records = store.dump();
+const indexes = store.dump('indexes');
 
 // Save records & indexes
 ```
@@ -412,12 +412,12 @@ var indexes = store.dump('indexes');
 **entries()**
 _MapIterator_
 
-Returns returns a new `Iterator` object that contains an array of `[key, value]` for each element in the `Map` object in 
+Returns returns a new `Iterator` object that contains an array of `[key, value]` for each element in the `Map` object in
 insertion order.
 
 Example of deleting a record:
 ```javascript
-var store = haro(),
+const store = haro(),
     item, iterator;
 
 // Data is added
@@ -434,12 +434,12 @@ do {
 **filter(callbackFn[, raw=false])**
 _Array_
 
-Returns an `Array` of double `Arrays` with the shape `[key, value]` for records which returned `true` to 
+Returns an `Array` of double `Arrays` with the shape `[key, value]` for records which returned `true` to
 `callbackFn(value, key)`.
 
 Example of filtering a DataStore:
 ```javascript
-var store = haro();
+const store = haro();
 
 // Data is added
 
@@ -455,7 +455,7 @@ Returns an `Array` of double `Arrays` with found by indexed values matching the 
 
 Example of finding a record(s) with an identity match:
 ```javascript
-var store = haro(null, {index: ['field1']});
+const store = haro(null, {index: ['field1']});
 
 // Data is added
 
@@ -465,12 +465,12 @@ store.find({field1: 'some value'});
 **forEach(callbackFn[, thisArg])**
 _Undefined_
 
-Calls `callbackFn` once for each key-value pair present in the `Map` object, in insertion order. If a `thisArg` 
+Calls `callbackFn` once for each key-value pair present in the `Map` object, in insertion order. If a `thisArg`
 parameter is provided to `forEach`, it will be used as the this value for each callback.
 
 Example of deleting a record:
 ```javascript
-var store = haro();
+const store = haro();
 
 store.set(null, {abc: true}).then(function (rec) {
   store.forEach(function (value, key) {
@@ -488,7 +488,7 @@ Gets the record as a double `Array` with the shape `[key, value]`.
 
 Example of getting a record with a known primary key value:
 ```javascript
-var store = haro();
+const store = haro();
 
 // Data is added
 
@@ -502,7 +502,7 @@ Returns a `Boolean` indicating if the data store contains `key`.
 
 Example of checking for a record with a known primary key value:
 ```javascript
-var store = haro();
+const store = haro();
 
 // Data is added
 
@@ -512,13 +512,13 @@ store.has('keyValue'); // true or false
 **join(other, on[, type="inner", where=[]])**
 _Promise_
 
-Joins `this` instance of `Haro` with another, on a field/property. Supports "inner", "left", & "right" JOINs. Resulting 
-composite records implement a `storeId_field` convention for fields/properties. The optional forth parameter is an Array 
-which can be used for WHERE clauses, similar to `find()`, `[store1, store2]`. 
+Joins `this` instance of `Haro` with another, on a field/property. Supports "inner", "left", & "right" JOINs. Resulting
+composite records implement a `storeId_field` convention for fields/properties. The optional forth parameter is an Array
+which can be used for WHERE clauses, similar to `find()`, `[store1, store2]`.
 
 ```javascript
-var store1 = haro([{id: "abc", name: "jason", age: 35}, {id: "def", name: "jen", age: 31}], {id: 'users', key: 'id', index: ['name', 'age']});
-var store2 = haro([{id: 'ghi', user: "abc", value: 40}], {id: 'values', key: 'id', index: ['user', 'value']});
+const store1 = haro([{id: "abc", name: "jason", age: 35}, {id: "def", name: "jen", age: 31}], {id: 'users', key: 'id', index: ['name', 'age']});
+const store2 = haro([{id: 'ghi', user: "abc", value: 40}], {id: 'values', key: 'id', index: ['user', 'value']});
 
 // Join results
 store1.join(store2, "user", "inner").then(function (records) {
@@ -559,7 +559,7 @@ Returns a new `Iterator` object that contains the keys for each element in the `
 
 Example of getting an iterator, and logging the results:
 ```javascript
-var store = haro(),
+const store = haro(),
     item, iterator;
 
 // Data is added
@@ -580,7 +580,7 @@ Returns an `Array` of double `Arrays` with the shape `[key, value]` for the corr
 
 Example of paginating a data set:
 ```javascript
-var store = haro(), ds1, ds2;
+const store = haro(), ds1, ds2;
 
 // Data is added
 
@@ -595,7 +595,7 @@ console.log(JSON.stringify(ds1[0][1]) === JSON.stringify(ds2[0][1])); // false
 **load([adapter="mongo", key])**
 _Promise_
 
-Loads the DataStore, or a record from a specific persistent storage & updates the DataStore. The DataStore will be cleared 
+Loads the DataStore, or a record from a specific persistent storage & updates the DataStore. The DataStore will be cleared
 prior to loading if `key` is omitted.
 
 **map(callbackFn, raw=false)**
@@ -605,7 +605,7 @@ Returns an `Array` of the returns of `callbackFn(value, key)`. If `raw` is `true
 
 Example of mapping a DataStore:
 ```javascript
-var store = haro();
+const store = haro();
 
 // Data is added
 
@@ -617,12 +617,12 @@ store.map(function (value) {
 **offload(data[, cmd="index", index=this.index])**
 _Promise_
 
-Returns a `Promise` for an offloaded work load, such as preparing indexes in a `Worker`. This method is ideal for dealing 
-with large data sets which could block a UI thread. This method requires `Blob` & `Worker`. 
+Returns a `Promise` for an offloaded work load, such as preparing indexes in a `Worker`. This method is ideal for dealing
+with large data sets which could block a UI thread. This method requires `Blob` & `Worker`.
 
 Example of offloading index creation:
 ```javascript
-var store = haro(null, {index: ['name', 'age'], key: 'guid'}),
+const store = haro(null, {index: ['name', 'age'], key: 'guid'}),
     data = [{guid: 'abc', name: 'Jason Mulligan', age: 35}];
 
 store.offload(data).then(function (args) {
@@ -642,7 +642,7 @@ transformation to simplify cross domain issues.
 
 Example of overriding a DataStore:
 ```javascript
-var store = haro();
+const store = haro();
 
 store.override({'field': {'value': ['pk']}}, "indexes").then(function () {
  // Indexes have been overridden, no records though! override as well?
@@ -658,7 +658,7 @@ Re-indexes the DataStore, to be called if changing the value of `index`.
 
 Example of mapping a DataStore:
 ```javascript
-var store = haro();
+const store = haro();
 
 // Data is added
 
@@ -676,7 +676,7 @@ Registers a persistent storage adapter.
 
 Example of registering an adapter:
 ```javascript
-var haro = require('haro'),
+const haro = require('haro'),
     store;
 
 // Configure a store to utilize the adapter
@@ -697,7 +697,7 @@ Returns a `Promise` for a `fetch()` with a triple `Array` [`body`, `status`, `he
 
 Example of mapping a DataStore:
 ```javascript
-var store = haro();
+const store = haro();
 
 store.request('https://somedomain.com/api').then(function (arg) {
   console.log(arg); // [body, status, headers]
@@ -715,15 +715,15 @@ Saves the DataStore to persistent storage.
 _Array_
 
 Returns an `Array` of double `Arrays` with the shape `[key, value]` of records found matching `arg`.
-If `arg` is a `Function` (parameters are `value` & `index`) a match is made if the result is `true`, if `arg` is a `RegExp` the field value must `.test()` 
-as `true`, else the value must be an identity match. The `index` parameter can be a `String` or `Array` of `Strings`; 
+If `arg` is a `Function` (parameters are `value` & `index`) a match is made if the result is `true`, if `arg` is a `RegExp` the field value must `.test()`
+as `true`, else the value must be an identity match. The `index` parameter can be a `String` or `Array` of `Strings`;
 if not supplied it defaults to `this.index`.
 
 Indexed `Arrays` which are tested with a `RegExp` will be treated as a comma delimited `String`, e.g. `['hockey', 'football']` becomes `'hockey, football'` for the `RegExp`.
 
 Example of searching with a predicate function:
 ```javascript
-var store = haro(null, {index: ['name', 'age']}),
+const store = haro(null, {index: ['name', 'age']}),
    data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
 
 store.batch(data, 'set').then(function (records) {
@@ -738,14 +738,14 @@ store.batch(data, 'set').then(function (records) {
 **set(key, data, batch=false, override=false)**
 _Promise_
 
-Returns a `Promise` for setting/amending a record in the DataStore, if `key` is `false` a version 4 `UUID` will be 
+Returns a `Promise` for setting/amending a record in the DataStore, if `key` is `false` a version 4 `UUID` will be
 generated.
 
 If `override` is `true`, the existing record will be replaced instead of amended.
 
 Example of creating a record:
 ```javascript
-var store = haro(null, {key: 'id'});
+const store = haro(null, {key: 'id'});
 
 store.set(null, {id: 1, name: 'John Doe'}).then(function (record) {
   console.log(record); // [1, {id: 1, name: 'Jane Doe'}]
@@ -760,16 +760,16 @@ _Promise_
 Returns a `Promise` for wiring the DataStore to an API, with the retrieved record set as the `resolve()` argument. This
 creates an implicit mapping of `$uri/{key}` for records.
 
-Pagination can be implemented by conditionally supplying `true` as the second argument. Doing so will `clear()` the 
+Pagination can be implemented by conditionally supplying `true` as the second argument. Doing so will `clear()` the
 DataStore prior to a batch insertion.
 
-If `PATCH` requests are supported by the collection `batch()`, `del()` & `set()` will make `JSONPatch` requests. If a 
-`405` / `Method not Allowed` response occurs from a `PATCH` request, the DataStore will fallback to the appropriate 
+If `PATCH` requests are supported by the collection `batch()`, `del()` & `set()` will make `JSONPatch` requests. If a
+`405` / `Method not Allowed` response occurs from a `PATCH` request, the DataStore will fallback to the appropriate
 method & disable `PATCH` for subsequent requests.
 
 Example setting the URI of the DataStore:
 ```javascript
-var store = haro(null, {key: 'id'});
+const store = haro(null, {key: 'id'});
 
 store.setUri('https://api.somedomain.com').then(function (records) {
   console.log(records); // [[$id, {...}], ...]
@@ -780,7 +780,7 @@ store.setUri('https://api.somedomain.com').then(function (records) {
 
 Example of pagination, by specifying `clear`:
 ```javascript
-var store = haro(null, {key: 'id'});
+const store = haro(null, {key: 'id'});
 
 store.setUri('https://api.somedomain.com?page=1').then(function (records) {
   console.log(records); // [[$id, {...}], ...]
@@ -803,7 +803,7 @@ Returns an Array of the DataStore, sorted by `callbackFn`.
 
 Example of sorting like an `Array`:
 ```javascript
-var store = haro(null, {index: ['name', 'age']}),
+const store = haro(null, {index: ['name', 'age']}),
    data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
 
 store.batch(data, 'set').then(function (records) {
@@ -822,7 +822,7 @@ Returns an `Array` of double `Arrays` with the shape `[key, value]` of records s
 
 Example of sorting by an index:
 ```javascript
-var store = haro(null, {index: ['name', 'age']}),
+const store = haro(null, {index: ['name', 'age']}),
    data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
 
 store.batch(data, 'set').then(function (records) {
@@ -840,7 +840,7 @@ prior to `batch()` upon a successful retrieval of data.
 
 Example of sorting by an index:
 ```javascript
-var store = haro(null, {key: 'id'}),
+const store = haro(null, {key: 'id'}),
     interval;
 
 store.setUri('https://api.somedomain.com').then(function (records) {
@@ -862,7 +862,7 @@ Returns an Array of the DataStore, or a subset.
 
 Example of casting to an `Array`:
 ```javascript
-var store = haro(),
+const store = haro(),
    data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
 
 store.batch(data, 'set').then(function (records) {
@@ -880,7 +880,7 @@ Returns an Object of the DataStore.
 
 Example of casting to an `Object`:
 ```javascript
-var store = haro(null, {key: 'guid'}),
+const store = haro(null, {key: 'guid'}),
    data = [{guid: 'abc', name: 'John Doe', age: 30}, {guid: 'def', name: 'Jane Doe', age: 28}];
 
 store.batch(data, 'set').then(function (records) {
@@ -897,11 +897,11 @@ _Mixed_
 Transforms `Map` to `Object`, `Object` to `Map`, `Set` to `Array`, & `Array` to `Set`. Accepts an optional second parameter to perform the
 transformation to simplify cross domain issues.
 
-`haro.transform()` is exposed so that you can either duplicate it into the current context with `toString()` & 
-`new Function()`, or simply re-implement, for situations where you need to supply the transformation `Function`. 
+`haro.transform()` is exposed so that you can either duplicate it into the current context with `toString()` &
+`new Function()`, or simply re-implement, for situations where you need to supply the transformation `Function`.
 
 ```javascript
-var store = haro(null, {key: 'guid', index: ['name'}),
+const store = haro(null, {key: 'guid', index: ['name'}),
    data = [{guid: 'abc', name: 'John Doe', age: 30}, {guid: 'def', name: 'Jane Doe', age: 28}];
 
 store.batch(data, 'set').then(function (records) {
@@ -923,7 +923,7 @@ Un-registers a persistent storage adapter.
 
 Example of unregistering an adapter:
 ```javascript
-var haro = require('haro'),
+const haro = require('haro'),
     store;
 
 // Register the adapter
@@ -947,17 +947,17 @@ Returns a new `Iterator` object that contains the values for each element in the
 
 Example of iterating the values:
 ```javascript
-var store = haro(),
+const store = haro(),
    data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
 
 store.batch(data, 'set').then(function (records) {
-  var iterator = store.values(),
-      item = iterator.next();
+  const iterator = store.values();
+  let item = iterator.next();
 
-  do {
+  while (!item.done) {
     console.log(item.value);
     item = iterator.next();
-  } while (!item.done);
+  };
 }, function (e) {
   console.error(e.stack || e.message || e);
 });
