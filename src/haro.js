@@ -93,16 +93,14 @@
 			}
 
 			return defer.promise.then(arg => {
-				const larg = tuple.apply(tuple, arg);
-
 				this.loading = false;
-				this.onbatch(type, larg);
+				this.onbatch(type, arg);
 
 				if (this.logging) {
 					console.log("Batch inserted data into", this.id);
 				}
 
-				return larg;
+				return arg;
 			}, e => {
 				this.loading = false;
 				this.onerror("batch", e);
@@ -138,13 +136,14 @@
 		}
 
 		crawl (arg) {
-			let result = clone(arg);
+			let input = clone(arg),
+				result = clone(input);
 
 			each((this.source || "").split("."), i => {
 				result = result[i];
 			});
 
-			return result;
+			return result || input;
 		}
 
 		del (key, batch = false) {
@@ -261,29 +260,31 @@
 				});
 			}
 
-			return output(result, raw);
+			return raw ? result : this.list(...result);
 		}
 
 		filter (fn, raw = false) {
 			const result = [];
 
-			this.forEach((function () {
-				if (!raw) {
-					return (value, key) => {
-						if (fn(value, key) === true) {
-							result.push(tuple(key, value));
-						}
-					};
-				} else {
-					return (value, key) => {
-						if (fn(value, key) === true) {
-							result.push(value);
-						}
-					};
-				}
-			}()));
+			let lfn;
 
-			return output(result, raw);
+			if (!raw) {
+				lfn = (value, key) => {
+					if (fn(value, key) === true) {
+						result.push(this.list(key, value));
+					}
+				};
+			} else {
+				lfn = (value, key) => {
+					if (fn(value, key) === true) {
+						result.push(value);
+					}
+				};
+			}
+
+			this.forEach(lfn);
+
+			return raw ? result : this.list(...result);
 		}
 
 		forEach (fn, ctx) {
@@ -297,7 +298,7 @@
 		get (key, raw = false) {
 			const result = clone(this.data.get(key) || null);
 
-			return result && !raw ? tuple(key, result) : result;
+			return result && !raw ? this.list(key, result) : result;
 		}
 
 		has (key) {
@@ -335,9 +336,13 @@
 		}
 
 		limit (offset = 0, max = 0, raw = false) {
-			return output(this.registry.slice(offset, offset + max).map(i => {
-				return this.get(i, raw);
-			}), raw);
+			const result = this.registry.slice(offset, offset + max).map(i => this.get(i, raw));
+
+			return raw ? result : this.list(...result);
+		}
+
+		list (...args) {
+			return Object.freeze(args.map(i => Object.freeze(clone(i))));
 		}
 
 		load (type = "mongo", key = undefined) {
@@ -370,7 +375,7 @@
 				result.push(fn(value, key));
 			});
 
-			return output(result, raw);
+			return raw ? result : this.list(...result);
 		}
 
 		offload (data, cmd = "index", index = this.index) {
@@ -507,12 +512,12 @@
 				}
 
 				res[res.headers.get("content-type").indexOf("application/json") > -1 ? "json" : "text"]().then(arg => {
-					defer[status < 200 || status >= 400 ? "reject" : "resolve"](tuple(this.onrequest(arg, status, headers), status, headers));
+					defer[status < 200 || status >= 400 ? "reject" : "resolve"](this.list(this.onrequest(arg, status, headers), status, headers));
 				}, e => {
-					defer.reject(tuple(e.message, status, headers));
+					defer.reject(this.list(e.message, status, headers));
 				});
 			}, e => {
-				defer.reject(tuple(e.message, 0, {}));
+				defer.reject(this.list(e.message, 0, {}));
 			});
 
 			return defer.promise;
@@ -573,7 +578,7 @@
 				});
 			}
 
-			return output(result, raw);
+			return raw ? result : this.list(...result);
 		}
 
 		set (key, data, batch = false, override = false, lload = false) {
@@ -605,7 +610,7 @@
 					}
 				} else {
 					if (this.versioning) {
-						this.versions.get(lkey).add(tuple(ogdata));
+						this.versions.get(lkey).add(this.list(ogdata));
 					}
 
 					delIndex(this.index, this.indexes, this.delimiter, lkey, ogdata, this.pattern);
@@ -727,7 +732,7 @@
 			return result;
 		}
 
-		sortBy (index) {
+		sortBy (index, raw = false) {
 			const result = [],
 				keys = [];
 
@@ -744,11 +749,11 @@
 
 			each(keys.sort(), i => {
 				lindex.get(i).forEach(key => {
-					result.push(this.get(key));
+					result.push(this.get(key, raw));
 				});
 			});
 
-			return tuple.apply(tuple, result);
+			return raw ? result : this.list(...result);
 		}
 
 		storage (...args) {
@@ -797,11 +802,9 @@
 			});
 
 			return defer.promise.then(arg => {
-				const larg = tuple.apply(tuple, arg);
+				this.onsync(arg);
 
-				this.onsync(larg);
-
-				return larg;
+				return arg;
 			}, e => {
 				this.onerror("sync", e);
 

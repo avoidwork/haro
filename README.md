@@ -8,7 +8,7 @@ Harō is a modern immutable DataStore built with ES6 features, which can be wire
 It is un-opinionated, and offers a plug'n'play solution to modeling, searching, & managing data on the client, or server
 (in RAM). It is a [partially persistent data structure](https://en.wikipedia.org/wiki/Persistent_data_structure), by maintaining version sets of records in `versions` ([MVCC](https://en.wikipedia.org/wiki/Multiversion_concurrency_control)).
 
-Synchronous commands return instantly (`Array` or `Tuple`), while asynchronous commands return  `Promises` which will
+Synchronous commands return an `Array` instantly, while asynchronous commands return  `Promises` which will
 resolve or reject in the future. This allows you to build complex applications without worrying about managing async 
 code.
 
@@ -23,8 +23,6 @@ Harō is built with ES6+ features, and requires polyfills for ES5 or earlier env
 - `Set`
 - `Promise`
 - `fetch()`
-- `deferred()` see [tiny-defer](https://github.com/avoidwork/tiny-defer) for loading in a browser
-- `tuple()` see [tiny-tuple](https://github.com/avoidwork/tiny-tuple) for loading in a browser
 
 ### How to use
 Harō takes two optional arguments, the first is an `Array` of records to set asynchronously, & the second is a 
@@ -249,7 +247,7 @@ Logs persistent storage messages to `console`, default is `true`.
 **onbatch**
 _Function_
 
-Event listener for a batch operation, receives two arguments ['type', `Tuple`].
+Event listener for a batch operation, receives two arguments ['type', `Array`].
 
 **onclear**
 _Function_
@@ -274,12 +272,12 @@ Event listener for transforming an API response, receives `body`, `status` & `he
 **onset**
 _Function_
 
-Event listener for when a record is set, receives a `Tuple`.
+Event listener for when a record is set, receives a `Array`.
 
 **onsync**
 _Function_
 
-Event listener for synchronizing with an API, receives a `Tuple` of `Tuples`.
+Event listener for synchronizing with an API, receives a `Array` of `Arrays`.
 
 **source**
 _String_
@@ -358,7 +356,7 @@ while (++i < nth) {
 }
 
 store.batch(data, 'set').then(function(records) {
-  // records is a Tuple of Tuples
+  // records is an Array of Arrays
 }, function (e) {
   console.error(e.stack);
 });
@@ -437,9 +435,9 @@ do {
 ```
 
 **filter(callbackFn[, raw=false])**
-_Tuple_
+_Array_
 
-Returns a `Tuple` of double `Tuples` with the shape `[key, value]` for records which returned `true` to 
+Returns a `Array` of double `Arrays` with the shape `[key, value]` for records which returned `true` to 
 `callbackFn(value, key)`.
 
 Example of filtering a DataStore:
@@ -454,9 +452,9 @@ store.filter(function (value) {
 ```
 
 **find(where[, raw=false])**
-_Tuple_
+_Array_
 
-Returns a `Tuple` of double `Tuples` with found by indexed values matching the `where`.
+Returns a `Array` of double `Arrays` with found by indexed values matching the `where`.
 
 Example of finding a record(s) with an identity match:
 ```javascript
@@ -487,9 +485,9 @@ store.set(null, {abc: true}).then(function (rec) {
 ```
 
 **get(key[, raw=false])**
-_Tuple_
+_Array_
 
-Gets the record as a double `Tuple` with the shape `[key, value]`.
+Gets the record as a double `Array` with the shape `[key, value]`.
 
 Example of getting a record with a known primary key value:
 ```javascript
@@ -579,9 +577,9 @@ do {
 ```
 
 **limit(offset=0, max=0, raw=false)**
-_Tuple_
+_Array_
 
-Returns a `Tuple` of double `Tuples` with the shape `[key, value]` for the corresponding range of records.
+Returns a `Array` of double `Arrays` with the shape `[key, value]` for the corresponding range of records.
 
 Example of paginating a data set:
 ```javascript
@@ -604,9 +602,9 @@ Loads the DataStore, or a record from a specific persistent storage & updates th
 prior to loading if `key` is omitted.
 
 **map(callbackFn, raw=false)**
-_Tuple_
+_Array_
 
-Returns a `Tuple` of the returns of `callbackFn(value, key)`. If `raw` is `true` an `Array` is returned.
+Returns a `Array` of the returns of `callbackFn(value, key)`. If `raw` is `true` an `Array` is returned.
 
 Example of mapping a DataStore:
 ```javascript
@@ -698,7 +696,7 @@ store.register('mongo', require('haro-mongo'));
 **request(input, config)**
 _Promise_
 
-Returns a `Promise` for a `fetch()` with a triple `Tuple` [`body`, `status`, `headers`] as the `resolve()` & `reject()` argument.
+Returns a `Promise` for a `fetch()` with a triple `Array` [`body`, `status`, `headers`] as the `resolve()` & `reject()` argument.
 
 Example of mapping a DataStore:
 ```javascript
@@ -717,9 +715,9 @@ _Promise_
 Saves the DataStore to persistent storage.
 
 **search(arg[, index=this.index, raw=false])**
-_Tuple_
+_Array_
 
-Returns a `Tuple` of double `Tuples` with the shape `[key, value]` of records found matching `arg`.
+Returns a `Array` of double `Arrays` with the shape `[key, value]` of records found matching `arg`.
 If `arg` is a `Function` (parameters are `value` & `index`) a match is made if the result is `true`, if `arg` is a `RegExp` the field value must `.test()` 
 as `true`, else the value must be an identity match. The `index` parameter can be a `String` or `Array` of `Strings`; 
 if not supplied it defaults to `this.index`.
@@ -821,9 +819,9 @@ store.batch(data, 'set').then(function (records) {
 ```
 
 **sortBy(index)**
-_Tuple_
+_Array_
 
-Returns a `Tuple` of double `Tuples` with the shape `[key, value]` of records sorted by an index.
+Returns a `Array` of double `Arrays` with the shape `[key, value]` of records sorted by an index.
 
 Example of sorting by an index:
 ```javascript
@@ -969,5 +967,5 @@ store.batch(data, 'set').then(function (records) {
 ```
 
 ## License
-Copyright (c) 2016 Jason Mulligan
+Copyright (c) 2017 Jason Mulligan
 Licensed under the BSD-3 license

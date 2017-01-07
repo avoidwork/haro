@@ -8,6 +8,7 @@
 				clone.toString(),
 				createIndexes.toString(),
 				each.toString(),
+				has.toString(),
 				iterate.toString(),
 				joinData.toString(),
 				keyIndex.toString(),

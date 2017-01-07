@@ -1,3 +1,18 @@
+	function deferred () {
+		let promise, resolver, rejecter;
+
+		promise = new Promise(function (resolve, reject) {
+			resolver = resolve;
+			rejecter = reject;
+		});
+
+		return {resolve: resolver, reject: rejecter, promise: promise};
+	}
+
+	function has (a, b) {
+		return b in a;
+	}
+
 	function each (arg, fn, exit = false) {
 		const nth = arg.length;
 
@@ -124,7 +139,7 @@
 				indexes.forEach(index => {
 					const lindex = keyIndex(index, i, delimiter, pattern);
 
-					if (result[index][lindex] === undefined) {
+					if (!has(result[index], lindex)) {
 						result[index][lindex] = [];
 					}
 
@@ -170,7 +185,7 @@
 		const result = [];
 
 		let error = false,
-			errorMsg;
+			errorMsg = "More than one record found on ";
 
 		function join (left, right, ids, include = false, reverse = false) {
 			const keys = Object.keys(right[0]),
@@ -184,14 +199,12 @@
 
 				if (c.length > 1) {
 					error = true;
-					errorMsg = "More than one record found on " + i[on];
+					errorMsg += i[on];
 					valid = false;
 				} else if (c.length === 1) {
-					each([i, c[0]], (x, idx) => {
-						iterate(x, (v, k) => {
-							comp[ids[idx] + "_" + k] = v;
-						});
-					});
+					each([i, c[0]], (x, idx) => iterate(x, (v, k) => {
+						comp[ids[idx] + "_" + k] = v;
+					}));
 				} else if (include) {
 					iterate(i, (v, k) => {
 						comp[ids[0] + "_" + k] = v;
@@ -240,10 +253,6 @@
 		}
 
 		postMessage(JSON.stringify(result));
-	}
-
-	function output (arg, raw = false) {
-		return !raw ? tuple.apply(tuple, arg) : clone(arg);
 	}
 
 	function patch (ogdata = {}, data = {}, key = "", overwrite = false) {
