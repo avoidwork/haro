@@ -272,12 +272,12 @@ Event listener for transforming an API response, receives `body`, `status` & `he
 **onset**
 _Function_
 
-Event listener for when a record is set, receives a `Array`.
+Event listener for when a record is set, receives an `Array`.
 
 **onsync**
 _Function_
 
-Event listener for synchronizing with an API, receives a `Array` of `Arrays`.
+Event listener for synchronizing with an API, receives an `Array` of `Arrays`.
 
 **source**
 _String_
@@ -437,7 +437,7 @@ do {
 **filter(callbackFn[, raw=false])**
 _Array_
 
-Returns a `Array` of double `Arrays` with the shape `[key, value]` for records which returned `true` to 
+Returns an `Array` of double `Arrays` with the shape `[key, value]` for records which returned `true` to 
 `callbackFn(value, key)`.
 
 Example of filtering a DataStore:
@@ -454,7 +454,7 @@ store.filter(function (value) {
 **find(where[, raw=false])**
 _Array_
 
-Returns a `Array` of double `Arrays` with found by indexed values matching the `where`.
+Returns an `Array` of double `Arrays` with found by indexed values matching the `where`.
 
 Example of finding a record(s) with an identity match:
 ```javascript
@@ -579,7 +579,7 @@ do {
 **limit(offset=0, max=0, raw=false)**
 _Array_
 
-Returns a `Array` of double `Arrays` with the shape `[key, value]` for the corresponding range of records.
+Returns an `Array` of double `Arrays` with the shape `[key, value]` for the corresponding range of records.
 
 Example of paginating a data set:
 ```javascript
@@ -604,7 +604,7 @@ prior to loading if `key` is omitted.
 **map(callbackFn, raw=false)**
 _Array_
 
-Returns a `Array` of the returns of `callbackFn(value, key)`. If `raw` is `true` an `Array` is returned.
+Returns an `Array` of the returns of `callbackFn(value, key)`. If `raw` is `true` an `Array` is returned.
 
 Example of mapping a DataStore:
 ```javascript
@@ -717,7 +717,7 @@ Saves the DataStore to persistent storage.
 **search(arg[, index=this.index, raw=false])**
 _Array_
 
-Returns a `Array` of double `Arrays` with the shape `[key, value]` of records found matching `arg`.
+Returns an `Array` of double `Arrays` with the shape `[key, value]` of records found matching `arg`.
 If `arg` is a `Function` (parameters are `value` & `index`) a match is made if the result is `true`, if `arg` is a `RegExp` the field value must `.test()` 
 as `true`, else the value must be an identity match. The `index` parameter can be a `String` or `Array` of `Strings`; 
 if not supplied it defaults to `this.index`.
@@ -821,7 +821,7 @@ store.batch(data, 'set').then(function (records) {
 **sortBy(index)**
 _Array_
 
-Returns a `Array` of double `Arrays` with the shape `[key, value]` of records sorted by an index.
+Returns an `Array` of double `Arrays` with the shape `[key, value]` of records sorted by an index.
 
 Example of sorting by an index:
 ```javascript
