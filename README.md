@@ -56,49 +56,46 @@ mutated. The return must be a `Promise`.
 ```javascript
 "use strict";
 
-const deferred = require("tiny-defer");
-
 function adapter (store, op, key, data) {
-	let defer = deferred(),
-		record = key !== undefined,
-		config = store.adapters.myAdapterName,
-		prefix = config.prefix || store.id,
-		lkey = prefix + (record ? "_" + key : "")),
-		client = "Your driver instance";
+	return new Promise((resolve, reject) => {
+		const record = key !== undefined,
+			config = store.adapters.myAdapterName,
+			prefix = config.prefix || store.id,
+			lkey = prefix + (record ? "_" + key : ""),
+			client = "Your driver instance";
 
-	if (op === "get") {
-		client.get(lkey, function (e, reply) {
-			let result = JSON.parse(reply || null);
+		if (op === "get") {
+			client.get(lkey, function (e, reply) {
+				let result = JSON.parse(reply || null);
 
-			if (e) {
-				defer.reject(e);
-			} else if (result) {
-				defer.resolve(result);
-			} else if (record) {
-				defer.reject(new Error("Record not found in myAdapterName"));
-			} else {
-				defer.reject([]);
-			}
-		});
-	} else if (op === "remove") {
-		client.del(lkey, function (e) {
-			if (e) {
-				defer.reject(e);
-			} else {
-				defer.resolve(true);
-			}
-		});
-	} else if (op === "set") {
-		client.set(lkey, JSON.stringify(record ? data : store.toArray()), function (e) {
-			if (e) {
-				defer.reject(e);
-			} else {
-				defer.resolve(true);
-			}
-		});
-	}
-
-	return defer.promise;
+				if (e) {
+					reject(e);
+				} else if (result) {
+					resolve(result);
+				} else if (record) {
+					reject(new Error("Record not found in myAdapterName"));
+				} else {
+					reject([]);
+				}
+			});
+		} else if (op === "remove") {
+			client.del(lkey, function (e) {
+				if (e) {
+					reject(e);
+				} else {
+					resolve(true);
+				}
+			});
+		} else if (op === "set") {
+			client.set(lkey, JSON.stringify(record ? data : store.toArray()), function (e) {
+				if (e) {
+					reject(e);
+				} else {
+					resolve(true);
+				}
+			});
+		}
+	});
 }
 
 module.exports = adapter;
@@ -818,7 +815,7 @@ store.batch(data, 'set').then(function (records) {
 });
 ```
 
-**sortBy(index)**
+**sortBy(index[, raw=false])**
 _Array_
 
 Returns an `Array` of double `Arrays` with the shape `[key, value]` of records sorted by an index.
