@@ -1,5 +1,6 @@
-const haro = require('./lib/haro'),
-    precise = require('precise'),
+const path = require("path"),
+    haro = require(path.join(__dirname, "lib", "haro.es6")),
+    precise = require("precise"),
     nth = 15000,
     data = [],
     indexes = {};
@@ -43,7 +44,7 @@ function first () {
         while (++i < nth) {
             (function () {
                 const timer2 = precise().start();
-				const record = store.find({name: 'abba 12345'});
+				const record = store.find({name: "abba 12345"});
                 timer2.stop();
                 console.log((timer2.diff() / 1000000) + "ms");
             }());
@@ -57,7 +58,7 @@ function first () {
         while (++i < nth) {
             (function () {
                 const timer2 = precise().start();
-                const record = store.search(/abba 12345/, 'name');
+                const record = store.search(/abba 12345/, "name");
                 timer2.stop();
                 console.log((timer2.diff() / 1000000) + "ms");
             }());
