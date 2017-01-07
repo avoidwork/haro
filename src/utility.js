@@ -303,7 +303,7 @@
 		const result = {};
 
 		arg.forEach((value, key) => {
-			const obj = clone(value);
+			const obj = value;
 
 			if (frozen) {
 				Object.freeze(obj);

@@ -136,14 +136,13 @@
 		}
 
 		crawl (arg) {
-			let input = clone(arg),
-				result = clone(input);
+			let result = clone(arg);
 
 			each((this.source || "").split("."), i => {
 				result = result[i];
 			});
 
-			return result || input;
+			return result || arg;
 		}
 
 		del (key, batch = false) {
@@ -342,7 +341,7 @@
 		}
 
 		list (...args) {
-			return Object.freeze(args.map(i => Object.freeze(clone(i))));
+			return Object.freeze(args.map(i => Object.freeze(i)));
 		}
 
 		load (type = "mongo", key = undefined) {
@@ -594,7 +593,10 @@
 
 				if (lkey === null) {
 					if (this.key) {
-						xdata = this.crawl(xdata);
+						if (this.source) {
+							xdata = this.crawl(xdata);
+						}
+
 						lkey = xdata[this.key] || ldata[this.key] || uuid();
 					} else {
 						lkey = uuid();
@@ -784,7 +786,11 @@
 				this.patch = (arg[2].Allow || arg[2].allow || "").indexOf("PATCH") > -1;
 
 				try {
-					data = this.crawl(arg[0]);
+					if (this.source) {
+						data = this.crawl(arg[0]);
+					} else {
+						data = arg[0];
+					}
 				} catch (e) {
 					valid = false;
 					defer.reject(e);
