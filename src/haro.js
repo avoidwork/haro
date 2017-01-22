@@ -391,7 +391,7 @@
 						};
 					}
 
-					obj.postMessage(JSON.stringify(payload));
+					obj.postMessage(JSON.stringify(payload, null, 0));
 				}
 			} else {
 				defer.reject(new Error(webWorkerError));
@@ -427,8 +427,8 @@
 				this.indexes.clear();
 				this.registry.length = 0;
 
-				data.forEach(datum => {
-					const key = datum[this.key] || uuid();
+				each(data, datum => {
+					const key = this.key ? datum[this.key] : uuid() || uuid();
 
 					this.data.set(key, datum);
 					this.registry.push(key);
