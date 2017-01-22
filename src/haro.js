@@ -15,7 +15,6 @@
 			this.index = [];
 			this.indexes = new Map();
 			this.key = "";
-			this.loading = false;
 			this.logging = true;
 			this.patch = false;
 			this.pattern = "\\s*|\\t*";
@@ -47,8 +46,6 @@
 			function next () {
 				Promise.all(args.map(fn)).then(defer.resolve, defer.reject);
 			}
-
-			this.loading = true;
 
 			if (del) {
 				fn = i => {
@@ -93,7 +90,6 @@
 			}
 
 			return defer.promise.then(arg => {
-				this.loading = false;
 				this.onbatch(type, arg);
 
 				if (this.logging) {
@@ -102,7 +98,6 @@
 
 				return arg;
 			}, e => {
-				this.loading = false;
 				this.onerror("batch", e);
 				throw e;
 			});
@@ -183,10 +178,6 @@
 			};
 
 			if (this.data.has(key)) {
-				if (!batch) {
-					this.loading = true;
-				}
-
 				if (!batch && this.uri) {
 					if (this.patch) {
 						this.request(concatURI(this.uri, null), {
@@ -215,18 +206,10 @@
 			}
 
 			return defer.promise.then(arg => {
-				if (!batch) {
-					this.loading = false;
-				}
-
 				this.ondelete(arg);
 
 				return arg;
 			}, e => {
-				if (!batch) {
-					this.loading = false;
-				}
-
 				this.onerror("delete", e);
 				throw e;
 			});
@@ -583,124 +566,74 @@
 		set (key, data, batch = false, override = false, lload = false) {
 			const defer = deferred();
 
-			let method = "post",
-				ldata = clone(data),
-				lkey = key,
-				body, ogdata, luri;
+			let x = clone(data),
+				method, og;
 
-			let next = arg => {
-				let xdata = arg ? arg[0] : {};
+			if (key === undefined || key === null) {
+				key = this.key && x[this.key] !== undefined ? x[this.key] : uuid();
+			}
 
-				if (lkey === null) {
-					if (this.key) {
-						if (this.source) {
-							xdata = this.crawl(xdata);
+			if (!this.data.has(key)) {
+				this.registry[this.total] = key;
+				++this.total;
+				method = "post";
+
+				if (this.versioning) {
+					this.versions.set(key, new Set());
+				}
+			} else {
+				og = this.get(key, true);
+				delIndex(this.index, this.indexes, this.delimiter, key, og, this.pattern);
+				method = "put";
+
+				if (this.versioning) {
+					this.versions.get(key).add(Object.freeze(clone(og)));
+				}
+
+				if (!override) {
+					x = merge(clone(og), x);
+				}
+			}
+
+			this.data.set(key, x);
+			setIndex(this.index, this.indexes, this.delimiter, key, x, null, this.pattern);
+			defer.resolve(this.get(key));
+
+			return defer.promise.then(arg => {
+				this.onset(arg);
+
+				if (!batch && this.uri) {
+					this.transmit(key, x, og, override, method).catch(e => {
+						if (this.logging) {
+							console.error(e.stack || e.message || e);
 						}
 
-						lkey = xdata[this.key] || ldata[this.key] || uuid();
-					} else {
-						lkey = uuid();
-					}
+						this.set(key, og).then(() => {
+							if (this.logging) {
+								console.log("Reverted", key);
+							}
+						}).catch(() => {
+							if (this.logging) {
+								console.log("Failed to revert", key);
+							}
+						});
+					});
 				}
-
-				if (method === "post") {
-					this.registry[this.total] = lkey;
-					++this.total;
-
-					if (this.versioning) {
-						this.versions.set(lkey, new Set());
-					}
-				} else {
-					if (this.versioning) {
-						this.versions.get(lkey).add(this.list(ogdata));
-					}
-
-					delIndex(this.index, this.indexes, this.delimiter, lkey, ogdata, this.pattern);
-				}
-
-				this.data.set(lkey, ldata);
-				setIndex(this.index, this.indexes, this.delimiter, lkey, ldata, null, this.pattern);
-				defer.resolve(this.get(lkey));
 
 				if (!lload) {
-					this.storage("set", lkey, ldata).then(success => {
+					this.storage("set", key, x).then(success => {
 						if (success && this.logging) {
-							console.log("Saved", lkey, "to persistent storage");
+							console.log("Saved", key, "to persistent storage");
 						}
 					}, e => {
 						if (this.logging) {
-							console.error("Error saving", lkey, "to persistent storage:", e.message || e.stack || e);
+							console.error("Error saving", key, "to persistent storage:", e.message || e.stack || e);
 						}
 					});
 				}
-			};
-
-			if (lkey === undefined || lkey === null) {
-				lkey = ldata[this.key] || null;
-			}
-
-			if (lkey && this.data.has(lkey)) {
-				method = "put";
-				ogdata = clone(this.data.get(lkey) || {});
-
-				if (!override) {
-					ldata = merge(ogdata, ldata);
-				}
-			}
-
-			if (!batch) {
-				this.loading = true;
-			}
-
-			if (!batch && this.uri) {
-				luri = concatURI(this.uri, lkey);
-
-				if (this.patch) {
-					if (method === "post") {
-						body = [{op: "add", path: "/", value: ldata}];
-					} else if (override) {
-						body = [{op: "replace", path: "/", value: ldata}];
-					} else {
-						body = patch(ogdata, ldata, this.key);
-					}
-
-					this.request(luri, {
-						method: "patch",
-						body: JSON.stringify(body, null, 0)
-					}).then(next, e => {
-						if (e[1] === 405) {
-							this.patch = false;
-							this.request(luri, {
-								method: method,
-								body: JSON.stringify(ldata, null, 0)
-							}).then(next, defer.reject);
-						} else {
-							defer.reject(e);
-						}
-					});
-				} else {
-					this.request(luri, {
-						method: method,
-						body: JSON.stringify(ldata)
-					}).then(next, defer.reject);
-				}
-			} else {
-				next();
-			}
-
-			return defer.promise.then(arg => {
-				if (!batch) {
-					this.loading = false;
-				}
-
-				this.onset(arg);
 
 				return arg;
 			}, e => {
-				if (!batch) {
-					this.loading = false;
-				}
-
 				this.onerror("set", e);
 				throw e;
 			});
@@ -760,9 +693,7 @@
 
 		storage (...args) {
 			const defer = deferred(),
-				deferreds = Object.keys(this.adapters).map(i => {
-					return this.cmd.apply(this, [i].concat(args));
-				});
+				deferreds = Object.keys(this.adapters).map(i => this.cmd.apply(this, [i].concat(args)));
 
 			if (deferreds.length > 0) {
 				Promise.all(deferreds).then(() => {
@@ -862,6 +793,36 @@
 
 		transform (input, fn) {
 			return typeof fn === "function" ? fn(input) : cast(input);
+		}
+
+		transmit (key, data, og, override = false, method = "post") {
+			const defer = deferred(),
+				uri = concatURI(this.uri, key);
+
+			let body;
+
+			if (this.patch) {
+				if (!og) {
+					body = [{op: "add", path: "/", value: data}];
+				} else if (override) {
+					body = [{op: "replace", path: "/", value: data}];
+				} else {
+					body = patch(og, data, this.key);
+				}
+
+				this.request(uri, {method: "patch", body: JSON.stringify(body, null, 0)}).then(defer.resolve, e => {
+					if (e[1] === 405) {
+						this.patch = false;
+						this.request(uri, {method: method, body: JSON.stringify(data, null, 0)}).then(defer.resolve, defer.reject);
+					} else {
+						defer.reject(e);
+					}
+				});
+			} else {
+				this.request(uri, {method: method, body: JSON.stringify(data, null, 0)}).then(defer.resolve, defer.reject);
+			}
+
+			return defer.promise;
 		}
 
 		unload (type = "mongo", key = undefined) {
