@@ -167,24 +167,6 @@
 			}
 
 			return defer.promise.then(arg => {
-				const next = err => {
-					if (this.logging) {
-						console.error(err.stack || err.message || err);
-					}
-
-					if (og) {
-						this.set(key, og, true, true).then(() => {
-							if (this.logging) {
-								console.log("Reverted", key);
-							}
-						}).catch(() => {
-							if (this.logging) {
-								console.log("Failed to revert", key);
-							}
-						});
-					}
-				};
-
 				this.ondelete(arg);
 
 				if (this.versioning) {
@@ -201,17 +183,24 @@
 					}
 				});
 
-				if (og && this.uri && !batch) {
-					if (this.patch) {
-						this.request(concatURI(this.uri, null), {method: "patch", body: JSON.stringify([{op: "remove", path: "/" + key}], null, 0)}).then(next, e => {
-							if (e[1] === 405) {
-								this.patch = false;
-								this.request(concatURI(this.uri, key), {method: "delete"}).then(null, next);
-							}
-						});
-					} else {
-						this.request(concatURI(this.uri, key), {method: "delete"}).then(null, next);
-					}
+				if (this.uri && !batch) {
+					this.transmit(key, null, og, false, "delete").catch(err => {
+						if (this.logging) {
+							console.error(err.stack || err.message || err);
+						}
+
+						if (og) {
+							this.set(key, og, true, true).then(() => {
+								if (this.logging) {
+									console.log("Reverted", key);
+								}
+							}).catch(() => {
+								if (this.logging) {
+									console.log("Failed to revert", key);
+								}
+							});
+						}
+					});
 				}
 
 				return arg;
@@ -485,6 +474,10 @@
 				cfg = merge(clone(this.config), config);
 
 			cfg.method = cfg.method.toUpperCase();
+
+			if (cfg.method === "DELETE") {
+				delete cfg.body;
+			}
 
 			fetch(input, cfg).then(res => {
 				let status = res.status,
@@ -815,12 +808,14 @@
 
 		transmit (key, data, og, override = false, method = "post") {
 			const defer = deferred(),
-				uri = concatURI(this.uri, key);
+				uri = concatURI(this.uri, data ? key : null);
 
 			let body;
 
 			if (this.patch) {
-				if (!og) {
+				if (!data) {
+					body = [{op: "remove", path: "/", value: key}];
+				} else if (!og) {
 					body = [{op: "add", path: "/", value: data}];
 				} else if (override) {
 					body = [{op: "replace", path: "/", value: data}];
