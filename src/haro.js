@@ -141,72 +141,78 @@
 		}
 
 		del (key, batch = false) {
-			const defer = deferred();
+			const defer = deferred(),
+				og = this.get(key, true);
 
-			let next = () => {
-				const index = this.registry.indexOf(key);
+			let index;
 
-				if (index > -1) {
-					if (index === 0) {
-						this.registry.shift();
-					} else if (index === this.registry.length - 1) {
-						this.registry.pop();
-					} else {
-						this.registry.splice(index, 1);
-					}
+			if (og) {
+				index = this.registry.indexOf(key);
 
-					delIndex(this.index, this.indexes, this.delimiter, key, this.data.get(key), this.pattern);
-					this.data.delete(key);
-					--this.total;
-
-					if (this.versioning) {
-						this.versions.delete(key);
-					}
-
-					this.storage("remove", key).then(success => {
-						if (success && this.logging) {
-							console.log("Deleted", key, "from persistent storage");
-						}
-					}, e => {
-						if (this.logging) {
-							console.error("Error deleting", key, "from persistent storage:", e.message || e.stack || e);
-						}
-					});
+				if (index === 0) {
+					this.registry.shift();
+				} else if (index === this.registry.length - 1) {
+					this.registry.pop();
+				} else {
+					this.registry.splice(index, 1);
 				}
+
+				delIndex(this.index, this.indexes, this.delimiter, key, this.data.get(key), this.pattern);
+				this.data.delete(key);
+				--this.total;
 
 				defer.resolve(key);
-			};
-
-			if (this.data.has(key)) {
-				if (!batch && this.uri) {
-					if (this.patch) {
-						this.request(concatURI(this.uri, null), {
-							method: "patch",
-							body: JSON.stringify([{op: "remove", path: "/" + key}])
-						}).then(next, e => {
-							if (e[1] === 405) {
-								this.patch = false;
-								this.request(concatURI(this.uri, key), {
-									method: "delete"
-								}).then(next, defer.reject);
-							} else {
-								defer.reject(e);
-							}
-						});
-					} else {
-						this.request(concatURI(this.uri, key), {
-							method: "delete"
-						}).then(next, defer.reject);
-					}
-				} else {
-					next();
-				}
 			} else {
 				defer.reject(new Error("Record not found"));
 			}
 
 			return defer.promise.then(arg => {
+				const next = err => {
+					if (this.logging) {
+						console.error(err.stack || err.message || err);
+					}
+
+					if (og) {
+						this.set(key, og).then(() => {
+							if (this.logging) {
+								console.log("Reverted", key);
+							}
+						}).catch(() => {
+							if (this.logging) {
+								console.log("Failed to revert", key);
+							}
+						});
+					}
+				};
+
 				this.ondelete(arg);
+
+				if (this.versioning) {
+					this.versions.delete(key);
+				}
+
+				this.storage("remove", key).then(success => {
+					if (success && this.logging) {
+						console.log("Deleted", key, "from persistent storage");
+					}
+				}, e => {
+					if (this.logging) {
+						console.error("Error deleting", key, "from persistent storage:", e.message || e.stack || e);
+					}
+				});
+
+				if (og && this.uri && !batch) {
+					if (this.patch) {
+						this.request(concatURI(this.uri, null), {method: "patch", body: JSON.stringify([{op: "remove", path: "/" + key}], null, 0)}).then(next, e => {
+							if (e[1] === 405) {
+								this.patch = false;
+								this.request(concatURI(this.uri, key), {method: "delete"}).then(null, next);
+							}
+						});
+					} else {
+						this.request(concatURI(this.uri, key), {method: "delete"}).then(null, next);
+					}
+				}
 
 				return arg;
 			}, e => {
