@@ -163,15 +163,7 @@
 		}
 
 		dump (type = "records") {
-			let result;
-
-			if (type === "records") {
-				result = this.toArray(null, false);
-			} else {
-				result = this.transform(this.indexes);
-			}
-
-			return result;
+			return type === "records" ? this.toArray(null, false) : this.transform(this.indexes);
 		}
 
 		entries () {
@@ -184,9 +176,7 @@
 				result = [];
 
 			if (this.indexes.has(key)) {
-				(this.indexes.get(key).get(value) || new Set()).forEach(i => {
-					result.push(this.get(i, raw));
-				});
+				(this.indexes.get(key).get(value) || new Set()).forEach(i => result.push(this.get(i, raw)));
 			}
 
 			return raw ? result : this.list(...result);
@@ -217,9 +207,7 @@
 		}
 
 		forEach (fn, ctx) {
-			this.data.forEach((value, key) => {
-				fn(clone(value), clone(key));
-			}, ctx);
+			this.data.forEach((value, key) => fn(clone(value), clone(key)), ctx);
 
 			return this;
 		}
@@ -300,9 +288,7 @@
 		map (fn, raw = false) {
 			const result = [];
 
-			this.forEach((value, key) => {
-				result.push(fn(value, key));
-			});
+			this.forEach((value, key) => result.push(fn(value, key)));
 
 			return raw ? result : this.list(...result);
 		}
@@ -399,23 +385,15 @@
 		reindex (index) {
 			if (!index) {
 				this.indexes.clear();
-				this.index.forEach(i => {
-					this.indexes.set(i, new Map());
-				});
-				this.forEach((data, key) => {
-					this.index.forEach(i => {
-						setIndex(this.index, this.indexes, this.delimiter, key, data, i, this.pattern);
-					});
-				});
+				this.index.forEach(i => this.indexes.set(i, new Map()));
+				this.forEach((data, key) => this.index.forEach(i => setIndex(this.index, this.indexes, this.delimiter, key, data, i, this.pattern)));
 			} else {
 				if (this.index.indexOf(index) === -1) {
 					this.index.push(index);
 				}
 
 				this.indexes.set(index, new Map());
-				this.forEach((data, key) => {
-					setIndex(this.index, this.indexes, this.delimiter, key, data, index, this.pattern);
-				});
+				this.forEach((data, key) => setIndex(this.index, this.indexes, this.delimiter, key, data, index, this.pattern));
 			}
 
 			return this;
@@ -432,8 +410,9 @@
 			}
 
 			fetch(input, cfg).then(res => {
-				let status = res.status,
-					headers;
+				const status = res.status;
+
+				let headers;
 
 				if (res.headers._headers) {
 					headers = {};
@@ -446,12 +425,8 @@
 
 				res[res.headers.get("content-type").indexOf("application/json") > -1 ? "json" : "text"]().then(arg => {
 					defer[status < 200 || status >= 400 ? "reject" : "resolve"](this.list(this.onrequest(arg, status, headers), status, headers));
-				}, e => {
-					defer.reject(this.list(e.message, status, headers));
-				});
-			}, e => {
-				defer.reject(this.list(e.message, 0, {}));
-			});
+				}, e => defer.reject(this.list(e.message, status, headers)));
+			}, e => defer.reject(this.list(e.message, 0, {})));
 
 			return defer.promise;
 		}
@@ -478,16 +453,8 @@
 				rgex = value && typeof value.test === "function",
 				seen = new Set();
 
-			let indexes;
-
 			if (value) {
-				if (index) {
-					indexes = Array.isArray(index) ? index : [index];
-				} else {
-					indexes = this.index;
-				}
-
-				indexes.forEach(i => {
+				each(index ? Array.isArray(index) ? index : [index] : this.index, i => {
 					let idx = this.indexes.get(i);
 
 					if (idx) {
@@ -617,17 +584,7 @@
 		}
 
 		sort (fn, frozen = true) {
-			let result;
-
-			if (frozen) {
-				result = Object.freeze(this.limit(0, this.total, true).sort(fn).map(i => {
-					return Object.freeze(i);
-				}));
-			} else {
-				result = this.limit(0, this.total, true).sort(fn);
-			}
-
-			return result;
+			return frozen ? Object.freeze(this.limit(0, this.total, true).sort(fn).map(i => Object.freeze(i))) : this.limit(0, this.total, true).sort(fn);
 		}
 
 		sortBy (index, raw = false) {
@@ -641,15 +598,8 @@
 			}
 
 			lindex = this.indexes.get(index);
-			lindex.forEach((idx, key) => {
-				keys.push(key);
-			});
-
-			each(keys.sort(), i => {
-				lindex.get(i).forEach(key => {
-					result.push(this.get(key, raw));
-				});
-			});
+			lindex.forEach((idx, key) => keys.push(key));
+			each(keys.sort(), i => lindex.get(i).forEach(key => result.push(this.get(key, raw))));
 
 			return raw ? result : this.list(...result);
 		}
@@ -659,9 +609,7 @@
 				deferreds = Object.keys(this.adapters).map(i => this.cmd.apply(this, [i].concat(args)));
 
 			if (deferreds.length > 0) {
-				Promise.all(deferreds).then(() => {
-					defer.resolve(true);
-				}, defer.reject);
+				Promise.all(deferreds).then(() => defer.resolve(true), defer.reject);
 			} else {
 				defer.resolve(false);
 			}
@@ -680,11 +628,7 @@
 				this.patch = (arg[2].Allow || arg[2].allow || "").indexOf("PATCH") > -1;
 
 				try {
-					if (this.source) {
-						data = this.crawl(arg[0]);
-					} else {
-						data = arg[0];
-					}
+					data = this.source ? this.crawl(arg[0]) : arg[0];
 				} catch (e) {
 					valid = false;
 					defer.reject(e);
@@ -716,16 +660,12 @@
 			let result;
 
 			if (data) {
-				result = data.map(i => {
-					return frozen ? i[1] : clone(i[1]);
-				});
+				result = data.map(i => frozen ? i[1] : clone(i[1]));
 			} else {
 				result = this.limit(0, this.total, true);
 
 				if (frozen) {
-					each(result, i => {
-						Object.freeze(i);
-					});
+					each(result, i => Object.freeze(i));
 				}
 			}
 
@@ -733,9 +673,7 @@
 		}
 
 		toObject (data, frozen = true) {
-			let result;
-
-			result = !data ? toObjekt(this, frozen) : data.reduce((a, b) => {
+			const result = !data ? toObjekt(this, frozen) : data.reduce((a, b) => {
 				const obj = clone(b[1]);
 
 				if (frozen) {
@@ -747,11 +685,7 @@
 				return a;
 			}, {});
 
-			if (frozen) {
-				Object.freeze(result);
-			}
-
-			return result;
+			return frozen ? Object.freeze(result) : result;
 		}
 
 		transform (input, fn) {
@@ -778,7 +712,7 @@
 				this.request(uri, {method: "patch", body: JSON.stringify(body, null, 0)}).then(defer.resolve, e => {
 					if (e[1] === 405) {
 						this.patch = false;
-						this.request(uri, {method: method, body: JSON.stringify(data, null, 0)}).then(defer.resolve, defer.reject);
+						this.request(!data ? concatURI(this.uri, key) : uri, {method: method, body: JSON.stringify(data, null, 0)}).then(defer.resolve, defer.reject);
 					} else {
 						defer.reject(e);
 					}
@@ -821,6 +755,7 @@
 
 			if (this.worker) {
 				obj = new Worker(this.worker);
+
 				obj.onerror = err => {
 					defer.reject(err);
 					obj.terminate();
