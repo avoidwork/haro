@@ -157,7 +157,7 @@
 					this.registry.splice(index, 1);
 				}
 
-				delIndex(this.index, this.indexes, this.delimiter, key, this.data.get(key), this.pattern);
+				delIndex(this.index, this.indexes, this.delimiter, key, og, this.pattern);
 				this.data.delete(key);
 				--this.total;
 
