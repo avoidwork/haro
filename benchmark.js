@@ -31,7 +31,7 @@ function second () {
 	    while (++i < nth) {
 		    (function () {
 			    const timer2 = precise().start();
-			    const record = store.search(/abba 12345/, "name");
+			    const record = store.search(/abba 2342/, "name");
 			    timer2.stop();
 			    console.log((timer2.diff() / 1000000) + "ms");
 
