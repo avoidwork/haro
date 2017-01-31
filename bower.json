@@ -4,7 +4,7 @@
   "authors": [
     "Jason Mulligan <jason.mulligan@avoidwork.com>"
   ],
-  "description": "Harō is a modern immutable DataStore using Maps, Sets, Promises, & Tuples",
+  "description": "Harō is a modern immutable DataStore",
   "main": "lib/haro.js",
   "moduleType": [
     "amd",
