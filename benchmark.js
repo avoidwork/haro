@@ -2,14 +2,14 @@ const path = require("path"),
     haro = require(path.join(__dirname, "lib", "haro.es6")),
     precise = require("precise"),
     nth = 15000,
-    data = [],
-    indexes = {};
+    data = [];
+
+let indexes;
 
 let i = -1;
 
 while (++i < nth) {
     data.push({id: i, name: "abba " + i});
-    indexes[i] = "abba" + i;
 }
 
 function second () {
@@ -40,6 +40,7 @@ function first () {
             nth = 5;
 
         console.log("testing time to 'find()' a record (first one is cold):");
+        indexes = store.dump("indexes");
 
         while (++i < nth) {
             (function () {
