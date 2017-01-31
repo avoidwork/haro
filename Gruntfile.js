@@ -9,7 +9,6 @@ module.exports = function (grunt) {
 				         " * @author <%= pkg.author %>\n" +
 				         " * @copyright <%= grunt.template.today('yyyy') %>\n" +
 				         " * @license <%= pkg.license %>\n" +
-				         " * @link <%= pkg.homepage %>\n" +
 				         " * @version <%= pkg.version %>\n" +
 				         " */\n"
 			},
@@ -45,11 +44,26 @@ module.exports = function (grunt) {
 		nodeunit : {
 			all : ["test/*.js"]
 		},
-		sed : {
-			"version" : {
-				pattern : "{{VERSION}}",
-				replacement : "<%= pkg.version %>",
-				path : ["<%= concat.dist.dest %>"]
+		replace: {
+			dist: {
+				options: {
+					patterns: [
+						{
+							match: /{{VERSION}}/,
+							replacement: '<%= pkg.version %>'
+						}
+					]
+				},
+				files: [
+					{
+						expand: true,
+						flatten: true,
+						src: [
+							"lib/<%= pkg.name %>.es6.js"
+						],
+						dest: 'lib/'
+					}
+				]
 			}
 		},
 		uglify: {
@@ -93,16 +107,16 @@ module.exports = function (grunt) {
 	});
 
 	// tasks
-	grunt.loadNpmTasks("grunt-sed");
 	grunt.loadNpmTasks("grunt-contrib-concat");
 	grunt.loadNpmTasks("grunt-contrib-nodeunit");
 	grunt.loadNpmTasks("grunt-contrib-watch");
 	grunt.loadNpmTasks("grunt-contrib-uglify");
 	grunt.loadNpmTasks("grunt-babel");
 	grunt.loadNpmTasks("grunt-eslint");
+	grunt.loadNpmTasks("grunt-replace");
 
 	// aliases
 	grunt.registerTask("test", ["eslint", "nodeunit"]);
-	grunt.registerTask("build", ["concat", "sed", "babel", "uglify"]);
+	grunt.registerTask("build", ["concat", "replace", "babel", "uglify"]);
 	grunt.registerTask("default", ["build", "test"]);
 };

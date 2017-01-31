@@ -24,10 +24,13 @@
     "**/.*",
     "node_modules",
     "bower_components",
-    "lib/haro.es6.js",
-    "lib/haro.min.*",
     "src",
     "test",
-    "tests"
+    "tests",
+    "benchmark.js",
+    "Gruntfile.js",
+    ".eslintrc",
+    ".travis.yml",
+    ".npmignore"
   ]
 }
