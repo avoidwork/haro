@@ -21,8 +21,25 @@ function second () {
     deferreds.push(store.override(indexes, "indexes"));
 
     Promise.all(deferreds).then(function () {
+	    let i = -1,
+		    nth = 5;
+
         timer.stop();
         console.log("time to override data: " + (timer.diff() / 1000000) + "ms");
+	    console.log("testing time to 'search(regex, index)' on overridden data for a record (first one is cold):");
+
+	    while (++i < nth) {
+		    (function () {
+			    const timer2 = precise().start();
+			    const record = store.search(/abba 12345/, "name");
+			    timer2.stop();
+			    console.log((timer2.diff() / 1000000) + "ms");
+
+			    if (!record) {
+				    console.log("Couldn't find record");
+                }
+		    }());
+	    }
     });
 }
 
@@ -48,6 +65,10 @@ function first () {
 				const record = store.find({name: "abba 12345"});
                 timer2.stop();
                 console.log((timer2.diff() / 1000000) + "ms");
+
+	            if (!record) {
+		            console.log("Couldn't find record");
+	            }
             }());
         }
     }).then(function () {
@@ -62,6 +83,10 @@ function first () {
                 const record = store.search(/abba 12345/, "name");
                 timer2.stop();
                 console.log((timer2.diff() / 1000000) + "ms");
+
+	            if (!record) {
+		            console.log("Couldn't find record");
+	            }
             }());
         }
 
