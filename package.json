@@ -16,8 +16,7 @@
     "store",
     "datastore",
     "api",
-    "haro",
-    "tuple"
+    "haro"
   ],
   "author": "Jason Mulligan <jason.mulligan@avoidwork.com>",
   "license": "BSD-3-Clause",
