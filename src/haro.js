@@ -410,20 +410,20 @@
 			}
 
 			fetch(input, cfg).then(res => {
-				const status = res.status;
-
-				let headers;
+				const status = res.status,
+					headers = {};
 
 				if (res.headers._headers) {
-					headers = {};
 					each(Object.keys(res.headers._headers), i => {
 						headers[i] = res.headers._headers[i].join(", ");
 					});
 				} else {
-					headers = toObjekt(res.headers);
+					for (const pair of res.headers.entries()) {
+						headers[pair[0]] = pair[1];
+					}
 				}
 
-				res[res.headers.get("content-type").indexOf("application/json") > -1 ? "json" : "text"]().then(arg => {
+				res[(headers["content-type"] || "").indexOf("application/json") > -1 ? "json" : "text"]().then(arg => {
 					defer[status < 200 || status >= 400 ? "reject" : "resolve"](this.list(this.onrequest(arg, status, headers), status, headers));
 				}, e => defer.reject(this.list(e.message, status, headers)));
 			}, e => defer.reject(this.list(e.message, 0, {})));
