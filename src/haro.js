@@ -121,7 +121,7 @@
 			}
 
 			return defer.promise.then(arg => {
-				this.ondelete(arg);
+				this.ondelete(arg, batch);
 
 				if (this.versioning) {
 					this.versions.delete(key);
@@ -518,7 +518,7 @@
 			defer.resolve(this.get(key));
 
 			return defer.promise.then(arg => {
-				this.onset(arg);
+				this.onset(arg, batch);
 
 				if (!batch && this.uri) {
 					this.transmit(key, x, og, override, method).catch(e => {
