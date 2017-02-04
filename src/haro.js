@@ -520,7 +520,7 @@
 			return defer.promise.then(arg => {
 				this.onset(arg, batch, retry);
 
-				if (!batch && this.uri) {
+				if (!batch && !retry && this.uri) {
 					this.transmit(key, x, og, override, method).catch(e => {
 						if (this.logging) {
 							console.error(e.stack || e.message || e);
