@@ -20,6 +20,7 @@ Harō is built with ES6+ features, and requires polyfills for ES5 or earlier env
 - `Map`
 - `Set`
 - `Promise`
+- `Promise`
 - `fetch()`
 
 ### How to use
@@ -268,7 +269,7 @@ Event listener for transforming an API response, receives `body`, `status` & `he
 **onset**
 _Function_
 
-Event listener for when a record is set, receives an `Array`.
+Event listener for when a record is set, receives an `Array`, `Boolean` for batch operation, & `Boolean` for reversion.
 
 **onsync**
 _Function_

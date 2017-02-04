@@ -531,6 +531,8 @@
 								if (this.logging) {
 									console.log("Reverted", key);
 								}
+
+								this.onset(og, batch, true);
 							}).catch(() => {
 								if (this.logging) {
 									console.log("Failed to revert", key);
