@@ -481,7 +481,7 @@
 			return raw ? result : this.list(...result);
 		}
 
-		set (key, data, batch = false, override = false, lload = false) {
+		set (key, data, batch = false, override = false, lload = false, retry = false) {
 			const defer = deferred();
 
 			let x = clone(data),
@@ -518,7 +518,7 @@
 			defer.resolve(this.get(key));
 
 			return defer.promise.then(arg => {
-				this.onset(arg, batch);
+				this.onset(arg, batch, retry);
 
 				if (!batch && this.uri) {
 					this.transmit(key, x, og, override, method).catch(e => {
@@ -527,7 +527,7 @@
 						}
 
 						if (og) {
-							this.set(key, og, batch, true).then(() => {
+							this.set(key, og, batch, true, lload, true).then(() => {
 								if (this.logging) {
 									console.log("Reverted", key);
 								}
