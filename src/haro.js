@@ -527,12 +527,10 @@
 						}
 
 						if (og) {
-							this.set(key, og, true, true).then(() => {
+							this.set(key, og, batch, true).then(() => {
 								if (this.logging) {
 									console.log("Reverted", key);
 								}
-
-								this.onset(this.list(key, og), batch, true);
 							}).catch(() => {
 								if (this.logging) {
 									console.log("Failed to revert", key);

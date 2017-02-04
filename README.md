@@ -269,7 +269,7 @@ Event listener for transforming an API response, receives `body`, `status` & `he
 **onset**
 _Function_
 
-Event listener for when a record is set, receives an `Array`, `Boolean` for batch operation, & `Boolean` for reversion.
+Event listener for when a record is set, receives an `Array`.
 
 **onsync**
 _Function_
