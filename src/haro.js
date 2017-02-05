@@ -593,7 +593,6 @@
 			const defer = deferred();
 
 			this.uri = uri;
-			this.beforeSync(uri, clear);
 
 			if (this.uri) {
 				this.sync(clear).then(defer.resolve, defer.reject);
@@ -643,6 +642,7 @@
 
 			let valid = true;
 
+			this.beforeSync(this.uri, clear);
 			this.request(this.uri).then(arg => {
 				let data;
 
