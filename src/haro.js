@@ -417,7 +417,8 @@
 
 		request (input, config = {}) {
 			const defer = deferred(),
-				cfg = merge(clone(this.config), config);
+				cfg = merge(clone(this.config), config),
+				ref = [input, cfg];
 
 			cfg.method = cfg.method.toUpperCase();
 
@@ -425,7 +426,7 @@
 				delete cfg.body;
 			}
 
-			this.beforeRequest(input, cfg);
+			this.beforeRequest(...ref);
 
 			fetch(input, cfg).then(res => {
 				const status = res.status,
