@@ -260,12 +260,6 @@ Example of specifying the primary key:
 const store = haro(null, {key: 'field'});
 ```
 
-**loading**
-_Boolean_
-
-Indicates when an asynchronous load op is in progress; due to it's nature it's ideal to use `batch()` if you intend to
- make multiple changes in a short span of time.
-
 **logging**
 _Boolean_
 
