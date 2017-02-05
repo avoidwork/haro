@@ -41,6 +41,7 @@
 			const defer = deferred(),
 				fn = type === "del" ? i => this.del(i, true) : i => this.set(null, i, true, true, lload);
 
+			this.beforeBatch(args, type);
 			Promise.all(args.map(fn)).then(defer.resolve, defer.reject);
 
 			return defer.promise.then(arg => {
@@ -57,7 +58,20 @@
 			});
 		}
 
+		beforeBatch () {}
+
+		beforeClear () {}
+
+		beforeDelete () {}
+
+		beforeRequest () {}
+
+		beforeSet () {}
+
+		beforeSync () {}
+
 		clear () {
+			this.beforeClear();
 			this.total = 0;
 			this.registry.length = 0;
 			this.data.clear();
@@ -99,6 +113,8 @@
 				og = this.get(key, true);
 
 			let index;
+
+			this.beforeDelete(key, batch);
 
 			if (og) {
 				index = this.registry.indexOf(key);
@@ -409,6 +425,8 @@
 				delete cfg.body;
 			}
 
+			this.beforeRequest(input, cfg);
+
 			fetch(input, cfg).then(res => {
 				const status = res.status,
 					headers = {};
@@ -490,6 +508,8 @@
 			if (key === undefined || key === null) {
 				key = this.key && x[this.key] !== undefined ? x[this.key] : uuid();
 			}
+
+			this.beforeSet(key, data, batch, override, lload, retry);
 
 			if (!this.data.has(key)) {
 				this.registry[this.total] = key;
@@ -573,6 +593,7 @@
 			const defer = deferred();
 
 			this.uri = uri;
+			this.beforeSync(uri, clear);
 
 			if (this.uri) {
 				this.sync(clear).then(defer.resolve, defer.reject);

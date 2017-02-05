@@ -194,6 +194,36 @@ const store = haro(null, {
 });
 ```
 
+**beforeBatch**
+_Function_
+
+Event listener for before a batch operation, receives `type`, `data`.
+
+**beforeClear**
+_Function_
+
+Event listener for before clearing the data store.
+
+**beforeDelete**
+_Function_
+
+Event listener for before a record is deleted, receives `key`, `batch`.
+
+**beforeRequest**
+_Function_
+
+Event listener for transforming an API response, receives `uri`, `config`.
+
+**beforeSet**
+_Function_
+
+Event listener for before a record is set, receives `key`, `data`.
+
+**beforeSync**
+_Function_
+
+Event listener for synchronizing with an API, receives `uri`, `clear`.
+
 **config**
 _Object_
 
