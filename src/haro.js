@@ -2,6 +2,8 @@
 		constructor (data, config = {}) {
 			this.adapters = {};
 			this.data = new Map();
+			this.debounce = 0;
+			this.debounced = new Map();
 			this.delimiter = "|";
 			this.config = {
 				method: "get",
@@ -154,21 +156,27 @@
 				});
 
 				if (this.uri && !batch) {
-					this.transmit(key, null, og, false, "delete").catch(err => {
-						if (this.logging) {
-							console.error(err.stack || err.message || err);
-						}
+					if (this.debounced.has(key)) {
+						clearTimeout(this.debounced.get(key));
+					}
 
-						this.set(key, og, true, true).then(() => {
+					this.debounced.set(key, setTimeout(() => {
+						this.transmit(key, null, og, false, "delete").catch(err => {
 							if (this.logging) {
-								console.log("Reverted", key);
+								console.error(err.stack || err.message || err);
 							}
-						}).catch(() => {
-							if (this.logging) {
-								console.log("Failed to revert", key);
-							}
+
+							this.set(key, og, true, true).then(() => {
+								if (this.logging) {
+									console.log("Reverted", key);
+								}
+							}).catch(() => {
+								if (this.logging) {
+									console.log("Failed to revert", key);
+								}
+							});
 						});
-					});
+					}, this.debounce));
 				}
 
 				return arg;
@@ -542,33 +550,39 @@
 				this.onset(arg, batch, retry);
 
 				if (!batch && !retry && this.uri) {
-					this.transmit(key, x, og, override, method).catch(e => {
-						if (this.logging) {
-							console.error(e.stack || e.message || e);
-						}
+					if (this.debounced.has(key)) {
+						clearTimeout(this.debounced.get(key));
+					}
 
-						if (og) {
-							this.set(key, og, batch, true, lload, true).then(() => {
-								if (this.logging) {
-									console.log("Reverted", key);
-								}
-							}).catch(() => {
-								if (this.logging) {
-									console.log("Failed to revert", key);
-								}
-							});
-						} else {
-							this.del(key, true).then(() => {
-								if (this.logging) {
-									console.log("Reverted", key);
-								}
-							}).catch(() => {
-								if (this.logging) {
-									console.log("Failed to revert", key);
-								}
-							});
-						}
-					});
+					this.debounced.set(key, setTimeout(() => {
+						this.transmit(key, x, og, override, method).catch(e => {
+							if (this.logging) {
+								console.error(e.stack || e.message || e);
+							}
+
+							if (og) {
+								this.set(key, og, batch, true, lload, true).then(() => {
+									if (this.logging) {
+										console.log("Reverted", key);
+									}
+								}).catch(() => {
+									if (this.logging) {
+										console.log("Failed to revert", key);
+									}
+								});
+							} else {
+								this.del(key, true).then(() => {
+									if (this.logging) {
+										console.log("Reverted", key);
+									}
+								}).catch(() => {
+									if (this.logging) {
+										console.log("Failed to revert", key);
+									}
+								});
+							}
+						});
+					}, this.debounce));
 				}
 
 				if (!lload) {

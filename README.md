@@ -239,6 +239,17 @@ const store = haro(null, {
   });
 ```
 
+**debounce**
+_Number_
+
+Optional `Number` of milliseconds to debounce changes transmitted over the wire, defaults to `0`.
+
+Example of specifying a 250ms debounce:
+```javascript
+const store = haro(null, {debounce: 250});
+```
+
+
 **index**
 _Array_
 
