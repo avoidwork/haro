@@ -1,7 +1,7 @@
 "use strict";
 
 (function (global) {
-	const server = typeof process !== "undefined" && typeof process.nextTick === "function";
+	const node = typeof process !== "undefined" && typeof process.nextTick === "function";
 	const Promise = global.Promise;
 	const Map = global.Map;
 	const Set = global.Set;
