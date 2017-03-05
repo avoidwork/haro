@@ -161,6 +161,7 @@
 					}
 
 					this.debounced.set(key, setTimeout(() => {
+						this.debounced.delete(key);
 						this.transmit(key, null, og, false, "delete").catch(err => {
 							if (this.logging) {
 								console.error(err.stack || err.message || err);
@@ -555,6 +556,7 @@
 					}
 
 					this.debounced.set(key, setTimeout(() => {
+						this.debounced.delete(key);
 						this.transmit(key, x, og, override, method).catch(e => {
 							if (this.logging) {
 								console.error(e.stack || e.message || e);
