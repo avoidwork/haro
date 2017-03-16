@@ -20,7 +20,6 @@ Harō is built with ES6+ features, and requires polyfills for ES5 or earlier env
 - `Map`
 - `Set`
 - `Promise`
-- `Promise`
 - `fetch()`
 
 ### How to use
