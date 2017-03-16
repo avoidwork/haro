@@ -1,6 +1,6 @@
 {
   "name": "haro",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "description": "Harō is a modern immutable DataStore",
   "main": "lib/haro.es6.js",
   "scripts": {
@@ -40,7 +40,7 @@
     "grunt-eslint": "~19.0.0",
     "grunt-replace": "~1.0.1",
     "precise": "~1.0.1",
-    "tenso": "~4.3.8"
+    "tenso": "~4.3.30"
   },
   "dependencies": {
     "Blob": "~0.10.0",

@@ -43,9 +43,7 @@
 				break;
 			case input instanceof Set:
 				result = [];
-				input.forEach(i => {
-					result.push(cast(i));
-				});
+				input.forEach(i => result.push(cast(i)));
 				break;
 			case Array.isArray(input):
 				result = new Set();
@@ -94,11 +92,7 @@
 		let result;
 
 		if (key.indexOf(delimiter) > -1) {
-			result = key.split(delimiter).sort((a, b) => {
-				return a.localeCompare(b);
-			}).map(i => {
-				return data[i].toString().replace(new RegExp(pattern, "g"), "").toLowerCase();
-			}).join(delimiter);
+			result = key.split(delimiter).sort((a, b) => a.localeCompare(b)).map(i => data[i].toString().replace(new RegExp(pattern, "g"), "").toLowerCase()).join(delimiter);
 		} else {
 			result = data[key];
 		}
@@ -118,7 +112,6 @@
 				o.delete(key);
 
 				if (o.size === 0) {
-					o = null;
 					idx.delete(value);
 				}
 			}
@@ -153,9 +146,7 @@
 
 	function iterate (obj, fn) {
 		if (obj instanceof Object) {
-			each(Object.keys(obj), i => {
-				fn.call(obj, obj[i], i);
-			});
+			each(Object.keys(obj), i => fn.call(obj, obj[i], i));
 		} else {
 			each(obj, fn);
 		}
