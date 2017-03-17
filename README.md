@@ -323,11 +323,11 @@ const store = haro(null, {source: 'data'});
 **versioning**
 _Boolean_
 
-Enable/disable MVCC style versioning of records, default is `true`. Versions are stored in `Sets` for easy iteration.
+Enable/disable MVCC style versioning of records, default is `false`. Versions are stored in `Sets` for easy iteration.
 
-Example of disabling versioning:
+Example of enabling versioning:
 ```javascript
-const store = haro(null, {versioning: false});
+const store = haro(null, {versioning: true});
 ```
 
 ### Properties
