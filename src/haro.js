@@ -183,7 +183,7 @@
 		}
 
 		find (where, raw = false) {
-			const key = Object.keys(where).sort().join(this.delimiter),
+			const key = Object.keys(where).sort((a, b) => a.localeCompare(b)).join(this.delimiter),
 				value = keyIndex(key, where, this.delimiter, this.pattern),
 				result = [];
 
