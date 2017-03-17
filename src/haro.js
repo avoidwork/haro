@@ -1,6 +1,6 @@
 	class Haro {
 		constructor ({config = {}, debounce = 0, delimiter = "|", id = uuid(), index = [], key = "", logging = true, patch = false, pattern = "\\s*|\\t*", source = "", versioning = false} = {}) {
-			this.adapters = {};
+			this.adapters = new Map();
 			this.data = new Map();
 			this.debounce = debounce;
 			this.debounced = new Map();
@@ -85,10 +85,10 @@
 		cmd (type, ...args) {
 			const defer = deferred();
 
-			if (!this.adapters[type] || !adapter[type]) {
+			if (!this.adapters.has(type)) {
 				defer.reject(new Error(type + " not configured for persistent storage"));
 			} else {
-				adapter[type].apply(this, [this, ...args]).then(defer.resolve, defer.reject);
+				this.adapters.get(type).apply(this, [this, ...args]).then(defer.resolve, defer.reject);
 			}
 
 			return defer.promise;
@@ -237,8 +237,8 @@
 			return result && !raw ? this.list(key, result) : result;
 		}
 
-		has (key) {
-			return this.data.has(key);
+		has (key, map = this.data) {
+			return map.has(key);
 		}
 
 		join (other, on = this.key, type = "inner", where = []) {
@@ -396,7 +396,7 @@
 		}
 
 		register (key, fn) {
-			adapter[key] = fn;
+			this.adapters.set(key, fn);
 
 			return this;
 		}
@@ -655,7 +655,7 @@
 
 		storage (...args) {
 			const defer = deferred(),
-				deferreds = Object.keys(this.adapters).map(i => this.cmd.apply(this, [i].concat(args)));
+				deferreds = Array.from(this.adapters.keys()).map(i => this.cmd.apply(this, [i, ...args]));
 
 			if (deferreds.length > 0) {
 				Promise.all(deferreds).then(() => defer.resolve(true), defer.reject);
@@ -793,7 +793,9 @@
 		}
 
 		unregister (key) {
-			delete adapter[key];
+			if (this.adapters.has(key)) {
+				this.adapters.delete(key);
+			}
 		}
 
 		values () {

@@ -15,5 +15,3 @@
 		},
 		webWorker = typeof Blob !== "undefined" && typeof Worker !== "undefined",
 		webWorkerError = "Web Worker not supported";
-
-	let adapter = {};
