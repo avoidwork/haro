@@ -1,6 +1,11 @@
-	function factory (data = null, config = {}, indexes = []) {
-		let obj = new Haro(data, config, indexes),
-			functions;
+	function factory (data = null, config = {}) {
+		const obj = new Haro(config).reindex();
+
+		let functions;
+
+		if (data) {
+			obj.batch(data, "set");
+		}
 
 		if (webWorker) {
 			functions = [

@@ -242,7 +242,7 @@
 		postMessage(JSON.stringify(result));
 	}
 
-	function patch (ogdata = {}, data = {}, key = "", overwrite = false) {
+	function createPatch (ogdata = {}, data = {}, key = "", overwrite = false) {
 		const result = [];
 
 		if (overwrite) {

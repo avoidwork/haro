@@ -433,7 +433,7 @@ exports["read (right join)"] = {
 
 exports.update = {
 	setUp: function (done) {
-		this.store = haro(null, {key: "guid", logging: false});
+		this.store = haro(null, {key: "guid", logging: false, versioning: true});
 		done();
 	},
 	test: function (test) {

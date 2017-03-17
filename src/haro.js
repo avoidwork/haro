@@ -1,10 +1,10 @@
 	class Haro {
-		constructor (data, config = {}) {
+		constructor ({config = {}, debounce = 0, delimiter = "|", id = uuid(), index = [], key = "", logging = true, patch = false, pattern = "\\s*|\\t*", source = "", versioning = false} = {}) {
 			this.adapters = {};
 			this.data = new Map();
-			this.debounce = 0;
+			this.debounce = debounce;
 			this.debounced = new Map();
-			this.delimiter = "|";
+			this.delimiter = delimiter;
 			this.config = {
 				method: "get",
 				credentials: false,
@@ -13,29 +13,23 @@
 					"content-type": "application/json"
 				}
 			};
-			this.id = uuid();
-			this.index = [];
+			this.id = id;
+			this.index = index;
 			this.indexes = new Map();
-			this.key = "";
-			this.logging = true;
-			this.patch = false;
-			this.pattern = "\\s*|\\t*";
+			this.key = key;
+			this.logging = logging;
+			this.patch = patch;
+			this.pattern = pattern;
 			this.registry = [];
-			this.source = "";
+			this.source = source;
 			this.total = 0;
 			this.uri = "";
 			this.worker = null;
 			this.versions = new Map();
-			this.versioning = true;
+			this.versioning = versioning;
 
-			each(Object.keys(config), i => {
-				this[i] = merge(this[i], config[i]);
-			});
-
-			this.reindex();
-
-			if (data) {
-				this.batch(data, "set");
+			if (Object.keys(config).length > 1) {
+				this.config = merge(this.config, config);
 			}
 		}
 
@@ -94,7 +88,7 @@
 			if (!this.adapters[type] || !adapter[type]) {
 				defer.reject(new Error(type + " not configured for persistent storage"));
 			} else {
-				adapter[type].apply(this, [this].concat(args)).then(defer.resolve, defer.reject);
+				adapter[type].apply(this, [this, ...args]).then(defer.resolve, defer.reject);
 			}
 
 			return defer.promise;
@@ -424,6 +418,24 @@
 			return this;
 		}
 
+		removeIndex (index, indexes, delimiter, key, data, pattern) {
+			index.forEach(i => {
+				const idx = indexes.get(i),
+					value = keyIndex(i, data, delimiter, pattern);
+
+				let o;
+
+				if (idx.has(value)) {
+					o = idx.get(value);
+					o.delete(key);
+
+					if (o.size === 0) {
+						idx.delete(value);
+					}
+				}
+			});
+		}
+
 		request (input, config = {}) {
 			const defer = deferred(),
 				cfg = merge(clone(this.config), config),
@@ -744,7 +756,7 @@
 				} else if (override) {
 					body = [{op: "replace", path: "/", value: data}];
 				} else {
-					body = patch(og, data, this.key);
+					body = createPatch(og, data, this.key);
 				}
 
 				this.request(uri, {method: "patch", body: JSON.stringify(body, null, 0)}).then(defer.resolve, e => {
