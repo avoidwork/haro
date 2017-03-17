@@ -235,7 +235,7 @@ const store = haro(null, {
     headers: {
       authorization: 'Bearer abcdef'
     }
-  });
+  }});
 ```
 
 **debounce**
@@ -248,7 +248,6 @@ Example of specifying a 250ms debounce:
 const store = haro(null, {debounce: 250});
 ```
 
-
 **index**
 _Array_
 
@@ -257,7 +256,7 @@ Non-matches within composites result in blank values.
 
 Example of fields/properties to index:
 ```javascript
-const store = haro(null, {index: ['field1', 'field2', 'field1|field2|field3']);
+const store = haro(null, {index: ['field1', 'field2', 'field1|field2|field3']});
 ```
 
 **key**
@@ -378,9 +377,10 @@ that is wired to an API with pagination enabled & `PATCH` support may create err
 ```javascript
 const haro = require('haro'),
     store = haro(null, {key: 'id', index: ['name']}),
-    i = -1,
     nth = 100,
     data = [];
+
+let i = -1;
 
 while (++i < nth) {
   data.push({id: i, name: 'John Doe' + i});
@@ -451,8 +451,8 @@ insertion order.
 
 Example of deleting a record:
 ```javascript
-const store = haro(),
-    item, iterator;
+const store = haro();
+let item, iterator;
 
 // Data is added
 
@@ -593,8 +593,8 @@ Returns a new `Iterator` object that contains the keys for each element in the `
 
 Example of getting an iterator, and logging the results:
 ```javascript
-const store = haro(),
-    item, iterator;
+const store = haro();
+let item, iterator;
 
 // Data is added
 
@@ -614,7 +614,9 @@ Returns an `Array` of double `Arrays` with the shape `[key, value]` for the corr
 
 Example of paginating a data set:
 ```javascript
-const store = haro(), ds1, ds2;
+const store = haro();
+
+let ds1, ds2;
 
 // Data is added
 
@@ -711,14 +713,11 @@ Registers a persistent storage adapter.
 Example of registering an adapter:
 ```javascript
 const haro = require('haro'),
-    store;
-
-// Configure a store to utilize the adapter
-store = haro(null, {
-  adapters: {
-    mongo: "mongo://localhost/mydb"
-  }
-});
+    store = haro(null, {
+      adapters: {
+        mongo: "mongo://localhost/mydb"
+      }
+    });
 
 // Register the adapter
 store.register('mongo', require('haro-mongo'));
@@ -760,7 +759,7 @@ Example of searching with a predicate function:
 const store = haro(null, {index: ['name', 'age']}),
    data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
 
-store.batch(data, 'set').then(function (records) {
+store.batch(data, 'set').then(function () {
  console.log(store.search(function (age) {
    return age < 30;
  }, 'age')); // [[$uuid, {name: 'Jane Doe', age: 28}]]
@@ -840,7 +839,7 @@ Example of sorting like an `Array`:
 const store = haro(null, {index: ['name', 'age']}),
    data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
 
-store.batch(data, 'set').then(function (records) {
+store.batch(data, 'set').then(function () {
   console.log(store.sort(function (a, b) {
     return a < b ? -1 : (a > b ? 1 : 0);
   })); // [{name: 'Jane Doe', age: 28}, {name: 'John Doe', age: 30}]
@@ -859,7 +858,7 @@ Example of sorting by an index:
 const store = haro(null, {index: ['name', 'age']}),
    data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
 
-store.batch(data, 'set').then(function (records) {
+store.batch(data, 'set').then(function () {
   console.log(store.sortBy('age')); // [[$uuid, {name: 'Jane Doe', age: 28}], [$uuid, {name: 'John Doe', age: 30}]]
 }, function (e) {
   console.error(e.stack || e.message || e);
@@ -874,8 +873,9 @@ prior to `batch()` upon a successful retrieval of data.
 
 Example of sorting by an index:
 ```javascript
-const store = haro(null, {key: 'id'}),
-    interval;
+const store = haro(null, {key: 'id'});
+
+let interval;
 
 store.setUri('https://api.somedomain.com').then(function (records) {
   console.log(records); // [[$id, {...}], ...]
@@ -899,7 +899,7 @@ Example of casting to an `Array`:
 const store = haro(),
    data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
 
-store.batch(data, 'set').then(function (records) {
+store.batch(data, 'set').then(function () {
   console.log(store.toArray()); // [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}]
   console.log(store.toArray(store.limit(1))); // [{name: 'John Doe', age: 30}]
 }, function (e) {
@@ -917,9 +917,9 @@ Example of casting to an `Object`:
 const store = haro(null, {key: 'guid'}),
    data = [{guid: 'abc', name: 'John Doe', age: 30}, {guid: 'def', name: 'Jane Doe', age: 28}];
 
-store.batch(data, 'set').then(function (records) {
+store.batch(data, 'set').then(function () {
   console.log(store.toObject()); // {abc: {guid: 'abc', name: 'John Doe', age: 30}, def: {guid: 'def', name: 'Jane Doe', age: 28}}
-  console.log(store.toObject(store.limit(1)); // {abc: {guid: 'abc', name: 'John Doe', age: 30}}}
+  console.log(store.toObject(store.limit(1))); // {abc: {guid: 'abc', name: 'John Doe', age: 30}}}
 }, function (e) {
   console.error(e.stack || e.message || e);
 });
@@ -935,10 +935,10 @@ transformation to simplify cross domain issues.
 `new Function()`, or simply re-implement, for situations where you need to supply the transformation `Function`.
 
 ```javascript
-const store = haro(null, {key: 'guid', index: ['name'}),
+const store = haro(null, {key: 'guid', index: ['name']}),
    data = [{guid: 'abc', name: 'John Doe', age: 30}, {guid: 'def', name: 'Jane Doe', age: 28}];
 
-store.batch(data, 'set').then(function (records) {
+store.batch(data, 'set').then(function () {
   console.log(store.transform(store.indexes)); // {age: {'28': ['def'], '30': ['abc']}, name: {'John Doe': ['abc'], 'Jane Doe': ['def']}}
 }, function (e) {
   console.error(e.stack || e.message || e);
@@ -957,8 +957,9 @@ Un-registers a persistent storage adapter.
 
 Example of unregistering an adapter:
 ```javascript
-const haro = require('haro'),
-    store;
+const haro = require('haro');
+
+let store;
 
 // Register the adapter
 haro.register('mongo', require('haro-mongo'));
@@ -984,7 +985,7 @@ Example of iterating the values:
 const store = haro(),
    data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
 
-store.batch(data, 'set').then(function (records) {
+store.batch(data, 'set').then(function () {
   const iterator = store.values();
   let item = iterator.next();
 
