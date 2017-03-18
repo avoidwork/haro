@@ -155,26 +155,32 @@ store.set(null, {abc: true}).then(function (arg) {
 
 ### Benchmarked
 A benchmark is included in the repository, and is useful for gauging how haro will perform on different hardware, & software.
-Please consider that `batch()`, & `set()` use `Promises` and incur time as a cost. The following results are from an Apple
-MacBook Air (Early 2014) / 8GB RAM / 512GB SSD / OS X Yosemite:
+Please consider that `batch()`, & `set()` use `Promises` and incur time as a cost.
 
 ```
-time to batch insert data: 205.801644ms
+time to batch insert data: 220.986895ms
 datastore record count: 15000
 name indexes: 15000
 testing time to 'find()' a record (first one is cold):
-0.221379ms
-0.043886ms
-0.016335ms
-0.016091ms
-0.016092ms
+0.285988ms
+0.060221ms
+0.018042ms
+0.012922ms
+0.013409ms
 testing time to 'search(regex, index)' for a record (first one is cold):
-2.146988ms
-1.235139ms
-0.923551ms
-0.927207ms
-0.935985ms
-time to override data: 14.469369ms
+1.915364ms
+0.988646ms
+0.944516ms
+0.945492ms
+0.943785ms
+time to override data: 17.803674ms
+testing time to 'search(regex, index)' on overridden data for a record (first one is cold):
+1.194909ms
+1.195884ms
+1.124447ms
+1.180767ms
+1.130299ms
+
 ```
 
 ### Configuration
