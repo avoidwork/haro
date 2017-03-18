@@ -449,10 +449,9 @@
 		}
 
 		search (value, index, raw = false) {
-			const result = [],
+			const result = new Map(),
 				fn = typeof value === "function",
-				rgex = value && typeof value.test === "function",
-				seen = new Set();
+				rgex = value && typeof value.test === "function";
 
 			if (value) {
 				each(index ? Array.isArray(index) ? index : [index] : this.index, i => {
@@ -465,9 +464,8 @@
 								case rgex && value.test(Array.isArray(lkey) ? lkey.join(", ") : lkey):
 								case lkey === value:
 									lset.forEach(key => {
-										if (!seen.has(key)) {
-											seen.add(key);
-											result.push(this.get(key, raw));
+										if (!result.has(key) && this.has(key)) {
+											result.set(key, this.get(key, raw));
 										}
 									});
 									break;
@@ -479,7 +477,7 @@
 				});
 			}
 
-			return raw ? result : this.list(...result);
+			return raw ? Array.from(result.values()) : this.list(...Array.from(result.values()));
 		}
 
 		set (key, data, batch = false, override = false, lazyLoad = false, retry = false) {
