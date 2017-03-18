@@ -42,8 +42,7 @@
 				});
 				break;
 			case input instanceof Set:
-				result = [];
-				input.forEach(i => result.push(cast(i)));
+				result = Array.from(input);
 				break;
 			case Array.isArray(input):
 				result = new Set();

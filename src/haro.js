@@ -20,7 +20,6 @@
 			this.logging = logging;
 			this.patch = patch;
 			this.pattern = pattern;
-			this.registry = [];
 			this.source = source;
 			this.total = 0;
 			this.uri = "";
@@ -28,14 +27,20 @@
 			this.versions = new Map();
 			this.versioning = versioning;
 
+			Object.defineProperty(this, "registry", {
+				get: function () {
+					return Array.from(this.data.keys());
+				}
+			});
+
 			if (Object.keys(config).length > 1) {
 				this.config = merge(this.config, config);
 			}
 		}
 
-		batch (args, type = "set", lload = false) {
+		batch (args, type = "set", lazyLoad = false) {
 			const defer = deferred(),
-				fn = type === "del" ? i => this.del(i, true) : i => this.set(null, i, true, true, lload);
+				fn = type === "del" ? i => this.del(i, true, lazyLoad) : i => this.set(null, i, true, true, lazyLoad);
 
 			this.beforeBatch(args, type);
 			Promise.all(args.map(fn)).then(defer.resolve, defer.reject);
@@ -74,7 +79,6 @@
 		clear () {
 			this.beforeClear();
 			this.total = 0;
-			this.registry.length = 0;
 			this.data.clear();
 			this.indexes.clear();
 			this.versions.clear();
@@ -109,14 +113,13 @@
 			return result || arg;
 		}
 
-		del (key, batch = false) {
+		del (key, batch = false, lazyLoad = true, retry = false) {
 			const defer = deferred(),
 				og = this.get(key, true);
 
-			this.beforeDelete(key, batch);
+			this.beforeDelete(key, batch, lazyLoad, retry);
 
 			if (og) {
-				this.registry.splice(this.registry.indexOf(key), 1);
 				delIndex(this.index, this.indexes, this.delimiter, key, og, this.pattern);
 				this.data.delete(key);
 				--this.total;
@@ -126,45 +129,47 @@
 			}
 
 			return defer.promise.then(arg => {
-				this.ondelete(arg, batch);
+				this.ondelete(arg, batch, retry, lazyLoad);
 
 				if (this.versioning) {
 					this.versions.delete(key);
 				}
 
-				this.storage("remove", key).then(success => {
-					if (success && this.logging) {
-						console.log("Deleted", key, "from persistent storage");
-					}
-				}, e => {
-					if (this.logging) {
-						console.error("Error deleting", key, "from persistent storage:", e.message || e.stack || e);
-					}
-				});
+				if (!lazyLoad) {
+					this.storage("remove", key).then(success => {
+						if (success && this.logging) {
+							console.log("Deleted", key, "from persistent storage");
+						}
+					}, e => {
+						if (this.logging) {
+							console.error("Error deleting", key, "from persistent storage:", e.message || e.stack || e);
+						}
+					});
 
-				if (this.uri && !batch) {
-					if (this.debounced.has(key)) {
-						clearTimeout(this.debounced.get(key));
-					}
+					if (!batch && !retry && this.uri) {
+						if (this.debounced.has(key)) {
+							clearTimeout(this.debounced.get(key));
+						}
 
-					this.debounced.set(key, setTimeout(() => {
-						this.debounced.delete(key);
-						this.transmit(key, null, og, false, "delete").catch(err => {
-							if (this.logging) {
-								console.error(err.stack || err.message || err);
-							}
-
-							this.set(key, og, true, true).then(() => {
+						this.debounced.set(key, setTimeout(() => {
+							this.debounced.delete(key);
+							this.transmit(key, null, og, false, "delete").catch(err => {
 								if (this.logging) {
-									console.log("Reverted", key);
+									console.error(err.stack || err.message || err);
 								}
-							}).catch(() => {
-								if (this.logging) {
-									console.log("Failed to revert", key);
-								}
+
+								this.set(key, og, true, true).then(() => {
+									if (this.logging) {
+										console.log("Reverted", key);
+									}
+								}).catch(() => {
+									if (this.logging) {
+										console.log("Failed to revert", key);
+									}
+								});
 							});
-						});
-					}, this.debounce));
+						}, this.debounce));
+					}
 				}
 
 				return arg;
@@ -199,15 +204,15 @@
 
 			this.forEach((value, key) => {
 				if (fn(value, key) === true) {
-					result.push(this.get(key, false));
+					result.push(this.get(key, raw));
 				}
-			});
+			}, this);
 
 			return raw ? result : this.list(...result);
 		}
 
 		forEach (fn, ctx) {
-			this.data.forEach((value, key) => fn(clone(value), clone(key)), ctx);
+			this.data.forEach((value, key) => fn(clone(value), clone(key)), ctx || this.data);
 
 			return this;
 		}
@@ -218,20 +223,20 @@
 			return result && !raw ? this.list(key, result) : result;
 		}
 
-		has (key, map = this.data) {
-			return map.has(key);
+		has (key, map) {
+			return (map || this.data).has(key);
 		}
 
-		join (other, on = this.key, type = "inner", where = []) {
+		join (other, on, type = "inner", where = []) {
 			const defer = deferred();
 
 			let promise;
 
 			if (other.total > 0) {
 				if (where.length > 0) {
-					promise = this.offload([[this.id, other.id], this.find(where[0], true), !where[1] ? other.toArray(null, true) : other.find(where[1], true), this.key, on, type], "join");
+					promise = this.offload([[this.id, other.id], this.find(where[0], true), !where[1] ? other.toArray(null, true) : other.find(where[1], true), this.key, on || this.key, type], "join");
 				} else {
-					promise = this.offload([[this.id, other.id], this.toArray(null, true), other.toArray(null, true), this.key, on, type], "join");
+					promise = this.offload([[this.id, other.id], this.toArray(null, true), other.toArray(null, true), this.key, on || this.key, type], "join");
 				}
 
 				promise.then(arg => {
@@ -358,13 +363,11 @@
 			} else if (type === "records") {
 				this.data.clear();
 				this.indexes.clear();
-				this.registry.length = 0;
 
 				each(data, datum => {
 					const key = this.key ? datum[this.key] : uuid() || uuid();
 
 					this.data.set(key, datum);
-					this.registry.push(key);
 				});
 
 				this.total = this.data.size;
@@ -484,7 +487,7 @@
 			return raw ? result : this.list(...result);
 		}
 
-		set (key, data, batch = false, override = false, lload = false, retry = false) {
+		set (key, data, batch = false, override = false, lazyLoad = false, retry = false) {
 			const defer = deferred();
 
 			let x = clone(data),
@@ -494,10 +497,9 @@
 				key = this.key && x[this.key] !== undefined ? x[this.key] : uuid();
 			}
 
-			this.beforeSet(key, data, batch, override, lload, retry);
+			this.beforeSet(key, data, batch, override, lazyLoad, retry);
 
 			if (!this.data.has(key)) {
-				this.registry[this.total] = key;
 				++this.total;
 				method = "post";
 
@@ -523,46 +525,10 @@
 			defer.resolve(this.get(key));
 
 			return defer.promise.then(arg => {
-				this.onset(arg, batch, retry);
+				this.onset(arg, batch, retry, lazyLoad);
 
-				if (!batch && !retry && this.uri) {
-					if (this.debounced.has(key)) {
-						clearTimeout(this.debounced.get(key));
-					}
 
-					this.debounced.set(key, setTimeout(() => {
-						this.debounced.delete(key);
-						this.transmit(key, x, og, override, method).catch(e => {
-							if (this.logging) {
-								console.error(e.stack || e.message || e);
-							}
-
-							if (og) {
-								this.set(key, og, batch, true, lload, true).then(() => {
-									if (this.logging) {
-										console.log("Reverted", key);
-									}
-								}).catch(() => {
-									if (this.logging) {
-										console.log("Failed to revert", key);
-									}
-								});
-							} else {
-								this.del(key, true).then(() => {
-									if (this.logging) {
-										console.log("Reverted", key);
-									}
-								}).catch(() => {
-									if (this.logging) {
-										console.log("Failed to revert", key);
-									}
-								});
-							}
-						});
-					}, this.debounce));
-				}
-
-				if (!lload) {
+				if (!lazyLoad) {
 					this.storage("set", key, x).then(success => {
 						if (success && this.logging) {
 							console.log("Saved", key, "to persistent storage");
@@ -572,6 +538,43 @@
 							console.error("Error saving", key, "to persistent storage:", e.message || e.stack || e);
 						}
 					});
+
+					if (!batch && !retry && this.uri) {
+						if (this.debounced.has(key)) {
+							clearTimeout(this.debounced.get(key));
+						}
+
+						this.debounced.set(key, setTimeout(() => {
+							this.debounced.delete(key);
+							this.transmit(key, x, og, override, method).catch(e => {
+								if (this.logging) {
+									console.error(e.stack || e.message || e);
+								}
+
+								if (og) {
+									this.set(key, og, batch, true, lazyLoad, true).then(() => {
+										if (this.logging) {
+											console.log("Reverted", key);
+										}
+									}).catch(() => {
+										if (this.logging) {
+											console.log("Failed to revert", key);
+										}
+									});
+								} else {
+									this.del(key, true).then(() => {
+										if (this.logging) {
+											console.log("Reverted", key);
+										}
+									}).catch(() => {
+										if (this.logging) {
+											console.log("Failed to revert", key);
+										}
+									});
+								}
+							});
+						}, this.debounce));
+					}
 				}
 
 				return arg;

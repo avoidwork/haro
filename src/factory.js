@@ -3,10 +3,6 @@
 
 		let functions;
 
-		if (data) {
-			obj.batch(data, "set");
-		}
-
 		if (webWorker) {
 			functions = [
 				cast.toString(),
@@ -27,6 +23,10 @@
 			} catch (e) {
 				obj.worker = null;
 			}
+		}
+
+		if (data) {
+			obj.batch(data, "set");
 		}
 
 		return obj;
