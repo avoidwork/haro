@@ -387,8 +387,8 @@
 		reindex (index) {
 			if (!index) {
 				this.indexes.clear();
-				this.index.forEach(i => this.indexes.set(i, new Map()));
-				this.forEach((data, key) => this.index.forEach(i => setIndex(this.index, this.indexes, this.delimiter, key, data, i, this.pattern)));
+				each(this.index, i => this.indexes.set(i, new Map()));
+				this.forEach((data, key) => each(this.index, i => setIndex(this.index, this.indexes, this.delimiter, key, data, i, this.pattern)));
 			} else {
 				if (this.index.indexOf(index) === -1) {
 					this.index.push(index);
