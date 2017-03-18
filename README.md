@@ -158,29 +158,32 @@ A benchmark is included in the repository, and is useful for gauging how haro wi
 Please consider that `batch()`, & `set()` use `Promises` and incur time as a cost.
 
 ```
-time to batch insert data: 220.986895ms
-datastore record count: 15000
-name indexes: 15000
-testing time to 'find()' a record (first one is cold):
-0.285988ms
-0.060221ms
-0.018042ms
-0.012922ms
-0.013409ms
-testing time to 'search(regex, index)' for a record (first one is cold):
-1.915364ms
-0.988646ms
-0.944516ms
-0.945492ms
-0.943785ms
-time to override data: 17.803674ms
-testing time to 'search(regex, index)' on overridden data for a record (first one is cold):
-1.194909ms
-1.195884ms
-1.124447ms
-1.180767ms
-1.130299ms
+Batch successful on test
+time to batch insert data: 58.500052ms
+datastore record count: 1000
+name indexes: 1000
 
+testing time to 'find()' a record (first one is cold):
+0.194559ms
+0.030232ms
+0.009265ms
+0.006583ms
+0.005852ms
+
+testing time to 'search(regex, index)' for a record (first one is cold):
+0.720213ms
+0.160183ms
+0.114591ms
+0.110933ms
+0.112396ms
+
+time to override data: 5.041485ms
+testing time to 'search(regex, index)' on overridden data for a record (first one is cold):
+0.129219ms
+0.113127ms
+0.106789ms
+0.105081ms
+0.104594ms
 ```
 
 ### Configuration

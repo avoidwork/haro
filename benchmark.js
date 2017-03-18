@@ -7,7 +7,7 @@ let indexes;
 
 function second () {
 	const timer = precise().start(),
-		store = haro(null, {key: "_id", index: ["name", "eyeColor", "age", "gender", "isActive"]}),
+		store = haro(null, {id: "test", key: "_id", index: ["name", "eyeColor", "age", "gender", "isActive"]}),
 		deferreds = [];
 
 	deferreds.push(store.override(data, "records"));
@@ -38,13 +38,13 @@ function second () {
 
 function first () {
 	const timer = precise().start(),
-		store = haro(null, {key: "_id", index: ["name", "eyeColor", "age", "gender", "isActive"]});
+		store = haro(null, {id: "test", key: "_id", index: ["name", "eyeColor", "age", "gender", "isActive"]});
 
 	store.batch(data, "set").then(function () {
 		timer.stop();
 		console.log("time to batch insert data: " + (timer.diff() / 1000000) + "ms");
 		console.log("datastore record count: " + store.total);
-		console.log("name indexes: " + store.indexes.get("name").size);
+		console.log("name indexes: " + store.indexes.get("name").size + "\n");
 	}).then(function () {
 		let i = -1,
 			nth = 5;
@@ -64,6 +64,8 @@ function first () {
 				}
 			}());
 		}
+
+		console.log("");
 	}).then(function () {
 		let i = -1,
 			nth = 5;
@@ -82,6 +84,8 @@ function first () {
 				}
 			}());
 		}
+
+		console.log("");
 
 		second();
 	});
