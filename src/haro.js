@@ -113,7 +113,7 @@
 			return result || arg;
 		}
 
-		del (key, batch = false, lazyLoad = true, retry = false) {
+		del (key, batch = false, lazyLoad = false, retry = false) {
 			const defer = deferred(),
 				og = this.get(key, true);
 
