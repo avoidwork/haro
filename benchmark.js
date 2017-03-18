@@ -7,7 +7,7 @@ let indexes;
 
 function second () {
 	const timer = precise().start(),
-		store = haro(null, {key: "id", index: ["name"]}),
+		store = haro(null, {key: "_id", index: ["name", "eyeColor", "age", "gender", "isActive"]}),
 		deferreds = [];
 
 	deferreds.push(store.override(data, "records"));
@@ -38,7 +38,7 @@ function second () {
 
 function first () {
 	const timer = precise().start(),
-		store = haro(null, {key: "id", index: ["name"]});
+		store = haro(null, {key: "_id", index: ["name", "eyeColor", "age", "gender", "isActive"]});
 
 	store.batch(data, "set").then(function () {
 		timer.stop();
