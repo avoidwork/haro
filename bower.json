@@ -21,16 +21,15 @@
   ],
   "license": "BSD-3-Clause",
   "ignore": [
-    "**/.*",
-    "node_modules",
-    "bower_components",
-    "src",
-    "test",
-    "tests",
+    "node_modules/*",
+    "src/*",
+    "test/*",
+    ".eslintrc",
+    ".gitignore",
+    ".npmignore",
+    ".travis.yml",
     "benchmark.js",
     "Gruntfile.js",
-    ".eslintrc",
-    ".travis.yml",
-    ".npmignore"
+    "data.json"
   ]
 }
