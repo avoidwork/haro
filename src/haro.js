@@ -117,9 +117,8 @@
 			const defer = deferred(),
 				og = this.get(key, true);
 
-			this.beforeDelete(key, batch, lazyLoad, retry);
-
 			if (og) {
+				this.beforeDelete(key, batch, lazyLoad, retry);
 				delIndex(this.index, this.indexes, this.delimiter, key, og, this.pattern);
 				this.data.delete(key);
 				--this.total;
