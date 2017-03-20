@@ -18,11 +18,7 @@
 				(!node ? "" : "self.") + "onmessage = " + onmessage.toString() + ";"
 			];
 
-			try {
-				obj.worker = !node ? global.URL.createObjectURL(blob(functions.join("\n"))) : new Function(functions.join("\n"));
-			} catch (e) {
-				obj.worker = null;
-			}
+			obj.worker = !node ? global.URL.createObjectURL(blob(functions.join("\n"))) : new Function(functions.join("\n"));
 		}
 
 		if (data) {

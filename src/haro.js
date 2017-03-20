@@ -628,29 +628,21 @@
 		sync (clear = false) {
 			const defer = deferred();
 
-			let valid = true;
-
 			this.beforeSync(this.uri, clear);
+
 			this.request(this.uri).then(arg => {
-				let data;
+				const data = this.source ? this.crawl(arg[0]) : arg[0];
 
 				this.patch = (arg[2].Allow || arg[2].allow || "").indexOf("PATCH") > -1;
 
-				try {
-					data = this.source ? this.crawl(arg[0]) : arg[0];
-				} catch (e) {
-					valid = false;
-					defer.reject(e);
+				if (clear) {
+					this.clear();
 				}
 
-				if (valid) {
-					if (clear) {
-						this.clear();
-					}
-
-					this.batch(data, "set").then(defer.resolve, defer.reject);
-				}
+				this.batch(data, "set").then(defer.resolve, defer.reject);
 			}, e => {
+				defer.reject(e[0] || e);
+			}).catch(e => {
 				defer.reject(e[0] || e);
 			});
 
