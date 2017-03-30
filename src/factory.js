@@ -13,7 +13,6 @@
 				iterate.toString(),
 				joinData.toString(),
 				keyIndex.toString(),
-				setIndexValue.toString(),
 				setIndex.toString(),
 				(!node ? "" : "self.") + "onmessage = " + onmessage.toString() + ";"
 			];

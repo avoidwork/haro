@@ -255,20 +255,19 @@
 		return ((Math.random() + 1) * 0x10000 | 0).toString(16).substring(1);
 	}
 
-	function setIndexValue (index, key, value) {
-		if (!index.has(key)) {
-			index.set(key, new Set());
-		}
-
-		index.get(key).add(value);
-	}
-
 	function setIndex (index, indexes, delimiter, key, data, indice, pattern) {
 		each(!indice ? index : [indice], i => {
-			let lidx = keyIndex(i, data, delimiter, pattern);
+			let lidx = keyIndex(i, data, delimiter, pattern),
+				lindex;
 
 			if (lidx !== undefined && lidx !== null) {
-				setIndexValue(indexes.get(i), lidx, key);
+				lindex = indexes.get(i);
+
+				if (!lindex.has(lidx)) {
+					lindex.set(lidx, new Set());
+				}
+
+				lindex.get(lidx).add(key);
 			}
 		});
 	}
