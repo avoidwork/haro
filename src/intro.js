@@ -14,4 +14,5 @@
 			endslash: /\/$/
 		},
 		webWorker = typeof Blob !== "undefined" && typeof Worker !== "undefined",
-		webWorkerError = "Web Worker not supported";
+		webWorkerError = "Web Worker not supported",
+		adapter = {};
