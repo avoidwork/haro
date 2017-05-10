@@ -7,7 +7,7 @@
 			this.delimiter = delimiter;
 			this.config = {
 				method: "get",
-				credentials: false,
+				credentials: "include",
 				headers: {
 					accept: "application/json",
 					"content-type": "application/json"
