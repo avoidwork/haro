@@ -1,6 +1,6 @@
 {
   "name": "haro",
-  "version": "3.4.5",
+  "version": "3.4.6",
   "description": "Harō is a modern immutable DataStore",
   "main": "lib/haro.es6.js",
   "scripts": {
@@ -43,8 +43,7 @@
     "tenso": "~4.3.30"
   },
   "dependencies": {
-    "Blob": "~0.10.0",
-    "node-fetch": "~1.6.3",
-    "tiny-worker": "~2.0.1"
+    "node-fetch": "~1.7.0",
+    "tiny-worker": "~2.1.1"
   }
 }
