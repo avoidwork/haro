@@ -1,32 +1,32 @@
 module.exports = function (grunt) {
 	grunt.initConfig({
-		pkg : grunt.file.readJSON("package.json"),
+		pkg: grunt.file.readJSON("package.json"),
 		concat: {
-			options : {
-				banner : "/**\n" +
-				         " * <%= pkg.description %>\n" +
-				         " *\n" +
-				         " * @author <%= pkg.author %>\n" +
-				         " * @copyright <%= grunt.template.today('yyyy') %>\n" +
-				         " * @license <%= pkg.license %>\n" +
-				         " * @version <%= pkg.version %>\n" +
-				         " */\n"
+			options: {
+				banner: "/**\n" +
+				" * <%= pkg.description %>\n" +
+				" *\n" +
+				" * @author <%= pkg.author %>\n" +
+				" * @copyright <%= grunt.template.today('yyyy') %>\n" +
+				" * @license <%= pkg.license %>\n" +
+				" * @version <%= pkg.version %>\n" +
+				" */\n"
 			},
 			dist: {
-				src : [
+				src: [
 					"src/intro.js",
 					"src/utility.js",
 					"src/haro.js",
 					"src/factory.js",
 					"src/outro.js"
 				],
-				dest : "lib/<%= pkg.name %>.es6.js"
+				dest: "lib/<%= pkg.name %>.es6.js"
 			}
 		},
 		babel: {
 			options: {
 				sourceMap: false,
-				presets: ["babel-preset-es2015"]
+				presets: ["babel-preset-env"]
 			},
 			dist: {
 				files: {
@@ -36,13 +36,13 @@ module.exports = function (grunt) {
 		},
 		eslint: {
 			target: [
-				"index.js",
+				"Gruntfile.js",
 				"lib/<%= pkg.name %>.es6.js",
 				"test/*.js"
 			]
 		},
-		nodeunit : {
-			all : ["test/*.js"]
+		nodeunit: {
+			all: ["test/*.js"]
 		},
 		replace: {
 			dist: {
@@ -50,7 +50,7 @@ module.exports = function (grunt) {
 					patterns: [
 						{
 							match: /{{VERSION}}/,
-							replacement: '<%= pkg.version %>'
+							replacement: "<%= pkg.version %>"
 						}
 					]
 				},
@@ -61,7 +61,7 @@ module.exports = function (grunt) {
 						src: [
 							"lib/<%= pkg.name %>.es6.js"
 						],
-						dest: 'lib/'
+						dest: "lib/"
 					}
 				]
 			}
@@ -71,37 +71,35 @@ module.exports = function (grunt) {
 				banner: '/* <%= grunt.template.today("yyyy") %> <%= pkg.author %> */\n',
 				sourceMap: true,
 				sourceMapIncludeSources: true,
-				mangle: {
-					except: [
-						"Map",
-						"Set",
-						"Haro",
-						"cast",
-						"clone",
-						"createIndexes",
-						"each",
-						"iterate",
-						"keyIndex",
-						"joinData",
-						"setIndexValue",
-						"setIndex"
-					]
-				}
+				reserved: [
+					"Map",
+					"Set",
+					"Haro",
+					"cast",
+					"clone",
+					"createIndexes",
+					"each",
+					"iterate",
+					"keyIndex",
+					"joinData",
+					"setIndexValue",
+					"setIndex"
+				]
 			},
 			target: {
 				files: {
-					"lib/<%= pkg.name %>.min.js" : ["lib/<%= pkg.name %>.js"]
+					"lib/<%= pkg.name %>.min.js": ["lib/<%= pkg.name %>.js"]
 				}
 			}
 		},
-		watch : {
-			js : {
-				files : "<%= concat.dist.src %>",
-				tasks : "default"
+		watch: {
+			js: {
+				files: "<%= concat.dist.src %>",
+				tasks: "default"
 			},
 			pkg: {
-				files : "package.json",
-				tasks : "default"
+				files: "package.json",
+				tasks: "default"
 			}
 		}
 	});
