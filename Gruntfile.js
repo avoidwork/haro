@@ -71,20 +71,22 @@ module.exports = function (grunt) {
 				banner: '/* <%= grunt.template.today("yyyy") %> <%= pkg.author %> */\n',
 				sourceMap: true,
 				sourceMapIncludeSources: true,
-				reserved: [
-					"Map",
-					"Set",
-					"Haro",
-					"cast",
-					"clone",
-					"createIndexes",
-					"each",
-					"iterate",
-					"keyIndex",
-					"joinData",
-					"setIndexValue",
-					"setIndex"
-				]
+				mangle: {
+					reserved: [
+						"Map",
+						"Set",
+						"Haro",
+						"cast",
+						"clone",
+						"createIndexes",
+						"each",
+						"iterate",
+						"keyIndex",
+						"joinData",
+						"setIndexValue",
+						"setIndex"
+					]
+				}
 			},
 			target: {
 				files: {
