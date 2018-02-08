@@ -20,24 +20,13 @@ module.exports = function (grunt) {
 					"src/factory.js",
 					"src/outro.js"
 				],
-				dest: "lib/<%= pkg.name %>.es6.js"
-			}
-		},
-		babel: {
-			options: {
-				sourceMap: false,
-				presets: ["babel-preset-env"]
-			},
-			dist: {
-				files: {
-					"lib/<%= pkg.name %>.js": "lib/<%= pkg.name %>.es6.js"
-				}
+				dest: "lib/<%= pkg.name %>.js"
 			}
 		},
 		eslint: {
 			target: [
 				"Gruntfile.js",
-				"lib/<%= pkg.name %>.es6.js",
+				"lib/<%= pkg.name %>.js",
 				"test/*.js"
 			]
 		},
@@ -59,39 +48,11 @@ module.exports = function (grunt) {
 						expand: true,
 						flatten: true,
 						src: [
-							"lib/<%= pkg.name %>.es6.js"
+							"lib/<%= pkg.name %>.js"
 						],
 						dest: "lib/"
 					}
 				]
-			}
-		},
-		uglify: {
-			options: {
-				banner: '/* <%= grunt.template.today("yyyy") %> <%= pkg.author %> */\n',
-				sourceMap: true,
-				sourceMapIncludeSources: true,
-				mangle: {
-					reserved: [
-						"Map",
-						"Set",
-						"Haro",
-						"cast",
-						"clone",
-						"createIndexes",
-						"each",
-						"iterate",
-						"keyIndex",
-						"joinData",
-						"setIndexValue",
-						"setIndex"
-					]
-				}
-			},
-			target: {
-				files: {
-					"lib/<%= pkg.name %>.min.js": ["lib/<%= pkg.name %>.js"]
-				}
 			}
 		},
 		watch: {
@@ -110,13 +71,11 @@ module.exports = function (grunt) {
 	grunt.loadNpmTasks("grunt-contrib-concat");
 	grunt.loadNpmTasks("grunt-contrib-nodeunit");
 	grunt.loadNpmTasks("grunt-contrib-watch");
-	grunt.loadNpmTasks("grunt-contrib-uglify");
-	grunt.loadNpmTasks("grunt-babel");
 	grunt.loadNpmTasks("grunt-eslint");
 	grunt.loadNpmTasks("grunt-replace");
 
 	// aliases
 	grunt.registerTask("test", ["eslint", "nodeunit"]);
-	grunt.registerTask("build", ["concat", "replace", "babel", "uglify"]);
+	grunt.registerTask("build", ["concat", "replace"]);
 	grunt.registerTask("default", ["build", "test"]);
 };

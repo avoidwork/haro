@@ -1,6 +1,6 @@
 {
   "name": "haro",
-  "version": "3.5.0",
+  "version": "4.0.0",
   "description": "Harō is a modern immutable DataStore",
   "main": "lib/haro.es6.js",
   "scripts": {
@@ -29,10 +29,7 @@
     "node": ">=6.0.0"
   },
   "devDependencies": {
-    "babel-core": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
     "grunt": "^1.0.1",
-    "grunt-babel": "^7.0.0",
     "grunt-cli": "^1.2.0",
     "grunt-contrib-concat": "^1.0.1",
     "grunt-contrib-nodeunit": "^1.0.0",

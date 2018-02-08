@@ -1,10 +1,8 @@
 	function factory (data = null, config = {}) {
 		const obj = new Haro(config).reindex();
 
-		let functions;
-
 		if (webWorker) {
-			functions = [
+			const functions = [
 				cast.toString(),
 				clone.toString(),
 				createIndexes.toString(),
@@ -14,10 +12,10 @@
 				joinData.toString(),
 				keyIndex.toString(),
 				setIndex.toString(),
-				(!node ? "" : "self.") + "onmessage = " + onmessage.toString() + ";"
+				(node === false ? "" : "self.") + "onmessage = " + onmessage.toString() + ";"
 			];
 
-			obj.worker = !node ? global.URL.createObjectURL(blob(functions.join("\n"))) : new Function(functions.join("\n"));
+			obj.worker = node === false ? global.URL.createObjectURL(blob(functions.join("\n"))) : new Function(functions.join("\n"));
 		}
 
 		if (data) {

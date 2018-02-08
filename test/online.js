@@ -1,5 +1,5 @@
 const path = require("path"),
-	haro = require(path.join(__dirname, "..", "lib", "haro.es6")),
+	haro = require(path.join(__dirname, "..", "lib", "haro")),
 	data = require(path.join(__dirname, "data.json"));
 
 require("tenso")({

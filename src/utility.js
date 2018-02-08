@@ -124,26 +124,6 @@
 		}
 	}
 
-	function merge (a, b) {
-		if (a instanceof Object && b instanceof Object) {
-			each(Object.keys(b), i => {
-				if (a[i] instanceof Object && b[i] instanceof Object) {
-					a[i] = merge(a[i], b[i]);
-				} else if (Array.isArray(a[i]) && Array.isArray(b[i])) {
-					a[i] = a[i].concat(b[i]);
-				} else {
-					a[i] = b[i];
-				}
-			});
-		} else if (Array.isArray(a) && Array.isArray(b)) {
-			a = a.concat(b);
-		} else {
-			a = b;
-		}
-
-		return a;
-	}
-
 	function joinData (id, a, b, key, on, type = "inner") {
 		const result = [];
 
