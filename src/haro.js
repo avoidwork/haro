@@ -501,49 +501,40 @@
 
 				if (!lazyLoad) {
 					this.storage("set", key, x).then(success => {
-						if (success && this.logging) {
+						if (success) {
 							this.log(`Saved ${key} to persistent storage`);
 						}
-					}, e => {
-						if (this.logging) {
-							console.error(`Error saving ${key} to persistent storage: ${e.message || e.stack || e}`);
-						}
-					});
+					}, e => this.log(`Error saving ${key} to persistent storage: ${e.message || e.stack || e}`, "error"));
 
 					if (!batch && !retry && this.uri) {
 						if (this.debounced.has(key)) {
 							clearTimeout(this.debounced.get(key));
 						}
 
-						this.debounced.set(key, setTimeout(() => {
+						this.debounced.set(key, setTimeout(async () => {
 							this.debounced.delete(key);
-							this.transmit(key, x, og, override, method).catch(e => {
-								if (this.logging) {
-									console.error(e.stack || e.message || e);
-								}
+
+							try {
+								await this.transmit(key, x, og, override, method);
 
 								if (og) {
-									this.set(key, og, batch, true, lazyLoad, true).then(() => {
-										if (this.logging) {
-											this.log(`Reverted ${key}`);
-										}
-									}).catch(() => {
-										if (this.logging) {
-											this.log(`Failed to revert ${key}`);
-										}
-									});
+									try {
+										await this.set(key, og, batch, true, lazyLoad, true);
+										this.log(`Reverted ${key}`);
+									} catch (e) {
+										this.log(`Failed to revert ${key}`);
+									}
 								} else {
-									this.del(key, true).then(() => {
-										if (this.logging) {
-											this.log(`Reverted ${key}`);
-										}
-									}).catch(() => {
-										if (this.logging) {
-											this.log(`Failed to revert ${key}`);
-										}
-									});
+									try {
+										await this.del(key, true);
+										this.log(`Reverted ${key}`);
+									} catch (e) {
+										this.log(`Failed to revert ${key}`);
+									}
 								}
-							});
+							} catch(e) {
+								this.log(e.stack || e.message || e, "error");
+							}
 						}, this.debounce));
 					}
 				}
