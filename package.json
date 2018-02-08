@@ -29,6 +29,8 @@
     "node": ">=6.0.0"
   },
   "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-minify": "^0.3.0",
     "grunt": "^1.0.1",
     "grunt-cli": "^1.2.0",
     "grunt-contrib-concat": "^1.0.1",

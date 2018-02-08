@@ -74,8 +74,28 @@ module.exports = function (grunt) {
 	grunt.loadNpmTasks("grunt-eslint");
 	grunt.loadNpmTasks("grunt-replace");
 
+	grunt.task.registerTask("babili", "Minifies ES2016+ code", function () {
+		const fs = require("fs"),
+			path = require("path"),
+			data = fs.readFileSync(path.join(__dirname, "lib", "haro.js"), "utf8").replace("\"use strict\";", ""), // Stripping "use strict"; because it's injected
+			pkg = require(path.join(__dirname, "package.json")),
+			banner = "/*\n " + new Date().getFullYear() + " " + pkg.author + "\n @version " + pkg.version + "\n*/\n\"use strict\";";
+
+		try {
+			const minified = require("babel-core").transform(data, {sourceFileName: "haro.js", sourceMaps: true, presets: ["minify"]});
+
+			fs.writeFileSync(path.join(__dirname, "lib", "haro.min.js"), banner + minified.code + "\n//# sourceMappingURL=haro.min.js.map", "utf8");
+			grunt.log.ok("1 file created.");
+			fs.writeFileSync(path.join(__dirname, "lib", "haro.min.js.map"), JSON.stringify(minified.map), "utf8");
+			grunt.log.ok("1 sourcemap created.");
+		} catch (e) {
+			console.error(e.stack || e.message || e);
+			throw e;
+		}
+	});
+
 	// aliases
 	grunt.registerTask("test", ["eslint", "nodeunit"]);
 	grunt.registerTask("build", ["concat", "replace"]);
-	grunt.registerTask("default", ["build", "test"]);
+	grunt.registerTask("default", ["build", "test", "babili"]);
 };

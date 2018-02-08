@@ -34,7 +34,7 @@
 			});
 
 			if (Object.keys(config).length > 1) {
-				this.config = {...this.config, ...config};
+				this.config = Object.assign({}, this.config, clone(config));
 			}
 		}
 
@@ -290,34 +290,29 @@
 			return new Promise((resolve, reject) => {
 				if (this.worker) {
 					const obj = this.useWorker(resolve, reject);
+					let payload;
 
-					if (obj) {
-						let payload;
-
-						if (cmd === "index") {
-							payload = {
-								cmd: cmd,
-								index: index,
-								records: data,
-								key: this.key,
-								delimiter: this.delimiter,
-								pattern: this.pattern
-							};
-						} else if (cmd === "join") {
-							payload = {
-								cmd: cmd,
-								ids: data[0],
-								records: [data[1], data[2]],
-								key: data[3],
-								on: data[4],
-								type: data[5]
-							};
-						}
-
-						obj.postMessage(JSON.stringify(payload, null, 0));
-					} else {
-						reject(Error(webWorkerError));
+					if (cmd === "index") {
+						payload = {
+							cmd: cmd,
+							index: index,
+							records: data,
+							key: this.key,
+							delimiter: this.delimiter,
+							pattern: this.pattern
+						};
+					} else if (cmd === "join") {
+						payload = {
+							cmd: cmd,
+							ids: data[0],
+							records: [data[1], data[2]],
+							key: data[3],
+							on: data[4],
+							type: data[5]
+						};
 					}
+
+					obj.postMessage(JSON.stringify(payload, null, 0));
 				} else {
 					reject(new Error(webWorkerError));
 				}
@@ -378,7 +373,7 @@
 
 		async request (input, config = {}) {
 			return new Promise(async (resolve, reject) => {
-				const cfg = {...clone(this.config), ...config},
+				const cfg = Object.assign({}, clone(this.config), config),
 					ref = [input, cfg],
 					headers = {};
 
@@ -489,7 +484,7 @@
 					}
 
 					if (override === false) {
-						x = {...clone(og), ...x};
+						x = Object.assign({}, clone(og), x);
 					}
 				}
 
@@ -532,7 +527,7 @@
 										this.log(`Failed to revert ${key}`);
 									}
 								}
-							} catch(e) {
+							} catch (e) {
 								this.log(e.stack || e.message || e, "error");
 							}
 						}, this.debounce));
