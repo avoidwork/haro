@@ -28,9 +28,8 @@
 			this.versioning = versioning;
 
 			Object.defineProperty(this, "registry", {
-				get: function () {
-					return Array.from(this.data.keys());
-				}
+				enumerable: true,
+				get: () => Array.from(this.data.keys())
 			});
 
 			if (Object.keys(config).length > 1) {
@@ -532,7 +531,7 @@
 										this.log(`Failed to revert ${key}`);
 									}
 								}
-							} catch(e) {
+							} catch (e) {
 								this.log(e.stack || e.message || e, "error");
 							}
 						}, this.debounce));
