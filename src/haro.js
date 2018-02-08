@@ -28,9 +28,8 @@
 			this.versioning = versioning;
 
 			Object.defineProperty(this, "registry", {
-				get: function () {
-					return Array.from(this.data.keys());
-				}
+				enumerable: true,
+				get: () => Array.from(this.data.keys())
 			});
 
 			if (Object.keys(config).length > 1) {
@@ -48,17 +47,10 @@
 
 				result = await Promise.all(args.map(fn));
 				this.onbatch(type, result);
-
-				if (this.logging) {
-					this.log(`Batch successful on ${this.id}`);
-				}
+				this.log(`Batch successful on ${this.id}`);
 			} catch (e) {
 				this.onerror("batch", e);
-
-				if (this.logging) {
-					this.log(`Batch failure on ${this.id}`);
-				}
-
+				this.log(`Batch failure on ${this.id}`);
 				throw e;
 			}
 
@@ -84,10 +76,7 @@
 			this.indexes.clear();
 			this.versions.clear();
 			this.reindex().onclear();
-
-			if (this.logging) {
-				this.log(`Cleared ${this.id}`);
-			}
+			this.log(`Cleared ${this.id}`);
 
 			return this;
 		}
