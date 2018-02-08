@@ -2,7 +2,7 @@
   "name": "haro",
   "version": "4.0.0",
   "description": "Harō is a modern immutable DataStore",
-  "main": "lib/haro.es6.js",
+  "main": "lib/haro.js",
   "scripts": {
     "test": "grunt test"
   },
