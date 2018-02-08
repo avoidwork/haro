@@ -132,37 +132,31 @@
 
 				if (!lazyLoad) {
 					this.storage("remove", key).then(success => {
-						if (success && this.logging) {
+						if (success) {
 							this.log(`Deleted ${key} from persistent storage`);
 						}
-					}, e => {
-						if (this.logging) {
-							console.error(`Error deleting ${key} from persistent storage: ${e.message || e.stack || e}`);
-						}
-					});
+					}, e => this.log(`Error deleting ${key} from persistent storage: ${e.message || e.stack || e}`, "error"));
 
 					if (!batch && !retry && this.uri) {
 						if (this.debounced.has(key)) {
 							clearTimeout(this.debounced.get(key));
 						}
 
-						this.debounced.set(key, setTimeout(() => {
+						this.debounced.set(key, setTimeout(async () => {
 							this.debounced.delete(key);
-							this.transmit(key, null, og, false, "delete").catch(err => {
-								if (this.logging) {
-									console.error(err.stack || err.message || err);
-								}
 
-								this.set(key, og, true, true).then(() => {
-									if (this.logging) {
-										this.log(`Reverted ${key}`);
-									}
-								}).catch(() => {
-									if (this.logging) {
-										this.log(`Failed to revert ${key}`);
-									}
-								});
-							});
+							try {
+								await this.transmit(key, null, og, false, "delete");
+							} catch (err) {
+								this.log(err.stack || err.message || err, "error");
+
+								try {
+									await this.set(key, og, true, true);
+									this.log(`Reverted ${key}`);
+								} catch (e) {
+									this.log(`Failed to revert ${key}`);
+								}
+							}
 						}, this.debounce));
 					}
 				}
@@ -309,9 +303,7 @@
 								delimiter: this.delimiter,
 								pattern: this.pattern
 							};
-						}
-
-						if (cmd === "join") {
+						} else if (cmd === "join") {
 							payload = {
 								cmd: cmd,
 								ids: data[0],
@@ -324,7 +316,7 @@
 
 						obj.postMessage(JSON.stringify(payload, null, 0));
 					} else {
-						reject(new Error(webWorkerError));
+						reject(Error(webWorkerError));
 					}
 				} else {
 					reject(new Error(webWorkerError));
