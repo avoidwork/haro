@@ -26,7 +26,7 @@
   "homepage": "https://github.com/avoidwork/haro",
   "engineStrict": true,
   "engines": {
-    "node": ">=8.4.0"
+    "node": ">=7.6.0"
   },
   "devDependencies": {
     "babel-core": "^6.26.0",
