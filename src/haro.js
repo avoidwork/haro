@@ -33,7 +33,7 @@
 			});
 
 			if (Object.keys(config).length > 1) {
-				this.config = Object.assign({}, this.config, clone(config));
+				this.config = merge(this.config, config);
 			}
 		}
 
@@ -362,7 +362,7 @@
 
 		async request (input, config = {}) {
 			return new Promise(async (resolve, reject) => {
-				const cfg = Object.assign({}, clone(this.config), config),
+				const cfg = merge(clone(this.config), config),
 					ref = [input, cfg],
 					headers = {};
 
@@ -473,7 +473,7 @@
 					}
 
 					if (override === false) {
-						x = Object.assign({}, clone(og), x);
+						x = merge(clone(og), x);
 					}
 				}
 
