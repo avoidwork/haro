@@ -2,7 +2,6 @@
 		return b in a;
 	}
 
-
 	function each (arg, fn) {
 		const nth = arg.length;
 		let i = -1;
