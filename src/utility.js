@@ -2,21 +2,13 @@
 		return b in a;
 	}
 
-	function each (arg, fn, exit = false) {
-		const nth = arg.length;
 
+	function each (arg, fn) {
+		const nth = arg.length;
 		let i = -1;
 
-		if (exit) {
-			while (++i < nth) {
-				if (fn(arg[i], i) === false) {
-					break;
-				}
-			}
-		} else {
-			while (++i < nth) {
-				fn(arg[i], i);
-			}
+		while (++i < nth) {
+			fn(arg[i], i);
 		}
 	}
 
