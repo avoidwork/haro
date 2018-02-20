@@ -68,10 +68,9 @@
 			const idx = indexes.get(i),
 				value = keyIndex(i, data, delimiter, pattern);
 
-			let o;
-
 			if (idx.has(value)) {
-				o = idx.get(value);
+				const o = idx.get(value);
+
 				o.delete(key);
 
 				if (o.size === 0) {
@@ -91,7 +90,7 @@
 		each(records, i => {
 			const lkey = i[key];
 
-			if (lkey !== undefined) {
+			if (lkey !== void 0) {
 				indexes.forEach(index => {
 					const lindex = keyIndex(index, i, delimiter, pattern);
 
@@ -136,10 +135,10 @@
 	}
 
 	function joinData (id, a, b, key, on, type = "inner") {
-		const result = [];
-
-		let error = false,
+		const result = [],
 			errorMsg = "More than one record found on ";
+
+		let error = false;
 
 		function join (left, right, ids, include = false, reverse = false) {
 			const keys = Object.keys(right[0]),
@@ -214,14 +213,14 @@
 
 		if (overwrite) {
 			iterate(ogdata, (v, k) => {
-				if (k !== key && data[k] === undefined) {
+				if (k !== key && data[k] === void 0) {
 					result.push({op: "remove", path: "/" + k});
 				}
 			});
 		}
 
 		iterate(data, (v, k) => {
-			if (k !== key && ogdata[k] === undefined) {
+			if (k !== key && ogdata[k] === void 0) {
 				result.push({op: "add", path: "/" + k, value: v});
 			} else if (JSON.stringify(ogdata[k]) !== JSON.stringify(v)) {
 				result.push({op: "replace", path: "/" + k, value: v});
@@ -237,10 +236,10 @@
 
 	function setIndex (index, indexes, delimiter, key, data, indice, pattern) {
 		each(!indice ? index : [indice], i => {
-			let lidx = keyIndex(i, data, delimiter, pattern),
-				lindex;
+			const lidx = keyIndex(i, data, delimiter, pattern);
+			let lindex;
 
-			if (lidx !== undefined && lidx !== null) {
+			if (lidx !== void 0 && lidx !== null) {
 				lindex = indexes.get(i);
 
 				if (!lindex.has(lidx)) {
@@ -275,3 +274,16 @@
 	function uuid () {
 		return s() + s() + "-" + s() + "-4" + s().substr(0, 3) + "-" + r[Math.floor(Math.random() * 4)] + s().substr(0, 3) + "-" + s() + s() + s();
 	}
+
+	const functions = [
+		cast.toString(),
+		clone.toString(),
+		createIndexes.toString(),
+		each.toString(),
+		has.toString(),
+		iterate.toString(),
+		joinData.toString(),
+		keyIndex.toString(),
+		setIndex.toString(),
+		(node === false ? "" : "self.") + "onmessage = " + onmessage.toString() + ";"
+	].join("\n");

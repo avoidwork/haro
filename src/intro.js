@@ -11,7 +11,8 @@
 		r = [8, 9, "a", "b"],
 		regex = {
 			querystring: /\?.*/,
-			endslash: /\/$/
+			endslash: /\/$/,
+			json: /^application\/json/
 		},
 		webWorker = typeof Worker !== "undefined",
 		webWorkerError = "Web Worker not supported",

@@ -35,6 +35,8 @@
 			if (Object.keys(config).length > 1) {
 				this.config = merge(this.config, config);
 			}
+
+			return this.reindex();
 		}
 
 		async batch (args, type = "set", lazyLoad = false) {
@@ -360,7 +362,7 @@
 		reindex (index) {
 			const indices = index ? [index] : this.index;
 
-			if (index && this.index.indexOf(index) === -1) {
+			if (index && this.index.includes(index) === false) {
 				this.index.push(index);
 			}
 
@@ -399,7 +401,7 @@
 						}
 					}
 
-					const arg = await res[(headers["content-type"] || "").indexOf("application/json") > -1 ? "json" : "text"](),
+					const arg = await res[regex.json.test(headers["content-type"] || "") ? "json" : "text"](),
 						next = ok ? resolve : reject;
 
 					next(this.list(this.onrequest(arg, status, headers), status, headers));
