@@ -21,7 +21,7 @@
 			this.patch = patch;
 			this.pattern = pattern;
 			this.source = source;
-			this.total = 0;
+			this.size = this.total = 0;
 			this.uri = "";
 			this.worker = null;
 			this.versions = new Map();
@@ -73,7 +73,7 @@
 
 		clear () {
 			this.beforeClear();
-			this.total = 0;
+			this.size = this.total = 0;
 			this.data.clear();
 			this.indexes.clear();
 			this.versions.clear();
@@ -113,6 +113,7 @@
 				delIndex(this.index, this.indexes, this.delimiter, key, og, this.pattern);
 				this.data.delete(key);
 				--this.total;
+				this.size = this.total;
 			}, async () => {
 				this.ondelete(key, batch, retry, lazyLoad);
 
@@ -345,7 +346,7 @@
 				this.data.clear();
 				this.indexes.clear();
 				each(data, datum => this.data.set(this.key ? datum[this.key] : uuid() || uuid(), datum));
-				this.total = this.data.size;
+				this.size = this.total = this.data.size;
 			} else {
 				throw new Error("Invalid type");
 			}
@@ -470,6 +471,7 @@
 
 				if (!this.data.has(key)) {
 					++this.total;
+					this.size = this.total;
 					method = "post";
 
 					if (this.versioning) {

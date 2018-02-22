@@ -360,6 +360,11 @@ _Array_
 
 Array representing the order of `this.data`.
 
+**size**
+_Number_
+
+Total records in the DataStore.
+
 **total**
 _Number_
 

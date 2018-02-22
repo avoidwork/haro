@@ -8,8 +8,9 @@ exports.empty = {
 		done();
 	},
 	test: function (test) {
-		test.expect(2);
+		test.expect(3);
 		test.equal(this.store.total, 0, "Should be '0'");
+		test.equal(this.store.size, 0, "Should be '0'");
 		test.equal(this.store.data.size, 0, "Should be '0'");
 		test.done();
 	}
@@ -23,11 +24,13 @@ exports.create = {
 	test: function (test) {
 		var self = this;
 
-		test.expect(4);
+		test.expect(6);
 		test.equal(this.store.total, 0, "Should be '0'");
+		test.equal(this.store.size, 0, "Should be '0'");
 		test.equal(this.store.data.size, 0, "Should be '0'");
 		this.store.set(null, data[0]).then(function () {
 			test.equal(self.store.total, 1, "Should be '1'");
+			test.equal(self.store.size, 1, "Should be '1'");
 			test.equal(self.store.data.size, 1, "Should be '1'");
 			test.done();
 		}, function () {
@@ -44,11 +47,13 @@ exports["create (batch)"] = {
 	test: function (test) {
 		var self = this;
 
-		test.expect(11);
+		test.expect(13);
 		test.equal(this.store.total, 0, "Should be '0'");
+		test.equal(this.store.size, 0, "Should be '0'");
 		test.equal(this.store.data.size, 0, "Should be '0'");
 		this.store.batch(data, "set").then(function () {
 			test.equal(self.store.total, 6, "Should be '6'");
+			test.equal(self.store.size, 6, "Should be '6'");
 			test.equal(self.store.data.size, 6, "Should be '6'");
 			test.equal(self.store.registry.length, 6, "Should be '6'");
 			test.equal(self.store.limit(0, 2)[1][0], self.store.get(self.store.registry[1])[0], "Should be a match");
@@ -82,11 +87,13 @@ exports["update (batch)"] = {
 	test: function (test) {
 		var self = this;
 
-		test.expect(14);
+		test.expect(17);
 		test.equal(this.store.total, 0, "Should be '0'");
+		test.equal(this.store.size, 0, "Should be '0'");
 		test.equal(this.store.data.size, 0, "Should be '0'");
 		this.store.batch(data, "set").then(function () {
 			test.equal(self.store.total, 6, "Should be '6'");
+			test.equal(self.store.size, 6, "Should be '6'");
 			test.equal(self.store.data.size, 6, "Should be '6'");
 			test.equal(self.store.registry.length, 6, "Should be '6'");
 
@@ -95,6 +102,7 @@ exports["update (batch)"] = {
 			throw e;
 		}).then(function () {
 			test.equal(self.store.total, 6, "Should be '6'");
+			test.equal(self.store.size, 6, "Should be '6'");
 			test.equal(self.store.data.size, 6, "Should be '6'");
 			test.equal(self.store.registry.length, 6, "Should be '6'");
 			test.equal(self.store.limit(0, 2)[1][0], self.store.get(self.store.registry[1])[0], "Should be a match");
@@ -129,11 +137,12 @@ exports["read (valid)"] = {
 	test: function (test) {
 		var self = this;
 
-		test.expect(4);
+		test.expect(5);
 		this.store.set(null, data[0]).then(function (arg) {
 			var record = self.store.get(arg[0]);
 
 			test.equal(self.store.total, 1, "Should be '1'");
+			test.equal(self.store.size, 1, "Should be '1'");
 			test.equal(self.store.data.size, 1, "Should be '1'");
 			test.equal(Object.keys(record[1]).length, 19, "Should be a '19'");
 			test.equal(record[1].name, "Decker Merrill", "Should be a match");
@@ -152,9 +161,10 @@ exports["read (invalid)"] = {
 	test: function (test) {
 		var self = this;
 
-		test.expect(3);
+		test.expect(4);
 		this.store.set(null, data[0]).then(function () {
 			test.equal(self.store.total, 1, "Should be '1'");
+			test.equal(self.store.size, 1, "Should be '1'");
 			test.equal(self.store.data.size, 1, "Should be '1'");
 			test.equal(self.store.get("abc"), undefined, "Should be 'undefined'");
 			test.done();
@@ -466,7 +476,7 @@ exports.delete = {
 	test: function (test) {
 		var self = this;
 
-		test.expect(3);
+		test.expect(4);
 		this.store.set(null, data[0]).then(function (arg) {
 			test.equal(arg[1].name, "Decker Merrill", "Should be a match");
 
@@ -477,6 +487,7 @@ exports.delete = {
 			throw e;
 		}).then(function () {
 			test.equal(self.store.total, 0, "Should be '0'");
+			test.equal(self.store.size, 0, "Should be '0'");
 			test.equal(self.store.data.size, 0, "Should be '0'");
 			test.done();
 		}, function () {
@@ -493,7 +504,7 @@ exports["delete (batch)"] = {
 	test: function (test) {
 		var self = this;
 
-		test.expect(3);
+		test.expect(4);
 		this.store.batch(data, "set").then(function (arg) {
 			test.equal(arg[0][1].name, "Decker Merrill", "Should be a match");
 
@@ -504,6 +515,7 @@ exports["delete (batch)"] = {
 			throw e;
 		}).then(function () {
 			test.equal(self.store.total, 4, "Should be '4'");
+			test.equal(self.store.size, 4, "Should be '4'");
 			test.equal(self.store.data.size, 4, "Should be '4'");
 			test.done();
 		}, function () {
@@ -635,9 +647,10 @@ exports["override (records)"] = {
 	test: function (test) {
 		var self = this;
 
-		test.expect(3);
+		test.expect(4);
 		this.store.override(data, "records").then(function () {
 			test.equal(self.store.total, 6, "Should be a '6'");
+			test.equal(self.store.size, 6, "Should be a '6'");
 			test.equal(self.store.registry.length, 6, "Should be a '6'");
 			test.equal(self.store.data.size, 6, "Should be a '6'");
 			test.done();

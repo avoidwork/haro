@@ -2,6 +2,8 @@ const path = require("path"),
 	haro = require(path.join(__dirname, "..", "lib", "haro")),
 	data = require(path.join(__dirname, "data.json"));
 
+process.env.NODE_NO_WARNINGS = 1;
+
 require("tenso")({
 	security: {
 		csrf: false
@@ -11,27 +13,17 @@ require("tenso")({
 	},
 	routes: {
 		get: {
-			"/": function (req, res) {
-				res.send(["data"]);
-			},
-			"/data.*": function (req, res) {
-				res.send(data);
-			}
+			"/": ["data"],
+			"/data(/)?.*": (req, res) => res.send(data)
 		},
 		put: {
-			"/data.*": function (req, res) {
-				res.send(req.body);
-			}
+			"/data(/)?.*": (req, res) => res.send(req.body)
 		},
 		post: {
-			"/data.*": function (req, res) {
-				res.send(req.body, 201);
-			}
+			"/data(/)?.*": (req, res) => res.send(req.body, 201)
 		},
 		"delete": {
-			"/data.*": function (req, res) {
-				res.send({success: true});
-			}
+			"/data(/)?.*": (req, res) => res.send({success: true})
 		}
 	}
 });
@@ -44,12 +36,14 @@ exports.setUri = {
 	test: function (test) {
 		var self = this;
 
-		test.expect(5);
+		test.expect(7);
 		test.equal(this.store.total, 0, "Should be '0'");
+		test.equal(this.store.size, 0, "Should be '0'");
 		test.equal(this.store.data.size, 0, "Should be '0'");
 		this.store.setUri("http://localhost:8000/data?page_size=10").then(function (args) {
 			test.equal(args.length, 6, "Should be '6'");
 			test.equal(self.store.total, 6, "Should be '6'");
+			test.equal(self.store.size, 6, "Should be '6'");
 			test.equal(self.store.data.size, 6, "Should be '6'");
 			test.done();
 		}, function () {
@@ -90,15 +84,17 @@ exports["delete (wired)"] = {
 	test: function (test) {
 		var self = this;
 
-		test.expect(3);
+		test.expect(5);
 		this.store.setUri("http://localhost:8000/data/?page_size=10").then(function (args) {
 			test.equal(self.store.total, 6, "Should be a match");
+			test.equal(self.store.size, 6, "Should be a match");
 
 			return self.store.del(args[0][0]);
 		}, function (e) {
 			throw e;
 		}).then(function () {
 			test.equal(self.store.total, self.store.data.size, "Should be a match");
+			test.equal(self.store.size, self.store.data.size, "Should be a match");
 			test.equal(self.store.data.size, 5, "Should be a match");
 			test.done();
 		}, function () {
