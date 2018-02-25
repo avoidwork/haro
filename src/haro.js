@@ -343,9 +343,9 @@
 			if (type === "indexes") {
 				this.indexes = this.transform(data, fn);
 			} else if (type === "records") {
-				this.data.clear();
+				const key = this.key !== "" ? arg => arg[this.key] || uuid() : () => uuid();
 				this.indexes.clear();
-				each(data, datum => this.data.set(this.key ? datum[this.key] : uuid() || uuid(), datum));
+				this.data = new Map(data.map(datum => [key(datum), datum]));
 				this.size = this.total = this.data.size;
 			} else {
 				throw new Error("Invalid type");
