@@ -1013,6 +1013,24 @@ store.batch(data, 'set').then(function () {
 });
 ```
 
+**where(predicate)**
+_Mixed_
+
+Performs a `find()` on the first key of `predicate`, and then a `filter()` on the remaining keys via a generated `Function`.
+
+Ideal when dealing with a composite index which contains an `Array` of values, which would make matching on a single value impossible when using `find()`
+
+```javascript
+const store = haro(null, {key: 'guid', index: ['name']}),
+   data = [{guid: 'abc', name: 'John Doe', age: 30}, {guid: 'def', name: 'Jane Doe', age: 28}];
+
+store.batch(data, 'set').then(function () {
+  console.log(store.where({name: 'John Doe', age: 30}); // [{guid: 'abc', name: 'John Doe', age: 30}]
+}, function (e) {
+  console.error(e.stack || e.message || e);
+});
+```
+
 ## License
 Copyright (c) 2018 Jason Mulligan
 Licensed under the BSD-3 license

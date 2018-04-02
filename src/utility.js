@@ -2,13 +2,12 @@
 		return b in a;
 	}
 
-	function each (arg, fn) {
-		const nth = arg.length;
-		let i = -1;
-
-		while (++i < nth) {
-			fn(arg[i], i);
+	function each (arr, fn) {
+		for (const item of arr.entries()) {
+			fn(item[1], item[0]);
 		}
+
+		return arr;
 	}
 
 	function cast (input) {

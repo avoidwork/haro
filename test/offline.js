@@ -659,3 +659,21 @@ exports["override (records)"] = {
 		});
 	}
 };
+
+exports.where = {
+	setUp: function (done) {
+		this.store = haro(null, {key: "guid", logging: false, index: ["name", "company"]});
+		done();
+	},
+	test: function (test) {
+		var self = this;
+
+		test.expect(1);
+		this.store.batch(data, "set").then(function () {
+			test.equal(self.store.where({company: "Insectus", tags: "occaecat"}).length, 1, "Should be '1'");
+			test.done();
+		}, function () {
+			test.done();
+		});
+	}
+};

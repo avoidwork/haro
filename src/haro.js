@@ -733,4 +733,30 @@
 
 			return obj;
 		}
+
+		where (query) {
+			const where = this.index.filter(i => i in query),
+				predicate = {};
+			let result;
+
+			if (where.length > 0) {
+				each(where, i => {
+					predicate[i] = query[i];
+				});
+
+				const keys = Object.keys(predicate);
+
+				if (keys.length > 0) {
+					const conditions = keys.map(i => `Array.isArray(a['${i}']) ? a['${i}'].includes('${predicate[i]}') : a['${i}'] === '${predicate[i]}'`);
+
+					result = this.filter(new Function("a", `return (${conditions.join(") && (")});`), true);
+				} else {
+					result = this.dump();
+				}
+			} else {
+				result = this.dump();
+			}
+
+			return result;
+		}
 	}
