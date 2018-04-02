@@ -744,15 +744,7 @@
 					predicate[i] = query[i];
 				});
 
-				const keys = Object.keys(predicate);
-
-				if (keys.length > 0) {
-					const conditions = keys.map(i => `Array.isArray(a['${i}']) ? a['${i}'].includes('${predicate[i]}') : a['${i}'] === '${predicate[i]}'`);
-
-					result = this.filter(new Function("a", `return (${conditions.join(") && (")});`), true);
-				} else {
-					result = [];
-				}
+				result = this.filter(new Function("a", `return (${where.map(i => `Array.isArray(a['${i}']) ? a['${i}'].includes('${predicate[i]}') : a['${i}'] === '${predicate[i]}'`).join(") && (")});`), true);
 			} else {
 				result = [];
 			}
