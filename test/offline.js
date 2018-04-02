@@ -22,7 +22,7 @@ exports.create = {
 		done();
 	},
 	test: function (test) {
-		var self = this;
+		const self = this;
 
 		test.expect(6);
 		test.equal(this.store.total, 0, "Should be '0'");
@@ -45,7 +45,7 @@ exports["create (batch)"] = {
 		done();
 	},
 	test: function (test) {
-		var self = this;
+		const self = this;
 
 		test.expect(13);
 		test.equal(this.store.total, 0, "Should be '0'");
@@ -85,7 +85,7 @@ exports["update (batch)"] = {
 		done();
 	},
 	test: function (test) {
-		var self = this;
+		const self = this;
 
 		test.expect(17);
 		test.equal(this.store.total, 0, "Should be '0'");
@@ -135,11 +135,11 @@ exports["read (valid)"] = {
 		done();
 	},
 	test: function (test) {
-		var self = this;
+		const self = this;
 
 		test.expect(5);
 		this.store.set(null, data[0]).then(function (arg) {
-			var record = self.store.get(arg[0]);
+			const record = self.store.get(arg[0]);
 
 			test.equal(self.store.total, 1, "Should be '1'");
 			test.equal(self.store.size, 1, "Should be '1'");
@@ -159,7 +159,7 @@ exports["read (invalid)"] = {
 		done();
 	},
 	test: function (test) {
-		var self = this;
+		const self = this;
 
 		test.expect(4);
 		this.store.set(null, data[0]).then(function () {
@@ -180,7 +180,7 @@ exports["read (raw/immutable)"] = {
 		done();
 	},
 	test: function (test) {
-		var self = this;
+		const self = this;
 
 		test.expect(1);
 		this.store.set(null, data[0]).then(function (arg) {
@@ -199,7 +199,7 @@ exports["read (indexed)"] = {
 		done();
 	},
 	test: function (test) {
-		var self = this;
+		const self = this;
 
 		test.expect(11);
 		this.store.batch(data, "set").then(function (args) {
@@ -236,7 +236,7 @@ exports["read (toArray)"] = {
 		done();
 	},
 	test: function (test) {
-		var self = this;
+		const self = this;
 
 		test.expect(4);
 		this.store.batch(data, "set").then(function () {
@@ -257,7 +257,7 @@ exports["read (toObject)"] = {
 		done();
 	},
 	test: function (test) {
-		var self = this;
+		const self = this;
 
 		test.expect(4);
 		this.store.batch(data, "set").then(function () {
@@ -278,7 +278,7 @@ exports["read (sort)"] = {
 		done();
 	},
 	test: function (test) {
-		var self = this;
+		const self = this;
 
 		test.expect(1);
 		this.store.batch(data, "set").then(function () {
@@ -303,7 +303,7 @@ exports["read (sortBy)"] = {
 		done();
 	},
 	test: function (test) {
-		var self = this;
+		const self = this;
 
 		test.expect(1);
 		this.store.batch(data, "set").then(function () {
@@ -321,12 +321,12 @@ exports["read (search - un-indexed)"] = {
 		done();
 	},
 	test: function (test) {
-		var self = this,
+		const self = this,
 			regex = new RegExp(".*de.*", "i");
 
 		test.expect(1);
 		this.store.batch(data, "set").then(function () {
-			var result = self.store.search(regex, "name");
+			const result = self.store.search(regex, "name");
 
 			test.equal(result.length, 0, "Should be '0'");
 			test.done();
@@ -342,14 +342,14 @@ exports["read (search - indexed)"] = {
 		done();
 	},
 	test: function (test) {
-		var self = this,
+		const self = this,
 			regex = new RegExp(".*de.*", "i");
 
 		test.expect(6);
 		this.store.batch(data, "set").then(function () {
-			var result1 = self.store.search(regex);
-			var result2 = self.store.search(20, "age");
-			var result3 = self.store.search(/velit/, "tags");
+			const result1 = self.store.search(regex);
+			const result2 = self.store.search(20, "age");
+			const result3 = self.store.search(/velit/, "tags");
 
 			test.equal(result1.length, 2, "Should be '2'");
 			test.equal(result1[0][1].name, "Decker Merrill", "Should be 'Decker Merrill'");
@@ -447,7 +447,7 @@ exports.update = {
 		done();
 	},
 	test: function (test) {
-		var self = this;
+		const self = this;
 
 		test.expect(3);
 		this.store.set(null, data[0]).then(function (arg) {
@@ -474,7 +474,7 @@ exports.delete = {
 		done();
 	},
 	test: function (test) {
-		var self = this;
+		const self = this;
 
 		test.expect(4);
 		this.store.set(null, data[0]).then(function (arg) {
@@ -502,7 +502,7 @@ exports["delete (batch)"] = {
 		done();
 	},
 	test: function (test) {
-		var self = this;
+		const self = this;
 
 		test.expect(4);
 		this.store.batch(data, "set").then(function (arg) {
@@ -530,11 +530,11 @@ exports["dump (indexes)"] = {
 		done();
 	},
 	test: function (test) {
-		var self = this;
+		const self = this;
 
 		test.expect(2);
 		this.store.batch(data, "set").then(function () {
-			var ldata = self.store.dump("indexes");
+			const ldata = self.store.dump("indexes");
 
 			test.equal(Object.keys(ldata).length, 3, "Should be a match");
 			test.equal(Object.isFrozen(ldata), false, "Should be 'false'");
@@ -551,11 +551,11 @@ exports["dump (records)"] = {
 		done();
 	},
 	test: function (test) {
-		var self = this;
+		const self = this;
 
 		test.expect(2);
 		this.store.batch(data, "set").then(function () {
-			var ldata = self.store.dump();
+			const ldata = self.store.dump();
 
 			test.equal(ldata.length, data.length, "Should be a match");
 			test.equal(Object.isFrozen(ldata), false, "Should be 'false'");
@@ -572,7 +572,7 @@ exports["offload (indexes)"] = {
 		done();
 	},
 	test: function (test) {
-		var self = this;
+		const self = this;
 
 		test.expect(3);
 		this.store.offload(data).then(function (args) {
@@ -618,7 +618,7 @@ exports["override (indexes)"] = {
 		done();
 	},
 	test: function (test) {
-		var self = this;
+		const self = this;
 
 		test.expect(6);
 		test.equal(self.store.indexes.size, 0, "Should be a '0'");
@@ -645,7 +645,7 @@ exports["override (records)"] = {
 		done();
 	},
 	test: function (test) {
-		var self = this;
+		const self = this;
 
 		test.expect(4);
 		this.store.override(data, "records").then(function () {
@@ -662,15 +662,17 @@ exports["override (records)"] = {
 
 exports.where = {
 	setUp: function (done) {
-		this.store = haro(null, {key: "guid", logging: false, index: ["name", "company"]});
+		this.store = haro(null, {key: "guid", logging: false, index: ["name", "company", "tags", "company|tags"]});
 		done();
 	},
 	test: function (test) {
-		var self = this;
+		const self = this;
 
-		test.expect(1);
+		test.expect(3);
 		this.store.batch(data, "set").then(function () {
 			test.equal(self.store.where({company: "Insectus", tags: "occaecat"}).length, 1, "Should be '1'");
+			test.equal(self.store.where({company: "Insectus", tags: "aaaaa"}).length, 0, "Should be '0'");
+			test.equal(self.store.where({}).length, 0, "Should be '0'");
 			test.done();
 		}, function () {
 			test.done();

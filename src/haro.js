@@ -751,10 +751,10 @@
 
 					result = this.filter(new Function("a", `return (${conditions.join(") && (")});`), true);
 				} else {
-					result = this.dump();
+					result = [];
 				}
 			} else {
-				result = this.dump();
+				result = [];
 			}
 
 			return result;

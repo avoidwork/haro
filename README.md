@@ -1016,9 +1016,7 @@ store.batch(data, 'set').then(function () {
 **where(predicate)**
 _Array_
 
-Performs a `find()` on the first key of `predicate`, and then a `filter()` on the remaining keys via a generated `Function`.
-
-Ideal when dealing with a composite index which contains an `Array` of values, which would make matching on a single value impossible when using `find()`
+Ideal for when dealing with a composite index which contains an `Array` of values, which would make matching on a single value impossible when using `find()`.
 
 ```javascript
 const store = haro(null, {key: 'guid', index: ['name']}),
