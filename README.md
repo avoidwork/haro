@@ -1014,7 +1014,7 @@ store.batch(data, 'set').then(function () {
 ```
 
 **where(predicate)**
-_Mixed_
+_Array_
 
 Performs a `find()` on the first key of `predicate`, and then a `filter()` on the remaining keys via a generated `Function`.
 
@@ -1025,7 +1025,7 @@ const store = haro(null, {key: 'guid', index: ['name']}),
    data = [{guid: 'abc', name: 'John Doe', age: 30}, {guid: 'def', name: 'Jane Doe', age: 28}];
 
 store.batch(data, 'set').then(function () {
-  console.log(store.where({name: 'John Doe', age: 30}); // [{guid: 'abc', name: 'John Doe', age: 30}]
+  console.log(store.where({name: 'John Doe', age: 30})); // [{guid: 'abc', name: 'John Doe', age: 30}]
 }, function (e) {
   console.error(e.stack || e.message || e);
 });
