@@ -734,21 +734,9 @@
 			return obj;
 		}
 
-		where (query) {
-			const where = this.index.filter(i => i in query),
-				predicate = {};
-			let result;
+		where (predicate) {
+			const keys = this.index.filter(i => i in predicate);
 
-			if (where.length > 0) {
-				each(where, i => {
-					predicate[i] = query[i];
-				});
-
-				result = this.filter(new Function("a", `return (${where.map(i => `Array.isArray(a['${i}']) ? a['${i}'].includes('${predicate[i]}') : a['${i}'] === '${predicate[i]}'`).join(") && (")});`), true);
-			} else {
-				result = [];
-			}
-
-			return result;
+			return keys.length > 0 ? this.filter(new Function("a", `return (${keys.map(i => `Array.isArray(a['${i}']) ? a['${i}'].includes('${predicate[i]}') : a['${i}'] === '${predicate[i]}'`).join(") && (")});`), true) : [];
 		}
 	}
