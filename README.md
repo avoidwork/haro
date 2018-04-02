@@ -1019,7 +1019,7 @@ _Array_
 Ideal for when dealing with a composite index which contains an `Array` of values, which would make matching on a single value impossible when using `find()`.
 
 ```javascript
-const store = haro(null, {key: 'guid', index: ['name']}),
+const store = haro(null, {key: 'guid', index: ['name', 'name|age', 'age']}),
    data = [{guid: 'abc', name: 'John Doe', age: 30}, {guid: 'def', name: 'Jane Doe', age: 28}];
 
 store.batch(data, 'set').then(function () {
