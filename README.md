@@ -702,6 +702,25 @@ store.override({'field': {'value': ['pk']}}, "indexes").then(function () {
 });
 ```
 
+**reduce(accumulator, value[, key, ctx=this, raw=false])**
+_Array_
+
+Runs an `Array.reduce()` inspired function against the data store (`Map`).
+
+Example of filtering a DataStore:
+```javascript
+const store = haro();
+
+// Data is added
+
+store.reduce(function (accumulator, value, key) {
+  accumulator[key] = value;
+
+  return accumulator;
+}, {});
+```
+
+
 **reindex([index])**
 _Haro_
 
@@ -1013,7 +1032,7 @@ store.batch(data, 'set').then(function () {
 });
 ```
 
-**where(predicate)**
+**where(predicate[, raw=false])**
 _Array_
 
 Ideal for when dealing with a composite index which contains an `Array` of values, which would make matching on a single value impossible when using `find()`.
