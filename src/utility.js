@@ -24,12 +24,10 @@
 				result = Array.from(input);
 				break;
 			case Array.isArray(input):
-				result = new Set();
-				each(input, i => result.add(cast(i)));
+				result = new Set(input);
 				break;
 			case input instanceof Object:
-				result = new Map();
-				each(Object.keys(input), i => result.set(i, cast(input[i])));
+				result = new Map(Object.keys(input).map(i => [i, cast(input[i])]));
 				break;
 			default:
 				result = input;
