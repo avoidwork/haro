@@ -132,8 +132,8 @@
 	}
 
 	function joinData (id, a, b, key, on, type = "inner") {
-		const result = [],
-			errorMsg = "More than one record found on ";
+		const result = [];
+		let errorMsg = "More than one record found on ";
 
 		let error = false;
 
