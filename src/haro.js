@@ -1,6 +1,6 @@
 	class Haro {
-		constructor ({config = {}, debounce = 0, delimiter = "|", id = uuid(), index = [], key = "", logging = true, patch = false, pattern = "\\s*|\\t*", source = "", versioning = false} = {}) {
-			this.adapters = {};
+		constructor ({adapters = {}, config = {}, debounce = 0, delimiter = "|", id = uuid(), index = [], key = "", logging = true, patch = false, pattern = "\\s*|\\t*", source = "", versioning = false} = {}) {
+			this.adapters = adapters;
 			this.data = new Map();
 			this.debounce = debounce;
 			this.debounced = new Map();
@@ -252,8 +252,8 @@
 			return Object.freeze(args.map(i => Object.freeze(i)));
 		}
 
-		async load (type = "mongo", key = undefined) {
-			const batch = key === undefined,
+		async load (type = "mongo", key = void 0) {
+			const batch = key === void 0,
 				id = !batch ? key : this.id;
 			let result;
 
@@ -337,7 +337,7 @@
 
 		onsync () {}
 
-		async override (data, type = "records", fn = undefined) {
+		async override (data, type = "records", fn = void 0) {
 			const result = true;
 
 			if (type === "indexes") {
@@ -473,8 +473,8 @@
 				method, og;
 
 			return this.exec(async () => {
-				if (key === undefined || key === null) {
-					key = this.key && x[this.key] !== undefined ? x[this.key] : uuid();
+				if (key === void 0 || key === null) {
+					key = this.key && x[this.key] !== void 0 ? x[this.key] : uuid();
 				}
 
 				this.beforeSet(key, data, batch, override, lazyLoad, retry);
@@ -699,8 +699,8 @@
 			return result;
 		}
 
-		async unload (type = "mongo", key = undefined) {
-			const id = key !== undefined ? key : this.id;
+		async unload (type = "mongo", key = void 0) {
+			const id = key !== void 0 ? key : this.id;
 			let result;
 
 			try {
