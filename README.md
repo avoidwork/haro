@@ -1035,7 +1035,7 @@ store.batch(data, 'set').then(function () {
 **where(predicate[, raw=false])**
 _Array_
 
-Ideal for when dealing with a composite index which contains an `Array` of values, which would make matching on a single value impossible when using `find()`.
+Ideal for when dealing with a composite index which contains an `Array` of values, which would make matching on a single value impossible when using `find()`. Predicate can include fields which are not indexed.
 
 ```javascript
 const store = haro(null, {key: 'guid', index: ['name', 'name|age', 'age']}),
