@@ -745,7 +745,7 @@
 		}
 
 		where (predicate, raw = false) {
-			const keys = Object.keys(predicate);
+			const keys = this.index.filter(i => i in predicate);
 
 			return keys.length > 0 ? this.filter(new Function("a", `return (${keys.map(i => {
 				const arg = typeof predicate[i] === "string" ? `'${predicate[i]}'` : predicate[i];
