@@ -680,12 +680,13 @@
 				}
 
 				try {
-					result = await this.request(uri, {method: "patch", body: JSON.stringify(body, null, 0)});
+					result = await this.request(uri, {method: "patch", headers: {"content-type": "application/json-patch+json"}, body: JSON.stringify(body, null, 0)});
 				} catch (e) {
 					if (e[1] === 405) {
 						this.patch = false;
 						result = await this.request(!data ? concatURI(this.uri, key) : uri, {
 							method: method,
+							headers: {"content-type": "application/json"},
 							body: JSON.stringify(data, null, 0)
 						});
 					} else {
@@ -693,7 +694,7 @@
 					}
 				}
 			} else {
-				result = await this.request(uri, {method: method, body: JSON.stringify(data, null, 0)});
+				result = await this.request(uri, {method: method, headers: {"content-type": "application/json"}, body: JSON.stringify(data, null, 0)});
 			}
 
 			return result;
