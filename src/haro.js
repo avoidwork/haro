@@ -749,9 +749,17 @@
 			const keys = this.index.filter(i => i in predicate);
 
 			return keys.length > 0 ? this.filter(new Function("a", `return (${keys.map(i => {
-				const arg = typeof predicate[i] === "string" ? `'${predicate[i]}'` : predicate[i];
+				let result;
 
-				return `Array.isArray(a['${i}']) ? a['${i}'].includes(${arg}) : a['${i}'] === ${arg}`;
+				if (Array.isArray(predicate[i])) {
+					result = `Array.isArray(a['${i}']) ? ${predicate[i].map(arg => `a['${i}'].includes(${typeof arg === "string" ? `'${arg}'` : arg})`).join(" || ")} : a['${i}'] === ${predicate[i].join(",")}`;
+				} else {
+					const arg = typeof predicate[i] === "string" ? `'${predicate[i]}'` : predicate[i];
+
+					result = `Array.isArray(a['${i}']) ? a['${i}'].includes(${arg}) : a['${i}'] === ${arg}`;
+				}
+
+				return result;
 			}).join(") && (")});`), raw) : [];
 		}
 	}
