@@ -753,6 +753,8 @@
 
 				if (Array.isArray(predicate[i])) {
 					result = `Array.isArray(a['${i}']) ? ${predicate[i].map(arg => `a['${i}'].includes(${typeof arg === "string" ? `'${arg}'` : arg})`).join(" || ")} : a['${i}'] === '${predicate[i].join(",")}'`;
+				} else if (predicate[i] instanceof RegExp) {
+					result = `Array.isArray(a['${i}']) ? a['${i}'].filter(i => ${predicate[i]}.test(a['${i}']) === true).length > 0 : ${predicate[i]}.test(a['${i}']) === true`;
 				} else {
 					const arg = typeof predicate[i] === "string" ? `'${predicate[i]}'` : predicate[i];
 
