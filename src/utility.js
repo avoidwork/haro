@@ -233,10 +233,10 @@
 
 	function setIndex (index, indexes, delimiter, key, data, indice, pattern) {
 		each(!indice ? index : [indice], i => {
+			const lindex = indexes.get(i);
+
 			if (Array.isArray(data[i]) && !i.includes(delimiter)) {
 				each(data[i], d => {
-					const lindex = indexes.get(i);
-
 					if (!lindex.has(d)) {
 						lindex.set(d, new Set());
 					}
@@ -245,11 +245,8 @@
 				});
 			} else {
 				const lidx = keyIndex(i, data, delimiter, pattern);
-				let lindex;
 
 				if (lidx !== void 0 && lidx !== null) {
-					lindex = indexes.get(i);
-
 					if (!lindex.has(lidx)) {
 						lindex.set(lidx, new Set());
 					}
