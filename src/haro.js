@@ -192,7 +192,7 @@
 
 		filter (fn, raw = false) {
 			const result = this.reduce((a, v, k, ctx) => {
-				if (fn.call(ctx, v) === true) {
+				if (fn.call(ctx, v)) {
 					a.push(this.get(k, raw));
 				}
 
@@ -754,7 +754,7 @@
 				if (Array.isArray(predicate[i])) {
 					result = `Array.isArray(a['${i}']) ? ${predicate[i].map(arg => `a['${i}'].includes(${typeof arg === "string" ? `'${arg}'` : arg})`).join(" || ")} : a['${i}'] === '${predicate[i].join(",")}'`;
 				} else if (predicate[i] instanceof RegExp) {
-					result = `Array.isArray(a['${i}']) ? a['${i}'].filter(i => ${predicate[i]}.test(a['${i}']) === true).length > 0 : ${predicate[i]}.test(a['${i}']) === true`;
+					result = `Array.isArray(a['${i}']) ? a['${i}'].filter(i => ${predicate[i]}.test(a['${i}'])).length > 0 : ${predicate[i]}.test(a['${i}'])`;
 				} else {
 					const arg = typeof predicate[i] === "string" ? `'${predicate[i]}'` : predicate[i];
 
