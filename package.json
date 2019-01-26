@@ -40,7 +40,7 @@
     "grunt-eslint": "^21.0.0",
     "grunt-replace": "^1.0.1",
     "precise": "^1.1.0",
-    "tenso": "^10.0.25"
+    "tenso": "^10.2.1"
   },
   "dependencies": {
     "node-fetch": "^2.3.0",
