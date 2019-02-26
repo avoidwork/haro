@@ -745,14 +745,14 @@
 			return obj;
 		}
 
-		where (predicate, raw = false, inner = false) {
+		where (predicate, raw = false, op = "||") {
 			const keys = this.index.filter(i => i in predicate);
 
 			return keys.length > 0 ? this.filter(new Function("a", `return (${keys.map(i => {
 				let result;
 
 				if (Array.isArray(predicate[i])) {
-					result = `Array.isArray(a['${i}']) ? ${predicate[i].map(arg => `a['${i}'].includes(${typeof arg === "string" ? `'${arg}'` : arg})`).join(` ${inner === true ? "&&" : "||"} `)} : a['${i}'] === '${predicate[i].join(",")}'`;
+					result = `Array.isArray(a['${i}']) ? ${predicate[i].map(arg => `a['${i}'].includes(${typeof arg === "string" ? `'${arg}'` : arg})`).join(` ${op} `)} : a['${i}'] === '${predicate[i].join(",")}'`;
 				} else if (predicate[i] instanceof RegExp) {
 					result = `Array.isArray(a['${i}']) ? a['${i}'].filter(i => ${predicate[i]}.test(a['${i}'])).length > 0 : ${predicate[i]}.test(a['${i}'])`;
 				} else {
