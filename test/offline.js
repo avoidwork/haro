@@ -668,9 +668,10 @@ exports.where = {
 	test: function (test) {
 		const self = this;
 
-		test.expect(5);
+		test.expect(6);
 		this.store.batch(data, "set").then(function () {
 			test.equal(self.store.where({company: "Insectus", tags: "occaecat"}).length, 1, "Should be '1'");
+			test.equal(self.store.where({company: "Insectus", tags: ["sunt", "aaaa"]}, false, "&&").length, 0, "Should be '0'");
 			test.equal(self.store.where({company: /insectus/i, tags: "occaecat"}).length, 1, "Should be '1'");
 			test.equal(self.store.where({tags: ["sunt", "veniam"]}, false, "&&").length, 1, "Should be '1'");
 			test.equal(self.store.where({company: "Insectus", tags: "aaaaa"}).length, 0, "Should be '0'");
