@@ -1032,7 +1032,7 @@ store.batch(data, 'set').then(function () {
 });
 ```
 
-**where(predicate[, raw=false])**
+**where(predicate[, raw=false, op="||"])**
 _Array_
 
 Ideal for when dealing with a composite index which contains an `Array` of values, which would make matching on a single value impossible when using `find()`.
