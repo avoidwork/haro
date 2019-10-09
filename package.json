@@ -4,6 +4,7 @@
   "description": "Harō is a modern immutable DataStore",
   "main": "lib/haro.js",
   "scripts": {
+    "changelog": "git log --no-merges --date=short --tags --format=\"[%cd] %h%d %s - %cn (%ce)\" > CHANGELOG",
     "test": "grunt test"
   },
   "repository": {
