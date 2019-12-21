@@ -44,10 +44,6 @@
 		return JSON.parse(JSON.stringify(arg, null, 0));
 	}
 
-	function concatURI (left, right) {
-		return left.replace(regex.querystring, "").replace(regex.endslash, "") + (right ? "/" + right : "");
-	}
-
 	function keyIndex (key, data, delimiter, pattern) {
 		let result;
 
@@ -203,28 +199,6 @@
 		}
 
 		postMessage(JSON.stringify(result));
-	}
-
-	function createPatch (ogdata = {}, data = {}, key = "", overwrite = false) {
-		const result = [];
-
-		if (overwrite) {
-			iterate(ogdata, (v, k) => {
-				if (k !== key && data[k] === void 0) {
-					result.push({op: "remove", path: "/" + k});
-				}
-			});
-		}
-
-		iterate(data, (v, k) => {
-			if (k !== key && ogdata[k] === void 0) {
-				result.push({op: "add", path: "/" + k, value: v});
-			} else if (JSON.stringify(ogdata[k]) !== JSON.stringify(v)) {
-				result.push({op: "replace", path: "/" + k, value: v});
-			}
-		});
-
-		return result;
 	}
 
 	function s () {

@@ -1,28 +1,17 @@
 	class Haro {
-		constructor ({adapters = {}, config = {}, debounce = 0, delimiter = "|", id = uuid(), index = [], key = "", logging = true, patch = false, pattern = "\\s*|\\t*", source = "", versioning = false} = {}) {
+		constructor ({adapters = {}, debounce = 0, delimiter = "|", id = uuid(), index = [], key = "", logging = true, pattern = "\\s*|\\t*", versioning = false} = {}) {
 			this.adapters = adapters;
 			this.data = new Map();
 			this.debounce = debounce;
 			this.debounced = new Map();
 			this.delimiter = delimiter;
-			this.config = {
-				method: "get",
-				credentials: "include",
-				headers: {
-					accept: "application/json",
-					"content-type": "application/json"
-				}
-			};
 			this.id = id;
 			this.index = index;
 			this.indexes = new Map();
 			this.key = key;
 			this.logging = logging;
-			this.patch = patch;
 			this.pattern = pattern;
-			this.source = source;
-			this.size = this.total = 0;
-			this.uri = "";
+			this.size = 0;
 			this.worker = null;
 			this.versions = new Map();
 			this.versioning = versioning;
@@ -31,10 +20,6 @@
 				enumerable: true,
 				get: () => Array.from(this.data.keys())
 			});
-
-			if (Object.keys(config).length > 1) {
-				this.config = merge(this.config, config);
-			}
 
 			return this.reindex();
 		}
@@ -65,15 +50,11 @@
 
 		beforeDelete () {}
 
-		beforeRequest () {}
-
 		beforeSet () {}
-
-		beforeSync () {}
 
 		clear () {
 			this.beforeClear();
-			this.size = this.total = 0;
+			this.size = 0;
 			this.data.clear();
 			this.indexes.clear();
 			this.versions.clear();
@@ -91,16 +72,6 @@
 			return await adapter[type].apply(this, [this, ...args]);
 		}
 
-		crawl (arg) {
-			let result = clone(arg);
-
-			each((this.source || "").split("."), i => {
-				result = result[i];
-			});
-
-			return result || arg;
-		}
-
 		del (key, batch = false, lazyLoad = false, retry = false) {
 			if (this.has(key) === false) {
 				throw new Error("Record not found");
@@ -112,8 +83,7 @@
 				this.beforeDelete(key, batch, lazyLoad, retry);
 				delIndex(this.index, this.indexes, this.delimiter, key, og, this.pattern);
 				this.data.delete(key);
-				--this.total;
-				this.size = this.total;
+				--this.size;
 			}, async () => {
 				this.ondelete(key, batch, retry, lazyLoad);
 
@@ -127,29 +97,6 @@
 							this.log(`Deleted ${key} from persistent storage`);
 						}
 					}, e => this.log(`Error deleting ${key} from persistent storage: ${e.message || e.stack || e}`, "error"));
-
-					if (!batch && !retry && this.uri) {
-						if (this.debounced.has(key)) {
-							clearTimeout(this.debounced.get(key));
-						}
-
-						this.debounced.set(key, setTimeout(async () => {
-							this.debounced.delete(key);
-
-							try {
-								await this.transmit(key, null, og, false, "delete");
-							} catch (err) {
-								this.log(err.stack || err.message || err, "error");
-
-								try {
-									await this.set(key, og, true, true);
-									this.log(`Reverted ${key}`);
-								} catch (e) {
-									this.log(`Failed to revert ${key}`);
-								}
-							}
-						}, this.debounce));
-					}
 				}
 			}, err => {
 				this.onerror("delete", err);
@@ -170,6 +117,7 @@
 
 			try {
 				const arg = await first();
+
 				result = await second(arg);
 			} catch (err) {
 				handler(err);
@@ -221,7 +169,7 @@
 		async join (other, on, type = "inner", where = []) {
 			let result;
 
-			if (other.total > 0) {
+			if (other.size > 0) {
 				if (where.length > 0) {
 					result = await this.offload([[this.id, other.id], this.find(where[0], true), !where[1] ? other.toArray(null, true) : other.find(where[1], true), this.key, on || this.key, type], "join");
 				} else {
@@ -346,7 +294,7 @@
 				const key = this.key !== "" ? arg => arg[this.key] || uuid() : () => uuid();
 				this.indexes.clear();
 				this.data = new Map(data.map(datum => [key(datum), datum]));
-				this.size = this.total = this.data.size;
+				this.size = this.data.size;
 			} else {
 				throw new Error("Invalid type");
 			}
@@ -381,45 +329,6 @@
 			this.forEach((data, key) => each(indices, i => setIndex(this.index, this.indexes, this.delimiter, key, data, i, this.pattern)));
 
 			return this;
-		}
-
-		async request (input, config = {}) {
-			return new Promise(async (resolve, reject) => {
-				const cfg = merge(clone(this.config), config),
-					ref = [input, cfg],
-					headers = {};
-
-				cfg.method = cfg.method.toUpperCase();
-
-				if (cfg.method === "DELETE") {
-					delete cfg.body;
-				}
-
-				this.beforeRequest(...ref);
-
-				try {
-					const res = await fetch(input, cfg),
-						ok = res.ok,
-						status = res.status;
-
-					if (res.headers._headers) {
-						each(Object.keys(res.headers._headers), i => {
-							headers[i] = res.headers._headers[i].join(", ");
-						});
-					} else {
-						for (const pair of res.headers.entries()) {
-							headers[pair[0]] = pair[1];
-						}
-					}
-
-					const arg = await res[regex.json.test(headers["content-type"] || "") ? "json" : "text"](),
-						next = ok ? resolve : reject;
-
-					next(this.list(this.onrequest(arg, status, headers), status, headers));
-				} catch (e) {
-					reject(this.list(e.message, 0, {}));
-				}
-			});
 		}
 
 		async save (type = "mongo") {
@@ -470,7 +379,7 @@
 
 		async set (key, data, batch = false, override = false, lazyLoad = false, retry = false) {
 			let x = clone(data),
-				method, og;
+				og;
 
 			return this.exec(async () => {
 				if (key === void 0 || key === null) {
@@ -480,9 +389,7 @@
 				this.beforeSet(key, data, batch, override, lazyLoad, retry);
 
 				if (!this.data.has(key)) {
-					++this.total;
-					this.size = this.total;
-					method = "post";
+					++this.size;
 
 					if (this.versioning) {
 						this.versions.set(key, new Set());
@@ -490,7 +397,6 @@
 				} else {
 					og = this.get(key, true);
 					delIndex(this.index, this.indexes, this.delimiter, key, og, this.pattern);
-					method = "put";
 
 					if (this.versioning) {
 						this.versions.get(key).add(Object.freeze(clone(og)));
@@ -514,38 +420,6 @@
 							this.log(`Saved ${key} to persistent storage`);
 						}
 					}, e => this.log(`Error saving ${key} to persistent storage: ${e.message || e.stack || e}`, "error"));
-
-					if (!batch && !retry && this.uri) {
-						if (this.debounced.has(key)) {
-							clearTimeout(this.debounced.get(key));
-						}
-
-						this.debounced.set(key, setTimeout(async () => {
-							this.debounced.delete(key);
-
-							try {
-								await this.transmit(key, x, og, override, method);
-
-								if (og) {
-									try {
-										await this.set(key, og, batch, true, lazyLoad, true);
-										this.log(`Reverted ${key}`);
-									} catch (e) {
-										this.log(`Failed to revert ${key}`);
-									}
-								} else {
-									try {
-										await this.del(key, true);
-										this.log(`Reverted ${key}`);
-									} catch (e) {
-										this.log(`Failed to revert ${key}`);
-									}
-								}
-							} catch (e) {
-								this.log(e.stack || e.message || e, "error");
-							}
-						}, this.debounce));
-					}
 				}
 
 				return arg;
@@ -555,14 +429,8 @@
 			});
 		}
 
-		async setUri (uri, clear = false) {
-			this.uri = uri;
-
-			return this.uri !== "" ? await this.sync(clear) : [];
-		}
-
 		sort (fn, frozen = true) {
-			return frozen ? Object.freeze(this.limit(0, this.total, true).sort(fn).map(i => Object.freeze(i))) : this.limit(0, this.total, true).sort(fn);
+			return frozen ? Object.freeze(this.limit(0, this.size, true).sort(fn).map(i => Object.freeze(i))) : this.limit(0, this.size, true).sort(fn);
 		}
 
 		sortBy (index, raw = false) {
@@ -586,42 +454,17 @@
 			let result;
 
 			try {
-				const deferreds = Object.keys(this.adapters).map(async i => await this.cmd.apply(this, [i, ...args]));
+				const promises = Object.keys(this.adapters).map(async i => await this.cmd.apply(this, [i, ...args]));
 
-				if (deferreds.length > 0) {
-					await Promise.all(deferreds);
+				if (promises.length > 0) {
+					await Promise.all(promises);
 					result = true;
 				} else {
 					result = false;
 				}
 			} catch (e) {
 				this.log(e.stack || e.message || e, "error");
-				throw e;
-			}
-
-			return result;
-		}
-
-		async sync (clear = false) {
-			let result;
-
-			this.beforeSync(this.uri, clear);
-
-			try {
-				const arg = await this.request(this.uri),
-					data = this.source ? this.crawl(arg[0]) : arg[0];
-
-				this.patch = (arg[2].Allow || arg[2].allow || "").includes("PATCH");
-
-				if (clear) {
-					this.clear();
-				}
-
-				result = await this.batch(data, "set");
-				this.onsync(result);
-			} catch (e) {
-				this.onerror("sync", e[0] || e);
-				throw e[0] || e;
+				result = false;
 			}
 
 			return result;
@@ -633,7 +476,7 @@
 			if (data) {
 				result = data.map(i => frozen ? i[1] : clone(i[1]));
 			} else {
-				result = this.limit(0, this.total, true);
+				result = this.limit(0, this.size, true);
 
 				if (frozen) {
 					each(result, i => Object.freeze(i));
@@ -661,43 +504,6 @@
 
 		transform (input, fn) {
 			return typeof fn === "function" ? fn(input) : cast(input);
-		}
-
-		async transmit (key, data, og, override = false, method = "post") {
-			const uri = concatURI(this.uri, data ? key : null);
-
-			let body, result;
-
-			if (this.patch) {
-				if (data === void 0) {
-					body = [{op: "remove", path: "/", value: key}];
-				} else if (og === void 0) {
-					body = [{op: "add", path: "/", value: data}];
-				} else if (override) {
-					body = [{op: "replace", path: "/", value: data}];
-				} else {
-					body = createPatch(og, data, this.key);
-				}
-
-				try {
-					result = await this.request(uri, {method: "patch", headers: {"content-type": "application/json-patch+json"}, body: JSON.stringify(body, null, 0)});
-				} catch (e) {
-					if (e[1] === 405) {
-						this.patch = false;
-						result = await this.request(!data ? concatURI(this.uri, key) : uri, {
-							method: method,
-							headers: {"content-type": "application/json"},
-							body: JSON.stringify(data, null, 0)
-						});
-					} else {
-						throw e;
-					}
-				}
-			} else {
-				result = await this.request(uri, {method: method, headers: {"content-type": "application/json"}, body: JSON.stringify(data, null, 0)});
-			}
-
-			return result;
 		}
 
 		async unload (type = "mongo", key = void 0) {

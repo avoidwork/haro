@@ -105,18 +105,18 @@ module.exports = adapter;
 ```javascript
 const store = haro();
 
-console.log(store.total); // 0
+console.log(store.size); // 0
 
 store.set(null, {abc: true}).then(function (arg) {
   console.log(arg); // [$uuid, {abc: true}];
-  console.log(store.total); // 1
+  console.log(store.size); // 1
   return store.set(arg[0], {abc: false});
 }).then(function (arg) {
   console.log(arg); // [$uuid, {abc: false}];
   console.log(store.versions.get(arg[0]).size); // 1;
   return store.del(arg[0])
 }).then(function () {
-  console.log(store.total); // 0;
+  console.log(store.size); // 0;
 }).catch(function (e) {
   console.error(e.stack || e.message || e);
 });
@@ -129,7 +129,7 @@ const store = haro(null, {index: ['name', 'age']}),
 
 store.batch(data, 'set').then(function (records) {
   console.log(records[0]); // [$uuid, {name: 'John Doe', age: 30}]
-  console.log(store.total); // 2
+  console.log(store.size); // 2
   console.log(store.find({age: 28})); // [[$uuid, {name: 'Jane Doe', age: 28}]]
   console.log(store.search(/^ja/i, 'name')); // [[$uuid, {name: 'Jane Doe', age: 28}]]
   console.log(store.search(function (age) { return age < 30; }, 'age')); // [[$uuid, {name: 'Jane Doe', age: 28}]]
@@ -218,35 +218,10 @@ _Function_
 
 Event listener for before a record is deleted, receives `key`, `batch`.
 
-**beforeRequest**
-_Function_
-
-Event listener for transforming an API response, receives `uri`, `config`.
-
 **beforeSet**
 _Function_
 
 Event listener for before a record is set, receives `key`, `data`.
-
-**beforeSync**
-_Function_
-
-Event listener for synchronizing with an API, receives `uri`, `clear`.
-
-**config**
-_Object_
-
-Default settings for `fetch()`.
-
-Example of specifying a bearer token authorization header:
-```javascript
-const store = haro(null, {
-  config: {
-    headers: {
-      authorization: 'Bearer abcdef'
-    }
-  }});
-```
 
 **debounce**
 _Number_
@@ -304,30 +279,10 @@ _Function_
 
 Event listener for errors which occur during common operations, receives two arguments ['type', `Error`]
 
-**onrequest**
-_Function_
-
-Event listener for transforming an API response, receives `body`, `status` & `headers`.
-
 **onset**
 _Function_
 
 Event listener for when a record is set, receives an `Array`.
-
-**onsync**
-_Function_
-
-Event listener for synchronizing with an API, receives an `Array` of `Arrays`.
-
-**source**
-_String_
-
-Optional `Object` key to retrieve data from API responses, see `setUri()`.
-
-Example of specifying the source of data:
-```javascript
-const store = haro(null, {source: 'data'});
-```
 
 **versioning**
 _Boolean_
@@ -350,11 +305,6 @@ _Map_
 
 Map of indexes, which are Sets containing Map keys.
 
-**patch**
-_Boolean_
-
-Set from the success handler of `sync()`, infers `PATCH` requests are supported by the API collection.
-
 **registry**
 _Array_
 
@@ -363,17 +313,7 @@ Array representing the order of `this.data`.
 **size**
 _Number_
 
-Total records in the DataStore.
-
-**total**
-_Number_
-
-Total records in the DataStore.
-
-**uri**
-_String_
-
-API collection URI the DataStore is wired to, in a feedback loop (do not modify, use `setUri()`). Setting the value creates an implicit relationship with records, e.g. setting `/users` would imply a URI structure of `/users/{key}`. Trailing slashes may be stripped.
+Number of records in the DataStore.
 
 **versions**
 _Map_
@@ -384,10 +324,7 @@ _Map_
 **batch(array, type)**
 _Promise_
 
-The first argument must be an `Array`, and the second argument must be `del` or `set`. Batch operations with a DataStore
-that is wired to an API with pagination enabled & `PATCH` support may create erroneous operations, such as `add` where
-`replace` is appropriate; this will happen because the DataStore will not have the entire data set to generate it's
-[JSONPatch](http://jsonpatchjs.com/) request.
+The first argument must be an `Array`, and the second argument must be `del` or `set`.
 
 ```javascript
 const haro = require('haro'),
@@ -436,7 +373,7 @@ store.set(null, {abc: true}).then(function (rec) {
 }, function (e) {
   throw e;
 }).then(function () {
-  console.log(store.total); // 0
+  console.log(store.size); // 0
 }, function (e) {
   console.error(e.stack);
 });
@@ -635,7 +572,7 @@ let ds1, ds2;
 
 // Data is added
 
-console.log(store.total);  // >10
+console.log(store.size);  // >10
 ds1 = store.limit(0, 10);  // [0-9]
 ds2 = store.limit(10, 10); // [10-19]
 
@@ -733,10 +670,10 @@ const store = haro();
 // Data is added
 
 // Creating a late index
-store.index('field3');
+store.reindex('field3');
 
 // Recreating indexes, this should only happen if the store is out of sync caused by developer code.
-store.index();
+store.reindex();
 ```
 
 **register(key, fn)**
@@ -821,48 +758,6 @@ store.set(null, {id: 1, name: 'John Doe'}).then(function (record) {
 });
 ```
 
-**setUri(uri, clear=false)**
-_Promise_
-
-Returns a `Promise` for wiring the DataStore to an API, with the retrieved record set as the `resolve()` argument. This
-creates an implicit mapping of `$uri/{key}` for records.
-
-Pagination can be implemented by conditionally supplying `true` as the second argument. Doing so will `clear()` the
-DataStore prior to a batch insertion.
-
-If `PATCH` requests are supported by the collection `batch()`, `del()` & `set()` will make `JSONPatch` requests. If a
-`405` / `Method not Allowed` response occurs from a `PATCH` request, the DataStore will fallback to the appropriate
-method & disable `PATCH` for subsequent requests.
-
-Example setting the URI of the DataStore:
-```javascript
-const store = haro(null, {key: 'id'});
-
-store.setUri('https://api.somedomain.com').then(function (records) {
-  console.log(records); // [[$id, {...}], ...]
-}, function (arg) {
-  console.error(arg[0]); // [body, statusCode]
-});
-```
-
-Example of pagination, by specifying `clear`:
-```javascript
-const store = haro(null, {key: 'id'});
-
-store.setUri('https://api.somedomain.com?page=1').then(function (records) {
-  console.log(records); // [[$id, {...}], ...]
-}, function (arg) {
-  console.log(arg[0]); // [body, statusCode]
-});
-
-// Later, based on user interaction, change the page
-store.setUri('https://api.somedomain.com?page=2', true).then(function (records) {
-  console.log(records); // [[$id, {...}], ...]
-}, function (arg) {
-  console.error(arg[0]); // [body, statusCode]
-});
-```
-
 **sort(callbackFn, [frozen = true])**
 _Array_
 
@@ -897,30 +792,6 @@ store.batch(data, 'set').then(function () {
 }, function (e) {
   console.error(e.stack || e.message || e);
 });
-```
-
-**sync(clear=false)**
-_Promise_
-
-Synchronises the DataStore with an API collection. If `clear` is `true`, the DataStore will have `clear()` executed
-prior to `batch()` upon a successful retrieval of data.
-
-Example of sorting by an index:
-```javascript
-const store = haro(null, {key: 'id'});
-
-let interval;
-
-store.setUri('https://api.somedomain.com').then(function (records) {
-  console.log(records); // [[$id, {...}], ...]
-}, function (arg) {
-  console.error(arg[0]); // [body, statusCode]
-});
-
-// Synchronizing the store every minute
-interval = setInterval(function () {
-  store.sync();
-}, 60000);
 ```
 
 **toArray([data, freeze=true])**
