@@ -693,22 +693,6 @@ const haro = require('haro'),
 store.register('mongo', require('haro-mongo'));
 ```
 
-**request(input, config)**
-_Promise_
-
-Returns a `Promise` for a `fetch()` with a triple `Array` [`body`, `status`, `headers`] as the `resolve()` & `reject()` argument.
-
-Example of mapping a DataStore:
-```javascript
-const store = haro();
-
-store.request('https://somedomain.com/api').then(function (arg) {
-  console.log(arg); // [body, status, headers]
-}, function (arg) {
-  console.error(arg[0]);
-});
-```
-
 **save([adapter])**
 _Promise_
 
