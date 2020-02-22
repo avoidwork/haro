@@ -1,6 +1,7 @@
 const path = require("path"),
 	haro = require(path.join(__dirname, "..", "lib", "haro")),
-	data = require(path.join(__dirname, "data.json"));
+	data = require(path.join(__dirname, "data.json")),
+	odata = data.map(i => [i.guid, i]);
 
 exports.empty = {
 	setUp: function (done) {
@@ -635,11 +636,12 @@ exports["override (records)"] = {
 	test: function (test) {
 		const self = this;
 
-		test.expect(3);
-		this.store.override(data, "records").then(function () {
+		test.expect(4);
+		this.store.override(odata, "records").then(function () {
 			test.equal(self.store.size, 6, "Should be a '6'");
 			test.equal(self.store.registry.length, 6, "Should be a '6'");
 			test.equal(self.store.data.size, 6, "Should be a '6'");
+			test.equal(self.store.data.get(self.store.registry[0], true).guid, data[0].guid, "Should be equal");
 			test.done();
 		}, function () {
 			test.done();

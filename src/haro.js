@@ -105,7 +105,19 @@
 		}
 
 		dump (type = "records") {
-			return type === "records" ? this.toArray(null, false) : this.transform(this.indexes);
+			const result = type === "records" ? Array.from(this.entries()) : Object.fromEntries(this.indexes);
+
+			if (type === "indexes") {
+				for (const key of Object.keys(result)) {
+					result[key] = Object.fromEntries(result[key]);
+
+					for (const lkey of Object.keys(result[key])) {
+						result[key][lkey] = Array.from(result[key][lkey]);
+					}
+				}
+			}
+
+			return result;
 		}
 
 		entries () {
@@ -285,15 +297,14 @@
 
 		onsync () {}
 
-		async override (data, type = "records", fn = void 0) {
+		async override (data, type = "records") {
 			const result = true;
 
 			if (type === "indexes") {
-				this.indexes = this.transform(data, fn);
+				this.indexes = new Map(Object.keys(data).map(i => [i, new Map(Object.keys(data[i]).map(p => [p, new Set(data[i][p])]))]));
 			} else if (type === "records") {
-				const key = this.key !== "" ? arg => arg[this.key] || uuid() : () => uuid();
 				this.indexes.clear();
-				this.data = new Map(data.map(datum => [key(datum), datum]));
+				this.data = new Map(data);
 				this.size = this.data.size;
 			} else {
 				throw new Error("Invalid type");
@@ -500,10 +511,6 @@
 			}, {});
 
 			return frozen ? Object.freeze(result) : result;
-		}
-
-		transform (input, fn) {
-			return typeof fn === "function" ? fn(input) : cast(input);
 		}
 
 		async unload (type = "mongo", key = void 0) {

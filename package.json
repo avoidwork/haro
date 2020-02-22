@@ -1,6 +1,6 @@
 {
   "name": "haro",
-  "version": "5.0.1",
+  "version": "6.0.0",
   "description": "Harō is a modern immutable DataStore",
   "main": "lib/haro.js",
   "scripts": {
@@ -27,7 +27,7 @@
   "homepage": "https://github.com/avoidwork/haro",
   "engineStrict": true,
   "engines": {
-    "node": ">=7.6.0"
+    "node": ">=12.0.0"
   },
   "devDependencies": {
     "auto-changelog": "^1.16.2",

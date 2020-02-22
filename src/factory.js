@@ -12,5 +12,4 @@
 		return obj;
 	}
 
-	factory.transform = cast;
 	factory.version = "{{VERSION}}";
