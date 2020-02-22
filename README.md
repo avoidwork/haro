@@ -813,26 +813,6 @@ store.batch(data, 'set').then(function () {
 });
 ```
 
-**transform(input[, fn])**
-_Mixed_
-
-Transforms `Map` to `Object`, `Object` to `Map`, `Set` to `Array`, & `Array` to `Set`. Accepts an optional second parameter to perform the
-transformation to simplify cross domain issues.
-
-`haro.transform()` is exposed so that you can either duplicate it into the current context with `toString()` &
-`new Function()`, or simply re-implement, for situations where you need to supply the transformation `Function`.
-
-```javascript
-const store = haro(null, {key: 'guid', index: ['name']}),
-   data = [{guid: 'abc', name: 'John Doe', age: 30}, {guid: 'def', name: 'Jane Doe', age: 28}];
-
-store.batch(data, 'set').then(function () {
-  console.log(store.transform(store.indexes)); // {age: {'28': ['def'], '30': ['abc']}, name: {'John Doe': ['abc'], 'Jane Doe': ['def']}}
-}, function (e) {
-  console.error(e.stack || e.message || e);
-});
-```
-
 **unload([adapter=mongo, key])**
 _Promise_
 

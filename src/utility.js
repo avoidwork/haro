@@ -10,32 +10,6 @@
 		return arr;
 	}
 
-	function cast (input) {
-		let result;
-
-		switch (true) {
-			case input instanceof Map:
-				result = {};
-				input.forEach((value, key) => {
-					result[key] = cast(value);
-				});
-				break;
-			case input instanceof Set:
-				result = Array.from(input);
-				break;
-			case Array.isArray(input):
-				result = new Set(input);
-				break;
-			case input instanceof Object:
-				result = new Map(Object.keys(input).map(i => [i, cast(input[i])]));
-				break;
-			default:
-				result = input;
-		}
-
-		return result;
-	}
-
 	function blob (arg) {
 		return new Blob([arg], {type: "application/javascript"});
 	}
@@ -256,7 +230,6 @@
 	}
 
 	const functions = [
-		cast.toString(),
 		clone.toString(),
 		createIndexes.toString(),
 		each.toString(),

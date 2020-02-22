@@ -513,10 +513,6 @@
 			return frozen ? Object.freeze(result) : result;
 		}
 
-		transform (input, fn) {
-			return typeof fn === "function" ? fn(input) : cast(input);
-		}
-
 		async unload (type = "mongo", key = void 0) {
 			const id = key !== void 0 ? key : this.id;
 			let result;
