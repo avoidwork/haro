@@ -21,6 +21,7 @@ Harō is built with ES6+ features, and requires polyfills for ES5 or earlier env
 - `Set`
 - `Promise`
 - `Array.from()` & `Array.is()`
+- `Object.fromEntries()`
 
 ### How to use
 Harō takes two optional arguments, the first is an `Array` of records to set asynchronously, & the second is a 
