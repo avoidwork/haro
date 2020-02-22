@@ -484,10 +484,10 @@
 		toArray (data, frozen = true) {
 			let result;
 
-			if (data) {
+			if (data instanceof Array) {
 				result = data.map(i => frozen ? i[1] : clone(i[1]));
 			} else {
-				result = this.limit(0, this.size, true);
+				result = Array.from(this.data.values()).map(i => clone(i));
 
 				if (frozen) {
 					each(result, i => Object.freeze(i));
