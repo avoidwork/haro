@@ -27,7 +27,7 @@
   "homepage": "https://github.com/avoidwork/haro",
   "engineStrict": true,
   "engines": {
-    "node": ">=7.6.0"
+    "node": ">=12.0.0"
   },
   "devDependencies": {
     "auto-changelog": "^1.16.2",
