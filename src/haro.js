@@ -128,7 +128,7 @@
 		find (where, raw = false) {
 			const key = Object.keys(where).sort((a, b) => a.localeCompare(b)).join(this.delimiter),
 				value = keyIndex(key, where, this.delimiter, this.pattern),
-				result = (this.indexes.get(key).get(value) || new Set()).forEach(i => result.push(this.get(i, raw)));
+				result = Array.from((this.indexes.get(key) || new Map()).get(value) || new Set()).map(i => this.get(i, raw));
 
 			return raw ? result : this.list(...result);
 		}
@@ -333,22 +333,6 @@
 
 		toArray (raw = false) {
 			return this.limit(0, this.data.size, raw);
-		}
-
-		toObject (data, frozen = true) {
-			const result = !data ? toObjekt(this, frozen) : data.reduce((a, b) => {
-				const obj = clone(b[1]);
-
-				if (frozen) {
-					Object.freeze(obj);
-				}
-
-				a[b[0]] = obj;
-
-				return a;
-			}, {});
-
-			return frozen ? Object.freeze(result) : result;
 		}
 
 		values () {

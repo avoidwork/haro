@@ -89,26 +89,6 @@
 		});
 	}
 
-	function toObjekt (arg, frozen = true) {
-		const result = {};
-
-		arg.forEach((value, key) => {
-			const obj = value;
-
-			if (frozen) {
-				Object.freeze(obj);
-			}
-
-			result[clone(key)] = obj;
-		});
-
-		if (frozen) {
-			Object.freeze(result);
-		}
-
-		return result;
-	}
-
 	function uuid () {
 		return s() + s() + "-" + s() + "-4" + s().substr(0, 3) + "-" + r[Math.floor(Math.random() * 4)] + s().substr(0, 3) + "-" + s() + s() + s();
 	}
