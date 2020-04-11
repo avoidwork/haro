@@ -4,6 +4,7 @@
   "description": "Harō is a modern immutable DataStore",
   "main": "lib/haro.js",
   "scripts": {
+    "build": "grunt",
     "changelog": "auto-changelog -p",
     "test": "grunt test"
   },
