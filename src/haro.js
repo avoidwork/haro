@@ -32,10 +32,8 @@
 
 				result = await Promise.all(this.beforeBatch(args, type).map(fn));
 				this.onbatch(type, result);
-				this.log(`Batch successful on ${this.id}`);
 			} catch (e) {
 				this.onerror("batch", e);
-				this.log(`Batch failure on ${this.id}`);
 				throw e;
 			}
 
@@ -59,7 +57,6 @@
 			this.indexes.clear();
 			this.versions.clear();
 			this.reindex().onclear();
-			this.log(`Cleared ${this.id}`);
 
 			return this;
 		}
@@ -89,14 +86,6 @@
 
 				if (this.versioning) {
 					this.versions.delete(key);
-				}
-
-				if (!lazyLoad) {
-					this.storage("remove", key).then(success => {
-						if (success) {
-							this.log(`Deleted ${key} from persistent storage`);
-						}
-					}, e => this.log(`Error deleting ${key} from persistent storage: ${e.message || e.stack || e}`, "error"));
 				}
 			}, err => {
 				this.onerror("delete", err);
@@ -186,12 +175,6 @@
 			return Object.freeze(args.map(i => Object.freeze(i)));
 		}
 
-		log (arg = "", type = "log") {
-			if (this.logging) {
-				console[type](`haro: ${arg}`);
-			}
-		}
-
 		map (fn, raw = false) {
 			const result = [];
 
@@ -200,7 +183,9 @@
 			return raw ? result : this.list(...result);
 		}
 
-		onbatch () {}
+		onbatch (arg) {
+			return arg;
+		}
 
 		onclear () {}
 
@@ -210,7 +195,7 @@
 
 		onset () {}
 
-		async override (data, type = "records") {
+		override (data, type = "records") {
 			const result = true;
 
 			if (type === "indexes") {
@@ -318,14 +303,6 @@
 			}, async arg => {
 				this.onset(arg, batch, retry, lazyLoad);
 
-				if (!lazyLoad) {
-					this.storage("set", key, x).then(success => {
-						if (success) {
-							this.log(`Saved ${key} to persistent storage`);
-						}
-					}, e => this.log(`Error saving ${key} to persistent storage: ${e.message || e.stack || e}`, "error"));
-				}
-
 				return arg;
 			}, err => {
 				this.onerror("set", err);
@@ -354,31 +331,8 @@
 			return raw ? result : this.list(...result);
 		}
 
-		async storage (...args) {
-			let result;
-
-			try {
-				const promises = Object.keys(this.adapters).map(async i => await this.cmd.apply(this, [i, ...args]));
-
-				if (promises.length > 0) {
-					await Promise.all(promises);
-					result = true;
-				} else {
-					result = false;
-				}
-			} catch (e) {
-				this.log(e.stack || e.message || e, "error");
-				result = false;
-			}
-
-			return result;
-		}
-
-		toArray (data = Array.from(this.data.values()), frozen = true) {
-			const fn = frozen ? i => Object.freeze(clone(i)) : i => clone(i),
-				result = data.map(fn);
-
-			return frozen ? Object.freeze(result) : result;
+		toArray (raw = false) {
+			return this.limit(0, this.data.size, raw);
 		}
 
 		toObject (data, frozen = true) {
@@ -397,49 +351,8 @@
 			return frozen ? Object.freeze(result) : result;
 		}
 
-		async unload (type = "mongo", key = void 0) {
-			const id = key !== void 0 ? key : this.id;
-			let result;
-
-			try {
-				result = await this.cmd(type, "remove", key);
-				this.log(`Unloaded ${id} from ${type} persistent storage`);
-			} catch (e) {
-				this.log(`Error unloading ${id} from ${type} persistent storage: ${e.message || e.stack || e}`, "error");
-				throw e;
-			}
-
-			return result;
-		}
-
-		unregister (key) {
-			delete adapter[key];
-		}
-
 		values () {
 			return this.data.values();
-		}
-
-		useWorker (resolve, reject) {
-			let obj;
-
-			if (this.worker) {
-				obj = new Worker(this.worker);
-
-				obj.onerror = err => {
-					reject(err);
-					obj.terminate();
-				};
-
-				obj.onmessage = ev => {
-					resolve(JSON.parse(ev.data));
-					obj.terminate();
-				};
-			} else {
-				reject(new Error(webWorkerError));
-			}
-
-			return obj;
 		}
 
 		where (predicate, raw = false, op = "||") {

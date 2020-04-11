@@ -778,10 +778,10 @@ store.batch(data, 'set').then(function () {
 });
 ```
 
-**toArray([data, freeze=true])**
+**toArray([raw=false])**
 _Array_
 
-Returns an Array of the DataStore, or a subset.
+Returns an Array of the DataStore.
 
 Example of casting to an `Array`:
 ```javascript
@@ -790,7 +790,7 @@ const store = haro(),
 
 store.batch(data, 'set').then(function () {
   console.log(store.toArray()); // [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}]
-  console.log(store.toArray(store.limit(1))); // [{name: 'John Doe', age: 30}]
+  console.log(store.toArray(store.limit(1, 1))); // [{name: 'John Doe', age: 30}]
 }, function (e) {
   console.error(e.stack || e.message || e);
 });
@@ -808,7 +808,7 @@ const store = haro(null, {key: 'guid'}),
 
 store.batch(data, 'set').then(function () {
   console.log(store.toObject()); // {abc: {guid: 'abc', name: 'John Doe', age: 30}, def: {guid: 'def', name: 'Jane Doe', age: 28}}
-  console.log(store.toObject(store.limit(1))); // {abc: {guid: 'abc', name: 'John Doe', age: 30}}}
+  console.log(store.toObject(store.limit(1, 1))); // {abc: {guid: 'abc', name: 'John Doe', age: 30}}}
 }, function (e) {
   console.error(e.stack || e.message || e);
 });
