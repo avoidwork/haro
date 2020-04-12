@@ -1,5 +1,5 @@
-	function has (a, b) {
-		return b in a;
+	function clone (arg) {
+		return JSON.parse(JSON.stringify(arg, null, 0));
 	}
 
 	function each (arr, fn) {
@@ -8,14 +8,6 @@
 		}
 
 		return arr;
-	}
-
-	function blob (arg) {
-		return new Blob([arg], {type: "application/javascript"});
-	}
-
-	function clone (arg) {
-		return JSON.parse(JSON.stringify(arg, null, 0));
 	}
 
 	function keyIndex (key, data, delimiter, pattern) {
@@ -47,40 +39,6 @@
 		});
 	}
 
-	function createIndexes (records, indexes, key, delimiter, pattern) {
-		const result = {};
-
-		each(indexes, i => {
-			result[i] = {};
-		});
-
-		each(records, i => {
-			const lkey = i[key];
-
-			if (lkey !== void 0) {
-				indexes.forEach(index => {
-					const lindex = keyIndex(index, i, delimiter, pattern);
-
-					if (!has(result[index], lindex)) {
-						result[index][lindex] = [];
-					}
-
-					result[index][lindex].push(lkey);
-				});
-			}
-		});
-
-		return result;
-	}
-
-	function iterate (obj, fn) {
-		if (obj instanceof Object) {
-			each(Object.keys(obj), i => fn.call(obj, obj[i], i));
-		} else {
-			each(obj, fn);
-		}
-	}
-
 	function merge (a, b) {
 		if (a instanceof Object && b instanceof Object) {
 			each(Object.keys(b), i => {
@@ -99,80 +57,6 @@
 		}
 
 		return a;
-	}
-
-	function joinData (id, a, b, key, on, type = "inner") {
-		const result = [];
-		let errorMsg = "More than one record found on ";
-
-		let error = false;
-
-		function join (left, right, ids, include = false, reverse = false) {
-			const keys = Object.keys(right[0]),
-				fn = !reverse ? (x, i) => x[on] === i[key] : (x, i) => x[key] === i[on];
-
-			each(left, i => {
-				const comp = {},
-					c = right.filter(x => fn(x, i));
-
-				let valid = true;
-
-				if (c.length > 1) {
-					error = true;
-					errorMsg += i[on];
-					valid = false;
-				} else if (c.length === 1) {
-					each([i, c[0]], (x, idx) => iterate(x, (v, k) => {
-						comp[ids[idx] + "_" + k] = v;
-					}));
-				} else if (include) {
-					iterate(i, (v, k) => {
-						comp[ids[0] + "_" + k] = v;
-					});
-
-					each(keys, k => {
-						comp[ids[1] + "_" + k] = null;
-					});
-				}
-
-				if (valid && Object.keys(comp).length > 0) {
-					result.push(comp);
-				}
-
-				return valid;
-			}, true);
-		}
-
-		if (type === "inner") {
-			join(a, b, id);
-		}
-
-		if (type === "left") {
-			join(a, b, id, true);
-		}
-
-		if (type === "right") {
-			join(b, a, clone(id).reverse(), true, true);
-		}
-
-		return !error ? result : errorMsg;
-	}
-
-	function onmessage (ev) {
-		const data = JSON.parse(ev.data),
-			cmd = data.cmd;
-
-		let result;
-
-		if (cmd === "index") {
-			result = createIndexes(data.records, data.index, data.key, data.delimiter, data.pattern);
-		}
-
-		if (cmd === "join") {
-			result = joinData(data.ids, data.records[0], data.records[1], data.key, data.on, data.type);
-		}
-
-		postMessage(JSON.stringify(result));
 	}
 
 	function s () {
@@ -205,38 +89,6 @@
 		});
 	}
 
-	function toObjekt (arg, frozen = true) {
-		const result = {};
-
-		arg.forEach((value, key) => {
-			const obj = value;
-
-			if (frozen) {
-				Object.freeze(obj);
-			}
-
-			result[clone(key)] = obj;
-		});
-
-		if (frozen) {
-			Object.freeze(result);
-		}
-
-		return result;
-	}
-
 	function uuid () {
 		return s() + s() + "-" + s() + "-4" + s().substr(0, 3) + "-" + r[Math.floor(Math.random() * 4)] + s().substr(0, 3) + "-" + s() + s() + s();
 	}
-
-	const functions = [
-		clone.toString(),
-		createIndexes.toString(),
-		each.toString(),
-		has.toString(),
-		iterate.toString(),
-		joinData.toString(),
-		keyIndex.toString(),
-		setIndex.toString(),
-		(node === false ? "" : "self.") + "onmessage = " + onmessage.toString() + ";"
-	].join("\n");

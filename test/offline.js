@@ -229,33 +229,11 @@ exports["read (toArray)"] = {
 	test: function (test) {
 		const self = this;
 
-		test.expect(4);
+		test.expect(3);
 		this.store.batch(data, "set").then(function () {
 			test.equal(self.store.toArray().length, 6, "Should be '6'");
-			test.equal(self.store.toArray(self.store.limit(0, 5)).length, 5, "Should be '5'");
-			test.equal(Object.isFrozen(self.store.toArray(undefined)), true, "Should be 'true'");
-			test.equal(Object.isFrozen(self.store.toArray(undefined, false)), false, "Should be 'false'");
-			test.done();
-		}, function () {
-			test.done();
-		});
-	}
-};
-
-exports["read (toObject)"] = {
-	setUp: function (done) {
-		this.store = haro(null, {key: "guid", logging: false});
-		done();
-	},
-	test: function (test) {
-		const self = this;
-
-		test.expect(4);
-		this.store.batch(data, "set").then(function () {
-			test.equal(self.store.toObject()["2a30000f-92dc-405c-b1e0-7c416d766b39"].isActive, false, "Should be 'false'");
-			test.equal(self.store.toObject(self.store.limit(0, 5))["2a30000f-92dc-405c-b1e0-7c416d766b39"].isActive, false, "Should be 'false'");
-			test.equal(Object.isFrozen(self.store.toObject()), true, "Should be 'true'");
-			test.equal(Object.isFrozen(self.store.toObject(undefined, false)), false, "Should be 'false'");
+			test.equal(Object.isFrozen(self.store.toArray()), true, "Should be 'true'");
+			test.equal(Object.isFrozen(self.store.toArray(true)), false, "Should be 'false'");
 			test.done();
 		}, function () {
 			test.done();
@@ -350,83 +328,6 @@ exports["read (search - indexed)"] = {
 			test.equal(result3[0][1].name, "Decker Merrill", "Should be 'Decker Merrill'");
 			test.done();
 		}, function () {
-			test.done();
-		});
-	}
-};
-
-exports["read (inner join)"] = {
-	setUp: function (done) {
-		this.store1 = haro([{id: "abc", name: "jason", age: 35}, {id: "def", name: "jen", age: 31}], {id: "users", key: "id", index: ["name", "age"], logging: false});
-		this.store2 = haro([{id: "ghi", user: "abc", value: 40}], {id: "values", key: "id", index: ["user", "value"], logging: false});
-		done();
-	},
-	test: function (test) {
-		test.expect(2);
-		this.store1.join(this.store2, "user", "inner").then(function (result) {
-			test.equal(result.length, 1, "Should be '1'");
-			test.equal(result[0].users_id, "abc", "Should be 'abc'");
-			test.done();
-		}, function (e) {
-			console.error(e);
-			test.done();
-		});
-	}
-};
-
-exports["read (inner join - where)"] = {
-	setUp: function (done) {
-		this.store1 = haro([{id: "abc", name: "jason", age: 35}, {id: "def", name: "jen", age: 31}], {id: "users", key: "id", index: ["name", "age"], logging: false});
-		this.store2 = haro([{id: "ghi", user: "abc", value: 40}], {id: "values", key: "id", index: ["user", "value"], logging: false});
-		done();
-	},
-	test: function (test) {
-		test.expect(1);
-		this.store1.join(this.store2, "user", "inner", [{age: 31}]).then(function (result) {
-			test.equal(result.length, 0, "Should be '0'");
-			test.done();
-		}, function (e) {
-			console.error(e);
-			test.done();
-		});
-	}
-};
-
-exports["read (left join)"] = {
-	setUp: function (done) {
-		this.store1 = haro([{id: "abc", name: "jason", age: 35}, {id: "def", name: "jen", age: 31}], {id: "users", key: "id", index: ["name", "age"], logging: false});
-		this.store2 = haro([{id: "ghi", user: "abc", value: 40}], {id: "values", key: "id", index: ["user", "value"], logging: false});
-		done();
-	},
-	test: function (test) {
-		test.expect(4);
-		this.store1.join(this.store2, "user", "left").then(function (result) {
-			test.equal(result.length, 2, "Should be '2'");
-			test.equal(result[0].users_id, "abc", "Should be 'abc'");
-			test.equal(result[1].users_id, "def", "Should be 'def'");
-			test.equal(result[1].values_value, null, "Should be 'null'");
-			test.done();
-		}, function (e) {
-			console.error(e);
-			test.done();
-		});
-	}
-};
-
-exports["read (right join)"] = {
-	setUp: function (done) {
-		this.store1 = haro([{id: "abc", name: "jason", age: 35}, {id: "def", name: "jen", age: 31}], {id: "users", key: "id", index: ["name", "age"], logging: false});
-		this.store2 = haro([{id: "ghi", user: "abc", value: 40}], {id: "values", key: "id", index: ["user", "value"], logging: false});
-		done();
-	},
-	test: function (test) {
-		test.expect(2);
-		this.store1.join(this.store2, "user", "right").then(function (result) {
-			test.equal(result.length, 1, "Should be '1'");
-			test.equal(result[0].users_id, "abc", "Should be 'abc'");
-			test.done();
-		}, function (e) {
-			console.error(e);
 			test.done();
 		});
 	}
@@ -548,26 +449,6 @@ exports["dump (records)"] = {
 
 			test.equal(ldata.length, data.length, "Should be a match");
 			test.equal(Object.isFrozen(ldata), false, "Should be 'false'");
-			test.done();
-		}, function () {
-			test.done();
-		});
-	}
-};
-
-exports["offload (indexes)"] = {
-	setUp: function (done) {
-		this.store = haro(null, {key: "guid", index: ["name", "age"], logging: false});
-		done();
-	},
-	test: function (test) {
-		const self = this;
-
-		test.expect(3);
-		this.store.offload(data).then(function (args) {
-			test.equal(Object.keys(args).length, self.store.index.length, "Should be a match");
-			test.equal(Object.keys(args.name).length, 6, "Should be '6'");
-			test.equal(args.age["20"].length, 2, "Should be '2'");
 			test.done();
 		}, function () {
 			test.done();

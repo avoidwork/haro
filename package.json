@@ -1,9 +1,10 @@
 {
   "name": "haro",
-  "version": "6.0.1",
+  "version": "7.0.0",
   "description": "Harō is a modern immutable DataStore",
   "main": "lib/haro.js",
   "scripts": {
+    "build": "grunt",
     "changelog": "auto-changelog -p",
     "test": "grunt test"
   },
@@ -30,20 +31,14 @@
     "node": ">=12.0.0"
   },
   "devDependencies": {
-    "auto-changelog": "^1.16.2",
-    "babel-core": "^6.26.3",
-    "babel-minify": "^0.5.1",
-    "grunt": "^1.0.4",
+    "auto-changelog": "^2.0.0",
+    "grunt": "^1.1.0",
     "grunt-cli": "^1.3.2",
     "grunt-contrib-concat": "^1.0.1",
-    "grunt-contrib-nodeunit": "^2.0.0",
-    "grunt-contrib-uglify": "^4.0.1",
+    "grunt-contrib-nodeunit": "^2.1.0",
+    "grunt-terser": "^1.0.0",
     "grunt-contrib-watch": "^1.1.0",
     "grunt-eslint": "^22.0.0",
-    "grunt-replace": "^1.0.1",
-    "precise": "^1.1.0"
-  },
-  "dependencies": {
-    "tiny-worker": "^2.3.0"
+    "grunt-replace": "^1.0.1"
   }
 }

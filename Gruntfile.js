@@ -55,6 +55,24 @@ module.exports = function (grunt) {
 				]
 			}
 		},
+		terser: {
+			options: {
+				ecma: 2017,
+				compress: true,
+				warnings: false,
+				keep_classnames: true,
+				keep_fnames: true,
+				mangle: true,
+				sourceMap: true
+			},
+			dist: {
+				files: {
+					"lib/haro.min.js": [
+						"lib/haro.js"
+					]
+				}
+			}
+		},
 		watch: {
 			js: {
 				files: "<%= concat.dist.src %>",
@@ -73,27 +91,10 @@ module.exports = function (grunt) {
 	grunt.loadNpmTasks("grunt-contrib-watch");
 	grunt.loadNpmTasks("grunt-eslint");
 	grunt.loadNpmTasks("grunt-replace");
-
-	grunt.task.registerTask("babel-minify", "Minifies ES2016+ code", function () {
-		const fs = require("fs"),
-			path = require("path"),
-			data = fs.readFileSync(path.join(__dirname, "lib", "haro.js"), "utf8");
-
-		try {
-			const minified = require("babel-core").transform(data, {sourceFileName: "haro.js", sourceMaps: true, presets: ["minify"]});
-
-			fs.writeFileSync(path.join(__dirname, "lib", "haro.min.js"), minified.code + "\n//# sourceMappingURL=haro.min.js.map", "utf8");
-			grunt.log.ok("1 file created.");
-			fs.writeFileSync(path.join(__dirname, "lib", "haro.min.js.map"), JSON.stringify(minified.map), "utf8");
-			grunt.log.ok("1 sourcemap created.");
-		} catch (e) {
-			console.error(e.stack || e.message || e);
-			throw e;
-		}
-	});
+	grunt.loadNpmTasks("grunt-terser");
 
 	// aliases
 	grunt.registerTask("test", ["eslint", "nodeunit"]);
 	grunt.registerTask("build", ["concat", "replace"]);
-	grunt.registerTask("default", ["build", "test", "babel-minify"]);
+	grunt.registerTask("default", ["build", "test", "terser"]);
 };
