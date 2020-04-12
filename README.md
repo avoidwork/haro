@@ -33,73 +33,6 @@ const storeRecords = haro([{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 
 const storeCustom = haro(null, {key: 'id'});
 ```
 
-### Persistent Storage
-Harō is an in RAM only DataStore, so state could be lost if your program unexpectedly restarted, or some kind of
-machine failure were to occur. To handle this serious problem, Harō affords a 1-n relationship with persistent storage
-adapters. You can register one or many adapters, and data updates will asynchronously persist to the various long term
-storage systems.
-
-DataStore records will be stored separate of the DataStore snapshot itself (if you decide to leverage it), meaning you
-are responsible for doing a `load()` & `save()` at startup & shutdown. This is a manual process because it could be a
-time bottleneck in the middle of using your application. Loading an individual record will update the DataStore with
-value from persistent storage.
-
-DataStore snapshots & individual records can be removed from persistent storage with `unload()`; it is not recommended
-to do this for an individual record, and to instead rely on `del()`, but it's afforded because it may be required.
-
-#### Creating an Adapter
-Adapters are simple in nature (can be isomorphic), and pretty easy to create! Follow the template below, fill in the
-gaps for your adapter as needed, such as handling multiple connection pools, etc.. The input parameters should not be
-mutated. The return must be a `Promise`.
-
-```javascript
-"use strict";
-
-function adapter (store, op, key, data) {
-	return new Promise((resolve, reject) => {
-		const record = key !== undefined,
-			config = store.adapters.myAdapterName,
-			prefix = config.prefix || store.id,
-			lkey = prefix + (record ? "_" + key : ""),
-			client = "Your driver instance";
-
-		if (op === "get") {
-			client.get(lkey, function (e, reply) {
-				let result = JSON.parse(reply || null);
-
-				if (e) {
-					reject(e);
-				} else if (result) {
-					resolve(result);
-				} else if (record) {
-					reject(new Error("Record not found in myAdapterName"));
-				} else {
-					reject([]);
-				}
-			});
-		} else if (op === "remove") {
-			client.del(lkey, function (e) {
-				if (e) {
-					reject(e);
-				} else {
-					resolve(true);
-				}
-			});
-		} else if (op === "set") {
-			client.set(lkey, JSON.stringify(record ? data : store.toArray()), function (e) {
-				if (e) {
-					reject(e);
-				} else {
-					resolve(true);
-				}
-			});
-		}
-	});
-}
-
-module.exports = adapter;
-```
-
 ### Examples
 #### Piping Promises
 ```javascript
@@ -187,22 +120,6 @@ testing time to 'search(regex, index)' on overridden data for a record (first on
 ```
 
 ### Configuration
-**adapters**
-_Object_
-
-Object of {(storage): (connection string)} pairs. Collection/table name is the value of `this.id`.
-
-Available adapters: _mongo_
-
-Example of specifying MongoDB as persistent storage:
-```javascript
-const store = haro(null, {
-  adapters: {
-    mongo: "mongo://localhost/mine"
-  }
-});
-```
-
 **beforeBatch**
 _Function_
 
@@ -495,49 +412,6 @@ const store = haro();
 store.has('keyValue'); // true or false
 ```
 
-**join(other, on[, type="inner", where=[]])**
-_Promise_
-
-Joins `this` instance of `Haro` with another, on a field/property. Supports "inner", "left", & "right" JOINs. Resulting
-composite records implement a `storeId_field` convention for fields/properties. The optional forth parameter is an Array
-which can be used for WHERE clauses, similar to `find()`, `[store1, store2]`.
-
-```javascript
-const store1 = haro([{id: "abc", name: "jason", age: 35}, {id: "def", name: "jen", age: 31}], {id: 'users', key: 'id', index: ['name', 'age']});
-const store2 = haro([{id: 'ghi', user: "abc", value: 40}], {id: 'values', key: 'id', index: ['user', 'value']});
-
-// Join results
-store1.join(store2, "user", "inner").then(function (records) {
-  console.log(records);
-  // [{"users_id":"abc","users_name":"jason","users_age":35,"values_id":"ghi","values_user":"abc","values_value":40}]
-}, function (e) {
-  console.error(e.stack || e.message || e);
-});
-
-store1.join(store2, "user", "inner", [{age: 31}]).then(function (records) {
-  console.log(records);
-  // []
-}, function (e) {
-  console.error(e.stack || e.message || e);
-});
-
-store1.join(store2, "user", "left").then(function (records) {
-  console.log(records);
-  // [{"users_id":"abc","users_name":"jason","users_age":35,"values_id":"ghi","values_user":"abc","values_value":40},
-  //  {"users_id":"def","users_name":"jen","users_age":31,"values_id":null,"values_user":null,"values_value":null}]
-}, function (e) {
-  console.error(e.stack || e.message || e);
-});
-
-store1.join(store2, "user", "right").then(function (records) {
-  console.log(records);
-  // [{"values_id":"ghi","values_user":"abc","values_value":40,"users_id":"abc","users_name":"jason","users_age":35}]
-}, function (e) {
-  console.error(e.stack || e.message || e);
-});
-
-```
-
 **keys()**
 _MapIterator_
 
@@ -580,12 +454,6 @@ console.log(ds1.length === ds2.length); // true
 console.log(JSON.stringify(ds1[0][1]) === JSON.stringify(ds2[0][1])); // false
 ```
 
-**load([adapter="mongo", key])**
-_Promise_
-
-Loads the DataStore, or a record from a specific persistent storage & updates the DataStore. The DataStore will be cleared
-prior to loading if `key` is omitted.
-
 **map(callbackFn, raw=false)**
 _Array_
 
@@ -599,25 +467,6 @@ const store = haro();
 
 store.map(function (value) {
   return value.property;
-});
-```
-
-**offload(data[, cmd="index", index=this.index])**
-_Promise_
-
-Returns a `Promise` for an offloaded work load, such as preparing indexes in a `Worker`. This method is ideal for dealing
-with large data sets which could block a UI thread. This method requires `Blob` & `Worker`.
-
-Example of offloading index creation:
-```javascript
-const store = haro(null, {index: ['name', 'age'], key: 'guid'}),
-    data = [{guid: 'abc', name: 'Jason Mulligan', age: 35}];
-
-store.offload(data).then(function (args) {
-  store.override(data);
-  store.override(args, 'indexes');
-}, function (e) {
-  console.error(e);
 });
 ```
 
@@ -675,29 +524,6 @@ store.reindex('field3');
 // Recreating indexes, this should only happen if the store is out of sync caused by developer code.
 store.reindex();
 ```
-
-**register(key, fn)**
-_Haro_
-
-Registers a persistent storage adapter.
-
-Example of registering an adapter:
-```javascript
-const haro = require('haro'),
-    store = haro(null, {
-      adapters: {
-        mongo: "mongo://localhost/mydb"
-      }
-    });
-
-// Register the adapter
-store.register('mongo', require('haro-mongo'));
-```
-
-**save([adapter])**
-_Promise_
-
-Saves the DataStore to persistent storage.
 
 **search(arg[, index=this.index, raw=false])**
 _Array_
@@ -794,54 +620,6 @@ store.batch(data, 'set').then(function () {
 }, function (e) {
   console.error(e.stack || e.message || e);
 });
-```
-
-**toObject([data, freeze=true])**
-_Object_
-
-Returns an Object of the DataStore.
-
-Example of casting to an `Object`:
-```javascript
-const store = haro(null, {key: 'guid'}),
-   data = [{guid: 'abc', name: 'John Doe', age: 30}, {guid: 'def', name: 'Jane Doe', age: 28}];
-
-store.batch(data, 'set').then(function () {
-  console.log(store.toObject()); // {abc: {guid: 'abc', name: 'John Doe', age: 30}, def: {guid: 'def', name: 'Jane Doe', age: 28}}
-  console.log(store.toObject(store.limit(1, 1))); // {abc: {guid: 'abc', name: 'John Doe', age: 30}}}
-}, function (e) {
-  console.error(e.stack || e.message || e);
-});
-```
-
-**unload([adapter=mongo, key])**
-_Promise_
-
-Unloads the DataStore, or a record from a specific persistent storage (delete).
-
-**unregister(key)**
-_Haro_
-
-Un-registers a persistent storage adapter.
-
-Example of unregistering an adapter:
-```javascript
-const haro = require('haro');
-
-let store;
-
-// Register the adapter
-haro.register('mongo', require('haro-mongo'));
-
-// Configure a store to utilize the adapter
-store = haro(null, {
-  adapters: {
-    mongo: "mongo://localhost/mydb"
-  }
-});
-
-// Later...
-store.unregister('haro');
 ```
 
 **values()**

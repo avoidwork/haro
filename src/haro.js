@@ -195,7 +195,7 @@
 
 		onset () {}
 
-		override (data, type = "records") {
+		async override (data, type = "records") {
 			const result = true;
 
 			if (type === "indexes") {
