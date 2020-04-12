@@ -1,6 +1,5 @@
 	class Haro {
-		constructor ({adapters = {}, debounce = 0, delimiter = "|", id = uuid(), index = [], key = "", logging = true, pattern = "\\s*|\\t*", versioning = false} = {}) {
-			this.adapters = adapters;
+		constructor ({debounce = 0, delimiter = "|", id = uuid(), index = [], key = "", pattern = "\\s*|\\t*", versioning = false} = {}) {
 			this.data = new Map();
 			this.debounce = debounce;
 			this.debounced = new Map();
@@ -9,10 +8,8 @@
 			this.index = index;
 			this.indexes = new Map();
 			this.key = key;
-			this.logging = logging;
 			this.pattern = pattern;
 			this.size = 0;
-			this.worker = null;
 			this.versions = new Map();
 			this.versioning = versioning;
 
@@ -31,7 +28,7 @@
 				const fn = type === "del" ? i => this.del(i, true, lazyLoad) : i => this.set(null, i, true, true, lazyLoad);
 
 				result = await Promise.all(this.beforeBatch(args, type).map(fn));
-				this.onbatch(type, result);
+				result = this.onbatch(result, type);
 			} catch (e) {
 				this.onerror("batch", e);
 				throw e;
@@ -59,14 +56,6 @@
 			this.reindex().onclear();
 
 			return this;
-		}
-
-		async cmd (type, ...args) {
-			if (this.adapters[type] === void 0 || adapter[type] === void 0) {
-				throw new Error(`${type} not configured for persistent storage`);
-			}
-
-			return await adapter[type].apply(this, [this, ...args]);
 		}
 
 		del (key, batch = false, lazyLoad = false, retry = false) {
