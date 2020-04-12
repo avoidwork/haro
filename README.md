@@ -604,7 +604,7 @@ store.batch(data, 'set').then(function () {
 });
 ```
 
-**toArray([raw=false])**
+**toArray([frozen=true])**
 _Array_
 
 Returns an Array of the DataStore.

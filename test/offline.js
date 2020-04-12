@@ -233,7 +233,7 @@ exports["read (toArray)"] = {
 		this.store.batch(data, "set").then(function () {
 			test.equal(self.store.toArray().length, 6, "Should be '6'");
 			test.equal(Object.isFrozen(self.store.toArray()), true, "Should be 'true'");
-			test.equal(Object.isFrozen(self.store.toArray(true)), false, "Should be 'false'");
+			test.equal(Object.isFrozen(self.store.toArray(false)), false, "Should be 'false'");
 			test.done();
 		}, function () {
 			test.done();

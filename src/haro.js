@@ -320,8 +320,15 @@
 			return raw ? result : this.list(...result);
 		}
 
-		toArray (raw = false) {
-			return this.limit(0, this.data.size, raw);
+		toArray (frozen = true) {
+			const result = Array.from(this.data.values()).map(i => clone(i));
+
+			if (frozen) {
+				each(result, i => Object.freeze(i));
+				Object.freeze(result);
+			}
+
+			return result;
 		}
 
 		values () {
