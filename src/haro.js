@@ -1,8 +1,6 @@
 	class Haro {
-		constructor ({debounce = 0, delimiter = "|", id = uuid(), index = [], key = "", pattern = "\\s*|\\t*", versioning = false} = {}) {
+		constructor ({delimiter = "|", id = uuid(), index = [], key = "", pattern = "\\s*|\\t*", versioning = false} = {}) {
 			this.data = new Map();
-			this.debounce = debounce;
-			this.debounced = new Map();
 			this.delimiter = delimiter;
 			this.id = id;
 			this.index = index;
