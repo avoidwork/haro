@@ -153,11 +153,14 @@ exports["read (invalid)"] = {
 	test: function (test) {
 		const self = this;
 
-		test.expect(3);
+		test.expect(6);
 		this.store.set(null, data[0]).then(function () {
 			test.equal(self.store.size, 1, "Should be '1'");
 			test.equal(self.store.data.size, 1, "Should be '1'");
-			test.equal(self.store.get("abc"), undefined, "Should be 'undefined'");
+			test.equal(self.store.get("abc") instanceof Array, true, "Should be 'true'");
+			test.equal(self.store.get("abc")[0], "abc", "Should be 'abc'");
+			test.equal(self.store.get("abc")[1], null, "Should be 'null'");
+			test.equal(self.store.get("abc", true), null, "Should be 'null'");
 			test.done();
 		}, function () {
 			test.done();

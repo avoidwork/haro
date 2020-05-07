@@ -141,7 +141,7 @@
 		get (key, raw = false) {
 			const result = clone(this.data.get(key) || null);
 
-			return result && !raw ? this.list(key, result) : result;
+			return raw ? result : this.list(key, result);
 		}
 
 		has (key, map = this.data) {
