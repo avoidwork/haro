@@ -121,16 +121,16 @@
 		}
 
 		filter (fn, raw = false) {
-			const x = raw ? g => g : g => this.get(g, raw),
+			const x = raw ? (k, v) => v : (k, v) => Object.freeze([k, Object.freeze(v)]),
 				result = this.reduce((a, v, k, ctx) => {
 					if (fn.call(ctx, v)) {
-						a.push(x(k));
+						a.push(x(k, v));
 					}
 
 					return a;
 				}, []);
 
-			return raw ? result : this.list(...result);
+			return raw ? result : Object.freeze(result);
 		}
 
 		forEach (fn, ctx) {
