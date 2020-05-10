@@ -121,13 +121,14 @@
 		}
 
 		filter (fn, raw = false) {
-			const result = this.reduce((a, v, k, ctx) => {
-				if (fn.call(ctx, v)) {
-					a.push(this.get(k, raw));
-				}
+			const x = raw ? g => g : g => this.get(g, raw),
+				result = this.reduce((a, v, k, ctx) => {
+					if (fn.call(ctx, v)) {
+						a.push(x(k));
+					}
 
-				return a;
-			}, []);
+					return a;
+				}, []);
 
 			return raw ? result : this.list(...result);
 		}

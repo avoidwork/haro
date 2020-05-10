@@ -45,7 +45,7 @@ exports["create (batch)"] = {
 	test: function (test) {
 		const self = this;
 
-		test.expect(11);
+		test.expect(12);
 		test.equal(this.store.size, 0, "Should be '0'");
 		test.equal(this.store.data.size, 0, "Should be '0'");
 		this.store.batch(data, "set").then(function () {
@@ -57,7 +57,10 @@ exports["create (batch)"] = {
 			test.equal(self.store.limit(5, 10).length, 1, "Should be '1'");
 			test.equal(self.store.filter(function (i) {
 				return (/decker/i).test(i.name);
-			}).length, 1, "Should be '1'");
+			})[0].length, 2, "Should be '2'");
+			test.equal(self.store.filter(function (i) {
+				return (/decker/i).test(i.name);
+			}, true).length, 1, "Should be '1'");
 			test.equal(self.store.map(function (i) {
 				i.name = "John Doe";
 
