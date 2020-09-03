@@ -81,16 +81,20 @@
 		}
 
 		dump (type = "records") {
-			const result = type === "records" ? Array.from(this.entries()) : Object.fromEntries(this.indexes);
+			let result;
 
-			if (type === "indexes") {
-				for (const key of Object.keys(result)) {
-					result[key] = Object.fromEntries(result[key]);
+			if (type === "records") {
+				result = Array.from(this.entries());
+			} else {
+				result = Array.from(this.indexes).map(i => {
+					i[1] = Array.from(i[1]).map(ii => {
+						ii[1] = Array.from(ii[1]);
 
-					for (const lkey of Object.keys(result[key])) {
-						result[key][lkey] = Array.from(result[key][lkey]);
-					}
-				}
+						return ii;
+					});
+
+					return i;
+				});
 			}
 
 			return result;
