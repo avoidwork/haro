@@ -191,7 +191,7 @@
 			const result = true;
 
 			if (type === "indexes") {
-				this.indexes = new Map(Object.keys(data).map(i => [i, new Map(Object.keys(data[i]).map(p => [p, new Set(data[i][p])]))]));
+				this.indexes = new Map(data.map(i => [i[0], new Map(i[1].map(ii => [ii[0], new Set(ii[1])]))]));
 			} else if (type === "records") {
 				this.indexes.clear();
 				this.data = new Map(data);

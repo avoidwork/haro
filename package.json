@@ -1,6 +1,6 @@
 {
   "name": "haro",
-  "version": "8.0.4",
+  "version": "9.0.0",
   "description": "Harō is a modern immutable DataStore",
   "main": "lib/haro.js",
   "scripts": {

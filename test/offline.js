@@ -465,32 +465,32 @@ exports["dump (records)"] = {
 exports["override (indexes)"] = {
 	setUp: function (done) {
 		this.store = haro(null, {key: "guid", logging: false});
-		this.indexes = {
-			name: {
-				"Decker Merrill": ["cfbfe5d1-451d-47b1-96c4-8e8e83fe9cfd"],
-				"Waters Yates": ["cbaa7d2f-b098-4347-9437-e1f879c9232a"],
-				"Elnora Durham": ["1adf114d-f0ab-4a29-9d28-47cd4a627127"],
-				"Krista Adkins": ["c5849290-afa2-4a33-a23f-64253f0d9ad9"],
-				"Mcneil Weiss": ["eccdbfd9-223f-4a85-a791-4567fecbeb44"],
-				"Leann Sosa": ["47ce98a7-3c4c-4175-9a9a-f32af8392065"]
-			},
-			age: {
-				"20": ["cfbfe5d1-451d-47b1-96c4-8e8e83fe9cfd",
-					"47ce98a7-3c4c-4175-9a9a-f32af8392065"],
-				"24": ["cbaa7d2f-b098-4347-9437-e1f879c9232a",
-					"eccdbfd9-223f-4a85-a791-4567fecbeb44"],
-				"26": ["1adf114d-f0ab-4a29-9d28-47cd4a627127"],
-				"29": ["c5849290-afa2-4a33-a23f-64253f0d9ad9"]
-			},
-			"age|gender": {
-				"20|male": ["cfbfe5d1-451d-47b1-96c4-8e8e83fe9cfd"],
-				"24|male": ["cbaa7d2f-b098-4347-9437-e1f879c9232a",
-					"eccdbfd9-223f-4a85-a791-4567fecbeb44"],
-				"26|female": ["1adf114d-f0ab-4a29-9d28-47cd4a627127"],
-				"29|female": ["c5849290-afa2-4a33-a23f-64253f0d9ad9"],
-				"20|female": ["47ce98a7-3c4c-4175-9a9a-f32af8392065"]
-			}
-		};
+		this.indexes = [
+			["name", [
+				["Decker Merrill", ["cfbfe5d1-451d-47b1-96c4-8e8e83fe9cfd"]],
+				["Waters Yates", ["cbaa7d2f-b098-4347-9437-e1f879c9232a"]],
+				["Elnora Durham", ["1adf114d-f0ab-4a29-9d28-47cd4a627127"]],
+				["Krista Adkins", ["c5849290-afa2-4a33-a23f-64253f0d9ad9"]],
+				["Mcneil Weiss", ["eccdbfd9-223f-4a85-a791-4567fecbeb44"]],
+				["Leann Sosa", ["47ce98a7-3c4c-4175-9a9a-f32af8392065"]]
+			]],
+			["age", [
+				[20, ["cfbfe5d1-451d-47b1-96c4-8e8e83fe9cfd",
+					"47ce98a7-3c4c-4175-9a9a-f32af8392065"]],
+				[24, ["cbaa7d2f-b098-4347-9437-e1f879c9232a",
+					"eccdbfd9-223f-4a85-a791-4567fecbeb44"]],
+				[26, ["1adf114d-f0ab-4a29-9d28-47cd4a627127"]],
+				[29, ["c5849290-afa2-4a33-a23f-64253f0d9ad9"]]
+			]],
+			["age|gender", [
+				["20|male", ["cfbfe5d1-451d-47b1-96c4-8e8e83fe9cfd"]],
+				["24|male", ["cbaa7d2f-b098-4347-9437-e1f879c9232a",
+					"eccdbfd9-223f-4a85-a791-4567fecbeb44"]],
+				["26|female", ["1adf114d-f0ab-4a29-9d28-47cd4a627127"]],
+				["29|female", ["c5849290-afa2-4a33-a23f-64253f0d9ad9"]],
+				["20|female", ["47ce98a7-3c4c-4175-9a9a-f32af8392065"]]
+			]
+			]];
 		done();
 	},
 	test: function (test) {
@@ -506,7 +506,7 @@ exports["override (indexes)"] = {
 			test.equal(self.store.indexes.size, 3, "Should be a '3'");
 			test.equal(self.store.indexes.get("name").size, 6, "Should be a '6'");
 			test.equal(self.store.indexes.get("age").size, 4, "Should be a '4'");
-			test.equal(self.store.indexes.get("age").get("20").size, 2, "Should be a '2'");
+			test.equal(self.store.indexes.get("age").get(20).size, 2, "Should be a '2'");
 			test.equal(self.store.indexes.get("age|gender").size, 5, "Should be a '5'");
 			test.done();
 		}, function (e) {
