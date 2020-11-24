@@ -1,13 +1,8 @@
 /.idea/
 /node_modules/
-/lib/haro.min.js
-/lib/haro.min.js.map
 /src/
 /test/
 .eslintrc
 .gitignore
 .travis.yml
-Gruntfile.js
-benchmark.js
-bower.json
-data.json
+rollup.config.js

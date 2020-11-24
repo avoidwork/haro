@@ -3,10 +3,30 @@
 		"browser": true,
 		"node": true,
 		"es6": true,
-		"amd": true
+		"amd": false
 	},
 	"parserOptions": {
-		"ecmaVersion": 2018
+		"ecmaVersion": 2018,
+		"sourceType": "module",
+		"ecmaFeatures": {
+			"jsx": true,
+			"superInFunctions": false,
+			"classes": false,
+			"modules": [2]
+		}
+	},
+	"globals": {
+		"it": true,
+		"describe": true,
+		"before": true,
+		"after": true,
+		"afterEach": true,
+		"beforeEach": true,
+		"bulmaCarousel": true,
+		"adobeIMS": true,
+		"regions": true,
+		"router": true,
+		"observable": true
 	},
 	"rules": {
 		"arrow-parens": [2, "as-needed"],
