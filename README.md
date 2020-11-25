@@ -2,7 +2,7 @@
 
 [![build status](https://secure.travis-ci.org/avoidwork/haro.svg)](http://travis-ci.org/avoidwork/haro)
 
-Harō is a modern immutable DataStore built with ES6 features, which can be wired to an API for a complete feedback loop.
+Haro is a modern immutable DataStore built with ES6 features, which can be wired to an API for a complete feedback loop.
 It is un-opinionated, and offers a plug'n'play solution to modeling, searching, & managing data on the client, or server
 (in RAM). It is a [partially persistent data structure](https://en.wikipedia.org/wiki/Persistent_data_structure), by maintaining version sets of records in `versions` ([MVCC](https://en.wikipedia.org/wiki/Multiversion_concurrency_control)).
 
@@ -10,21 +10,24 @@ Synchronous commands return an `Array` instantly, while asynchronous commands re
 resolve or reject in the future. This allows you to build complex applications without worrying about managing async 
 code.
 
-Harō indexes have the following structure `Map (field/property) > Map (value) > Set (PKs)` which allow for quick & easy 
+Haro indexes have the following structure `Map (field/property) > Map (value) > Set (PKs)` which allow for quick & easy 
 searching, as well as inspection. Indexes can be managed independently of `del()` & `set()` operations, for example you 
 can lazily create new indexes via `reindex(field)`, or `sortBy(field)`.
 
-### Requirements
-Harō is built with ES6+ features, and requires polyfills for ES5 or earlier environments.
+### Usage
+Named export is `haro`:
 
-- `Map`
-- `Set`
-- `Promise`
-- `Array.from()` & `Array.is()`
-- `Object.fromEntries()`
+#### ES Module
+```javascript
+import {haro} from 'haro';
+```
 
-### How to use
-Harō takes two optional arguments, the first is an `Array` of records to set asynchronously, & the second is a 
+#### CommonJS / node.js
+```javascript
+const {haro} = require('haro');
+```
+#### Function parameters
+Haro takes two optional arguments, the first is an `Array` of records to set asynchronously, & the second is a 
 configuration descriptor.
 
 ```javascript

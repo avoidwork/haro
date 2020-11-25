@@ -1,4 +1,6 @@
-"use strict";
+'use strict';
+
+Object.defineProperty(exports, '__esModule', { value: true });
 
 const r = [8, 9, "a", "b"];
 
@@ -353,8 +355,6 @@ class Haro {
 									}
 								});
 								break;
-							default:
-								void 0;
 						}
 					});
 				}
@@ -465,7 +465,7 @@ class Haro {
 	}
 }
 
-export function haro (data = null, config = {}) {
+function haro (data = null, config = {}) {
 	const obj = new Haro(config);
 
 	if (Array.isArray(data)) {
@@ -474,3 +474,5 @@ export function haro (data = null, config = {}) {
 
 	return obj;
 }
+
+exports.haro = haro;
