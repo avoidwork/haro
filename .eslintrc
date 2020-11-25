@@ -17,16 +17,7 @@
 	},
 	"globals": {
 		"it": true,
-		"describe": true,
-		"before": true,
-		"after": true,
-		"afterEach": true,
-		"beforeEach": true,
-		"bulmaCarousel": true,
-		"adobeIMS": true,
-		"regions": true,
-		"router": true,
-		"observable": true
+		"describe": true
 	},
 	"rules": {
 		"arrow-parens": [2, "as-needed"],
