@@ -53,7 +53,11 @@ describe("Create", function () {
 });
 
 describe("Read", function () {
-	const store = haro(null, {key: "guid", index: ["name", "age", "age|gender", "company", "name", "tags", "company|tags"], logging: false});
+	const store = haro(null, {
+		key: "guid",
+		index: ["name", "age", "age|gender", "company", "name", "tags", "company|tags"],
+		logging: false
+	});
 
 	it("should return an array (tuple) by default", function () {
 		return store.set(null, data[0]).then(function (arg) {

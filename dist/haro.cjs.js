@@ -140,11 +140,14 @@ class Haro {
 		return arg;
 	}
 
-	beforeClear () {}
+	beforeClear () {
+	}
 
-	beforeDelete () {}
+	beforeDelete () {
+	}
 
-	beforeSet () {}
+	beforeSet () {
+	}
 
 	clear () {
 		this.beforeClear();
@@ -280,13 +283,17 @@ class Haro {
 		return arg;
 	}
 
-	onclear () {}
+	onclear () {
+	}
 
-	ondelete () {}
+	ondelete () {
+	}
 
-	onerror () {}
+	onerror () {
+	}
 
-	onset () {}
+	onset () {
+	}
 
 	async override (data, type = "records") {
 		const result = true;
