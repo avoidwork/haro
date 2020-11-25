@@ -6,12 +6,10 @@
   "browser": "dist/haro.js",
   "main": "dist/haro.cjs.js",
   "module": "dist/haro.esm.js",
-  "types": "dist/haro.d.ts",
   "scripts": {
     "build": "rollup --config && npm run test",
     "changelog": "auto-changelog -p",
-    "test": "eslint *.js src/*.js test/*.js && mocha test/*.js",
-    "types": "npx typescript src/*.js --declaration --allowJs --emitDeclarationOnly --outDir dist"
+    "test": "eslint *.js src/*.js test/*.js && mocha test/*.js"
   },
   "repository": {
     "type": "git",
