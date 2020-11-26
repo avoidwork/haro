@@ -38,20 +38,21 @@ function keyIndex (key, data, delimiter, pattern) {
 	return result;
 }
 
-function delIndex (index, indexes, delimiter, key, data, pattern) {
+function delIndex (index, indexes, delimiter, key, data) {
 	index.forEach(i => {
-		const idx = indexes.get(i),
-			value = keyIndex(i, data, delimiter, pattern);
+		const idx = indexes.get(i);
 
-		if (idx.has(value)) {
-			const o = idx.get(value);
+		each(i.includes(delimiter) ? indexKeys(i, delimiter, data) : Array.isArray(data[i]) ? data[i] : [data[i]], value => {
+			if (idx.has(value)) {
+				const o = idx.get(value);
 
-			o.delete(key);
+				o.delete(key);
 
-			if (o.size === 0) {
-				idx.delete(value);
+				if (o.size === 0) {
+					idx.delete(value);
+				}
 			}
-		}
+		});
 	});
 }
 
