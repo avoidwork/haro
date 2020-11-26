@@ -219,8 +219,12 @@ class Haro {
 
 	find (where = {}, raw = false) {
 		const key = Object.keys(where).sort((a, b) => a.localeCompare(b)).join(this.delimiter),
-			index = this.indexes.get(key) || new Map(),
-			keys = indexKeys(key, this.delimiter, where),
+			index = this.indexes.get(key) || new Map();
+		let result = [];
+
+		if (index.size > 0) {
+			const keys = indexKeys(key, this.delimiter, where);
+
 			result = Array.from(keys.reduce((a, v) => {
 				if (index.has(v)) {
 					Array.from(index.get(v)).forEach(k => a.add(k));
@@ -228,6 +232,7 @@ class Haro {
 
 				return a;
 			}, new Set())).map(i => this.get(i, raw));
+		}
 
 		return raw ? result : this.list(...result);
 	}
