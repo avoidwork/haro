@@ -14,32 +14,31 @@ function each (arr, fn) {
 	return arr;
 }
 
-function keyIndex (key, data, delimiter, pattern) {
-	let result;
+function indexKeys (arg = "", delimiter = "|", data = {}) {
+	return arg.split(delimiter).reduce((a, li, lidx) => {
+		const result = [];
 
-	if (key.includes(delimiter)) {
-		result = key.split(delimiter).sort((a, b) => a.localeCompare(b)).map(i => (data[i] !== void 0 ? data[i] : "").toString().replace(new RegExp(pattern, "g"), "").toLowerCase()).join(delimiter);
-	} else {
-		result = data[key];
-	}
+		(Array.isArray(data[li]) ? data[li] : [data[li]]).forEach(lli => lidx === 0 ? result.push(lli) : a.forEach(x => result.push(`${x}|${lli}`)));
 
-	return result;
+		return result;
+	}, []);
 }
 
-function delIndex (index, indexes, delimiter, key, data, pattern) {
+function delIndex (index, indexes, delimiter, key, data) {
 	index.forEach(i => {
-		const idx = indexes.get(i),
-			value = keyIndex(i, data, delimiter, pattern);
+		const idx = indexes.get(i);
 
-		if (idx.has(value)) {
-			const o = idx.get(value);
+		each(i.includes(delimiter) ? indexKeys(i, delimiter, data) : Array.isArray(data[i]) ? data[i] : [data[i]], value => {
+			if (idx.has(value)) {
+				const o = idx.get(value);
 
-			o.delete(key);
+				o.delete(key);
 
-			if (o.size === 0) {
-				idx.delete(value);
+				if (o.size === 0) {
+					idx.delete(value);
+				}
 			}
-		}
+		});
 	});
 }
 
@@ -67,28 +66,26 @@ function s () {
 	return ((Math.random() + 1) * 0x10000 | 0).toString(16).substring(1);
 }
 
-function setIndex (index, indexes, delimiter, key, data, indice, pattern) {
+function setIndex (index, indexes, delimiter, key, data, indice) {
 	each(!indice ? index : [indice], i => {
 		const lindex = indexes.get(i);
 
-		if (Array.isArray(data[i]) && !i.includes(delimiter)) {
-			each(data[i], d => {
+		if (i.includes(delimiter)) {
+			each(indexKeys(i, delimiter, data), c => {
+				if (!lindex.has(c)) {
+					lindex.set(c, new Set());
+				}
+
+				lindex.get(c).add(key);
+			});
+		} else {
+			each(Array.isArray(data[i]) ? data[i] : [data[i]], d => {
 				if (!lindex.has(d)) {
 					lindex.set(d, new Set());
 				}
 
 				lindex.get(d).add(key);
 			});
-		} else {
-			const lidx = keyIndex(i, data, delimiter, pattern);
-
-			if (lidx !== void 0 && lidx !== null) {
-				if (!lindex.has(lidx)) {
-					lindex.set(lidx, new Set());
-				}
-
-				lindex.get(lidx).add(key);
-			}
 		}
 	});
 }
@@ -98,14 +95,13 @@ function uuid () {
 }
 
 class Haro {
-	constructor ({delimiter = "|", id = uuid(), index = [], key = "", pattern = "\\s*|\\t*", versioning = false} = {}) {
+	constructor ({delimiter = "|", id = uuid(), index = [], key = "", versioning = false} = {}) {
 		this.data = new Map();
 		this.delimiter = delimiter;
 		this.id = id;
 		this.index = index;
 		this.indexes = new Map();
 		this.key = key;
-		this.pattern = pattern;
 		this.size = 0;
 		this.versions = new Map();
 		this.versioning = versioning;
@@ -167,7 +163,7 @@ class Haro {
 
 		return this.exec(async () => {
 			this.beforeDelete(key, batch, lazyLoad, retry);
-			delIndex(this.index, this.indexes, this.delimiter, key, og, this.pattern);
+			delIndex(this.index, this.indexes, this.delimiter, key, og);
 			this.data.delete(key);
 			--this.size;
 		}, async () => {
@@ -218,15 +214,27 @@ class Haro {
 		return result;
 	}
 
-	find (where, raw = false) {
+	find (where = {}, raw = false) {
 		const key = Object.keys(where).sort((a, b) => a.localeCompare(b)).join(this.delimiter),
-			value = keyIndex(key, where, this.delimiter, this.pattern),
-			result = Array.from((this.indexes.get(key) || new Map()).get(value) || new Set()).map(i => this.get(i, raw));
+			index = this.indexes.get(key) || new Map();
+		let result = [];
+
+		if (index.size > 0) {
+			const keys = indexKeys(key, this.delimiter, where);
+
+			result = Array.from(keys.reduce((a, v) => {
+				if (index.has(v)) {
+					index.get(v).forEach(k => a.add(k));
+				}
+
+				return a;
+			}, new Set())).map(i => this.get(i, raw));
+		}
 
 		return raw ? result : this.list(...result);
 	}
 
-	filter (fn, raw = false) {
+	filter (fn = () => void 0, raw = false) {
 		const x = raw ? (k, v) => v : (k, v) => Object.freeze([k, Object.freeze(v)]),
 			result = this.reduce((a, v, k, ctx) => {
 				if (fn.call(ctx, v)) {
@@ -327,7 +335,7 @@ class Haro {
 		}
 
 		each(indices, i => this.indexes.set(i, new Map()));
-		this.forEach((data, key) => each(indices, i => setIndex(this.index, this.indexes, this.delimiter, key, data, i, this.pattern)));
+		this.forEach((data, key) => each(indices, i => setIndex(this.index, this.indexes, this.delimiter, key, data, i)));
 
 		return this;
 	}
@@ -383,7 +391,7 @@ class Haro {
 				}
 			} else {
 				og = this.get(key, true);
-				delIndex(this.index, this.indexes, this.delimiter, key, og, this.pattern);
+				delIndex(this.index, this.indexes, this.delimiter, key, og);
 
 				if (this.versioning) {
 					this.versions.get(key).add(Object.freeze(clone(og)));
@@ -395,7 +403,7 @@ class Haro {
 			}
 
 			this.data.set(key, x);
-			setIndex(this.index, this.indexes, this.delimiter, key, x, null, this.pattern);
+			setIndex(this.index, this.indexes, this.delimiter, key, x, null);
 
 			return this.get(key);
 		}, async arg => {
@@ -430,7 +438,7 @@ class Haro {
 	}
 
 	toArray (frozen = true) {
-		const result = Array.from(this.data.values()).map(i => clone(i));
+		const result = Array.from(this.data.values());
 
 		if (frozen) {
 			each(result, i => Object.freeze(i));
