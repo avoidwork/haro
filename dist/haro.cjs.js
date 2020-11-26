@@ -16,6 +16,16 @@ function each (arr, fn) {
 	return arr;
 }
 
+function indexKeys (arg = "", delimiter = "|", data = {}) {
+	return arg.split(delimiter).reduce((a, li, lidx) => {
+		const result = [];
+
+		(Array.isArray(data[li]) ? data[li] : [data[li]]).forEach(lli => lidx === 0 ? result.push(lli) : a.forEach(x => result.push(`${x}|${lli}`)));
+
+		return result;
+	}, []);
+}
+
 function keyIndex (key, data, delimiter, pattern) {
 	let result;
 
@@ -74,16 +84,7 @@ function setIndex (index, indexes, delimiter, key, data, indice) {
 		const lindex = indexes.get(i);
 
 		if (i.includes(delimiter)) {
-			const keys = i.split(delimiter),
-				results = keys.reduce((a, li, lidx) => {
-					const result = [];
-
-					(Array.isArray(data[li]) ? data[li] : [data[li]]).forEach(lli => lidx === 0 ? result.push(lli) : a.forEach(x => result.push(`${x}|${lli}`)));
-
-					return result;
-				}, []);
-
-			each(results, c => {
+			each(indexKeys(i, delimiter, data), c => {
 				if (!lindex.has(c)) {
 					lindex.set(c, new Set());
 				}
