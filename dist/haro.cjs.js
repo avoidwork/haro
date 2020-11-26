@@ -227,7 +227,7 @@ class Haro {
 
 			result = Array.from(keys.reduce((a, v) => {
 				if (index.has(v)) {
-					Array.from(index.get(v)).forEach(k => a.add(k));
+					index.get(v).forEach(k => a.add(k));
 				}
 
 				return a;
@@ -439,7 +439,7 @@ class Haro {
 	}
 
 	toArray (frozen = true) {
-		const result = Array.from(this.data.values()).map(i => clone(i));
+		const result = Array.from(this.data.values());
 
 		if (frozen) {
 			each(result, i => Object.freeze(i));
