@@ -26,18 +26,6 @@ function indexKeys (arg = "", delimiter = "|", data = {}) {
 	}, []);
 }
 
-function keyIndex (key, data, delimiter, pattern) {
-	let result;
-
-	if (key.includes(delimiter)) {
-		result = key.split(delimiter).sort((a, b) => a.localeCompare(b)).map(i => (data[i] !== void 0 ? data[i] : "").toString().replace(new RegExp(pattern, "g"), "").toLowerCase()).join(delimiter);
-	} else {
-		result = data[key];
-	}
-
-	return result;
-}
-
 function delIndex (index, indexes, delimiter, key, data) {
 	index.forEach(i => {
 		const idx = indexes.get(i);
@@ -229,15 +217,22 @@ class Haro {
 		return result;
 	}
 
-	find (where, raw = false) {
+	find (where = {}, raw = false) {
 		const key = Object.keys(where).sort((a, b) => a.localeCompare(b)).join(this.delimiter),
-			value = keyIndex(key, where, this.delimiter, this.pattern),
-			result = Array.from((this.indexes.get(key) || new Map()).get(value) || new Set()).map(i => this.get(i, raw));
+			index = this.indexes.get(key) || new Map(),
+			keys = indexKeys(key, this.delimiter, where),
+			result = Array.from(keys.reduce((a, v) => {
+				if (index.has(v)) {
+					Array.from(index.get(v)).forEach(k => a.add(k));
+				}
+
+				return a;
+			}, new Set())).map(i => this.get(i, raw));
 
 		return raw ? result : this.list(...result);
 	}
 
-	filter (fn, raw = false) {
+	filter (fn = () => void 0, raw = false) {
 		const x = raw ? (k, v) => v : (k, v) => Object.freeze([k, Object.freeze(v)]),
 			result = this.reduce((a, v, k, ctx) => {
 				if (fn.call(ctx, v)) {
