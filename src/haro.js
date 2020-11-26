@@ -176,7 +176,7 @@ class Haro {
 
 		return this.exec(async () => {
 			this.beforeDelete(key, batch, lazyLoad, retry);
-			delIndex(this.index, this.indexes, this.delimiter, key, og, this.pattern);
+			delIndex(this.index, this.indexes, this.delimiter, key, og);
 			this.data.delete(key);
 			--this.size;
 		}, async () => {
@@ -336,7 +336,7 @@ class Haro {
 		}
 
 		each(indices, i => this.indexes.set(i, new Map()));
-		this.forEach((data, key) => each(indices, i => setIndex(this.index, this.indexes, this.delimiter, key, data, i, this.pattern)));
+		this.forEach((data, key) => each(indices, i => setIndex(this.index, this.indexes, this.delimiter, key, data, i)));
 
 		return this;
 	}
@@ -404,7 +404,7 @@ class Haro {
 			}
 
 			this.data.set(key, x);
-			setIndex(this.index, this.indexes, this.delimiter, key, x, null, this.pattern);
+			setIndex(this.index, this.indexes, this.delimiter, key, x, null);
 
 			return this.get(key);
 		}, async arg => {
