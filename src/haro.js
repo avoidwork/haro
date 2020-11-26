@@ -95,14 +95,13 @@ function uuid () {
 }
 
 class Haro {
-	constructor ({delimiter = "|", id = uuid(), index = [], key = "", pattern = "\\s*|\\t*", versioning = false} = {}) {
+	constructor ({delimiter = "|", id = uuid(), index = [], key = "", versioning = false} = {}) {
 		this.data = new Map();
 		this.delimiter = delimiter;
 		this.id = id;
 		this.index = index;
 		this.indexes = new Map();
 		this.key = key;
-		this.pattern = pattern;
 		this.size = 0;
 		this.versions = new Map();
 		this.versioning = versioning;
@@ -392,7 +391,7 @@ class Haro {
 				}
 			} else {
 				og = this.get(key, true);
-				delIndex(this.index, this.indexes, this.delimiter, key, og, this.pattern);
+				delIndex(this.index, this.indexes, this.delimiter, key, og);
 
 				if (this.versioning) {
 					this.versions.get(key).add(Object.freeze(clone(og)));
