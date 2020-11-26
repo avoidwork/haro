@@ -67,28 +67,35 @@ function s () {
 	return ((Math.random() + 1) * 0x10000 | 0).toString(16).substring(1);
 }
 
-function setIndex (index, indexes, delimiter, key, data, indice, pattern) {
+function setIndex (index, indexes, delimiter, key, data, indice) {
 	each(!indice ? index : [indice], i => {
 		const lindex = indexes.get(i);
 
-		if (Array.isArray(data[i]) && !i.includes(delimiter)) {
-			each(data[i], d => {
+		if (i.includes(delimiter)) {
+			const keys = i.split(delimiter),
+				results = keys.reduce((a, li, lidx) => {
+					const result = [];
+
+					(Array.isArray(data[li]) ? data[li] : [data[li]]).forEach(lli => lidx === 0 ? result.push(lli) : a.forEach(x => result.push(`${x}|${lli}`)));
+
+					return result;
+				}, []);
+
+			each(results, c => {
+				if (!lindex.has(c)) {
+					lindex.set(c, new Set());
+				}
+
+				lindex.get(c).add(key);
+			});
+		} else {
+			each(Array.isArray(data[i]) ? data[i] : [data[i]], d => {
 				if (!lindex.has(d)) {
 					lindex.set(d, new Set());
 				}
 
 				lindex.get(d).add(key);
 			});
-		} else {
-			const lidx = keyIndex(i, data, delimiter, pattern);
-
-			if (lidx !== void 0 && lidx !== null) {
-				if (!lindex.has(lidx)) {
-					lindex.set(lidx, new Set());
-				}
-
-				lindex.get(lidx).add(key);
-			}
 		}
 	});
 }
