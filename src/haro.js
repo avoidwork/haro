@@ -161,21 +161,15 @@ class Haro {
 
 		const og = this.get(key, true);
 
-		return this.exec(async () => {
-			this.beforeDelete(key, batch, lazyLoad, retry);
-			delIndex(this.index, this.indexes, this.delimiter, key, og);
-			this.data.delete(key);
-			--this.size;
-		}, async () => {
-			this.ondelete(key, batch, retry, lazyLoad);
+		this.beforeDelete(key, batch, lazyLoad, retry);
+		delIndex(this.index, this.indexes, this.delimiter, key, og);
+		this.data.delete(key);
+		--this.size;
+		this.ondelete(key, batch, retry, lazyLoad);
 
-			if (this.versioning) {
-				this.versions.delete(key);
-			}
-		}, err => {
-			this.onerror("delete", err);
-			throw err;
-		});
+		if (this.versioning) {
+			this.versions.delete(key);
+		}
 	}
 
 	dump (type = "records") {
@@ -200,18 +194,6 @@ class Haro {
 
 	entries () {
 		return this.data.entries();
-	}
-
-	async exec (first, second, handler) {
-		let result;
-
-		try {
-			result = await second(await first());
-		} catch (err) {
-			handler(err);
-		}
-
-		return result;
 	}
 
 	find (where = {}, raw = false) {
@@ -374,46 +356,39 @@ class Haro {
 
 	async set (key, data, batch = false, override = false, lazyLoad = false, retry = false) {
 		let x = clone(data),
-			og;
+			og, result;
 
-		return this.exec(async () => {
-			if (key === void 0 || key === null) {
-				key = this.key && x[this.key] !== void 0 ? x[this.key] : uuid();
+		if (key === void 0 || key === null) {
+			key = this.key && x[this.key] !== void 0 ? x[this.key] : uuid();
+		}
+
+		this.beforeSet(key, data, batch, override, lazyLoad, retry);
+
+		if (!this.data.has(key)) {
+			++this.size;
+
+			if (this.versioning) {
+				this.versions.set(key, new Set());
+			}
+		} else {
+			og = this.get(key, true);
+			delIndex(this.index, this.indexes, this.delimiter, key, og);
+
+			if (this.versioning) {
+				this.versions.get(key).add(Object.freeze(clone(og)));
 			}
 
-			this.beforeSet(key, data, batch, override, lazyLoad, retry);
-
-			if (!this.data.has(key)) {
-				++this.size;
-
-				if (this.versioning) {
-					this.versions.set(key, new Set());
-				}
-			} else {
-				og = this.get(key, true);
-				delIndex(this.index, this.indexes, this.delimiter, key, og);
-
-				if (this.versioning) {
-					this.versions.get(key).add(Object.freeze(clone(og)));
-				}
-
-				if (override === false) {
-					x = merge(clone(og), x);
-				}
+			if (override === false) {
+				x = merge(clone(og), x);
 			}
+		}
 
-			this.data.set(key, x);
-			setIndex(this.index, this.indexes, this.delimiter, key, x, null);
+		this.data.set(key, x);
+		setIndex(this.index, this.indexes, this.delimiter, key, x, null);
+		result = this.get(key);
+		this.onset(result, batch, retry, lazyLoad);
 
-			return this.get(key);
-		}, async arg => {
-			this.onset(arg, batch, retry, lazyLoad);
-
-			return arg;
-		}, err => {
-			this.onerror("set", err);
-			throw err;
-		});
+		return result;
 	}
 
 	sort (fn, frozen = true) {
