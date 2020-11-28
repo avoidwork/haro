@@ -1,6 +1,6 @@
 {
   "name": "haro",
-  "version": "11.0.1",
+  "version": "11.0.2",
   "description": "Haro is a modern immutable DataStore",
   "source": "src/haro.js",
   "browser": "dist/haro.js",

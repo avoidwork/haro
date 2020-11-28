@@ -18,7 +18,7 @@ function indexKeys (arg = "", delimiter = "|", data = {}) {
 	return arg.split(delimiter).reduce((a, li, lidx) => {
 		const result = [];
 
-		(Array.isArray(data[li]) ? data[li] : [data[li]]).forEach(lli => lidx === 0 ? result.push(lli) : a.forEach(x => result.push(`${x}|${lli}`)));
+		(Array.isArray(data[li]) ? data[li] : [data[li]]).forEach(lli => lidx === 0 ? result.push(lli) : a.forEach(x => result.push(`${x}${delimiter}${lli}`)));
 
 		return result;
 	}, []);
