@@ -69,12 +69,12 @@ function s () {
 }
 
 function setIndex (index, indexes, delimiter, key, data, indice) {
-	each(!indice ? index : [indice], i => {
+	each(indice === null ? index : [indice], i => {
 		const lindex = indexes.get(i);
 
 		if (i.includes(delimiter)) {
 			each(indexKeys(i, delimiter, data), c => {
-				if (!lindex.has(c)) {
+				if (lindex.has(c) === false) {
 					lindex.set(c, new Set());
 				}
 
@@ -82,7 +82,7 @@ function setIndex (index, indexes, delimiter, key, data, indice) {
 			});
 		} else {
 			each(Array.isArray(data[i]) ? data[i] : [data[i]], d => {
-				if (!lindex.has(d)) {
+				if (lindex.has(d) === false) {
 					lindex.set(d, new Set());
 				}
 
@@ -243,8 +243,8 @@ class Haro {
 		return raw ? result : this.list(key, result);
 	}
 
-	has (key, map = this.data) {
-		return map.has(key);
+	has (key) {
+		return this.data.has(key);
 	}
 
 	keys () {
@@ -340,7 +340,7 @@ class Haro {
 							case rgex && value.test(Array.isArray(lkey) ? lkey.join(", ") : lkey):
 							case lkey === value:
 								lset.forEach(key => {
-									if (!result.has(key) && this.has(key)) {
+									if (result.has(key) === false && this.has(key)) {
 										result.set(key, this.get(key, raw));
 									}
 								});
@@ -364,7 +364,7 @@ class Haro {
 
 		this.beforeSet(key, data, batch, override, lazyLoad, retry);
 
-		if (!this.data.has(key)) {
+		if (this.has(key) === false) {
 			++this.size;
 
 			if (this.versioning) {
@@ -401,7 +401,7 @@ class Haro {
 
 		let lindex;
 
-		if (!this.indexes.has(index)) {
+		if (this.indexes.has(index) === false) {
 			this.reindex(index);
 		}
 
