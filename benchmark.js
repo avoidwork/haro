@@ -18,7 +18,7 @@ function second () {
 			nth = 5;
 
 		timer.stop();
-		console.log("time to override data: " + (timer.diff() / 1000000) + "ms");
+		console.log("time to override data: " + timer.diff() / 1000000 + "ms");
 		console.log("testing time to 'search(regex, index)' on overridden data for a record (first one is cold):");
 
 		while (++i < nth) {
@@ -26,7 +26,7 @@ function second () {
 				const timer2 = precise().start();
 				const record = store.search(/Carly Conway/, "name");
 				timer2.stop();
-				console.log((timer2.diff() / 1000000) + "ms");
+				console.log(timer2.diff() / 1000000 + "ms");
 
 				if (!record) {
 					console.log("Couldn't find record");
@@ -42,7 +42,7 @@ function first () {
 
 	store.batch(data, "set").then(function () {
 		timer.stop();
-		console.log("time to batch insert data: " + (timer.diff() / 1000000) + "ms");
+		console.log("time to batch insert data: " + timer.diff() / 1000000 + "ms");
 		console.log("datastore record count: " + store.total);
 		console.log("name indexes: " + store.indexes.get("name").size + "\n");
 	}).then(function () {
@@ -57,7 +57,7 @@ function first () {
 				const timer2 = precise().start();
 				const record = store.find({name: "Muriel Osborne"});
 				timer2.stop();
-				console.log((timer2.diff() / 1000000) + "ms");
+				console.log(timer2.diff() / 1000000 + "ms");
 
 				if (!record) {
 					console.log("Couldn't find record");
@@ -77,7 +77,7 @@ function first () {
 				const timer2 = precise().start();
 				const record = store.search(/Lizzie Clayton/, "name");
 				timer2.stop();
-				console.log((timer2.diff() / 1000000) + "ms");
+				console.log(timer2.diff() / 1000000 + "ms");
 
 				if (!record) {
 					console.log("Couldn't find record");
