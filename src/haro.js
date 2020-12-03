@@ -2,6 +2,23 @@
 
 const r = [8, 9, "a", "b"];
 
+function decode (arg = new ArrayBuffer(0)) {
+	return JSON.parse(String.fromCharCode.apply(null, new Uint16Array(arg)));
+}
+
+function encode (arg = "") {
+	const str = JSON.stringify(arg),
+		buf = new ArrayBuffer(str.length * 2), // 2 bytes for each char
+		bufView = new Uint16Array(buf);
+	let i = -1;
+
+	for (const char of str) {
+		bufView[++i] = char.charCodeAt(0);
+	}
+
+	return buf;
+}
+
 function clone (arg) {
 	return JSON.parse(JSON.stringify(arg, null, 0));
 }
@@ -230,13 +247,13 @@ class Haro {
 	}
 
 	forEach (fn, ctx) {
-		this.data.forEach((value, key) => fn(clone(value), clone(key)), ctx || this.data);
+		this.data.forEach((value, key) => fn(decode(value), clone(key)), ctx || this.data);
 
 		return this;
 	}
 
 	get (key, raw = false) {
-		const result = clone(this.data.get(key) || null);
+		const result = this.has(key) ? decode(this.data.get(key)) : null;
 
 		return raw ? result : this.list(key, result);
 	}
@@ -290,7 +307,7 @@ class Haro {
 			this.indexes = new Map(data.map(i => [i[0], new Map(i[1].map(ii => [ii[0], new Set(ii[1])]))]));
 		} else if (type === "records") {
 			this.indexes.clear();
-			this.data = new Map(data);
+			this.data = new Map(data.map(i => [i[0], encode(i[1])]));
 			this.size = this.data.size;
 		} else {
 			throw new Error("Invalid type");
@@ -383,7 +400,7 @@ class Haro {
 			}
 		}
 
-		this.data.set(key, x);
+		this.data.set(key, encode(x));
 		setIndex(this.index, this.indexes, this.delimiter, key, x, null);
 		result = this.get(key);
 		this.onset(result, batch, retry, lazyLoad);

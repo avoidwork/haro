@@ -5,4 +5,5 @@
 .eslintrc
 .gitignore
 .travis.yml
+data.json
 rollup.config.js
