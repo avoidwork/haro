@@ -9,16 +9,7 @@ function decode (arg = new ArrayBuffer(0)) {
 }
 
 function encode (arg = "") {
-	const str = JSON.stringify(arg),
-		buf = new ArrayBuffer(str.length * 2), // 2 bytes for each char
-		bufView = new Uint16Array(buf);
-	let i = -1;
-
-	for (const char of str) {
-		bufView[++i] = char.charCodeAt(0);
-	}
-
-	return buf;
+	return new TextEncoder().encode(JSON.stringify(arg));
 }
 
 function clone (arg) {
@@ -430,7 +421,7 @@ class Haro {
 	}
 
 	toArray (frozen = true) {
-		const result = Array.from(this.data.values());
+		const result = Array.from(this.data.values()).map(decode);
 
 		if (frozen) {
 			each(result, i => Object.freeze(i));
