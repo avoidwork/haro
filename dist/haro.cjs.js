@@ -2,14 +2,16 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-const r = [8, 9, "a", "b"];
+const decoder = new TextDecoder(),
+	encoder = new TextEncoder(),
+	r = [8, 9, "a", "b"];
 
 function decode (arg = new ArrayBuffer(0)) {
-	return JSON.parse(new TextDecoder().decode(arg));
+	return JSON.parse(decoder.decode(arg));
 }
 
 function encode (arg = "") {
-	return new TextEncoder().encode(JSON.stringify(arg));
+	return encoder.encode(JSON.stringify(arg));
 }
 
 function each (arr, fn) {
