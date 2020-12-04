@@ -2,16 +2,10 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-const decoder = new TextDecoder(),
-	encoder = new TextEncoder(),
-	r = [8, 9, "a", "b"];
+const r = [8, 9, "a", "b"];
 
-function decode (arg = new ArrayBuffer(0)) {
-	return JSON.parse(decoder.decode(arg));
-}
-
-function encode (arg = "") {
-	return encoder.encode(JSON.stringify(arg));
+function clone (arg) {
+	return JSON.parse(JSON.stringify(arg, null, 0));
 }
 
 function each (arr, fn) {
@@ -227,7 +221,7 @@ class Haro {
 	filter (fn = () => void 0, raw = false) {
 		const x = raw ? (k, v) => v : (k, v) => Object.freeze([k, Object.freeze(v)]),
 			result = this.reduce((a, v, k, ctx) => {
-				if (fn.call(ctx, v, k)) {
+				if (fn.call(ctx, v)) {
 					a.push(x(k, v));
 				}
 
@@ -238,13 +232,13 @@ class Haro {
 	}
 
 	forEach (fn, ctx) {
-		this.data.forEach((value, key) => fn(decode(value), key), ctx || this.data);
+		this.data.forEach((value, key) => fn(clone(value), clone(key)), ctx || this.data);
 
 		return this;
 	}
 
 	get (key, raw = false) {
-		const result = this.has(key) ? decode(this.data.get(key)) : null;
+		const result = clone(this.data.get(key) || null);
 
 		return raw ? result : this.list(key, result);
 	}
@@ -298,7 +292,7 @@ class Haro {
 			this.indexes = new Map(data.map(i => [i[0], new Map(i[1].map(ii => [ii[0], new Set(ii[1])]))]));
 		} else if (type === "records") {
 			this.indexes.clear();
-			this.data = new Map(data.map(i => [i[0], encode(i[1])]));
+			this.data = new Map(data);
 			this.size = this.data.size;
 		} else {
 			throw new Error("Invalid type");
@@ -361,7 +355,7 @@ class Haro {
 	}
 
 	async set (key, data, batch = false, override = false, lazyLoad = false, retry = false) {
-		let x = data,
+		let x = clone(data),
 			og, result;
 
 		if (key === void 0 || key === null) {
@@ -381,15 +375,15 @@ class Haro {
 			delIndex(this.index, this.indexes, this.delimiter, key, og);
 
 			if (this.versioning) {
-				this.versions.get(key).add(Object.freeze(this.get(key, true)));
+				this.versions.get(key).add(Object.freeze(clone(og)));
 			}
 
 			if (override === false) {
-				x = merge(og, x);
+				x = merge(clone(og), x);
 			}
 		}
 
-		this.data.set(key, encode(x));
+		this.data.set(key, x);
 		setIndex(this.index, this.indexes, this.delimiter, key, x, null);
 		result = this.get(key);
 		this.onset(result, batch, retry, lazyLoad);
@@ -419,7 +413,7 @@ class Haro {
 	}
 
 	toArray (frozen = true) {
-		const result = Array.from(this.data.values()).map(decode);
+		const result = Array.from(this.data.values());
 
 		if (frozen) {
 			each(result, i => Object.freeze(i));

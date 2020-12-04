@@ -292,7 +292,7 @@ describe("Update", function () {
 			assert.strictEqual(store.size, 6);
 			assert.strictEqual(store.registry.length, 6);
 			assert.strictEqual(store.data.size, 6);
-			assert.strictEqual(store.get(store.registry[0], true).guid, data[0].guid);
+			assert.strictEqual(store.data.get(store.registry[0], true).guid, data[0].guid);
 		});
 	});
 });
