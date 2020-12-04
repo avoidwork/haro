@@ -223,7 +223,7 @@ class Haro {
 	filter (fn = () => void 0, raw = false) {
 		const x = raw ? (k, v) => v : (k, v) => Object.freeze([k, Object.freeze(v)]),
 			result = this.reduce((a, v, k, ctx) => {
-				if (fn.call(ctx, v)) {
+				if (fn.call(ctx, v, k)) {
 					a.push(x(k, v));
 				}
 
