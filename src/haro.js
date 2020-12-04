@@ -3,15 +3,11 @@
 const r = [8, 9, "a", "b"];
 
 function decode (arg = new ArrayBuffer(0)) {
-	return JSON.parse(String.fromCharCode.apply(null, new Uint16Array(arg)));
+	return JSON.parse(new TextDecoder().decode(arg));
 }
 
 function encode (arg = "") {
 	return new TextEncoder().encode(JSON.stringify(arg));
-}
-
-function clone (arg) {
-	return JSON.parse(JSON.stringify(arg, null, 0));
 }
 
 function each (arr, fn) {
@@ -238,7 +234,7 @@ class Haro {
 	}
 
 	forEach (fn, ctx) {
-		this.data.forEach((value, key) => fn(decode(value), clone(key)), ctx || this.data);
+		this.data.forEach((value, key) => fn(decode(value), key), ctx || this.data);
 
 		return this;
 	}
@@ -363,7 +359,7 @@ class Haro {
 	}
 
 	async set (key, data, batch = false, override = false, lazyLoad = false, retry = false) {
-		let x = clone(data),
+		let x = data,
 			og, result;
 
 		if (key === void 0 || key === null) {
@@ -383,11 +379,11 @@ class Haro {
 			delIndex(this.index, this.indexes, this.delimiter, key, og);
 
 			if (this.versioning) {
-				this.versions.get(key).add(Object.freeze(clone(og)));
+				this.versions.get(key).add(Object.freeze(this.get(key, true)));
 			}
 
 			if (override === false) {
-				x = merge(clone(og), x);
+				x = merge(og, x);
 			}
 		}
 
