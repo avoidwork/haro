@@ -102,13 +102,17 @@ class Haro {
 		this.index = index;
 		this.indexes = new Map();
 		this.key = key;
-		this.size = 0;
 		this.versions = new Map();
 		this.versioning = versioning;
 
 		Object.defineProperty(this, "registry", {
 			enumerable: true,
 			get: () => Array.from(this.data.keys())
+		});
+
+		Object.defineProperty(this, "size", {
+			enumerable: true,
+			get: () => this.data.size
 		});
 
 		return this.reindex();
@@ -145,7 +149,6 @@ class Haro {
 
 	clear () {
 		this.beforeClear();
-		this.size = 0;
 		this.data.clear();
 		this.indexes.clear();
 		this.versions.clear();
@@ -164,7 +167,6 @@ class Haro {
 		this.beforeDelete(key, batch, lazyLoad, retry);
 		delIndex(this.index, this.indexes, this.delimiter, key, og);
 		this.data.delete(key);
-		--this.size;
 		this.ondelete(key, batch, retry, lazyLoad);
 
 		if (this.versioning) {
@@ -291,7 +293,6 @@ class Haro {
 		} else if (type === "records") {
 			this.indexes.clear();
 			this.data = new Map(data);
-			this.size = this.data.size;
 		} else {
 			throw new Error("Invalid type");
 		}
@@ -365,8 +366,6 @@ class Haro {
 		this.beforeSet(key, data, batch, override, lazyLoad, retry);
 
 		if (this.has(key) === false) {
-			++this.size;
-
 			if (this.versioning) {
 				this.versions.set(key, new Set());
 			}
@@ -392,7 +391,7 @@ class Haro {
 	}
 
 	sort (fn, frozen = true) {
-		return frozen ? Object.freeze(this.limit(0, this.size, true).sort(fn).map(i => Object.freeze(i))) : this.limit(0, this.size, true).sort(fn);
+		return frozen ? Object.freeze(this.limit(0, this.data.size, true).sort(fn).map(i => Object.freeze(i))) : this.limit(0, this.data.size, true).sort(fn);
 	}
 
 	sortBy (index, raw = false) {
