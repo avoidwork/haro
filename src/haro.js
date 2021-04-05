@@ -282,6 +282,9 @@ class Haro {
 	onerror () {
 	}
 
+	onoverride () {
+	}
+
 	onset () {
 	}
 
@@ -296,6 +299,8 @@ class Haro {
 		} else {
 			throw new Error("Invalid type");
 		}
+
+		this.onoverride(type);
 
 		return result;
 	}

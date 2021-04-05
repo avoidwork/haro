@@ -189,6 +189,11 @@ _Function_
 
 Event listener for errors which occur during common operations, receives two arguments ['type', `Error`]
 
+**onoverride**
+_Function_
+
+Event listener for when the data store changes entire data set, receives a `String` naming what changed (`indexes` or `records`).
+
 **onset**
 _Function_
 
@@ -654,5 +659,5 @@ store.batch(data, 'set').then(function () {
 ```
 
 ## License
-Copyright (c) 2020 Jason Mulligan
+Copyright (c) 2021 Jason Mulligan
 Licensed under the BSD-3 license
