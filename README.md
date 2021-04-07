@@ -67,31 +67,31 @@ A benchmark is included in the repository, and is useful for gauging how haro wi
 
 ```
 Batch successful on test
-time to batch insert data: 58.500052ms
+time to batch insert data: 26.774208 ms
 datastore record count: 1000
 name indexes: 1000
 
 testing time to 'find()' a record (first one is cold):
-0.194559ms
-0.030232ms
-0.009265ms
-0.006583ms
-0.005852ms
+0.10475ms
+0.005792ms
+0.003458ms
+0.005166ms
+0.009584ms
 
 testing time to 'search(regex, index)' for a record (first one is cold):
-0.720213ms
-0.160183ms
-0.114591ms
-0.110933ms
-0.112396ms
+0.193834ms
+0.110333ms
+0.103875ms
+0.10325ms
+0.125833ms
 
-time to override data: 5.041485ms
+time to override data: 0.450125 ms
 testing time to 'search(regex, index)' on overridden data for a record (first one is cold):
-0.129219ms
-0.113127ms
-0.106789ms
-0.105081ms
-0.104594ms
+0.260542ms
+0.099792ms
+0.097ms
+0.09825ms
+0.098334ms
 ```
 
 ### Configuration
@@ -209,7 +209,7 @@ _Map_
 
 ### API
 **batch(array, type)**
-_Promise_
+_Array_
 
 The first argument must be an `Array`, and the second argument must be `del` or `set`.
 
@@ -247,7 +247,7 @@ store.clear();
 ```
 
 **del(key)**
-_Promise_
+_Undefined_
 
 Deletes the record.
 
@@ -441,9 +441,9 @@ store.map(function (value) {
 ```
 
 **override(data[, type="records", fn])**
-_Promise_
+_Boolean_
 
-Returns a `Promise` for the new state. This is meant to be used in a paired override of the indexes & records, such that
+This is meant to be used in a paired override of the indexes & records, such that
 you can avoid the `Promise` based code path of a `batch()` insert or `load()`. Accepts an optional third parameter to perform the
 transformation to simplify cross domain issues.
 
@@ -520,9 +520,9 @@ store.batch(data, 'set').then(function () {
 ```
 
 **set(key, data, batch=false, override=false)**
-_Promise_
+_Object_
 
-Returns a `Promise` for setting/amending a record in the DataStore, if `key` is `false` a version 4 `UUID` will be
+Record in the DataStore. If `key` is `false` a version 4 `UUID` will be
 generated.
 
 If `override` is `true`, the existing record will be replaced instead of amended.
