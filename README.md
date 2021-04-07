@@ -37,61 +37,33 @@ const storeCustom = haro(null, {key: 'id'});
 ```
 
 ### Examples
-#### Piping Promises
-```javascript
-const store = haro();
-
-console.log(store.size); // 0
-
-store.set(null, {abc: true}).then(function (arg) {
-  console.log(arg); // [$uuid, {abc: true}];
-  console.log(store.size); // 1
-  return store.set(arg[0], {abc: false});
-}).then(function (arg) {
-  console.log(arg); // [$uuid, {abc: false}];
-  console.log(store.versions.get(arg[0]).size); // 1;
-  return store.del(arg[0])
-}).then(function () {
-  console.log(store.size); // 0;
-}).catch(function (e) {
-  console.error(e.stack || e.message || e);
-});
-```
-
 #### Indexes & Searching
 ```javascript
 const store = haro(null, {index: ['name', 'age']}),
     data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
 
-store.batch(data, 'set').then(function (records) {
-  console.log(records[0]); // [$uuid, {name: 'John Doe', age: 30}]
-  console.log(store.size); // 2
-  console.log(store.find({age: 28})); // [[$uuid, {name: 'Jane Doe', age: 28}]]
-  console.log(store.search(/^ja/i, 'name')); // [[$uuid, {name: 'Jane Doe', age: 28}]]
-  console.log(store.search(function (age) { return age < 30; }, 'age')); // [[$uuid, {name: 'Jane Doe', age: 28}]]
-}).catch(function (e) {
-  console.error(e.stack || e.message || e);
-});
+const records = store.batch(data, 'set');
+
+console.log(records[0]); // [$uuid, {name: 'John Doe', age: 30}]
+console.log(store.size); // 2
+console.log(store.find({age: 28})); // [[$uuid, {name: 'Jane Doe', age: 28}]]
+console.log(store.search(/^ja/i, 'name')); // [[$uuid, {name: 'Jane Doe', age: 28}]]
+console.log(store.search(arg => age < 30, 'age')); // [[$uuid, {name: 'Jane Doe', age: 28}]]
 ```
 
 #### MVCC versioning
 ```javascript
 const store = haro();
+let arg;
 
-store.set(null, {abc: true}).then(function (arg) {
-  return store.set(arg[0], {abc: false});
-}).then(function (arg) {
-  return store.set(arg[0], {abc: true});
-}).then(function (arg) {
-  store.versions.get(arg[0]).forEach(function (i) { console.log(i[0]); }); // {abc: true}, {abc: false}
-}).catch(function (e) {
-  console.error(e.stack || e.message || e);
-});
+arg = store.set(null, {abc: true});
+arg = store.set(arg[0], {abc: false});
+arg = store.set(arg[0], {abc: true});
+store.versions.get(arg[0]).forEach(i => console.log(i[0])); // {abc: true}, {abc: false}
 ```
 
 ### Benchmarked
 A benchmark is included in the repository, and is useful for gauging how haro will perform on different hardware, & software.
-Please consider that `batch()`, & `set()` use `Promises` and incur time as a cost.
 
 ```
 Batch successful on test

@@ -118,13 +118,13 @@ class Haro {
 		return this.reindex();
 	}
 
-	async batch (args, type = "set", lazyLoad = false) {
+	batch (args, type = "set") {
 		let result;
 
 		try {
-			const fn = type === "del" ? i => this.del(i, true, lazyLoad) : i => this.set(null, i, true, true, lazyLoad);
+			const fn = type === "del" ? i => this.del(i, true) : i => this.set(null, i, true, true);
 
-			result = await Promise.all(this.beforeBatch(args, type).map(fn));
+			result = this.beforeBatch(args, type).map(fn);
 			result = this.onbatch(result, type);
 		} catch (e) {
 			this.onerror("batch", e);
@@ -157,17 +157,17 @@ class Haro {
 		return this;
 	}
 
-	del (key, batch = false, lazyLoad = false, retry = false) {
+	del (key, batch = false) {
 		if (this.has(key) === false) {
 			throw new Error("Record not found");
 		}
 
 		const og = this.get(key, true);
 
-		this.beforeDelete(key, batch, lazyLoad, retry);
+		this.beforeDelete(key, batch);
 		delIndex(this.index, this.indexes, this.delimiter, key, og);
 		this.data.delete(key);
-		this.ondelete(key, batch, retry, lazyLoad);
+		this.ondelete(key, batch);
 
 		if (this.versioning) {
 			this.versions.delete(key);
@@ -288,7 +288,7 @@ class Haro {
 	onset () {
 	}
 
-	async override (data, type = "records") {
+	override (data, type = "records") {
 		const result = true;
 
 		if (type === "indexes") {
@@ -360,7 +360,7 @@ class Haro {
 		return raw ? Array.from(result.values()) : this.list(...Array.from(result.values()));
 	}
 
-	async set (key, data, batch = false, override = false, lazyLoad = false, retry = false) {
+	set (key, data, batch = false, override = false) {
 		let x = clone(data),
 			og, result;
 
@@ -368,7 +368,7 @@ class Haro {
 			key = this.key && x[this.key] !== void 0 ? x[this.key] : uuid();
 		}
 
-		this.beforeSet(key, data, batch, override, lazyLoad, retry);
+		this.beforeSet(key, data, batch, override);
 
 		if (this.has(key) === false) {
 			if (this.versioning) {
@@ -390,7 +390,7 @@ class Haro {
 		this.data.set(key, x);
 		setIndex(this.index, this.indexes, this.delimiter, key, x, null);
 		result = this.get(key);
-		this.onset(result, batch, retry, lazyLoad);
+		this.onset(result, batch);
 
 		return result;
 	}
