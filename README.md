@@ -2,13 +2,10 @@
 
 [![build status](https://secure.travis-ci.org/avoidwork/haro.svg)](http://travis-ci.org/avoidwork/haro)
 
-Haro is a modern immutable DataStore built with ES6 features, which can be wired to an API for a complete feedback loop.
-It is un-opinionated, and offers a plug'n'play solution to modeling, searching, & managing data on the client, or server
+Haro is a modern immutable DataStore built with ES6 features. It is un-opinionated, and offers a plug'n'play solution to modeling, searching, & managing data on the client, or server
 (in RAM). It is a [partially persistent data structure](https://en.wikipedia.org/wiki/Persistent_data_structure), by maintaining version sets of records in `versions` ([MVCC](https://en.wikipedia.org/wiki/Multiversion_concurrency_control)).
 
-Synchronous commands return an `Array` instantly, while asynchronous commands return  `Promises` which will
-resolve or reject in the future. This allows you to build complex applications without worrying about managing async 
-code.
+All methods are synchronous.
 
 Haro indexes have the following structure `Map (field/property) > Map (value) > Set (PKs)` which allow for quick & easy 
 searching, as well as inspection. Indexes can be managed independently of `del()` & `set()` operations, for example you 
@@ -220,11 +217,8 @@ while (++i < nth) {
   data.push({id: i, name: 'John Doe' + i});
 }
 
-store.batch(data, 'set').then(function(records) {
-  // records is an Array of Arrays
-}, function (e) {
-  console.error(e.stack);
-});
+// records is an Array of Arrays
+const records = store.batch(data, 'set');
 ```
 
 **clear()**
@@ -248,17 +242,11 @@ Deletes the record.
 
 Example of deleting a record:
 ```javascript
-const store = haro();
+const store = haro(),
+  rec = store.set(null, {abc: true});
 
-store.set(null, {abc: true}).then(function (rec) {
-  return store.del(rec[0]);
-}, function (e) {
-  throw e;
-}).then(function () {
-  console.log(store.size); // 0
-}, function (e) {
-  console.error(e.stack);
-});
+store.del(rec[0]);
+console.log(store.size); // 0
 ```
 
 **dump(type="records")**
@@ -340,12 +328,9 @@ Example of deleting a record:
 ```javascript
 const store = haro();
 
-store.set(null, {abc: true}).then(function (rec) {
-  store.forEach(function (value, key) {
-    console.log(key);
-  });
-}, function (e) {
-  console.error(e.stack);
+store.set(null, {abc: true});
+store.forEach(function (value, key) {
+  console.log(key);
 });
 ```
 
@@ -446,11 +431,7 @@ Example of overriding a DataStore:
 ```javascript
 const store = haro();
 
-store.override({'field': {'value': ['pk']}}, "indexes").then(function () {
- // Indexes have been overridden, no records though! override as well?
-}, function (e) {
-  console.error(e.stack);
-});
+store.override({'field': {'value': ['pk']}}, "indexes");
 ```
 
 **reduce(accumulator, value[, key, ctx=this, raw=false])**
@@ -505,13 +486,10 @@ Example of searching with a predicate function:
 const store = haro(null, {index: ['name', 'age']}),
    data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
 
-store.batch(data, 'set').then(function () {
- console.log(store.search(function (age) {
-   return age < 30;
- }, 'age')); // [[$uuid, {name: 'Jane Doe', age: 28}]]
-}, function (e) {
-  console.error(e.stack || e.message || e);
-});
+store.batch(data, 'set')
+console.log(store.search(function (age) {
+  return age < 30;
+}, 'age')); // [[$uuid, {name: 'Jane Doe', age: 28}]]
 ```
 
 **set(key, data, batch=false, override=false)**
@@ -524,13 +502,10 @@ If `override` is `true`, the existing record will be replaced instead of amended
 
 Example of creating a record:
 ```javascript
-const store = haro(null, {key: 'id'});
+const store = haro(null, {key: 'id'}),
+  record = store.set(null, {id: 1, name: 'John Doe'});
 
-store.set(null, {id: 1, name: 'John Doe'}).then(function (record) {
-  console.log(record); // [1, {id: 1, name: 'Jane Doe'}]
-}, function (e) {
-  console.error(e.stack || e.message || e);
-});
+console.log(record); // [1, {id: 1, name: 'Jane Doe'}]
 ```
 
 **sort(callbackFn, [frozen = true])**
@@ -543,13 +518,8 @@ Example of sorting like an `Array`:
 const store = haro(null, {index: ['name', 'age']}),
    data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
 
-store.batch(data, 'set').then(function () {
-  console.log(store.sort(function (a, b) {
-    return a < b ? -1 : (a > b ? 1 : 0);
-  })); // [{name: 'Jane Doe', age: 28}, {name: 'John Doe', age: 30}]
-}, function (e) {
-  console.error(e.stack || e.message || e);
-});
+store.batch(data, 'set')
+console.log(store.sort((a, b) => a < b ? -1 : (a > b ? 1 : 0))); // [{name: 'Jane Doe', age: 28}, {name: 'John Doe', age: 30}]
 ```
 
 **sortBy(index[, raw=false])**
@@ -562,11 +532,8 @@ Example of sorting by an index:
 const store = haro(null, {index: ['name', 'age']}),
    data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
 
-store.batch(data, 'set').then(function () {
-  console.log(store.sortBy('age')); // [[$uuid, {name: 'Jane Doe', age: 28}], [$uuid, {name: 'John Doe', age: 30}]]
-}, function (e) {
-  console.error(e.stack || e.message || e);
-});
+store.batch(data, 'set')
+console.log(store.sortBy('age')); // [[$uuid, {name: 'Jane Doe', age: 28}], [$uuid, {name: 'John Doe', age: 30}]]
 ```
 
 **toArray([frozen=true])**
@@ -579,11 +546,8 @@ Example of casting to an `Array`:
 const store = haro(),
    data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
 
-store.batch(data, 'set').then(function () {
-  console.log(store.toArray()); // [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}]
-}, function (e) {
-  console.error(e.stack || e.message || e);
-});
+store.batch(data, 'set')
+console.log(store.toArray()); // [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}]
 ```
 
 **values()**
@@ -596,17 +560,15 @@ Example of iterating the values:
 const store = haro(),
    data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
 
-store.batch(data, 'set').then(function () {
-  const iterator = store.values();
-  let item = iterator.next();
+store.batch(data, 'set')
 
-  while (!item.done) {
-    console.log(item.value);
-    item = iterator.next();
-  };
-}, function (e) {
-  console.error(e.stack || e.message || e);
-});
+const iterator = store.values();
+let item = iterator.next();
+
+while (!item.done) {
+  console.log(item.value);
+  item = iterator.next();
+};
 ```
 
 **where(predicate[, raw=false, op="||"])**
@@ -618,11 +580,8 @@ Ideal for when dealing with a composite index which contains an `Array` of value
 const store = haro(null, {key: 'guid', index: ['name', 'name|age', 'age']}),
    data = [{guid: 'abc', name: 'John Doe', age: 30}, {guid: 'def', name: 'Jane Doe', age: 28}];
 
-store.batch(data, 'set').then(function () {
-  console.log(store.where({name: 'John Doe', age: 30})); // [{guid: 'abc', name: 'John Doe', age: 30}]
-}, function (e) {
-  console.error(e.stack || e.message || e);
-});
+store.batch(data, 'set');
+console.log(store.where({name: 'John Doe', age: 30})); // [{guid: 'abc', name: 'John Doe', age: 30}]
 ```
 
 ## License
