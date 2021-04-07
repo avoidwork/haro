@@ -1,6 +1,6 @@
 {
   "name": "haro",
-  "version": "13.1.0",
+  "version": "14.0.0",
   "description": "Haro is a modern immutable DataStore",
   "source": "src/haro.js",
   "browser": "dist/haro.js",
@@ -37,6 +37,7 @@
     "auto-changelog": "^2.2.1",
     "eslint": "^7.23.0",
     "mocha": "^8.3.2",
+    "precise": "^1.1.0",
     "rollup": "^2.44.0",
     "rollup-plugin-terser": "^7.0.2"
   }
