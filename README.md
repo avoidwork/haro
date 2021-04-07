@@ -156,11 +156,6 @@ _Function_
 
 Event listener for when a record is deleted, receives the record key.
 
-**onerror**
-_Function_
-
-Event listener for errors which occur during common operations, receives two arguments ['type', `Error`]
-
 **onoverride**
 _Function_
 

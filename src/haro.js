@@ -119,17 +119,11 @@ class Haro {
 	}
 
 	batch (args, type = "set") {
+		const fn = type === "del" ? i => this.del(i, true) : i => this.set(null, i, true, true);
 		let result;
 
-		try {
-			const fn = type === "del" ? i => this.del(i, true) : i => this.set(null, i, true, true);
-
-			result = this.beforeBatch(args, type).map(fn);
-			result = this.onbatch(result, type);
-		} catch (e) {
-			this.onerror("batch", e);
-			throw e;
-		}
+		result = this.beforeBatch(args, type).map(fn);
+		result = this.onbatch(result, type);
 
 		return result;
 	}
@@ -277,9 +271,6 @@ class Haro {
 	}
 
 	ondelete () {
-	}
-
-	onerror () {
 	}
 
 	onoverride () {
