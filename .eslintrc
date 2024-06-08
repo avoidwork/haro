@@ -1,23 +1,17 @@
 {
 	"env": {
-		"browser": true,
+		"browser": false,
 		"node": true,
 		"es6": true,
 		"amd": false
 	},
 	"parserOptions": {
-		"ecmaVersion": 2018,
-		"sourceType": "module",
-		"ecmaFeatures": {
-			"jsx": true,
-			"superInFunctions": false,
-			"classes": false,
-			"modules": [2]
-		}
+		"ecmaVersion": 2020,
+		"sourceType": "module"
 	},
 	"globals": {
-		"it": true,
-		"describe": true
+		"describe": "readonly",
+		"it": "readonly"
 	},
 	"rules": {
 		"arrow-parens": [2, "as-needed"],

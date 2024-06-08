@@ -1,26 +1,30 @@
-const {terser} = require("rollup-plugin-terser");
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
+const pkg = require("./package.json");
+const year = new Date().getFullYear();
+const bannerLong = `/**
+ * ${pkg.name}
+ *
+ * @copyright ${year} ${pkg.author}
+ * @license ${pkg.license}
+ * @version ${pkg.version}
+ */`;
+const defaultOutBase = {compact: true, banner: bannerLong, name: pkg.name};
+const cjOutBase = {...defaultOutBase, compact: false, format: "cjs", exports: "named"};
+const esmOutBase = {...defaultOutBase, format: "esm"};
 
 export default [
 	{
-		input: "./src/haro.js",
+		external: [],
+		input: `./src/${pkg.name}.js`,
 		output: [
 			{
-				file: "dist/haro.cjs.js",
-				format: "cjs",
-				exports: "named"
+				...cjOutBase,
+				file: `dist/${pkg.name}.cjs`
 			},
 			{
-				file: "dist/haro.esm.js",
-				format: "es",
-				compact: true,
-				plugins: [terser()]
-			},
-			{
-				file: "dist/haro.js",
-				name: "haro",
-				format: "umd",
-				compact: true,
-				plugins: [terser()]
+				...esmOutBase,
+				file: `dist/${pkg.name}.js`
 			}
 		]
 	}
