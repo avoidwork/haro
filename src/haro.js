@@ -114,7 +114,7 @@ export class Haro {
 
 	find (where = {}, raw = false) {
 		const key = Object.keys(where).sort((a, b) => a.localeCompare(b)).join(this.delimiter),
-			index = this.indexes.get(key) || new Map();
+			index = this.indexes.get(key) ?? new Map();
 		let result = [];
 
 		if (index.size > 0) {
@@ -146,13 +146,13 @@ export class Haro {
 	}
 
 	forEach (fn, ctx) {
-		this.data.forEach((value, key) => fn(clone(value), clone(key)), ctx || this.data);
+		this.data.forEach((value, key) => fn(clone(value), clone(key)), ctx ?? this.data);
 
 		return this;
 	}
 
 	get (key, raw = false) {
-		const result = clone(this.data.get(key) || null);
+		const result = clone(this.data.get(key) ?? null);
 
 		return raw ? result : this.list(key, result);
 	}
@@ -217,7 +217,7 @@ export class Haro {
 	}
 
 	reduce (fn, accumulator, raw = false) {
-		let a = accumulator || this.data.keys().next().value;
+		let a = accumulator ?? this.data.keys().next().value;
 
 		this.forEach((v, k) => {
 			a = fn(a, v, k, this, raw);
@@ -272,15 +272,11 @@ export class Haro {
 	}
 
 	set (key = null, data = {}, batch = false, override = false) {
-		let x = clone(data);
-
 		if (key === null) {
-			if (this.key in x) {
-				key = x[this.key];
-			} else {
-				x[this.key] = key = uuid();
-			}
+			key = data[this.key] ?? uuid();
 		}
+
+		let x = {...data, [this.key]: key};
 
 		this.beforeSet(key, x, batch, override);
 

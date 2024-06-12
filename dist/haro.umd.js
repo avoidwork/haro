@@ -3,7 +3,7 @@
  *
  * @copyright 2024 Jason Mulligan <jason.mulligan@avoidwork.com>
  * @license BSD-3-Clause
- * @version 15.0.1
+ * @version 15.0.2
  */
 (function(g,f){typeof exports==='object'&&typeof module!=='undefined'?f(exports):typeof define==='function'&&define.amd?define(['exports'],f):(g=typeof globalThis!=='undefined'?globalThis:g||self,f(g.lru={}));})(this,(function(exports){'use strict';const STRING_COMMA = ",";
 const STRING_EMPTY = "";
@@ -222,7 +222,7 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 
 	find (where = {}, raw = false) {
 		const key = Object.keys(where).sort((a, b) => a.localeCompare(b)).join(this.delimiter),
-			index = this.indexes.get(key) || new Map();
+			index = this.indexes.get(key) ?? new Map();
 		let result = [];
 
 		if (index.size > 0) {
@@ -254,13 +254,13 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 	}
 
 	forEach (fn, ctx) {
-		this.data.forEach((value, key) => fn(clone(value), clone(key)), ctx || this.data);
+		this.data.forEach((value, key) => fn(clone(value), clone(key)), ctx ?? this.data);
 
 		return this;
 	}
 
 	get (key, raw = false) {
-		const result = clone(this.data.get(key) || null);
+		const result = clone(this.data.get(key) ?? null);
 
 		return raw ? result : this.list(key, result);
 	}
@@ -325,7 +325,7 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 	}
 
 	reduce (fn, accumulator, raw = false) {
-		let a = accumulator || this.data.keys().next().value;
+		let a = accumulator ?? this.data.keys().next().value;
 
 		this.forEach((v, k) => {
 			a = fn(a, v, k, this, raw);
@@ -378,15 +378,11 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 	}
 
 	set (key = null, data = {}, batch = false, override = false) {
-		let x = clone(data);
-
 		if (key === null) {
-			if (this.key in x) {
-				key = x[this.key];
-			} else {
-				x[this.key] = key = uuid();
-			}
+			key = data[this.key] ?? uuid();
 		}
+
+		let x = {...data, [this.key]: key};
 
 		this.beforeSet(key, x, batch, override);
 
