@@ -272,8 +272,7 @@ export class Haro {
 	}
 
 	set (key = null, data = {}, batch = false, override = false) {
-		let x = clone(data),
-			og, result;
+		let x = clone(data);
 
 		if (key === null) {
 			if (this.key in x) {
@@ -283,14 +282,14 @@ export class Haro {
 			}
 		}
 
-		this.beforeSet(key, data, batch, override);
+		this.beforeSet(key, x, batch, override);
 
 		if (this.has(key) === false) {
 			if (this.versioning) {
 				this.versions.set(key, new Set());
 			}
 		} else {
-			og = this.get(key, true);
+			let og = this.get(key, true);
 			delIndex(this.index, this.indexes, this.delimiter, key, og);
 
 			if (this.versioning) {
@@ -304,7 +303,7 @@ export class Haro {
 
 		this.data.set(key, x);
 		setIndex(this.index, this.indexes, this.delimiter, key, x, null);
-		result = this.get(key);
+		let result = this.get(key);
 		this.onset(result, batch);
 
 		return result;
