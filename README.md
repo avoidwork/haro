@@ -10,7 +10,7 @@ searching, as well as inspection. Indexes can be managed independently of `del()
 can lazily create new indexes via `reindex(field)`, or `sortBy(field)`.
 
 ## Usage
-Named export is `haro`:
+The named export is `haro`, and the named Class exported is `Haro`.
 
 ### ES Module
 ```javascript
