@@ -349,7 +349,7 @@ export class Haro {
         return this.data.values();
     }
 
-    where(predicate, raw = false, op = STRING_DOUBLE_PIPE) {
+    where(predicate = {}, raw = false, op = STRING_DOUBLE_PIPE) {
         const keys = this.index.filter(i => i in predicate);
 
         return keys.length > INT_0 ? this.filter(new Function(STRING_A, `return (${keys.map(i => {
