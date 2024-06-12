@@ -19,7 +19,7 @@ import {
 } from "./constants.js";
 
 export class Haro {
-    constructor({delimiter = STRING_PIPE, id = uuid(), index = [], key = "", versioning = false} = {}) {
+    constructor({delimiter = STRING_PIPE, id = uuid(), index = [], key = STRING_EMPTY, versioning = false} = {}) {
         this.data = new Map();
         this.delimiter = delimiter;
         this.id = id;
