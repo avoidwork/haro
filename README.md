@@ -1,8 +1,6 @@
 # haro
 
-[![build status](https://secure.travis-ci.org/avoidwork/haro.svg)](http://travis-ci.org/avoidwork/haro)
-
-Haro is a modern immutable DataStore built with ES6 features. It is un-opinionated, and offers a plug'n'play solution to modeling, searching, & managing data on the client, or server
+Haro is a modern immutable DataStore built with ES6 features. It is un-opinionated, and offers a "plug-and-play" solution to modeling, searching, & managing data on the client, or server
 (in RAM). It is a [partially persistent data structure](https://en.wikipedia.org/wiki/Persistent_data_structure), by maintaining version sets of records in `versions` ([MVCC](https://en.wikipedia.org/wiki/Multiversion_concurrency_control)).
 
 All methods are synchronous.
@@ -11,19 +9,32 @@ Haro indexes have the following structure `Map (field/property) > Map (value) > 
 searching, as well as inspection. Indexes can be managed independently of `del()` & `set()` operations, for example you 
 can lazily create new indexes via `reindex(field)`, or `sortBy(field)`.
 
-### Usage
-Named export is `haro`:
+## Testing
 
-#### ES Module
+Haro has >90% code coverage with its tests.
+
+```console
+----------|---------|----------|---------|---------|---------------------------------------------------------
+File      | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+----------|---------|----------|---------|---------|---------------------------------------------------------
+All files |   92.62 |    70.81 |   94.11 |   92.69 |                                                        
+ haro.cjs |   92.62 |    70.81 |   94.11 |   92.69 | 85,87,92-95,192,203,251,281,327,349,396,433,440,463,491
+----------|---------|----------|---------|---------|---------------------------------------------------------
+```
+
+## Usage
+The named export is `haro`, and the named Class exported is `Haro`.
+
+### ES Module
 ```javascript
 import {haro} from 'haro';
 ```
 
-#### CommonJS / node.js
+### CommonJS / node.js
 ```javascript
 const {haro} = require('haro');
 ```
-#### Function parameters
+### Function parameters
 Haro takes two optional arguments, the first is an `Array` of records to set asynchronously, & the second is a 
 configuration descriptor.
 
@@ -33,8 +44,8 @@ const storeRecords = haro([{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 
 const storeCustom = haro(null, {key: 'id'});
 ```
 
-### Examples
-#### Indexes & Searching
+## Examples
+### Indexes & Searching
 ```javascript
 const store = haro(null, {index: ['name', 'age']}),
     data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
@@ -48,7 +59,7 @@ console.log(store.search(/^ja/i, 'name')); // [[$uuid, {name: 'Jane Doe', age: 2
 console.log(store.search(arg => age < 30, 'age')); // [[$uuid, {name: 'Jane Doe', age: 28}]]
 ```
 
-#### MVCC versioning
+### MVCC versioning
 ```javascript
 const store = haro();
 let arg;
@@ -59,60 +70,59 @@ arg = store.set(arg[0], {abc: true});
 store.versions.get(arg[0]).forEach(i => console.log(i[0])); // {abc: true}, {abc: false}
 ```
 
-### Benchmarked
+## Benchmarked
 A benchmark is included in the repository, and is useful for gauging how haro will perform on different hardware, & software.
 
 ```
-Batch successful on test
-time to batch insert data: 26.774208 ms
+time to batch insert data: 21.356 ms
 datastore record count: 1000
 name indexes: 1000
 
 testing time to 'find()' a record (first one is cold):
-0.10475ms
-0.005792ms
-0.003458ms
-0.005166ms
-0.009584ms
+0.1156ms
+0.0147ms
+0.0137ms
+0.0186ms
+0.0141ms
 
 testing time to 'search(regex, index)' for a record (first one is cold):
-0.193834ms
-0.110333ms
-0.103875ms
-0.10325ms
-0.125833ms
+0.2372ms
+0.1778ms
+0.1101ms
+0.1287ms
+0.1109ms
 
-time to override data: 0.450125 ms
+time to override data: 0.5522 ms
 testing time to 'search(regex, index)' on overridden data for a record (first one is cold):
-0.260542ms
-0.099792ms
-0.097ms
-0.09825ms
-0.098334ms
+0.0541ms
+0.0502ms
+0.0441ms
+0.0497ms
+0.0469ms
 ```
 
-### Configuration
-**beforeBatch**
+## Configuration
+### beforeBatch
 _Function_
 
 Event listener for before a batch operation, receives `type`, `data`.
 
-**beforeClear**
+### beforeClear
 _Function_
 
 Event listener for before clearing the data store.
 
-**beforeDelete**
+### beforeDelete
 _Function_
 
 Event listener for before a record is deleted, receives `key`, `batch`.
 
-**beforeSet**
+### beforeSet
 _Function_
 
 Event listener for before a record is set, receives `key`, `data`.
 
-**index**
+### index
 _Array_
 
 Array of values to index. Composite indexes are supported, by using the default delimiter (`this.delimiter`).
@@ -123,7 +133,7 @@ Example of fields/properties to index:
 const store = haro(null, {index: ['field1', 'field2', 'field1|field2|field3']});
 ```
 
-**key**
+### key
 _String_
 
 Optional `Object` key to utilize as `Map` key, defaults to a version 4 `UUID` if not specified, or found.
@@ -133,37 +143,37 @@ Example of specifying the primary key:
 const store = haro(null, {key: 'field'});
 ```
 
-**logging**
+### logging
 _Boolean_
 
 Logs persistent storage messages to `console`, default is `true`.
 
-**onbatch**
+### onbatch
 _Function_
 
 Event listener for a batch operation, receives two arguments ['type', `Array`].
 
-**onclear**
+### onclear
 _Function_
 
 Event listener for clearing the data store.
 
-**ondelete**
+### ondelete
 _Function_
 
 Event listener for when a record is deleted, receives the record key.
 
-**onoverride**
+### onoverride
 _Function_
 
 Event listener for when the data store changes entire data set, receives a `String` naming what changed (`indexes` or `records`).
 
-**onset**
+### onset
 _Function_
 
 Event listener for when a record is set, receives an `Array`.
 
-**versioning**
+### versioning
 _Boolean_
 
 Enable/disable MVCC style versioning of records, default is `false`. Versions are stored in `Sets` for easy iteration.
@@ -173,34 +183,34 @@ Example of enabling versioning:
 const store = haro(null, {versioning: true});
 ```
 
-### Properties
-**data**
+## Properties
+### data
 _Map_
 
 `Map` of records, updated by `del()` & `set()`.
 
-**indexes**
+### indexes
 _Map_
 
 Map of indexes, which are Sets containing Map keys.
 
-**registry**
+### registry
 _Array_
 
 Array representing the order of `this.data`.
 
-**size**
+### size
 _Number_
 
 Number of records in the DataStore.
 
-**versions**
+### versions
 _Map_
 
 `Map` of `Sets` of records, updated by `set()`.
 
-### API
-**batch(array, type)**
+## API
+### batch(array, type)
 _Array_
 
 The first argument must be an `Array`, and the second argument must be `del` or `set`.
@@ -221,7 +231,7 @@ while (++i < nth) {
 const records = store.batch(data, 'set');
 ```
 
-**clear()**
+### clear()
 _self_
 
 Removes all key/value pairs from the DataStore.
@@ -235,7 +245,7 @@ const store = haro();
 store.clear();
 ```
 
-**del(key)**
+### del(key)
 _Undefined_
 
 Deletes the record.
@@ -249,7 +259,7 @@ store.del(rec[0]);
 console.log(store.size); // 0
 ```
 
-**dump(type="records")**
+### dump(type="records")
 _Array_ or _Object_
 
 Returns the records or indexes of the DataStore as mutable `Array` or `Object`, for the intention of reuse/persistent storage without relying on an adapter which would break up the data set.
@@ -265,10 +275,10 @@ const indexes = store.dump('indexes');
 // Save records & indexes
 ```
 
-**entries()**
+### entries()
 _MapIterator_
 
-Returns returns a new `Iterator` object that contains an array of `[key, value]` for each element in the `Map` object in
+Returns a new `Iterator` object that contains an array of `[key, value]` for each element in the `Map` object in
 insertion order.
 
 Example of deleting a record:
@@ -287,7 +297,7 @@ do {
 } while (!item.done);
 ```
 
-**filter(callbackFn[, raw=false])**
+### filter(callbackFn[, raw=false])
 _Array_
 
 Returns an `Array` of double `Arrays` with the shape `[key, value]` for records which returned `true` to
@@ -304,7 +314,7 @@ store.filter(function (value) {
 });
 ```
 
-**find(where[, raw=false])**
+### find(where[, raw=false])
 _Array_
 
 Returns an `Array` of double `Arrays` with found by indexed values matching the `where`.
@@ -318,11 +328,11 @@ const store = haro(null, {index: ['field1']});
 store.find({field1: 'some value'});
 ```
 
-**forEach(callbackFn[, thisArg])**
+### forEach(callbackFn[, thisArg])
 _Undefined_
 
 Calls `callbackFn` once for each key-value pair present in the `Map` object, in insertion order. If a `thisArg`
-parameter is provided to `forEach`, it will be used as the this value for each callback.
+parameter is provided to `forEach`, it will be used as the `this` value for each callback.
 
 Example of deleting a record:
 ```javascript
@@ -334,7 +344,7 @@ store.forEach(function (value, key) {
 });
 ```
 
-**get(key[, raw=false])**
+### get(key[, raw=false])
 _Array_
 
 Gets the record as a double `Array` with the shape `[key, value]`.
@@ -348,7 +358,7 @@ const store = haro();
 store.get('keyValue');
 ```
 
-**has(key)**
+### has(key)
 _Boolean_
 
 Returns a `Boolean` indicating if the data store contains `key`.
@@ -362,7 +372,7 @@ const store = haro();
 store.has('keyValue'); // true or false
 ```
 
-**keys()**
+### keys()
 _MapIterator_
 
 Returns a new `Iterator` object that contains the keys for each element in the `Map` object in insertion order.`
@@ -383,7 +393,7 @@ do {
 } while (!item.done);
 ```
 
-**limit(offset=0, max=0, raw=false)**
+### limit(offset=0, max=0, raw=false)
 _Array_
 
 Returns an `Array` of double `Arrays` with the shape `[key, value]` for the corresponding range of records.
@@ -404,7 +414,7 @@ console.log(ds1.length === ds2.length); // true
 console.log(JSON.stringify(ds1[0][1]) === JSON.stringify(ds2[0][1])); // false
 ```
 
-**map(callbackFn, raw=false)**
+### map(callbackFn, raw=false)
 _Array_
 
 Returns an `Array` of the returns of `callbackFn(value, key)`. If `raw` is `true` an `Array` is returned.
@@ -420,7 +430,7 @@ store.map(function (value) {
 });
 ```
 
-**override(data[, type="records", fn])**
+### override(data[, type="records", fn])
 _Boolean_
 
 This is meant to be used in a paired override of the indexes & records, such that
@@ -434,7 +444,7 @@ const store = haro();
 store.override({'field': {'value': ['pk']}}, "indexes");
 ```
 
-**reduce(accumulator, value[, key, ctx=this, raw=false])**
+### reduce(accumulator, value[, key, ctx=this, raw=false])
 _Array_
 
 Runs an `Array.reduce()` inspired function against the data store (`Map`).
@@ -453,7 +463,7 @@ store.reduce(function (accumulator, value, key) {
 ```
 
 
-**reindex([index])**
+### reindex([index])
 _Haro_
 
 Re-indexes the DataStore, to be called if changing the value of `index`.
@@ -471,7 +481,7 @@ store.reindex('field3');
 store.reindex();
 ```
 
-**search(arg[, index=this.index, raw=false])**
+### search(arg[, index=this.index, raw=false])
 _Array_
 
 Returns an `Array` of double `Arrays` with the shape `[key, value]` of records found matching `arg`.
@@ -492,7 +502,7 @@ console.log(store.search(function (age) {
 }, 'age')); // [[$uuid, {name: 'Jane Doe', age: 28}]]
 ```
 
-**set(key, data, batch=false, override=false)**
+### set(key, data, batch=false, override=false)
 _Object_
 
 Record in the DataStore. If `key` is `false` a version 4 `UUID` will be
@@ -508,7 +518,7 @@ const store = haro(null, {key: 'id'}),
 console.log(record); // [1, {id: 1, name: 'Jane Doe'}]
 ```
 
-**sort(callbackFn, [frozen = true])**
+### sort(callbackFn, [frozen = true])
 _Array_
 
 Returns an Array of the DataStore, sorted by `callbackFn`.
@@ -522,7 +532,7 @@ store.batch(data, 'set')
 console.log(store.sort((a, b) => a < b ? -1 : (a > b ? 1 : 0))); // [{name: 'Jane Doe', age: 28}, {name: 'John Doe', age: 30}]
 ```
 
-**sortBy(index[, raw=false])**
+### sortBy(index[, raw=false])
 _Array_
 
 Returns an `Array` of double `Arrays` with the shape `[key, value]` of records sorted by an index.
@@ -536,7 +546,7 @@ store.batch(data, 'set')
 console.log(store.sortBy('age')); // [[$uuid, {name: 'Jane Doe', age: 28}], [$uuid, {name: 'John Doe', age: 30}]]
 ```
 
-**toArray([frozen=true])**
+### toArray([frozen=true])
 _Array_
 
 Returns an Array of the DataStore.
@@ -550,7 +560,7 @@ store.batch(data, 'set')
 console.log(store.toArray()); // [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}]
 ```
 
-**values()**
+### values()
 _MapIterator_
 
 Returns a new `Iterator` object that contains the values for each element in the `Map` object in insertion order.
@@ -571,7 +581,7 @@ while (!item.done) {
 };
 ```
 
-**where(predicate[, raw=false, op="||"])**
+### where(predicate[, raw=false, op="||"])
 _Array_
 
 Ideal for when dealing with a composite index which contains an `Array` of values, which would make matching on a single value impossible when using `find()`.
@@ -585,5 +595,5 @@ console.log(store.where({name: 'John Doe', age: 30})); // [{guid: 'abc', name: '
 ```
 
 ## License
-Copyright (c) 2021 Jason Mulligan
+Copyright (c) 2024 Jason Mulligan
 Licensed under the BSD-3 license

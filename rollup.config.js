@@ -1,26 +1,53 @@
-const {terser} = require("rollup-plugin-terser");
+import terser from "@rollup/plugin-terser";
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
+const pkg = require("./package.json");
+const year = new Date().getFullYear();
+const bannerLong = `/**
+ * ${pkg.name}
+ *
+ * @copyright ${year} ${pkg.author}
+ * @license ${pkg.license}
+ * @version ${pkg.version}
+ */`;
+const bannerShort = `/*!
+ ${year} ${pkg.author}
+ @version ${pkg.version}
+*/`;
+const defaultOutBase = {compact: true, banner: bannerLong, name: pkg.name};
+const cjOutBase = {...defaultOutBase, compact: false, format: "cjs", exports: "named"};
+const esmOutBase = {...defaultOutBase, format: "esm"};
+const umdOutBase = {...defaultOutBase, format: "umd"};
+const minOutBase = {banner: bannerShort, name: pkg.name, plugins: [terser()], sourcemap: true};
+
 
 export default [
 	{
-		input: "./src/haro.js",
+		input: `./src/${pkg.name}.js`,
 		output: [
 			{
-				file: "dist/haro.cjs.js",
-				format: "cjs",
-				exports: "named"
+				...cjOutBase,
+				file: `dist/${pkg.name}.cjs`
 			},
 			{
-				file: "dist/haro.esm.js",
-				format: "es",
-				compact: true,
-				plugins: [terser()]
+				...esmOutBase,
+				file: `dist/${pkg.name}.js`
 			},
 			{
-				file: "dist/haro.js",
-				name: "haro",
-				format: "umd",
-				compact: true,
-				plugins: [terser()]
+				...esmOutBase,
+				...minOutBase,
+				file: `dist/${pkg.name}.min.js`
+			},
+			{
+				...umdOutBase,
+				file: `dist/${pkg.name}.umd.js`,
+				name: "lru"
+			},
+			{
+				...umdOutBase,
+				...minOutBase,
+				file: `dist/${pkg.name}.umd.min.js`,
+				name: "lru"
 			}
 		]
 	}

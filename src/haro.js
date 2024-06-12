@@ -1,101 +1,25 @@
-"use strict";
+import {clone, delIndex, each, indexKeys, merge, setIndex, uuid} from "./utils.js";
+import {
+	INT_0,
+	STRING_A,
+	STRING_COMMA,
+	STRING_DEL,
+	STRING_DOUBLE_PIPE,
+	STRING_EMPTY,
+	STRING_FUNCTION,
+	STRING_INDEXES,
+	STRING_INVALID_FIELD,
+	STRING_INVALID_TYPE,
+	STRING_PIPE,
+	STRING_RECORD_NOT_FOUND,
+	STRING_RECORDS,
+	STRING_REGISTRY,
+	STRING_SET,
+	STRING_SIZE
+} from "./constants.js";
 
-const r = [8, 9, "a", "b"];
-
-function clone (arg) {
-	return JSON.parse(JSON.stringify(arg, null, 0));
-}
-
-function each (arr, fn) {
-	for (const item of arr.entries()) {
-		fn(item[1], item[0]);
-	}
-
-	return arr;
-}
-
-function indexKeys (arg = "", delimiter = "|", data = {}) {
-	return arg.split(delimiter).reduce((a, li, lidx) => {
-		const result = [];
-
-		(Array.isArray(data[li]) ? data[li] : [data[li]]).forEach(lli => lidx === 0 ? result.push(lli) : a.forEach(x => result.push(`${x}${delimiter}${lli}`)));
-
-		return result;
-	}, []);
-}
-
-function delIndex (index, indexes, delimiter, key, data) {
-	index.forEach(i => {
-		const idx = indexes.get(i);
-
-		each(i.includes(delimiter) ? indexKeys(i, delimiter, data) : Array.isArray(data[i]) ? data[i] : [data[i]], value => {
-			if (idx.has(value)) {
-				const o = idx.get(value);
-
-				o.delete(key);
-
-				if (o.size === 0) {
-					idx.delete(value);
-				}
-			}
-		});
-	});
-}
-
-function merge (a, b) {
-	if (a instanceof Object && b instanceof Object) {
-		each(Object.keys(b), i => {
-			if (a[i] instanceof Object && b[i] instanceof Object) {
-				a[i] = merge(a[i], b[i]);
-			} else if (Array.isArray(a[i]) && Array.isArray(b[i])) {
-				a[i] = a[i].concat(b[i]);
-			} else {
-				a[i] = b[i];
-			}
-		});
-	} else if (Array.isArray(a) && Array.isArray(b)) {
-		a = a.concat(b);
-	} else {
-		a = b;
-	}
-
-	return a;
-}
-
-function s () {
-	return ((Math.random() + 1) * 0x10000 | 0).toString(16).substring(1);
-}
-
-function setIndex (index, indexes, delimiter, key, data, indice) {
-	each(indice === null ? index : [indice], i => {
-		const lindex = indexes.get(i);
-
-		if (i.includes(delimiter)) {
-			each(indexKeys(i, delimiter, data), c => {
-				if (lindex.has(c) === false) {
-					lindex.set(c, new Set());
-				}
-
-				lindex.get(c).add(key);
-			});
-		} else {
-			each(Array.isArray(data[i]) ? data[i] : [data[i]], d => {
-				if (lindex.has(d) === false) {
-					lindex.set(d, new Set());
-				}
-
-				lindex.get(d).add(key);
-			});
-		}
-	});
-}
-
-function uuid () {
-	return s() + s() + "-" + s() + "-4" + s().substr(0, 3) + "-" + r[Math.floor(Math.random() * 4)] + s().substr(0, 3) + "-" + s() + s() + s();
-}
-
-class Haro {
-	constructor ({delimiter = "|", id = uuid(), index = [], key = "", versioning = false} = {}) {
+export class Haro {
+	constructor ({delimiter = STRING_PIPE, id = uuid(), index = [], key = STRING_EMPTY, versioning = false} = {}) {
 		this.data = new Map();
 		this.delimiter = delimiter;
 		this.id = id;
@@ -105,12 +29,12 @@ class Haro {
 		this.versions = new Map();
 		this.versioning = versioning;
 
-		Object.defineProperty(this, "registry", {
+		Object.defineProperty(this, STRING_REGISTRY, {
 			enumerable: true,
 			get: () => Array.from(this.data.keys())
 		});
 
-		Object.defineProperty(this, "size", {
+		Object.defineProperty(this, STRING_SIZE, {
 			enumerable: true,
 			get: () => this.data.size
 		});
@@ -118,14 +42,10 @@ class Haro {
 		return this.reindex();
 	}
 
-	batch (args, type = "set") {
-		const fn = type === "del" ? i => this.del(i, true) : i => this.set(null, i, true, true);
-		let result;
+	batch (args, type = STRING_SET) {
+		const fn = type === STRING_DEL ? i => this.del(i, true) : i => this.set(null, i, true, true);
 
-		result = this.beforeBatch(args, type).map(fn);
-		result = this.onbatch(result, type);
-
-		return result;
+		return this.onbatch(this.beforeBatch(args, type).map(fn), type);
 	}
 
 	beforeBatch (arg) {
@@ -153,7 +73,7 @@ class Haro {
 
 	del (key, batch = false) {
 		if (this.has(key) === false) {
-			throw new Error("Record not found");
+			throw new Error(STRING_RECORD_NOT_FOUND);
 		}
 
 		const og = this.get(key, true);
@@ -168,10 +88,10 @@ class Haro {
 		}
 	}
 
-	dump (type = "records") {
+	dump (type = STRING_RECORDS) {
 		let result;
 
-		if (type === "records") {
+		if (type === STRING_RECORDS) {
 			result = Array.from(this.entries());
 		} else {
 			result = Array.from(this.indexes).map(i => {
@@ -245,7 +165,7 @@ class Haro {
 		return this.data.keys();
 	}
 
-	limit (offset = 0, max = 0, raw = false) {
+	limit (offset = INT_0, max = INT_0, raw = false) {
 		const result = this.registry.slice(offset, offset + max).map(i => this.get(i, raw));
 
 		return raw ? result : this.list(...result);
@@ -279,16 +199,16 @@ class Haro {
 	onset () {
 	}
 
-	override (data, type = "records") {
+	override (data, type = STRING_RECORDS) {
 		const result = true;
 
-		if (type === "indexes") {
+		if (type === STRING_INDEXES) {
 			this.indexes = new Map(data.map(i => [i[0], new Map(i[1].map(ii => [ii[0], new Set(ii[1])]))]));
-		} else if (type === "records") {
+		} else if (type === STRING_RECORDS) {
 			this.indexes.clear();
 			this.data = new Map(data);
 		} else {
-			throw new Error("Invalid type");
+			throw new Error(STRING_INVALID_TYPE);
 		}
 
 		this.onoverride(type);
@@ -321,8 +241,8 @@ class Haro {
 
 	search (value, index, raw = false) {
 		const result = new Map(),
-			fn = typeof value === "function",
-			rgex = value && typeof value.test === "function";
+			fn = typeof value === STRING_FUNCTION,
+			rgex = value && typeof value.test === STRING_FUNCTION;
 
 		if (value) {
 			each(index ? Array.isArray(index) ? index : [index] : this.index, i => {
@@ -332,7 +252,7 @@ class Haro {
 					idx.forEach((lset, lkey) => {
 						switch (true) {
 							case fn && value(lkey, i):
-							case rgex && value.test(Array.isArray(lkey) ? lkey.join(", ") : lkey):
+							case rgex && value.test(Array.isArray(lkey) ? lkey.join(STRING_COMMA) : lkey):
 							case lkey === value:
 								lset.forEach(key => {
 									if (result.has(key) === false && this.has(key)) {
@@ -351,12 +271,16 @@ class Haro {
 		return raw ? Array.from(result.values()) : this.list(...Array.from(result.values()));
 	}
 
-	set (key, data, batch = false, override = false) {
+	set (key = null, data = {}, batch = false, override = false) {
 		let x = clone(data),
 			og, result;
 
-		if (key === void 0 || key === null) {
-			key = this.key && x[this.key] !== void 0 ? x[this.key] : uuid();
+		if (key === null) {
+			if (this.key in x) {
+				key = x[this.key];
+			} else {
+				x[this.key] = key = uuid();
+			}
 		}
 
 		this.beforeSet(key, data, batch, override);
@@ -387,20 +311,23 @@ class Haro {
 	}
 
 	sort (fn, frozen = true) {
-		return frozen ? Object.freeze(this.limit(0, this.data.size, true).sort(fn).map(i => Object.freeze(i))) : this.limit(0, this.data.size, true).sort(fn);
+		return frozen ? Object.freeze(this.limit(INT_0, this.data.size, true).sort(fn).map(i => Object.freeze(i))) : this.limit(INT_0, this.data.size, true).sort(fn);
 	}
 
-	sortBy (index, raw = false) {
+	sortBy (index = STRING_EMPTY, raw = false) {
+		if (index === STRING_EMPTY) {
+			throw new Error(STRING_INVALID_FIELD)
+		}
+
 		const result = [],
 			keys = [];
-
-		let lindex;
 
 		if (this.indexes.has(index) === false) {
 			this.reindex(index);
 		}
 
-		lindex = this.indexes.get(index);
+		const lindex = this.indexes.get(index);
+
 		lindex.forEach((idx, key) => keys.push(key));
 		each(keys.sort(), i => lindex.get(i).forEach(key => result.push(this.get(key, raw))));
 
@@ -422,10 +349,10 @@ class Haro {
 		return this.data.values();
 	}
 
-	where (predicate, raw = false, op = "||") {
+	where (predicate = {}, raw = false, op = STRING_DOUBLE_PIPE) {
 		const keys = this.index.filter(i => i in predicate);
 
-		return keys.length > 0 ? this.filter(new Function("a", `return (${keys.map(i => {
+		return keys.length > INT_0 ? this.filter(new Function(STRING_A, `return (${keys.map(i => {
 			let result;
 
 			if (Array.isArray(predicate[i])) {
@@ -447,7 +374,7 @@ export function haro (data = null, config = {}) {
 	const obj = new Haro(config);
 
 	if (Array.isArray(data)) {
-		obj.batch(data, "set");
+		obj.batch(data, STRING_SET);
 	}
 
 	return obj;
