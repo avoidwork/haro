@@ -5,7 +5,7 @@
  * @license BSD-3-Clause
  * @version 15.0.0
  */
-const STRING_COMMA = ",";
+(function(g,f){typeof exports==='object'&&typeof module!=='undefined'?f(exports):typeof define==='function'&&define.amd?define(['exports'],f):(g=typeof globalThis!=='undefined'?globalThis:g||self,f(g.lru={}));})(this,(function(exports){'use strict';const STRING_COMMA = ",";
 const STRING_EMPTY = "";
 const STRING_PIPE = "|";
 const STRING_DOUBLE_PIPE = "||";
@@ -476,4 +476,4 @@ function haro(data = null, config = {}) {
     }
 
     return obj;
-}export{Haro,haro};
+}exports.Haro=Haro;exports.haro=haro;}));

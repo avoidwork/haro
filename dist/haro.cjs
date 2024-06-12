@@ -5,6 +5,8 @@
  * @license BSD-3-Clause
  * @version 15.0.0
  */
+'use strict';
+
 const STRING_COMMA = ",";
 const STRING_EMPTY = "";
 const STRING_PIPE = "|";
@@ -28,7 +30,9 @@ const INT_3 = 3;
 const INT_4 = 4;
 const INT_8 = 8;
 const INT_9 = 9;
-const INT_16 = 16;const r = [INT_8, INT_9, STRING_A, STRING_B];
+const INT_16 = 16;
+
+const r = [INT_8, INT_9, STRING_A, STRING_B];
 
 const clone = structuredClone ?? function shallowClone(arg) {
     return JSON.parse(JSON.stringify(arg, null, INT_0));
@@ -118,7 +122,9 @@ function setIndex(index, indexes, delimiter, key, data, indice) {
     });
 }
 
-const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID : () => `${s()}${s()}-${s()}-4${s().slice(INT_0, INT_3)}-${r[Math.floor(Math.random() * INT_4)]}${s().slice(INT_0, INT_3)}-${s()}${s()}${s()}`;class Haro {
+const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID : () => `${s()}${s()}-${s()}-4${s().slice(INT_0, INT_3)}-${r[Math.floor(Math.random() * INT_4)]}${s().slice(INT_0, INT_3)}-${s()}${s()}${s()}`;
+
+class Haro {
     constructor({delimiter = STRING_PIPE, id = uuid(), index = [], key = "", versioning = false} = {}) {
         this.data = new Map();
         this.delimiter = delimiter;
@@ -476,4 +482,7 @@ function haro(data = null, config = {}) {
     }
 
     return obj;
-}export{Haro,haro};
+}
+
+exports.Haro = Haro;
+exports.haro = haro;

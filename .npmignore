@@ -1,10 +1,9 @@
-/.idea/
-/node_modules/
-/src/
-/test/
+.idea
+.husky
+.nyc_output
+benchmark
+src
+test
 .eslintrc
 .gitignore
-.travis.yml
-benchmark.js
 rollup.config.js
-data.json
