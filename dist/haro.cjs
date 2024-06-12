@@ -122,10 +122,10 @@ function setIndex(index, indexes, delimiter, key, data, indice) {
     });
 }
 
-const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID : () => `${s()}${s()}-${s()}-4${s().slice(INT_0, INT_3)}-${r[Math.floor(Math.random() * INT_4)]}${s().slice(INT_0, INT_3)}-${s()}${s()}${s()}`;
+const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : () => `${s()}${s()}-${s()}-4${s().slice(INT_0, INT_3)}-${r[Math.floor(Math.random() * INT_4)]}${s().slice(INT_0, INT_3)}-${s()}${s()}${s()}`;
 
 class Haro {
-    constructor({delimiter = STRING_PIPE, id = uuid(), index = [], key = "", versioning = false} = {}) {
+    constructor({delimiter = STRING_PIPE, id = uuid(), index = [], key = STRING_EMPTY, versioning = false} = {}) {
         this.data = new Map();
         this.delimiter = delimiter;
         this.id = id;
@@ -453,7 +453,7 @@ class Haro {
         return this.data.values();
     }
 
-    where(predicate, raw = false, op = STRING_DOUBLE_PIPE) {
+    where(predicate = {}, raw = false, op = STRING_DOUBLE_PIPE) {
         const keys = this.index.filter(i => i in predicate);
 
         return keys.length > INT_0 ? this.filter(new Function(STRING_A, `return (${keys.map(i => {

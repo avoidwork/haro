@@ -1,8 +1,10 @@
-const path = require("path"),
-	assert = require("assert"),
-	{haro} = require(path.join(__dirname, "..", "dist", "haro.cjs.js")),
-	data = require(path.join(__dirname, "data.json")),
-	odata = data.map(i => [i.guid, i]);
+import assert from "node:assert";
+import {haro} from "../dist/haro.cjs";
+import { readFile } from 'node:fs/promises';
+
+const fileUrl = new URL("./data.json", import.meta.url);
+const data = JSON.parse(await readFile(fileUrl, "utf8"));
+const odata = data.map(i => [i.guid, i]);
 
 describe("Starting state", function () {
 	const store = haro(null, {key: "guid", logging: false});
