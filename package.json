@@ -24,7 +24,7 @@
     "rollup": "rollup --config",
     "test": "npm run lint && npm run mocha",
     "types": "npx -p typescript tsc src/haro.js --declaration --allowJs --emitDeclarationOnly --outDir types",
-    "prepare": "husky install"
+    "prepare": "husky"
   },
   "repository": {
     "type": "git",
