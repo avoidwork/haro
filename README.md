@@ -9,6 +9,19 @@ Haro indexes have the following structure `Map (field/property) > Map (value) > 
 searching, as well as inspection. Indexes can be managed independently of `del()` & `set()` operations, for example you 
 can lazily create new indexes via `reindex(field)`, or `sortBy(field)`.
 
+## Testing
+
+Haro has >90% code coverage with its tests.
+
+```console
+----------|---------|----------|---------|---------|----------------------------------------------------------------
+File      | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+----------|---------|----------|---------|---------|----------------------------------------------------------------
+All files |   91.53 |    70.81 |    90.9 |   91.89 |                                                               
+ haro.cjs |   91.53 |    70.81 |    90.9 |   91.89 | 38,83,85,90-93,100,184,195,243,273,319,341,388,425,432,455,483
+----------|---------|----------|---------|---------|----------------------------------------------------------------
+```
+
 ## Usage
 The named export is `haro`, and the named Class exported is `Haro`.
 
