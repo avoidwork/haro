@@ -61,32 +61,31 @@ store.versions.get(arg[0]).forEach(i => console.log(i[0])); // {abc: true}, {abc
 A benchmark is included in the repository, and is useful for gauging how haro will perform on different hardware, & software.
 
 ```
-Batch successful on test
-time to batch insert data: 26.774208 ms
+time to batch insert data: 21.356 ms
 datastore record count: 1000
 name indexes: 1000
 
 testing time to 'find()' a record (first one is cold):
-0.10475ms
-0.005792ms
-0.003458ms
-0.005166ms
-0.009584ms
+0.1156ms
+0.0147ms
+0.0137ms
+0.0186ms
+0.0141ms
 
 testing time to 'search(regex, index)' for a record (first one is cold):
-0.193834ms
-0.110333ms
-0.103875ms
-0.10325ms
-0.125833ms
+0.2372ms
+0.1778ms
+0.1101ms
+0.1287ms
+0.1109ms
 
-time to override data: 0.450125 ms
+time to override data: 0.5522 ms
 testing time to 'search(regex, index)' on overridden data for a record (first one is cold):
-0.260542ms
-0.099792ms
-0.097ms
-0.09825ms
-0.098334ms
+0.0541ms
+0.0502ms
+0.0441ms
+0.0497ms
+0.0469ms
 ```
 
 ## Configuration

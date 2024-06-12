@@ -1,7 +1,9 @@
-const path = require("path"),
-	{haro} = require(path.join(__dirname, "dist", "haro.cjs.js")),
-	precise = require("precise"),
-	data = require(path.join(__dirname, "data.json"));
+import {haro} from "../dist/haro.cjs";
+import {precise} from "precise";
+import { readFile } from 'node:fs/promises';
+
+const fileUrl = new URL("./data.json", import.meta.url);
+const data = JSON.parse(await readFile(fileUrl, "utf8"));
 
 let indexes;
 
