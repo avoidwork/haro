@@ -1,6 +1,6 @@
 # haro
 
-Haro is a modern immutable DataStore built with ES6 features. It is un-opinionated, and offers a plug'n'play solution to modeling, searching, & managing data on the client, or server
+Haro is a modern immutable DataStore built with ES6 features. It is un-opinionated, and offers a "plug-and-play" solution to modeling, searching, & managing data on the client, or server
 (in RAM). It is a [partially persistent data structure](https://en.wikipedia.org/wiki/Persistent_data_structure), by maintaining version sets of records in `versions` ([MVCC](https://en.wikipedia.org/wiki/Multiversion_concurrency_control)).
 
 All methods are synchronous.
@@ -332,7 +332,7 @@ store.find({field1: 'some value'});
 _Undefined_
 
 Calls `callbackFn` once for each key-value pair present in the `Map` object, in insertion order. If a `thisArg`
-parameter is provided to `forEach`, it will be used as the this value for each callback.
+parameter is provided to `forEach`, it will be used as the `this` value for each callback.
 
 Example of deleting a record:
 ```javascript
