@@ -17,11 +17,9 @@ import {
 const r = [INT_8, INT_9, STRING_A, STRING_B];
 
 /* istanbul ignore next */
-export function shallowClone (arg) {
+export function clone (arg) {
 	return JSON.parse(JSON.stringify(arg, null, INT_0));
 }
-
-export const clone = structuredClone ?? shallowClone;
 
 export function each (arr = [], fn) {
 	for (const [idx, value] of arr.entries()) {

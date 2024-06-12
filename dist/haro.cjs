@@ -3,7 +3,7 @@
  *
  * @copyright 2024 Jason Mulligan <jason.mulligan@avoidwork.com>
  * @license BSD-3-Clause
- * @version 15.0.0
+ * @version 15.0.1
  */
 'use strict';
 
@@ -36,11 +36,9 @@ const INT_16 = 16;
 const r = [INT_8, INT_9, STRING_A, STRING_B];
 
 /* istanbul ignore next */
-function shallowClone (arg) {
+function clone (arg) {
 	return JSON.parse(JSON.stringify(arg, null, INT_0));
 }
-
-const clone = structuredClone ?? shallowClone;
 
 function each (arr = [], fn) {
 	for (const [idx, value] of arr.entries()) {
