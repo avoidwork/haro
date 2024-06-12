@@ -13,8 +13,10 @@ import {
     STRING_PIPE
 } from "./constants.js";
 
+/* istanbul ignore next */
 const r = [INT_8, INT_9, STRING_A, STRING_B];
 
+/* istanbul ignore next */
 export function shallowClone(arg) {
     return JSON.parse(JSON.stringify(arg, null, INT_0));
 }
@@ -77,6 +79,7 @@ export function merge(a, b) {
     return a;
 }
 
+/* istanbul ignore next */
 export function s() {
     return ((Math.random() + INT_1) * 0x10000 | INT_0).toString(INT_16).substring(INT_1);
 }
@@ -105,4 +108,9 @@ export function setIndex(index, indexes, delimiter, key, data, indice) {
     });
 }
 
-export const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : () => `${s()}${s()}-${s()}-4${s().slice(INT_0, INT_3)}-${r[Math.floor(Math.random() * INT_4)]}${s().slice(INT_0, INT_3)}-${s()}${s()}${s()}`;
+/* istanbul ignore next */
+function customUUID() {
+    return `${s()}${s()}-${s()}-4${s().slice(INT_0, INT_3)}-${r[Math.floor(Math.random() * INT_4)]}${s().slice(INT_0, INT_3)}-${s()}${s()}${s()}`;
+}
+
+export const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : customUUID;

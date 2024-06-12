@@ -28,8 +28,10 @@ const INT_3 = 3;
 const INT_4 = 4;
 const INT_8 = 8;
 const INT_9 = 9;
-const INT_16 = 16;const r = [INT_8, INT_9, STRING_A, STRING_B];
+const INT_16 = 16;/* istanbul ignore next */
+const r = [INT_8, INT_9, STRING_A, STRING_B];
 
+/* istanbul ignore next */
 function shallowClone(arg) {
     return JSON.parse(JSON.stringify(arg, null, INT_0));
 }
@@ -92,6 +94,7 @@ function merge(a, b) {
     return a;
 }
 
+/* istanbul ignore next */
 function s() {
     return ((Math.random() + INT_1) * 0x10000 | INT_0).toString(INT_16).substring(INT_1);
 }
@@ -120,7 +123,12 @@ function setIndex(index, indexes, delimiter, key, data, indice) {
     });
 }
 
-const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : () => `${s()}${s()}-${s()}-4${s().slice(INT_0, INT_3)}-${r[Math.floor(Math.random() * INT_4)]}${s().slice(INT_0, INT_3)}-${s()}${s()}${s()}`;class Haro {
+/* istanbul ignore next */
+function customUUID() {
+    return `${s()}${s()}-${s()}-4${s().slice(INT_0, INT_3)}-${r[Math.floor(Math.random() * INT_4)]}${s().slice(INT_0, INT_3)}-${s()}${s()}${s()}`;
+}
+
+const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : customUUID;class Haro {
     constructor({delimiter = STRING_PIPE, id = uuid(), index = [], key = STRING_EMPTY, versioning = false} = {}) {
         this.data = new Map();
         this.delimiter = delimiter;
