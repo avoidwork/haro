@@ -223,7 +223,7 @@ export class Haro {
 		return raw ? result : this.list(...result);
 	}
 
-	merge (a, b, override = false) {
+	merge (a = {}, b = {}, override = false) {
 		if (a instanceof Object && b instanceof Object) {
 			this.each(Object.keys(b), i => {
 				if (a[i] instanceof Object && b[i] instanceof Object) {
