@@ -32,93 +32,8 @@ const INT_16 = 16;/* istanbul ignore next */
 const r = [INT_8, INT_9, STRING_A, STRING_B];
 
 /* istanbul ignore next */
-function clone (arg) {
-	return JSON.parse(JSON.stringify(arg, null, INT_0));
-}
-
-function each (arr = [], fn) {
-	for (const [idx, value] of arr.entries()) {
-		fn(value, idx);
-	}
-
-	return arr;
-}
-
-function indexKeys (arg = STRING_EMPTY, delimiter = STRING_PIPE, data = {}) {
-	return arg.split(delimiter).reduce((a, li, lidx) => {
-		const result = [];
-
-		(Array.isArray(data[li]) ? data[li] : [data[li]]).forEach(lli => lidx === INT_0 ? result.push(lli) : a.forEach(x => result.push(`${x}${delimiter}${lli}`)));
-
-		return result;
-	}, []);
-}
-
-function delIndex (index, indexes, delimiter, key, data) {
-	index.forEach(i => {
-		const idx = indexes.get(i);
-
-		each(i.includes(delimiter) ? indexKeys(i, delimiter, data) : Array.isArray(data[i]) ? data[i] : [data[i]], value => {
-			if (idx.has(value)) {
-				const o = idx.get(value);
-
-				o.delete(key);
-
-				if (o.size === INT_0) {
-					idx.delete(value);
-				}
-			}
-		});
-	});
-}
-
-function merge (a, b) {
-	if (a instanceof Object && b instanceof Object) {
-		each(Object.keys(b), i => {
-			if (a[i] instanceof Object && b[i] instanceof Object) {
-				a[i] = merge(a[i], b[i]);
-			} else if (Array.isArray(a[i]) && Array.isArray(b[i])) {
-				a[i] = a[i].concat(b[i]);
-			} else {
-				a[i] = b[i];
-			}
-		});
-	} else if (Array.isArray(a) && Array.isArray(b)) {
-		a = a.concat(b);
-	} else {
-		a = b;
-	}
-
-	return a;
-}
-
-/* istanbul ignore next */
 function s () {
 	return ((Math.random() + INT_1) * 0x10000 | INT_0).toString(INT_16).substring(INT_1);
-}
-
-function setIndex (index, indexes, delimiter, key, data, indice) {
-	each(indice === null ? index : [indice], i => {
-		const lindex = indexes.get(i);
-
-		if (i.includes(delimiter)) {
-			each(indexKeys(i, delimiter, data), c => {
-				if (lindex.has(c) === false) {
-					lindex.set(c, new Set());
-				}
-
-				lindex.get(c).add(key);
-			});
-		} else {
-			each(Array.isArray(data[i]) ? data[i] : [data[i]], d => {
-				if (lindex.has(d) === false) {
-					lindex.set(d, new Set());
-				}
-
-				lindex.get(d).add(key);
-			});
-		}
-	});
 }
 
 /* istanbul ignore next */
@@ -179,6 +94,10 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 		return this;
 	}
 
+	clone (arg) {
+		return JSON.parse(JSON.stringify(arg, null, INT_0));
+	}
+
 	del (key, batch = false) {
 		if (this.has(key) === false) {
 			throw new Error(STRING_RECORD_NOT_FOUND);
@@ -187,13 +106,31 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 		const og = this.get(key, true);
 
 		this.beforeDelete(key, batch);
-		delIndex(this.index, this.indexes, this.delimiter, key, og);
+		this.delIndex(this.index, this.indexes, this.delimiter, key, og);
 		this.data.delete(key);
 		this.ondelete(key, batch);
 
 		if (this.versioning) {
 			this.versions.delete(key);
 		}
+	}
+
+	delIndex (index, indexes, delimiter, key, data) {
+		index.forEach(i => {
+			const idx = indexes.get(i);
+
+			this.each(i.includes(delimiter) ? this.indexKeys(i, delimiter, data) : Array.isArray(data[i]) ? data[i] : [data[i]], value => {
+				if (idx.has(value)) {
+					const o = idx.get(value);
+
+					o.delete(key);
+
+					if (o.size === INT_0) {
+						idx.delete(value);
+					}
+				}
+			});
+		});
 	}
 
 	dump (type = STRING_RECORDS) {
@@ -216,6 +153,14 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 		return result;
 	}
 
+	each (arr = [], fn) {
+		for (const [idx, value] of arr.entries()) {
+			fn(value, idx);
+		}
+
+		return arr;
+	}
+
 	entries () {
 		return this.data.entries();
 	}
@@ -226,7 +171,7 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 		let result = [];
 
 		if (index.size > 0) {
-			const keys = indexKeys(key, this.delimiter, where);
+			const keys = this.indexKeys(key, this.delimiter, where);
 
 			result = Array.from(keys.reduce((a, v) => {
 				if (index.has(v)) {
@@ -254,19 +199,29 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 	}
 
 	forEach (fn, ctx) {
-		this.data.forEach((value, key) => fn(clone(value), clone(key)), ctx ?? this.data);
+		this.data.forEach((value, key) => fn(this.clone(value), this.clone(key)), ctx ?? this.data);
 
 		return this;
 	}
 
 	get (key, raw = false) {
-		const result = clone(this.data.get(key) ?? null);
+		const result = this.clone(this.data.get(key) ?? null);
 
 		return raw ? result : this.list(key, result);
 	}
 
 	has (key) {
 		return this.data.has(key);
+	}
+
+	indexKeys (arg = STRING_EMPTY, delimiter = STRING_PIPE, data = {}) {
+		return arg.split(delimiter).reduce((a, li, lidx) => {
+			const result = [];
+
+			(Array.isArray(data[li]) ? data[li] : [data[li]]).forEach(lli => lidx === INT_0 ? result.push(lli) : a.forEach(x => result.push(`${x}${delimiter}${lli}`)));
+
+			return result;
+		}, []);
 	}
 
 	keys () {
@@ -289,6 +244,26 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 		this.forEach((value, key) => result.push(fn(value, key)));
 
 		return raw ? result : this.list(...result);
+	}
+
+	merge (a, b) {
+		if (a instanceof Object && b instanceof Object) {
+			this.each(Object.keys(b), i => {
+				if (a[i] instanceof Object && b[i] instanceof Object) {
+					a[i] = this.merge(a[i], b[i]);
+				} else if (Array.isArray(a[i]) && Array.isArray(b[i])) {
+					a[i] = a[i].concat(b[i]);
+				} else {
+					a[i] = b[i];
+				}
+			});
+		} else if (Array.isArray(a) && Array.isArray(b)) {
+			a = a.concat(b);
+		} else {
+			a = b;
+		}
+
+		return a;
 	}
 
 	onbatch (arg) {
@@ -341,8 +316,8 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 			this.index.push(index);
 		}
 
-		each(indices, i => this.indexes.set(i, new Map()));
-		this.forEach((data, key) => each(indices, i => setIndex(this.index, this.indexes, this.delimiter, key, data, i)));
+		this.each(indices, i => this.indexes.set(i, new Map()));
+		this.forEach((data, key) => this.each(indices, i => this.setIndex(this.index, this.indexes, this.delimiter, key, data, i)));
 
 		return this;
 	}
@@ -353,7 +328,7 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 			rgex = value && typeof value.test === STRING_FUNCTION;
 
 		if (value) {
-			each(index ? Array.isArray(index) ? index : [index] : this.index, i => {
+			this.each(index ? Array.isArray(index) ? index : [index] : this.index, i => {
 				let idx = this.indexes.get(i);
 
 				if (idx) {
@@ -392,23 +367,47 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 			}
 		} else {
 			let og = this.get(key, true);
-			delIndex(this.index, this.indexes, this.delimiter, key, og);
+			this.delIndex(this.index, this.indexes, this.delimiter, key, og);
 
 			if (this.versioning) {
-				this.versions.get(key).add(Object.freeze(clone(og)));
+				this.versions.get(key).add(Object.freeze(this.clone(og)));
 			}
 
 			if (override === false) {
-				x = merge(clone(og), x);
+				x = this.merge(this.clone(og), x);
 			}
 		}
 
 		this.data.set(key, x);
-		setIndex(this.index, this.indexes, this.delimiter, key, x, null);
+		this.setIndex(this.index, this.indexes, this.delimiter, key, x, null);
 		let result = this.get(key);
 		this.onset(result, batch);
 
 		return result;
+	}
+
+	setIndex (index, indexes, delimiter, key, data, indice) {
+		this.each(indice === null ? index : [indice], i => {
+			const lindex = indexes.get(i);
+
+			if (i.includes(delimiter)) {
+				this.each(this.indexKeys(i, delimiter, data), c => {
+					if (lindex.has(c) === false) {
+						lindex.set(c, new Set());
+					}
+
+					lindex.get(c).add(key);
+				});
+			} else {
+				this.each(Array.isArray(data[i]) ? data[i] : [data[i]], d => {
+					if (lindex.has(d) === false) {
+						lindex.set(d, new Set());
+					}
+
+					lindex.get(d).add(key);
+				});
+			}
+		});
 	}
 
 	sort (fn, frozen = true) {
@@ -430,7 +429,7 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 		const lindex = this.indexes.get(index);
 
 		lindex.forEach((idx, key) => keys.push(key));
-		each(keys.sort(), i => lindex.get(i).forEach(key => result.push(this.get(key, raw))));
+		this.each(keys.sort(), i => lindex.get(i).forEach(key => result.push(this.get(key, raw))));
 
 		return raw ? result : this.list(...result);
 	}
@@ -439,7 +438,7 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 		const result = Array.from(this.data.values());
 
 		if (frozen) {
-			each(result, i => Object.freeze(i));
+			this.each(result, i => Object.freeze(i));
 			Object.freeze(result);
 		}
 
