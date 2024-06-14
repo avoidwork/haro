@@ -98,8 +98,8 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 		return JSON.parse(JSON.stringify(arg, null, INT_0));
 	}
 
-	del (key, batch = false) {
-		if (this.has(key) === false) {
+	del (key = STRING_EMPTY, batch = false) {
+		if (this.data.has(key) === false) {
 			throw new Error(STRING_RECORD_NOT_FOUND);
 		}
 
@@ -238,7 +238,7 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 		return Object.freeze(args.map(i => Object.freeze(i)));
 	}
 
-	map (fn, raw = false) {
+	map (fn = arg => arg, raw = false) {
 		const result = [];
 
 		this.forEach((value, key) => result.push(fn(value, key)));
@@ -250,7 +250,7 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 		if (a instanceof Object && b instanceof Object) {
 			this.each(Object.keys(b), i => {
 				if (a[i] instanceof Object && b[i] instanceof Object) {
-					a[i] = this.merge(a[i], b[i]);
+					a[i] = override ? a[i] : this.merge(a[i], b[i]);
 				} else if (Array.isArray(a[i]) && Array.isArray(b[i])) {
 					a[i] = override ? b[i] : a[i].concat(b[i]);
 				} else {
@@ -338,7 +338,7 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 							case rgex && value.test(Array.isArray(lkey) ? lkey.join(STRING_COMMA) : lkey):
 							case lkey === value:
 								lset.forEach(key => {
-									if (result.has(key) === false && this.has(key)) {
+									if (result.has(key) === false && this.data.has(key)) {
 										result.set(key, this.get(key, raw));
 									}
 								});
@@ -361,7 +361,7 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 
 		this.beforeSet(key, x, batch, override);
 
-		if (this.has(key) === false) {
+		if (this.data.has(key) === false) {
 			if (this.versioning) {
 				this.versions.set(key, new Set());
 			}
