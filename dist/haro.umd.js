@@ -246,19 +246,19 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 		return raw ? result : this.list(...result);
 	}
 
-	merge (a, b) {
+	merge (a, b, override = false) {
 		if (a instanceof Object && b instanceof Object) {
 			this.each(Object.keys(b), i => {
 				if (a[i] instanceof Object && b[i] instanceof Object) {
 					a[i] = this.merge(a[i], b[i]);
 				} else if (Array.isArray(a[i]) && Array.isArray(b[i])) {
-					a[i] = a[i].concat(b[i]);
+					a[i] = override ? b[i] : a[i].concat(b[i]);
 				} else {
 					a[i] = b[i];
 				}
 			});
 		} else if (Array.isArray(a) && Array.isArray(b)) {
-			a = a.concat(b);
+			a = override ? b : a.concat(b);
 		} else {
 			a = b;
 		}
