@@ -9,8 +9,8 @@ function s () {
 }
 
 /* istanbul ignore next */
-function customUUID () {
+function randomUUID () {
 	return `${s()}${s()}-${s()}-4${s().slice(INT_0, INT_3)}-${r[Math.floor(Math.random() * INT_4)]}${s().slice(INT_0, INT_3)}-${s()}${s()}${s()}`;
 }
 
-export const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : customUUID;
+export const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : randomUUID;
