@@ -371,3 +371,12 @@ describe("Override", function () {
 		assert.throws(() => store.override(null, "invalid"), Error);
 	});
 });
+
+describe("Reindex", function () {
+	const store = haro(null, {key: "guid", logging: false});
+
+	it("should add a missing index when re-indexing", function () {
+		store.set(null, data[0]);
+		store.reindex("latitude");
+	});
+});
