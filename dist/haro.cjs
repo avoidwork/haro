@@ -3,7 +3,7 @@
  *
  * @copyright 2024 Jason Mulligan <jason.mulligan@avoidwork.com>
  * @license BSD-3-Clause
- * @version 15.1.0
+ * @version 15.1.1
  */
 'use strict';
 
@@ -221,7 +221,7 @@ class Haro {
 		return raw ? result : this.list(key, result);
 	}
 
-	has (key = STRING_EMPTY) {
+	has (key) {
 		return this.data.has(key);
 	}
 

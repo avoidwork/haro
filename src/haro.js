@@ -192,7 +192,7 @@ export class Haro {
 		return raw ? result : this.list(key, result);
 	}
 
-	has (key = STRING_EMPTY) {
+	has (key) {
 		return this.data.has(key);
 	}
 

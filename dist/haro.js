@@ -3,7 +3,7 @@
  *
  * @copyright 2024 Jason Mulligan <jason.mulligan@avoidwork.com>
  * @license BSD-3-Clause
- * @version 15.1.0
+ * @version 15.1.1
  */
 const STRING_COMMA = ",";
 const STRING_EMPTY = "";
@@ -215,7 +215,7 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 		return raw ? result : this.list(key, result);
 	}
 
-	has (key = STRING_EMPTY) {
+	has (key) {
 		return this.data.has(key);
 	}
 
