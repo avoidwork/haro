@@ -278,7 +278,11 @@ describe("Update", function () {
 });
 
 describe("Delete", function () {
-	const store = haro(null, {key: "guid", logging: false});
+	const store = haro(null, {key: "guid", logging: false, versioning: true});
+
+	it("should throw an error deleting an invalid key", function () {
+		assert.throws(() => store.del("invalid"), Error);
+	});
 
 	it("should have a matching size (single)", function () {
 		const arg = store.set(null, data[0]);
@@ -297,5 +301,111 @@ describe("Delete", function () {
 		store.batch([arg[0][0], arg[2][0]], "del");
 		assert.strictEqual(store.size, 4);
 		assert.strictEqual(store.data.size, 4);
+	});
+});
+
+describe("Filter", function () {
+	const store = haro(null, {key: "guid", logging: false});
+
+	it("should throw an error when not providing the function", function () {
+		assert.throws(() => store.filter(undefined, true), Error);
+	});
+
+	it("should filter to a record (single)", function () {
+		store.set(null, data[0]);
+		assert.strictEqual(store.filter((arg) => arg.name === "Decker Merrill", true)[0].name, "Decker Merrill");
+		assert.strictEqual(store.filter((arg) => arg.name === "Decker Merrill", false)[0][1].name, "Decker Merrill");
+	});
+});
+
+describe("Has", function () {
+	const store = haro(null, {key: "guid", logging: false});
+
+	it("return a boolean", function () {
+		store.set(null, data[0]);
+		assert.strictEqual(store.has("abc"), false);
+		assert.strictEqual(store.has(Array.from(store.keys())[0]), true);
+	});
+});
+
+describe("Map", function () {
+	const store = haro(null, {key: "guid", logging: false});
+
+	it("should throw an error when not providing the function", function () {
+		assert.throws(() => store.map(undefined, true), Error);
+	});
+
+	it("should map the records", function () {
+		store.set(null, data[0]);
+		assert.strictEqual(store.map(arg => arg.name, true)[0], "Decker Merrill");
+	});
+});
+
+describe("Merge", function () {
+	const store = haro(null, {key: "guid", logging: false});
+
+	it("should merge the inputs", function () {
+		assert.strictEqual(JSON.stringify(store.merge({a: {b: true}}, {a: {c: true}})), JSON.stringify({
+			a: {
+				b: true,
+				c: true
+			}
+		}));
+		assert.strictEqual(JSON.stringify(store.merge({a: [1]}, {a: [2]}, false)), JSON.stringify({a: [1, 2]}));
+		assert.strictEqual(JSON.stringify(store.merge({a: [1]}, {a: [2]})), JSON.stringify({a: [2]}));
+		assert.strictEqual(JSON.stringify(store.merge({a: 1}, {a: 2}, false)), JSON.stringify({a: 3}));
+		assert.strictEqual(JSON.stringify(store.merge({a: 1}, {a: 2})), JSON.stringify({a: 2}));
+		assert.strictEqual(JSON.stringify(store.merge([1], [2], false)), JSON.stringify([1, 2]));
+		assert.strictEqual(JSON.stringify(store.merge("a", "b", false)), JSON.stringify("ab"));
+		assert.strictEqual(JSON.stringify(store.merge("a", "b")), JSON.stringify("b"));
+		assert.strictEqual(JSON.stringify(store.merge(1, 2, false)), JSON.stringify(3));
+		assert.strictEqual(JSON.stringify(store.merge(1, 2)), JSON.stringify(2));
+		assert.strictEqual(JSON.stringify(store.merge(true, false)), JSON.stringify(false));
+	});
+});
+
+describe("Override", function () {
+	const store = haro(null, {key: "guid", logging: false});
+
+	it("should throw an error when receiving invalid type", function () {
+		assert.throws(() => store.override(null, "invalid"), Error);
+	});
+});
+
+describe("Reindex", function () {
+	const store = haro(null, {key: "guid", logging: false});
+
+	it("should add a missing index when re-indexing", function () {
+		store.set(null, data[0]);
+		store.reindex("latitude");
+	});
+});
+
+describe("Sort By", function () {
+	const store = haro(null, {key: "guid", logging: false});
+
+	it("should throw an error when receiving invalid field", function () {
+		assert.throws(() => store.sortBy(undefined, true), Error);
+	});
+
+	it("should add a missing index when re-indexing", function () {
+		store.sortBy("latitude", true);
+	});
+});
+
+describe("Values", function () {
+	const store = haro(null, {key: "guid", logging: false});
+
+	it("should return an iterator of the values", function () {
+		store.set(null, data[0]);
+		assert.strictEqual(Array.from(store.values())[0].name, "Decker Merrill");
+	});
+});
+
+describe("Initial data", function () {
+	const store = haro([data[0]], {key: "guid", logging: false});
+
+	it("contain records when receiving an array", function () {
+		assert.strictEqual(store.size, 1);
 	});
 });
