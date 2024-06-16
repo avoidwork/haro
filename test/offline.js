@@ -317,3 +317,13 @@ describe("Filter", function () {
 		assert.strictEqual(store.filter((arg) => arg.name === "Decker Merrill", false)[0][1].name, "Decker Merrill");
 	});
 });
+
+describe("Has", function () {
+	const store = haro(null, {key: "guid", logging: false});
+
+	it("return a boolean", function () {
+		store.set(null, data[0]);
+		assert.strictEqual(store.has("abc"), false);
+		assert.strictEqual(store.has(Array.from(store.keys())[0]), true);
+	});
+});

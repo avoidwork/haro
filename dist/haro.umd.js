@@ -215,7 +215,7 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 		return raw ? result : this.list(key, result);
 	}
 
-	has (key) {
+	has (key = STRING_EMPTY) {
 		return this.data.has(key);
 	}
 
