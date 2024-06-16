@@ -353,5 +353,6 @@ describe("Merge", function () {
 		}));
 		assert.strictEqual(JSON.stringify(store.merge({a: [1]}, {a: [2]})), JSON.stringify({a: [1, 2]}));
 		assert.strictEqual(JSON.stringify(store.merge([1], [2])), JSON.stringify([1, 2]));
+		assert.strictEqual(JSON.stringify(store.merge("a", "b")), JSON.stringify("b"));
 	});
 });
