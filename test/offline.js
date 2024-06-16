@@ -380,3 +380,15 @@ describe("Reindex", function () {
 		store.reindex("latitude");
 	});
 });
+
+describe("Sort By", function () {
+	const store = haro(null, {key: "guid", logging: false});
+
+	it("should throw an error when receiving invalid field", function () {
+		assert.throws(() => store.sortBy(undefined, true), Error);
+	});
+
+	it("should add a missing index when re-indexing", function () {
+		store.sortBy("latitude", true);
+	});
+});
