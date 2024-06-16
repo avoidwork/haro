@@ -280,6 +280,10 @@ describe("Update", function () {
 describe("Delete", function () {
 	const store = haro(null, {key: "guid", logging: false});
 
+	it("should throw an error deleting an invalid key", function () {
+		assert.throws(() => store.del("invalid"), Error);
+	});
+
 	it("should have a matching size (single)", function () {
 		const arg = store.set(null, data[0]);
 
