@@ -8,7 +8,7 @@ import {
 	STRING_EMPTY,
 	STRING_FUNCTION,
 	STRING_INDEXES,
-	STRING_INVALID_FIELD,
+	STRING_INVALID_FIELD, STRING_INVALID_FUNCTION,
 	STRING_INVALID_TYPE,
 	STRING_PIPE,
 	STRING_RECORD_NOT_FOUND,
@@ -163,8 +163,8 @@ export class Haro {
 	}
 
 	filter (fn, raw = false) {
-		if (typeof fn !== "function") {
-			throw new Error("Expected a function");
+		if (typeof fn !== STRING_FUNCTION) {
+			throw new Error(STRING_INVALID_FUNCTION);
 		}
 
 		const x = raw ? (k, v) => v : (k, v) => Object.freeze([k, Object.freeze(v)]),

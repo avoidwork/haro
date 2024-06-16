@@ -15,6 +15,7 @@ const STRING_DEL = "del";
 const STRING_FUNCTION = "function";
 const STRING_INDEXES = "indexes";
 const STRING_INVALID_FIELD = "Invalid field";
+const STRING_INVALID_FUNCTION = "Invalid function";
 const STRING_INVALID_TYPE = "Invalid type";
 const STRING_OBJECT = "object";
 const STRING_RECORD_NOT_FOUND = "Record not found";
@@ -186,8 +187,8 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 	}
 
 	filter (fn, raw = false) {
-		if (typeof fn !== "function") {
-			throw new Error("Expected a function");
+		if (typeof fn !== STRING_FUNCTION) {
+			throw new Error(STRING_INVALID_FUNCTION);
 		}
 
 		const x = raw ? (k, v) => v : (k, v) => Object.freeze([k, Object.freeze(v)]),
