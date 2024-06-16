@@ -255,7 +255,7 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 		return raw ? result : this.list(...result);
 	}
 
-	merge (a = {}, b = {}, override = false) {
+	merge (a = {}, b = {}, override = true) {
 		if (Array.isArray(a) && Array.isArray(b)) {
 			a = override ? b : a.concat(b);
 		} else if (a instanceof Object && b instanceof Object) {
@@ -264,10 +264,18 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 					a[i] = override ? b[i] : a[i].concat(b[i]);
 				} else if (a[i] instanceof Object && b[i] instanceof Object) {
 					a[i] = this.merge(a[i], b[i], override);
+				} else if (typeof a[i] === "string" && typeof b[i] === "string") {
+					a[i] = override ? b[i] : a[i] + b[i];
+				} else if (typeof a[i] === "number" && typeof b[i] === "number") {
+					a[i] = override ? b[i] : a[i] + b[i];
 				} else {
 					a[i] = b[i];
 				}
 			});
+		} else if (typeof a === "string" && typeof b === "string") {
+			a = override ? b : a + b;
+		} else if (typeof a === "number" && typeof b === "number") {
+			a = override ? b : a + b;
 		} else {
 			a = b;
 		}
