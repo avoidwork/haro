@@ -3,7 +3,7 @@
  *
  * @copyright 2024 Jason Mulligan <jason.mulligan@avoidwork.com>
  * @license BSD-3-Clause
- * @version 15.1.1
+ * @version 15.2.0
  */
 (function(g,f){typeof exports==='object'&&typeof module!=='undefined'?f(exports):typeof define==='function'&&define.amd?define(['exports'],f):(g=typeof globalThis!=='undefined'?globalThis:g||self,f(g.lru={}));})(this,(function(exports){'use strict';const STRING_COMMA = ",";
 const STRING_EMPTY = "";
@@ -43,7 +43,7 @@ function randomUUID () {
 }
 
 const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : randomUUID;class Haro {
-	constructor ({delimiter = STRING_PIPE, id = uuid(), index = [], key = STRING_EMPTY, versioning = false} = {}) {
+	constructor ({delimiter = STRING_PIPE, id = this.uuid(), index = [], key = STRING_EMPTY, versioning = false} = {}) {
 		this.data = new Map();
 		this.delimiter = delimiter;
 		this.id = id;
@@ -371,7 +371,7 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 
 	set (key = null, data = {}, batch = false, override = false) {
 		if (key === null) {
-			key = data[this.key] ?? uuid();
+			key = data[this.key] ?? this.uuid();
 		}
 
 		let x = {...data, [this.key]: key};
@@ -460,6 +460,10 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 		}
 
 		return result;
+	}
+
+	uuid () {
+		return uuid();
 	}
 
 	values () {

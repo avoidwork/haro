@@ -20,7 +20,7 @@ import {
 } from "./constants.js";
 
 export class Haro {
-	constructor ({delimiter = STRING_PIPE, id = uuid(), index = [], key = STRING_EMPTY, versioning = false} = {}) {
+	constructor ({delimiter = STRING_PIPE, id = this.uuid(), index = [], key = STRING_EMPTY, versioning = false} = {}) {
 		this.data = new Map();
 		this.delimiter = delimiter;
 		this.id = id;
@@ -350,7 +350,7 @@ export class Haro {
 
 	set (key = null, data = {}, batch = false, override = false) {
 		if (key === null) {
-			key = data[this.key] ?? uuid();
+			key = data[this.key] ?? this.uuid();
 		}
 
 		let x = {...data, [this.key]: key};
@@ -439,6 +439,10 @@ export class Haro {
 		}
 
 		return result;
+	}
+
+	uuid () {
+		return uuid();
 	}
 
 	values () {

@@ -7,7 +7,7 @@ const data = JSON.parse(await readFile(fileUrl, "utf8"));
 const odata = data.map(i => [i.guid, i]);
 
 describe("Starting state", function () {
-	const store = haro(null, {key: "guid", logging: false});
+	const store = haro(null, {key: "guid"});
 
 	it("should be empty", function () {
 		assert.strictEqual(store.size, 0);
@@ -16,7 +16,7 @@ describe("Starting state", function () {
 });
 
 describe("Create", function () {
-	const store = haro(null, {key: "guid", logging: false});
+	const store = haro(null, {key: "guid"});
 
 	it("should have a matching size (single)", function () {
 		store.set(null, data[0]);
@@ -192,7 +192,7 @@ describe("Read", function () {
 });
 
 describe("Update", function () {
-	const store = haro(null, {key: "guid", logging: false, versioning: true});
+	const store = haro(null, {key: "guid", versioning: true});
 
 	it("should have a matching size (single)", function () {
 		let arg = store.set(null, data[0]);
@@ -278,7 +278,7 @@ describe("Update", function () {
 });
 
 describe("Delete", function () {
-	const store = haro(null, {key: "guid", logging: false, versioning: true});
+	const store = haro(null, {key: "guid", versioning: true});
 
 	it("should throw an error deleting an invalid key", function () {
 		assert.throws(() => store.del("invalid"), Error);
@@ -305,7 +305,7 @@ describe("Delete", function () {
 });
 
 describe("Filter", function () {
-	const store = haro(null, {key: "guid", logging: false});
+	const store = haro(null, {key: "guid"});
 
 	it("should throw an error when not providing the function", function () {
 		assert.throws(() => store.filter(undefined, true), Error);
@@ -319,7 +319,7 @@ describe("Filter", function () {
 });
 
 describe("Has", function () {
-	const store = haro(null, {key: "guid", logging: false});
+	const store = haro(null, {key: "guid"});
 
 	it("return a boolean", function () {
 		store.set(null, data[0]);
@@ -329,7 +329,7 @@ describe("Has", function () {
 });
 
 describe("Map", function () {
-	const store = haro(null, {key: "guid", logging: false});
+	const store = haro(null, {key: "guid"});
 
 	it("should throw an error when not providing the function", function () {
 		assert.throws(() => store.map(undefined, true), Error);
@@ -342,7 +342,7 @@ describe("Map", function () {
 });
 
 describe("Merge", function () {
-	const store = haro(null, {key: "guid", logging: false});
+	const store = haro(null, {key: "guid"});
 
 	it("should merge the inputs", function () {
 		assert.strictEqual(JSON.stringify(store.merge({a: {b: true}}, {a: {c: true}})), JSON.stringify({
@@ -365,7 +365,7 @@ describe("Merge", function () {
 });
 
 describe("Override", function () {
-	const store = haro(null, {key: "guid", logging: false});
+	const store = haro(null, {key: "guid"});
 
 	it("should throw an error when receiving invalid type", function () {
 		assert.throws(() => store.override(null, "invalid"), Error);
@@ -373,7 +373,7 @@ describe("Override", function () {
 });
 
 describe("Reindex", function () {
-	const store = haro(null, {key: "guid", logging: false});
+	const store = haro(null, {key: "guid"});
 
 	it("should add a missing index when re-indexing", function () {
 		store.set(null, data[0]);
@@ -382,7 +382,7 @@ describe("Reindex", function () {
 });
 
 describe("Sort By", function () {
-	const store = haro(null, {key: "guid", logging: false});
+	const store = haro(null, {key: "guid"});
 
 	it("should throw an error when receiving invalid field", function () {
 		assert.throws(() => store.sortBy(undefined, true), Error);
@@ -394,7 +394,7 @@ describe("Sort By", function () {
 });
 
 describe("Values", function () {
-	const store = haro(null, {key: "guid", logging: false});
+	const store = haro(null, {key: "guid"});
 
 	it("should return an iterator of the values", function () {
 		store.set(null, data[0]);
@@ -403,7 +403,7 @@ describe("Values", function () {
 });
 
 describe("Initial data", function () {
-	const store = haro([data[0]], {key: "guid", logging: false});
+	const store = haro([data[0]], {key: "guid"});
 
 	it("contain records when receiving an array", function () {
 		assert.strictEqual(store.size, 1);

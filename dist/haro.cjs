@@ -3,7 +3,7 @@
  *
  * @copyright 2024 Jason Mulligan <jason.mulligan@avoidwork.com>
  * @license BSD-3-Clause
- * @version 15.1.1
+ * @version 15.2.0
  */
 'use strict';
 
@@ -49,7 +49,7 @@ function randomUUID () {
 const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : randomUUID;
 
 class Haro {
-	constructor ({delimiter = STRING_PIPE, id = uuid(), index = [], key = STRING_EMPTY, versioning = false} = {}) {
+	constructor ({delimiter = STRING_PIPE, id = this.uuid(), index = [], key = STRING_EMPTY, versioning = false} = {}) {
 		this.data = new Map();
 		this.delimiter = delimiter;
 		this.id = id;
@@ -377,7 +377,7 @@ class Haro {
 
 	set (key = null, data = {}, batch = false, override = false) {
 		if (key === null) {
-			key = data[this.key] ?? uuid();
+			key = data[this.key] ?? this.uuid();
 		}
 
 		let x = {...data, [this.key]: key};
@@ -466,6 +466,10 @@ class Haro {
 		}
 
 		return result;
+	}
+
+	uuid () {
+		return uuid();
 	}
 
 	values () {

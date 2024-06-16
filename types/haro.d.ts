@@ -52,6 +52,7 @@ export class Haro {
     sort(fn: any, frozen?: boolean): any;
     sortBy(index?: string, raw?: boolean): readonly any[];
     toArray(frozen?: boolean): any;
+    uuid(): any;
     values(): any;
     where(predicate?: {}, raw?: boolean, op?: string): any;
 }
