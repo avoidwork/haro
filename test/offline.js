@@ -278,7 +278,7 @@ describe("Update", function () {
 });
 
 describe("Delete", function () {
-	const store = haro(null, {key: "guid", logging: false});
+	const store = haro(null, {key: "guid", logging: false, versioning: true});
 
 	it("should throw an error deleting an invalid key", function () {
 		assert.throws(() => store.del("invalid"), Error);
