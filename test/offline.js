@@ -363,3 +363,11 @@ describe("Merge", function () {
 		assert.strictEqual(JSON.stringify(store.merge(true, false)), JSON.stringify(false));
 	});
 });
+
+describe("Override", function () {
+	const store = haro(null, {key: "guid", logging: false});
+
+	it("should throw an error when receiving invalid type", function () {
+		assert.throws(() => store.override(null, "invalid"), Error);
+	});
+});
