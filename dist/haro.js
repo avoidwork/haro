@@ -3,7 +3,7 @@
  *
  * @copyright 2024 Jason Mulligan <jason.mulligan@avoidwork.com>
  * @license BSD-3-Clause
- * @version 15.2.2
+ * @version 15.2.3
  */
 const STRING_COMMA = ",";
 const STRING_EMPTY = "";
@@ -255,7 +255,7 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 		return raw ? result : this.list(...result);
 	}
 
-	merge (a = {}, b = {}, override = false) {
+	merge (a, b, override = false) {
 		if (Array.isArray(a) && Array.isArray(b)) {
 			a = override ? b : a.concat(b);
 		} else if (a instanceof Object && b instanceof Object) {

@@ -354,6 +354,8 @@ describe("Merge", function () {
 		assert.strictEqual(JSON.stringify(store.merge({a: [1]}, {a: [2]})), JSON.stringify({a: [1, 2]}));
 		assert.strictEqual(JSON.stringify(store.merge({a: [1]}, {a: [2]}, true)), JSON.stringify({a: [2]}));
 		assert.strictEqual(JSON.stringify(store.merge({a: 1}, {a: 2})), JSON.stringify({a: 2}));
+		assert.strictEqual(JSON.stringify(store.merge({a: 1}, {a: null})), JSON.stringify({a: null}));
+		assert.strictEqual(JSON.stringify(store.merge({a: 1}, {a: undefined})), JSON.stringify({a: undefined}));
 		assert.strictEqual(JSON.stringify(store.merge([1], [2], true)), JSON.stringify([2]));
 		assert.strictEqual(JSON.stringify(store.merge([1], [2])), JSON.stringify([1, 2]));
 		assert.strictEqual(JSON.stringify(store.merge("a", "b")), JSON.stringify("b"));

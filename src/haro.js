@@ -232,7 +232,7 @@ export class Haro {
 		return raw ? result : this.list(...result);
 	}
 
-	merge (a = {}, b = {}, override = false) {
+	merge (a, b, override = false) {
 		if (Array.isArray(a) && Array.isArray(b)) {
 			a = override ? b : a.concat(b);
 		} else if (a instanceof Object && b instanceof Object) {

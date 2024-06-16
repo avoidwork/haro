@@ -1,6 +1,6 @@
 {
   "name": "haro",
-  "version": "15.2.2",
+  "version": "15.2.3",
   "description": "Haro is a modern immutable DataStore",
   "type": "module",
   "types": "types/haro.d.ts",
