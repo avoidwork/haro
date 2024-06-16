@@ -249,7 +249,11 @@ class Haro {
 		return Object.freeze(args.map(i => Object.freeze(i)));
 	}
 
-	map (fn = arg => arg, raw = false) {
+	map (fn, raw = false) {
+		if (typeof fn !== STRING_FUNCTION) {
+			throw new Error(STRING_INVALID_FUNCTION);
+		}
+
 		const result = [];
 
 		this.forEach((value, key) => result.push(fn(value, key)));

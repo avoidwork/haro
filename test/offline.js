@@ -327,3 +327,16 @@ describe("Has", function () {
 		assert.strictEqual(store.has(Array.from(store.keys())[0]), true);
 	});
 });
+
+describe("Map", function () {
+	const store = haro(null, {key: "guid", logging: false});
+
+	it("should throw an error when not providing the function", function () {
+		assert.throws(() => store.map(undefined, true), Error);
+	});
+
+	it("should map the records", function () {
+		store.set(null, data[0]);
+		assert.strictEqual(store.map(arg => arg.name, true)[0], "Decker Merrill");
+	});
+});
