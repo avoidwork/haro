@@ -162,7 +162,11 @@ export class Haro {
 		return raw ? result : this.list(...result);
 	}
 
-	filter (fn = () => void 0, raw = false) {
+	filter (fn, raw = false) {
+		if (typeof fn !== "function") {
+			throw new Error("Expected a function");
+		}
+
 		const x = raw ? (k, v) => v : (k, v) => Object.freeze([k, Object.freeze(v)]),
 			result = this.reduce((a, v, k, ctx) => {
 				if (fn.call(ctx, v)) {

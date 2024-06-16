@@ -191,7 +191,11 @@ class Haro {
 		return raw ? result : this.list(...result);
 	}
 
-	filter (fn = () => void 0, raw = false) {
+	filter (fn, raw = false) {
+		if (typeof fn !== "function") {
+			throw new Error("Expected a function");
+		}
+
 		const x = raw ? (k, v) => v : (k, v) => Object.freeze([k, Object.freeze(v)]),
 			result = this.reduce((a, v, k, ctx) => {
 				if (fn.call(ctx, v)) {
@@ -256,7 +260,7 @@ class Haro {
 		if (a instanceof Object && b instanceof Object) {
 			this.each(Object.keys(b), i => {
 				if (a[i] instanceof Object && b[i] instanceof Object) {
-					a[i] = override ? a[i] : this.merge(a[i], b[i]);
+					a[i] = this.merge(a[i], b[i], override);
 				} else if (Array.isArray(a[i]) && Array.isArray(b[i])) {
 					a[i] = override ? b[i] : a[i].concat(b[i]);
 				} else {

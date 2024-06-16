@@ -303,3 +303,14 @@ describe("Delete", function () {
 		assert.strictEqual(store.data.size, 4);
 	});
 });
+
+describe("Filter", function () {
+	const store = haro(null, {key: "guid", logging: false});
+
+	it("should filter to a record (single)", function () {
+		store.set(null, data[0]);
+		assert.throws(() => store.filter(undefined, true), Error);
+		assert.strictEqual(store.filter((arg) => arg.name === "Decker Merrill", true)[0].name, "Decker Merrill");
+		assert.strictEqual(store.filter((arg) => arg.name === "Decker Merrill", false)[0][1].name, "Decker Merrill");
+	});
+});
