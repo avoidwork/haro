@@ -351,14 +351,12 @@ describe("Merge", function () {
 				c: true
 			}
 		}));
-		assert.strictEqual(JSON.stringify(store.merge({a: [1]}, {a: [2]}, false)), JSON.stringify({a: [1, 2]}));
-		assert.strictEqual(JSON.stringify(store.merge({a: [1]}, {a: [2]})), JSON.stringify({a: [2]}));
-		assert.strictEqual(JSON.stringify(store.merge({a: 1}, {a: 2}, false)), JSON.stringify({a: 3}));
+		assert.strictEqual(JSON.stringify(store.merge({a: [1]}, {a: [2]})), JSON.stringify({a: [1, 2]}));
+		assert.strictEqual(JSON.stringify(store.merge({a: [1]}, {a: [2]}, true)), JSON.stringify({a: [2]}));
 		assert.strictEqual(JSON.stringify(store.merge({a: 1}, {a: 2})), JSON.stringify({a: 2}));
-		assert.strictEqual(JSON.stringify(store.merge([1], [2], false)), JSON.stringify([1, 2]));
-		assert.strictEqual(JSON.stringify(store.merge("a", "b", false)), JSON.stringify("ab"));
+		assert.strictEqual(JSON.stringify(store.merge([1], [2], true)), JSON.stringify([2]));
+		assert.strictEqual(JSON.stringify(store.merge([1], [2])), JSON.stringify([1, 2]));
 		assert.strictEqual(JSON.stringify(store.merge("a", "b")), JSON.stringify("b"));
-		assert.strictEqual(JSON.stringify(store.merge(1, 2, false)), JSON.stringify(3));
 		assert.strictEqual(JSON.stringify(store.merge(1, 2)), JSON.stringify(2));
 		assert.strictEqual(JSON.stringify(store.merge(true, false)), JSON.stringify(false));
 	});

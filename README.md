@@ -11,7 +11,7 @@ can lazily create new indexes via `reindex(field)`, or `sortBy(field)`.
 
 ## Testing
 
-Haro has >90% code coverage with its tests.
+Haro has 100% code coverage with its tests.
 
 ```console
 ----------|---------|----------|---------|---------|-------------------------------------------------------------------------------------------------------
