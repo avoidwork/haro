@@ -264,10 +264,10 @@ class Haro {
 	merge (a = {}, b = {}, override = false) {
 		if (a instanceof Object && b instanceof Object) {
 			this.each(Object.keys(b), i => {
-				if (a[i] instanceof Object && b[i] instanceof Object) {
-					a[i] = this.merge(a[i], b[i], override);
-				} else if (Array.isArray(a[i]) && Array.isArray(b[i])) {
+				if (Array.isArray(a[i]) && Array.isArray(b[i])) {
 					a[i] = override ? b[i] : a[i].concat(b[i]);
+				} else if (a[i] instanceof Object && b[i] instanceof Object) {
+					a[i] = this.merge(a[i], b[i], override);
 				} else {
 					a[i] = b[i];
 				}

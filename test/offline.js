@@ -340,3 +340,17 @@ describe("Map", function () {
 		assert.strictEqual(store.map(arg => arg.name, true)[0], "Decker Merrill");
 	});
 });
+
+describe("Merge", function () {
+	const store = haro(null, {key: "guid", logging: false});
+
+	it("should merge the inputs", function () {
+		assert.strictEqual(JSON.stringify(store.merge({a: {b: true}}, {a: {c: true}})), JSON.stringify({
+			a: {
+				b: true,
+				c: true
+			}
+		}));
+		assert.strictEqual(JSON.stringify(store.merge({a: [1]}, {a: [2]})), JSON.stringify({a: [1, 2]}));
+	});
+});

@@ -8,7 +8,8 @@ import {
 	STRING_EMPTY,
 	STRING_FUNCTION,
 	STRING_INDEXES,
-	STRING_INVALID_FIELD, STRING_INVALID_FUNCTION,
+	STRING_INVALID_FIELD,
+	STRING_INVALID_FUNCTION,
 	STRING_INVALID_TYPE,
 	STRING_PIPE,
 	STRING_RECORD_NOT_FOUND,
@@ -234,10 +235,10 @@ export class Haro {
 	merge (a = {}, b = {}, override = false) {
 		if (a instanceof Object && b instanceof Object) {
 			this.each(Object.keys(b), i => {
-				if (a[i] instanceof Object && b[i] instanceof Object) {
-					a[i] = this.merge(a[i], b[i], override);
-				} else if (Array.isArray(a[i]) && Array.isArray(b[i])) {
+				if (Array.isArray(a[i]) && Array.isArray(b[i])) {
 					a[i] = override ? b[i] : a[i].concat(b[i]);
+				} else if (a[i] instanceof Object && b[i] instanceof Object) {
+					a[i] = this.merge(a[i], b[i], override);
 				} else {
 					a[i] = b[i];
 				}

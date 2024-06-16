@@ -1,4 +1,4 @@
-import {INT_0, INT_1, INT_16, INT_3, INT_4, INT_8, INT_9, STRING_A, STRING_B, STRING_OBJECT,} from "./constants.js";
+import {INT_0, INT_1, INT_16, INT_3, INT_4, INT_8, INT_9, STRING_A, STRING_B, STRING_OBJECT} from "./constants.js";
 
 /* istanbul ignore next */
 const r = [INT_8, INT_9, STRING_A, STRING_B];
