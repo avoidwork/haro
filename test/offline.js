@@ -392,3 +392,20 @@ describe("Sort By", function () {
 		store.sortBy("latitude", true);
 	});
 });
+
+describe("Values", function () {
+	const store = haro(null, {key: "guid", logging: false});
+
+	it("should return an iterator of the values", function () {
+		store.set(null, data[0]);
+		assert.strictEqual(Array.from(store.values())[0].name, "Decker Merrill");
+	});
+});
+
+describe("Initial data", function () {
+	const store = haro([data[0]], {key: "guid", logging: false});
+
+	it("contain records when receiving an array", function () {
+		assert.strictEqual(store.size, 1);
+	});
+});
