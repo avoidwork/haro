@@ -3,7 +3,7 @@
  *
  * @copyright 2024 Jason Mulligan <jason.mulligan@avoidwork.com>
  * @license BSD-3-Clause
- * @version 15.2.1
+ * @version 15.2.2
  */
 'use strict';
 
@@ -265,15 +265,7 @@ class Haro {
 		if (Array.isArray(a) && Array.isArray(b)) {
 			a = override ? b : a.concat(b);
 		} else if (a instanceof Object && b instanceof Object) {
-			this.each(Object.keys(b), i => {
-				if (Array.isArray(a[i]) && Array.isArray(b[i])) {
-					a[i] = override ? b[i] : a[i].concat(b[i]);
-				} else if (a[i] instanceof Object && b[i] instanceof Object) {
-					a[i] = this.merge(a[i], b[i], override);
-				} else {
-					a[i] = b[i];
-				}
-			});
+			this.each(Object.keys(b), i => (a[i] = this.merge(a[i], b[i], override)));
 		} else {
 			a = b;
 		}
