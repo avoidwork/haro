@@ -1,6 +1,6 @@
 {
   "name": "haro",
-  "version": "15.2.3",
+  "version": "15.2.4",
   "description": "Haro is a modern immutable DataStore",
   "type": "module",
   "types": "types/haro.d.ts",
@@ -12,8 +12,9 @@
     "require": "./dist/haro.cjs"
   },
   "files": [
-    "dist",
-    "types"
+    "dist/haro.cjs",
+    "dist/haro.js",
+    "types/haro.d.ts"
   ],
   "scripts": {
     "build": "npm run lint && npm run rollup && npm run mocha",
@@ -49,16 +50,16 @@
     "node": ">=12.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.4.0",
+    "@eslint/js": "^9.6.0",
     "@rollup/plugin-terser": "^0.4.4",
     "auto-changelog": "^2.4.0",
-    "eslint": "^9.4.0",
-    "globals": "^15.4.0",
+    "eslint": "^9.6.0",
+    "globals": "^15.8.0",
     "husky": "^9.0.11",
-    "mocha": "^10.4.0",
+    "mocha": "^10.6.0",
     "nyc": "^17.0.0",
     "precise": "^4.0.3",
     "rollup": "^4.18.0",
-    "typescript": "^5.4.5"
+    "typescript": "^5.5.3"
   }
 }

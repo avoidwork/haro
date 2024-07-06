@@ -3,7 +3,7 @@
  *
  * @copyright 2024 Jason Mulligan <jason.mulligan@avoidwork.com>
  * @license BSD-3-Clause
- * @version 15.2.3
+ * @version 15.2.4
  */
 const STRING_COMMA = ",";
 const STRING_EMPTY = "";
