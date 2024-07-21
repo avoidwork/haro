@@ -16,10 +16,10 @@ export class Haro {
     versions: any;
     versioning: boolean;
     batch(args: any, type?: string): any[];
-    beforeBatch(arg: any): any;
+    beforeBatch(arg: any, type?: string): any;
     beforeClear(): void;
-    beforeDelete(): void;
-    beforeSet(): void;
+    beforeDelete(key?: string, batch?: boolean): (string | boolean)[];
+    beforeSet(key?: string, batch?: boolean): (string | boolean)[];
     clear(): this;
     clone(arg: any): any;
     del(key?: string, batch?: boolean): void;
@@ -30,19 +30,19 @@ export class Haro {
     find(where?: {}, raw?: boolean): any[] | [any, any][];
     filter(fn: any, raw?: boolean): any[] | [any, any][];
     forEach(fn: any, ctx: any): this;
-    get(key: any, raw?: boolean): any | [any, any];
+    get(key: any, raw?: boolean): any[] | [any, any][];
     has(key: any): boolean;
     indexKeys(arg?: string, delimiter?: string, data?: {}): any[];
     keys(): any[];
     limit(offset?: number, max?: number, raw?: boolean): any[] | [any, any][];
     list(...args: any[]): readonly any[];
     map(fn: any, raw?: boolean): any[] | [any, any][];
-    merge(a?: {}, b?: {}, override?: boolean): {};
-    onbatch(arg: any): any;
+    merge(a: any, b: any, override?: boolean): any;
+    onbatch(arg: any, type?: string): any[];
     onclear(): void;
-    ondelete(): void;
-    onoverride(): void;
-    onset(): void;
+    ondelete(key?: string, batch?: boolean): (string | boolean)[];
+    onoverride(type?: string): any;
+    onset(arg?: {}, batch?: boolean): any[];
     override(data: any, type?: string): boolean;
     reduce(fn: any, accumulator: any, raw?: boolean): any[] | [any, any][];
     reindex(index: any): this;
@@ -53,6 +53,6 @@ export class Haro {
     sortBy(index?: string, raw?: boolean): any[] | [any, any][];
     toArray(frozen?: boolean): any[];
     uuid(): string;
-    values(): any[];
-    where(predicate?: {}, raw?: boolean, op?: string): any[];
+    values(): any;
+    where(predicate?: {}, raw?: boolean, op?: string): any[] | [any, any][];
 }

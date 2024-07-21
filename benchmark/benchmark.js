@@ -1,6 +1,6 @@
 import {haro} from "../dist/haro.cjs";
 import {precise} from "precise";
-import {readFile} from 'node:fs/promises';
+import {readFile} from "node:fs/promises";
 
 const fileUrl = new URL("./data.json", import.meta.url);
 const data = JSON.parse(await readFile(fileUrl, "utf8"));

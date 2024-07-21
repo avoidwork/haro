@@ -3,7 +3,7 @@
  *
  * @copyright 2024 Jason Mulligan <jason.mulligan@avoidwork.com>
  * @license BSD-3-Clause
- * @version 15.2.4
+ * @version 15.2.5
  */
 'use strict';
 
@@ -78,17 +78,19 @@ class Haro {
 		return this.onbatch(this.beforeBatch(args, type).map(fn), type);
 	}
 
-	beforeBatch (arg) {
+	beforeBatch (arg, type = STRING_EMPTY) { // eslint-disable-line no-unused-vars
 		return arg;
 	}
 
 	beforeClear () {
 	}
 
-	beforeDelete () {
+	beforeDelete (key = STRING_EMPTY, batch = false) {
+		return [key, batch];
 	}
 
-	beforeSet () {
+	beforeSet (key = STRING_EMPTY, batch = false) {
+		return [key, batch];
 	}
 
 	clear () {
@@ -265,7 +267,9 @@ class Haro {
 		if (Array.isArray(a) && Array.isArray(b)) {
 			a = override ? b : a.concat(b);
 		} else if (a instanceof Object && b instanceof Object) {
-			this.each(Object.keys(b), i => (a[i] = this.merge(a[i], b[i], override)));
+			this.each(Object.keys(b), i => {
+				a[i] = this.merge(a[i], b[i], override);
+			});
 		} else {
 			a = b;
 		}
@@ -273,20 +277,23 @@ class Haro {
 		return a;
 	}
 
-	onbatch (arg) {
+	onbatch (arg, type = STRING_EMPTY) { // eslint-disable-line no-unused-vars
 		return arg;
 	}
 
 	onclear () {
 	}
 
-	ondelete () {
+	ondelete (key = STRING_EMPTY, batch = false) {
+		return [key, batch];
 	}
 
-	onoverride () {
+	onoverride (type = STRING_EMPTY) {
+		return type;
 	}
 
-	onset () {
+	onset (arg = {}, batch = false) {
+		return [arg, batch];
 	}
 
 	override (data, type = STRING_RECORDS) {
@@ -423,7 +430,7 @@ class Haro {
 
 	sortBy (index = STRING_EMPTY, raw = false) {
 		if (index === STRING_EMPTY) {
-			throw new Error(STRING_INVALID_FIELD)
+			throw new Error(STRING_INVALID_FIELD);
 		}
 
 		const result = [],
