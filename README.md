@@ -55,30 +55,65 @@ const storeCustom = haro(null, {key: 'id'});
 ```
 
 ## Examples
-### Indexes & Searching
+
+### Example 1: Manage a Contact List
 ```javascript
-const store = haro(null, {index: ['name', 'age']}),
-    data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
+import { haro } from 'haro';
 
-const records = store.batch(data, 'set');
+// Create a store with indexes for name and age
+const contacts = haro(null, { index: ['name', 'age'] });
 
-console.log(records[0]); // [$uuid, {name: 'John Doe', age: 30}]
-console.log(store.size); // 2
-console.log(store.find({age: 28})); // [[$uuid, {name: 'Jane Doe', age: 28}]]
-console.log(store.search(/^ja/i, 'name')); // [[$uuid, {name: 'Jane Doe', age: 28}]]
-console.log(store.search(arg => age < 30, 'age')); // [[$uuid, {name: 'Jane Doe', age: 28}]]
+// Add contacts
+contacts.batch([
+  { name: 'John Doe', age: 30 },
+  { name: 'Jane Doe', age: 28 }
+], 'set');
+
+// Find a contact by age
+console.log(contacts.find({ age: 28 })); // → [[$uuid, { name: 'Jane Doe', age: 28 }]]
+
+// Search contacts by name (case-insensitive)
+console.log(contacts.search(/^ja/i, 'name')); // → [[$uuid, { name: 'Jane Doe', age: 28 }]]
+
+// Search contacts younger than 30
+console.log(contacts.search(age => age < 30, 'age')); // → [[$uuid, { name: 'Jane Doe', age: 28 }]]
 ```
 
-### MVCC versioning
+### Example 2: Track Task Status
 ```javascript
-const store = haro();
-let arg;
+import { haro } from 'haro';
 
-arg = store.set(null, {abc: true});
-arg = store.set(arg[0], {abc: false});
-arg = store.set(arg[0], {abc: true});
-store.versions.get(arg[0]).forEach(i => console.log(i[0])); // {abc: true}, {abc: false}
+// Create a store for tasks, indexed by status
+const tasks = haro(null, { index: ['status'] });
+
+tasks.batch([
+  { title: 'Buy groceries', status: 'pending' },
+  { title: 'Write report', status: 'done' }
+], 'set');
+
+// Find all pending tasks
+console.log(tasks.find({ status: 'pending' })); // → [[$uuid, { title: 'Buy groceries', status: 'pending' }]]
 ```
+
+### Example 3: See Change History (Versioning)
+```javascript
+import { haro } from 'haro';
+
+// Enable versioning
+const store = haro(null, { versioning: true });
+
+// Add and update a record
+let rec = store.set(null, { note: 'Initial' });
+rec = store.set(rec[0], { note: 'Updated' });
+
+// See all versions of the record
+store.versions.get(rec[0]).forEach(([data]) => console.log(data));
+// Output:
+// { note: 'Initial' }
+// { note: 'Updated' }
+```
+
+These examples show how Haro can help you manage contacts, tasks, and keep a history of changes with just a few lines of code.
 
 ## Benchmarked
 A benchmark is included in the repository, and is useful for gauging how haro will perform on different hardware, & software.
