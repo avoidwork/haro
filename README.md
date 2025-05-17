@@ -21,15 +21,15 @@ Imagine you have a box of index cards, each with information about a person or t
 
 ## Testing
 
-Haro has 100% code coverage with its tests.
+Haro has 99.6% code coverage with its tests.
 
 ```console
-----------|---------|----------|---------|---------|------------------------------------------------------------------------------------------------------
-File      | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                                                                                    
-----------|---------|----------|---------|---------|------------------------------------------------------------------------------------------------------
-All files |    99.6 |    77.83 |     100 |     100 |                                                                                                      
- haro.cjs |    99.6 |    77.83 |     100 |     100 | 49-79,85-115,136,171-183,200,236,250,286-306,324,351-352,357-359,373-376,378-381,437,479,486,490-500 
-----------|---------|----------|---------|---------|------------------------------------------------------------------------------------------------------
+----------|---------|----------|---------|---------|------------------------------------------------------------------------------------------
+File      | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                                                                        
+----------|---------|----------|---------|---------|------------------------------------------------------------------------------------------
+All files |   99.63 |    80.56 |     100 |     100 |                                                                                          
+ haro.cjs |   99.63 |    80.56 |     100 |     100 | 49-74,80-110,127,163-175,190,225,239,275-295,313,340-341,346-348,362-365,367,419,461,511 
+----------|---------|----------|---------|---------|------------------------------------------------------------------------------------------
 ```
 
 ## Usage
@@ -60,91 +60,75 @@ const storeCustom = haro(null, {key: 'id'});
 ```javascript
 import { haro } from 'haro';
 
-// Create a store with indexes for name and age
-const contacts = haro(null, { index: ['name', 'age'] });
+// Create a store with indexes for name and email
+const contacts = haro(null, { index: ['name', 'email'] });
 
-// Add contacts
+// Add realistic contacts
 contacts.batch([
-  { name: 'John Doe', age: 30 },
-  { name: 'Jane Doe', age: 28 }
+  { name: 'Alice Johnson', email: 'alice.j@example.com', company: 'Acme Corp', phone: '555-1234' },
+  { name: 'Carlos Rivera', email: 'carlos.r@example.com', company: 'Rivera Designs', phone: '555-5678' },
+  { name: 'Priya Patel', email: 'priya.p@example.com', company: 'InnovateX', phone: '555-8765' }
 ], 'set');
 
-// Find a contact by age
-console.log(contacts.find({ age: 28 })); // → [[$uuid, { name: 'Jane Doe', age: 28 }]]
+// Find a contact by email
+console.log(contacts.find({ email: 'carlos.r@example.com' }));
+// → [[$uuid, { name: 'Carlos Rivera', email: 'carlos.r@example.com', company: 'Rivera Designs', phone: '555-5678' }]]
 
-// Search contacts by name (case-insensitive)
-console.log(contacts.search(/^ja/i, 'name')); // → [[$uuid, { name: 'Jane Doe', age: 28 }]]
+// Search contacts by company
+console.log(contacts.search(/^acme/i, 'company'));
+// → [[$uuid, { name: 'Alice Johnson', email: 'alice.j@example.com', company: 'Acme Corp', phone: '555-1234' }]]
 
-// Search contacts younger than 30
-console.log(contacts.search(age => age < 30, 'age')); // → [[$uuid, { name: 'Jane Doe', age: 28 }]]
+// Search contacts with phone numbers ending in '78'
+console.log(contacts.search(phone => phone.endsWith('78'), 'phone'));
+// → [[$uuid, { name: 'Carlos Rivera', ... }]]
 ```
 
-### Example 2: Track Task Status
+### Example 2: Track Project Tasks
 ```javascript
 import { haro } from 'haro';
 
-// Create a store for tasks, indexed by status
-const tasks = haro(null, { index: ['status'] });
+// Create a store for project tasks, indexed by status and assignee
+const tasks = haro(null, { index: ['status', 'assignee'] });
 
 tasks.batch([
-  { title: 'Buy groceries', status: 'pending' },
-  { title: 'Write report', status: 'done' }
+  { title: 'Design homepage', status: 'in progress', assignee: 'Alice', due: '2025-05-20' },
+  { title: 'Fix login bug', status: 'open', assignee: 'Carlos', due: '2025-05-18' },
+  { title: 'Deploy to production', status: 'done', assignee: 'Priya', due: '2025-05-15' }
 ], 'set');
 
-// Find all pending tasks
-console.log(tasks.find({ status: 'pending' })); // → [[$uuid, { title: 'Buy groceries', status: 'pending' }]]
+// Find all open tasks
+console.log(tasks.find({ status: 'open' }));
+// → [[$uuid, { title: 'Fix login bug', status: 'open', assignee: 'Carlos', due: '2025-05-18' }]]
+
+// Search tasks assigned to Alice
+console.log(tasks.search('Alice', 'assignee'));
+// → [[$uuid, { title: 'Design homepage', ... }]]
 ```
 
-### Example 3: See Change History (Versioning)
+### Example 3: Track Order Status Changes (Versioning)
 ```javascript
 import { haro } from 'haro';
 
-// Enable versioning
-const store = haro(null, { versioning: true });
+// Enable versioning for order tracking
+const orders = haro(null, { versioning: true });
 
-// Add and update a record
-let rec = store.set(null, { note: 'Initial' });
-rec = store.set(rec[0], { note: 'Updated' });
+// Add a new order and update its status
+let rec = orders.set(null, { id: 1001, customer: 'Priya Patel', status: 'processing' });
+rec = orders.set(rec[0], { id: 1001, customer: 'Priya Patel', status: 'shipped' });
+rec = orders.set(rec[0], { id: 1001, customer: 'Priya Patel', status: 'delivered' });
 
-// See all versions of the record
-store.versions.get(rec[0]).forEach(([data]) => console.log(data));
+// See all status changes for the order
+orders.versions.get(rec[0]).forEach(([data]) => console.log(data));
 // Output:
+// { id: 1001, customer: 'Priya Patel', status: 'processing' }
+// { id: 1001, customer: 'Priya Patel', status: 'shipped' }
+// { id: 1001, customer: 'Priya Patel', status: 'delivered' }
+```
 // { note: 'Initial' }
 // { note: 'Updated' }
 ```
 
 These examples show how Haro can help you manage contacts, tasks, and keep a history of changes with just a few lines of code.
-
-## Benchmarked
-A benchmark is included in the repository, and is useful for gauging how haro will perform on different hardware, & software.
-
-```
-time to batch insert data: 6.7825 ms
-datastore record count: 1000
-name indexes: 1000
-
-testing time to 'find()' a record (first one is cold):
-0.063375ms
-0.004583ms
-0.002417ms
-0.003459ms
-0.001916ms
-
-testing time to 'search(regex, index)' for a record (first one is cold):
-0.147792ms
-0.051209ms
-0.050958ms
-0.051125ms
-0.052166ms
-
-time to override data: 0.361709 ms
-testing time to 'search(regex, index)' on overridden data for a record (first one is cold):
-0.053083ms
-0.051916ms
-0.027459ms
-0.0275ms
-0.032292ms
-```
 
 ## Configuration
 ### beforeBatch
@@ -538,13 +522,17 @@ Indexed `Arrays` which are tested with a `RegExp` will be treated as a comma del
 
 Example of searching with a predicate function:
 ```javascript
-const store = haro(null, {index: ['name', 'age']}),
-   data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
+const store = haro(null, {index: ['department', 'salary']}),
+  employees = [
+    { name: 'Alice Johnson', department: 'Engineering', salary: 120000 },
+    { name: 'Carlos Rivera', department: 'Design', salary: 95000 },
+    { name: 'Priya Patel', department: 'Engineering', salary: 130000 }
+  ];
 
-store.batch(data, 'set')
-console.log(store.search(function (age) {
-  return age < 30;
-}, 'age')); // [[$uuid, {name: 'Jane Doe', age: 28}]]
+store.batch(employees, 'set');
+// Find all employees in Engineering making over $125,000
+console.log(store.search((salary, department) => department === 'Engineering' && salary > 125000, ['salary', 'department']));
+// → [[$uuid, { name: 'Priya Patel', department: 'Engineering', salary: 130000 }]]
 ```
 
 ### set(key, data, batch=false, override=false)
@@ -584,11 +572,16 @@ Returns an `Array` of double `Arrays` with the shape `[key, value]` of records s
 
 Example of sorting by an index:
 ```javascript
-const store = haro(null, {index: ['name', 'age']}),
-   data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
+const store = haro(null, {index: ['priority', 'due']}),
+  tickets = [
+    { title: 'Fix bug #42', priority: 2, due: '2025-05-18' },
+    { title: 'Release v2.0', priority: 1, due: '2025-05-20' },
+    { title: 'Update docs', priority: 3, due: '2025-05-22' }
+  ];
 
-store.batch(data, 'set')
-console.log(store.sortBy('age')); // [[$uuid, {name: 'Jane Doe', age: 28}], [$uuid, {name: 'John Doe', age: 30}]]
+store.batch(tickets, 'set');
+console.log(store.sortBy('priority'));
+// → Sorted by priority ascending
 ```
 
 ### toArray([frozen=true])
@@ -599,10 +592,17 @@ Returns an Array of the DataStore.
 Example of casting to an `Array`:
 ```javascript
 const store = haro(),
-   data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
+  notes = [
+    { title: 'Call Alice', content: 'Discuss Q2 roadmap.' },
+    { title: 'Email Carlos', content: 'Send project update.' }
+  ];
 
-store.batch(data, 'set')
-console.log(store.toArray()); // [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}]
+store.batch(notes, 'set');
+console.log(store.toArray());
+// → [
+//   { title: 'Call Alice', content: 'Discuss Q2 roadmap.' },
+//   { title: 'Email Carlos', content: 'Send project update.' }
+// ]
 ```
 
 ### values()
