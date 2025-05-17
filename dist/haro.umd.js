@@ -372,7 +372,7 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 			key = data[this.key] ?? this.uuid();
 		}
 
-		let x = this.key ? { ...data, [this.key]: key } : { ...data };
+		let x = { ...data, [this.key]: key };
 
 		this.beforeSet(key, x, batch, override);
 
