@@ -167,7 +167,7 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 	}
 
 	find (where = {}, raw = false) {
-		const key = Object.keys(where).sort().join(this.delimiter);
+		const key = Object.keys(where).sort((a, b) => a.localeCompare(b)).join(this.delimiter);
 		const index = this.indexes.get(key) ?? new Map();
 		let result = [];
 		if (index.size > 0) {
