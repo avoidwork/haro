@@ -455,22 +455,51 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 	where (predicate = {}, raw = false, op = STRING_DOUBLE_PIPE) {
 		const keys = this.index.filter(i => i in predicate);
 
-		return keys.length > INT_0 ? this.filter(new Function(STRING_A, `return (${keys.map(i => {
-			let result;
+		if (keys.length === 0) return [];
 
-			if (Array.isArray(predicate[i])) {
-				result = `Array.isArray(a['${i}']) ? ${predicate[i].map(arg => `a['${i}'].includes(${typeof arg === "string" ? `'${arg}'` : arg})`).join(` ${op} `)} : (${predicate[i].map(arg => `a['${i}'] === ${typeof arg === "string" ? `'${arg}'` : arg}`).join(` ${op} `)})`;
-			} else if (predicate[i] instanceof RegExp) {
-				result = `Array.isArray(a['${i}']) ? a['${i}'].filter(i => ${predicate[i]}.test(a['${i}'])).length > 0 : ${predicate[i]}.test(a['${i}'])`;
-			} else {
-				const arg = typeof predicate[i] === "string" ? `'${predicate[i]}'` : predicate[i];
-
-				result = `Array.isArray(a['${i}']) ? a['${i}'].includes(${arg}) : a['${i}'] === ${arg}`;
+		// Supported operators: '||' (OR), '&&' (AND)
+		// Always AND across fields (all keys must match for a record)
+		return this.filter(a => {
+			const matches = keys.map(i => {
+				const pred = predicate[i];
+				const val = a[i];
+				if (Array.isArray(pred)) {
+					if (Array.isArray(val)) {
+						if (op === "&&") {
+							return pred.every(p => val.includes(p));
+						} else {
+							return pred.some(p => val.includes(p));
+						}
+					} else if (op === "&&") {
+						return pred.every(p => val === p);
+					} else {
+						return pred.some(p => val === p);
+					}
+				} else if (pred instanceof RegExp) {
+					if (Array.isArray(val)) {
+						if (op === "&&") {
+							return val.every(v => pred.test(v));
+						} else {
+							return val.some(v => pred.test(v));
+						}
+					} else {
+						return pred.test(val);
+					}
+				} else if (Array.isArray(val)) {
+					return val.includes(pred);
+				} else {
+					return val === pred;
+				}
+			});
+			const isMatch = matches.every(Boolean);
+			if (predicate.company === "Insectus" && predicate.tags === "occaecat") {
+				console.log("DEBUG WHERE:", {a, matches, isMatch});
 			}
 
-			return result;
-		}).join(") && (")});`), raw) : [];
+			return isMatch;
+		}, raw);
 	}
+
 }
 
 function haro (data = null, config = {}) {
