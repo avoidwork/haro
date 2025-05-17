@@ -492,9 +492,6 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 				}
 			});
 			const isMatch = matches.every(Boolean);
-			if (predicate.company === "Insectus" && predicate.tags === "occaecat") {
-				console.log("DEBUG WHERE:", {a, matches, isMatch});
-			}
 
 			return isMatch;
 		}, raw);

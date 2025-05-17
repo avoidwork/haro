@@ -498,9 +498,6 @@ class Haro {
 				}
 			});
 			const isMatch = matches.every(Boolean);
-			if (predicate.company === "Insectus" && predicate.tags === "occaecat") {
-				console.log("DEBUG WHERE:", {a, matches, isMatch});
-			}
 
 			return isMatch;
 		}, raw);
