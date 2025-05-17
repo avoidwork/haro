@@ -1,8 +1,26 @@
 # Haro
 
+[![npm version](https://img.shields.io/npm/v/haro.svg)](https://www.npmjs.com/package/haro)
+[![License: BSD-3](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](./LICENSE)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/avoidwork/haro/ci.yml?branch=main)](https://github.com/avoidwork/haro/actions)
+
 **A simple, fast, and flexible way to organize and search your data.**
 
+---
+
 Need a simple way to keep track of information—like contacts, lists, or notes? Haro helps you organize, find, and update your data quickly, whether you’re using it in a website, an app, or just on your computer. It’s like having a super-organized digital assistant for your information.
+
+## Table of Contents
+- [Features](#key-features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Examples](#examples)
+- [API](#api)
+- [Configuration](#configuration)
+- [Contributing](#contributing)
+- [License](#license)
+- [Changelog](#changelog)
+- [Support](#support)
 
 ## Key Features
 - **Easy to use**: Works out of the box, no complicated setup.
@@ -19,39 +37,44 @@ Imagine you have a box of index cards, each with information about a person or t
 - People building websites or apps who want an easy way to manage data.
 - Developers looking for a fast, reliable data storage solution.
 
-## Testing
+## Installation
 
-Haro has 99.6% code coverage with its tests.
+Install with npm:
 
-```console
-----------|---------|----------|---------|---------|------------------------------------------------------------------------------------------
-File      | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                                                                        
-----------|---------|----------|---------|---------|------------------------------------------------------------------------------------------
-All files |   99.63 |    80.56 |     100 |     100 |                                                                                          
- haro.cjs |   99.63 |    80.56 |     100 |     100 | 49-74,80-110,127,163-175,190,225,239,275-295,313,340-341,346-348,362-365,367,419,461,511 
-----------|---------|----------|---------|---------|------------------------------------------------------------------------------------------
+```sh
+npm install haro
+```
+
+Or with yarn:
+
+```sh
+yarn add haro
 ```
 
 ## Usage
-The named export is `haro`, and the named Class exported is `Haro`.
 
-### ES Module
+Haro is available as both an ES module and CommonJS module.
+
+### Import (ESM)
 ```javascript
-import {haro} from 'haro';
+import { haro } from 'haro';
 ```
 
-### CommonJS / node.js
+### Require (CommonJS)
 ```javascript
-const {haro} = require('haro');
+const { haro } = require('haro');
 ```
-### Function parameters
-Haro takes two optional arguments, the first is an `Array` of records to set asynchronously, & the second is a 
-configuration descriptor.
+
+### Creating a Store
+Haro takes two optional arguments: an array of records to set asynchronously, and a configuration object.
 
 ```javascript
 const storeDefaults = haro();
-const storeRecords = haro([{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}]);
-const storeCustom = haro(null, {key: 'id'});
+const storeRecords = haro([
+  { name: 'Alice', age: 30 },
+  { name: 'Bob', age: 28 }
+]);
+const storeCustom = haro(null, { key: 'id' });
 ```
 
 ## Examples
@@ -639,6 +662,24 @@ store.batch(data, 'set');
 console.log(store.where({name: 'John Doe', age: 30})); // [{guid: 'abc', name: 'John Doe', age: 30}]
 ```
 
+## Contributing
+
+Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/avoidwork/haro/issues) or submit a pull request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/my-feature`)
+3. Commit your changes (`git commit -am 'Add new feature'`)
+4. Push to the branch (`git push origin feature/my-feature`)
+5. Open a pull request
+
+## Support
+
+For questions, suggestions, or support, please open an issue on [GitHub](https://github.com/avoidwork/haro/issues), or contact the maintainer.
+
 ## License
-Copyright (c) 2025 Jason Mulligan
-Licensed under the BSD-3 license
+
+This project is licensed under the BSD-3 license - see the [LICENSE](./LICENSE) file for details.
+
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md) for release notes and version history.
