@@ -146,7 +146,7 @@ orders.versions.get(rec[0]).forEach(([data]) => console.log(data));
 // { id: 1001, customer: 'Priya Patel', status: 'processing' }
 // { id: 1001, customer: 'Priya Patel', status: 'shipped' }
 // { id: 1001, customer: 'Priya Patel', status: 'delivered' }
-```
+
 // { note: 'Initial' }
 // { note: 'Updated' }
 ```
