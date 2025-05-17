@@ -61,7 +61,8 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 			enumerable: true,
 			get: () => this.data.size
 		});
-		this.reindex();
+
+		return this.reindex();
 	}
 
 	batch (args, type = STRING_SET) {

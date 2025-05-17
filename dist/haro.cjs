@@ -67,7 +67,8 @@ class Haro {
 			enumerable: true,
 			get: () => this.data.size
 		});
-		this.reindex();
+
+		return this.reindex();
 	}
 
 	batch (args, type = STRING_SET) {
