@@ -1,105 +1,157 @@
-# haro
+# Haro
 
-Haro is a modern immutable DataStore built with ES6 features. It is un-opinionated, and offers a "plug-and-play" solution to modeling, searching, & managing data on the client, or server
-(in RAM). It is a [partially persistent data structure](https://en.wikipedia.org/wiki/Persistent_data_structure), by maintaining version sets of records in `versions` ([MVCC](https://en.wikipedia.org/wiki/Multiversion_concurrency_control)).
+[![npm version](https://img.shields.io/npm/v/haro.svg)](https://www.npmjs.com/package/haro)
+[![License: BSD-3](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](./LICENSE)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/avoidwork/haro/ci.yml?branch=main)](https://github.com/avoidwork/haro/actions)
 
-All methods are synchronous.
+**A simple, fast, and flexible way to organize and search your data.**
 
-Haro indexes have the following structure `Map (field/property) > Map (value) > Set (PKs)` which allow for quick & easy 
-searching, as well as inspection. Indexes can be managed independently of `del()` & `set()` operations, for example you 
-can lazily create new indexes via `reindex(field)`, or `sortBy(field)`.
+---
 
-## Testing
+Need a simple way to keep track of information—like contacts, lists, or notes? Haro helps you organize, find, and update your data quickly, whether you’re using it in a website, an app, or just on your computer. It’s like having a super-organized digital assistant for your information.
 
-Haro has 100% code coverage with its tests.
+## Table of Contents
+- [Features](#key-features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Examples](#examples)
+- [API](#api)
+- [Configuration](#configuration)
+- [Contributing](#contributing)
+- [License](#license)
+- [Changelog](#changelog)
+- [Support](#support)
 
-```console
-----------|---------|----------|---------|---------|-------------------------------------------------------------------------------------------------------
-File      | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                                                                                     
-----------|---------|----------|---------|---------|-------------------------------------------------------------------------------------------------------
-All files |     100 |    83.56 |     100 |     100 |                                                                                                      
- haro.cjs |     100 |    83.56 |     100 |     100 | 49-75,108,163-175,192,224-228,242,264,266,274,308,326,353-354,359-361,375-378,380,437,475,482,486-496
-----------|---------|----------|---------|---------|-------------------------------------------------------------------------------------------------------
+## Key Features
+- **Easy to use**: Works out of the box, no complicated setup.
+- **Very fast**: Quickly finds and updates your information.
+- **Keeps a history**: Remembers changes, so you can see what something looked like before.
+- **Flexible**: Use it for any type of data—contacts, tasks, notes, and more.
+- **Works anywhere**: Use it in your website, app, or server.
+
+## How Does It Work?
+Imagine you have a box of index cards, each with information about a person or thing. Haro helps you sort, search, and update those cards instantly. If you make a change, Haro remembers the old version too. You can ask Haro questions like “Who is named Jane?” or “Show me everyone under 30.”
+
+## Who Is This For?
+- Anyone who needs to keep track of information in an organized way.
+- People building websites or apps who want an easy way to manage data.
+- Developers looking for a fast, reliable data storage solution.
+
+## Installation
+
+Install with npm:
+
+```sh
+npm install haro
+```
+
+Or with yarn:
+
+```sh
+yarn add haro
 ```
 
 ## Usage
-The named export is `haro`, and the named Class exported is `Haro`.
 
-### ES Module
+Haro is available as both an ES module and CommonJS module.
+
+### Import (ESM)
 ```javascript
-import {haro} from 'haro';
+import { haro } from 'haro';
 ```
 
-### CommonJS / node.js
+### Require (CommonJS)
 ```javascript
-const {haro} = require('haro');
+const { haro } = require('haro');
 ```
-### Function parameters
-Haro takes two optional arguments, the first is an `Array` of records to set asynchronously, & the second is a 
-configuration descriptor.
+
+### Creating a Store
+Haro takes two optional arguments: an array of records to set asynchronously, and a configuration object.
 
 ```javascript
 const storeDefaults = haro();
-const storeRecords = haro([{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}]);
-const storeCustom = haro(null, {key: 'id'});
+const storeRecords = haro([
+  { name: 'Alice', age: 30 },
+  { name: 'Bob', age: 28 }
+]);
+const storeCustom = haro(null, { key: 'id' });
 ```
 
 ## Examples
-### Indexes & Searching
+
+### Example 1: Manage a Contact List
 ```javascript
-const store = haro(null, {index: ['name', 'age']}),
-    data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
+import { haro } from 'haro';
 
-const records = store.batch(data, 'set');
+// Create a store with indexes for name and email
+const contacts = haro(null, { index: ['name', 'email'] });
 
-console.log(records[0]); // [$uuid, {name: 'John Doe', age: 30}]
-console.log(store.size); // 2
-console.log(store.find({age: 28})); // [[$uuid, {name: 'Jane Doe', age: 28}]]
-console.log(store.search(/^ja/i, 'name')); // [[$uuid, {name: 'Jane Doe', age: 28}]]
-console.log(store.search(arg => age < 30, 'age')); // [[$uuid, {name: 'Jane Doe', age: 28}]]
+// Add realistic contacts
+contacts.batch([
+  { name: 'Alice Johnson', email: 'alice.j@example.com', company: 'Acme Corp', phone: '555-1234' },
+  { name: 'Carlos Rivera', email: 'carlos.r@example.com', company: 'Rivera Designs', phone: '555-5678' },
+  { name: 'Priya Patel', email: 'priya.p@example.com', company: 'InnovateX', phone: '555-8765' }
+], 'set');
+
+// Find a contact by email
+console.log(contacts.find({ email: 'carlos.r@example.com' }));
+// → [[$uuid, { name: 'Carlos Rivera', email: 'carlos.r@example.com', company: 'Rivera Designs', phone: '555-5678' }]]
+
+// Search contacts by company
+console.log(contacts.search(/^acme/i, 'company'));
+// → [[$uuid, { name: 'Alice Johnson', email: 'alice.j@example.com', company: 'Acme Corp', phone: '555-1234' }]]
+
+// Search contacts with phone numbers ending in '78'
+console.log(contacts.search(phone => phone.endsWith('78'), 'phone'));
+// → [[$uuid, { name: 'Carlos Rivera', ... }]]
 ```
 
-### MVCC versioning
+### Example 2: Track Project Tasks
 ```javascript
-const store = haro();
-let arg;
+import { haro } from 'haro';
 
-arg = store.set(null, {abc: true});
-arg = store.set(arg[0], {abc: false});
-arg = store.set(arg[0], {abc: true});
-store.versions.get(arg[0]).forEach(i => console.log(i[0])); // {abc: true}, {abc: false}
+// Create a store for project tasks, indexed by status and assignee
+const tasks = haro(null, { index: ['status', 'assignee'] });
+
+tasks.batch([
+  { title: 'Design homepage', status: 'in progress', assignee: 'Alice', due: '2025-05-20' },
+  { title: 'Fix login bug', status: 'open', assignee: 'Carlos', due: '2025-05-18' },
+  { title: 'Deploy to production', status: 'done', assignee: 'Priya', due: '2025-05-15' }
+], 'set');
+
+// Find all open tasks
+console.log(tasks.find({ status: 'open' }));
+// → [[$uuid, { title: 'Fix login bug', status: 'open', assignee: 'Carlos', due: '2025-05-18' }]]
+
+// Search tasks assigned to Alice
+console.log(tasks.search('Alice', 'assignee'));
+// → [[$uuid, { title: 'Design homepage', ... }]]
 ```
 
-## Benchmarked
-A benchmark is included in the repository, and is useful for gauging how haro will perform on different hardware, & software.
+### Example 3: Track Order Status Changes (Versioning)
+```javascript
+import { haro } from 'haro';
 
+// Enable versioning for order tracking
+const orders = haro(null, { versioning: true });
+
+// Add a new order and update its status
+let rec = orders.set(null, { id: 1001, customer: 'Priya Patel', status: 'processing' });
+rec = orders.set(rec[0], { id: 1001, customer: 'Priya Patel', status: 'shipped' });
+rec = orders.set(rec[0], { id: 1001, customer: 'Priya Patel', status: 'delivered' });
+
+// See all status changes for the order
+orders.versions.get(rec[0]).forEach(([data]) => console.log(data));
+// Output:
+// { id: 1001, customer: 'Priya Patel', status: 'processing' }
+// { id: 1001, customer: 'Priya Patel', status: 'shipped' }
+// { id: 1001, customer: 'Priya Patel', status: 'delivered' }
+
+// { note: 'Initial' }
+// { note: 'Updated' }
 ```
-time to batch insert data: 6.7825 ms
-datastore record count: 1000
-name indexes: 1000
 
-testing time to 'find()' a record (first one is cold):
-0.063375ms
-0.004583ms
-0.002417ms
-0.003459ms
-0.001916ms
-
-testing time to 'search(regex, index)' for a record (first one is cold):
-0.147792ms
-0.051209ms
-0.050958ms
-0.051125ms
-0.052166ms
-
-time to override data: 0.361709 ms
-testing time to 'search(regex, index)' on overridden data for a record (first one is cold):
-0.053083ms
-0.051916ms
-0.027459ms
-0.0275ms
-0.032292ms
-```
+These examples show how Haro can help you manage contacts, tasks, and keep a history of changes with just a few lines of code.
 
 ## Configuration
 ### beforeBatch
@@ -493,13 +545,17 @@ Indexed `Arrays` which are tested with a `RegExp` will be treated as a comma del
 
 Example of searching with a predicate function:
 ```javascript
-const store = haro(null, {index: ['name', 'age']}),
-   data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
+const store = haro(null, {index: ['department', 'salary']}),
+  employees = [
+    { name: 'Alice Johnson', department: 'Engineering', salary: 120000 },
+    { name: 'Carlos Rivera', department: 'Design', salary: 95000 },
+    { name: 'Priya Patel', department: 'Engineering', salary: 130000 }
+  ];
 
-store.batch(data, 'set')
-console.log(store.search(function (age) {
-  return age < 30;
-}, 'age')); // [[$uuid, {name: 'Jane Doe', age: 28}]]
+store.batch(employees, 'set');
+// Find all employees in Engineering making over $125,000
+console.log(store.search((salary, department) => department === 'Engineering' && salary > 125000, ['salary', 'department']));
+// → [[$uuid, { name: 'Priya Patel', department: 'Engineering', salary: 130000 }]]
 ```
 
 ### set(key, data, batch=false, override=false)
@@ -539,11 +595,16 @@ Returns an `Array` of double `Arrays` with the shape `[key, value]` of records s
 
 Example of sorting by an index:
 ```javascript
-const store = haro(null, {index: ['name', 'age']}),
-   data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
+const store = haro(null, {index: ['priority', 'due']}),
+  tickets = [
+    { title: 'Fix bug #42', priority: 2, due: '2025-05-18' },
+    { title: 'Release v2.0', priority: 1, due: '2025-05-20' },
+    { title: 'Update docs', priority: 3, due: '2025-05-22' }
+  ];
 
-store.batch(data, 'set')
-console.log(store.sortBy('age')); // [[$uuid, {name: 'Jane Doe', age: 28}], [$uuid, {name: 'John Doe', age: 30}]]
+store.batch(tickets, 'set');
+console.log(store.sortBy('priority'));
+// → Sorted by priority ascending
 ```
 
 ### toArray([frozen=true])
@@ -554,10 +615,17 @@ Returns an Array of the DataStore.
 Example of casting to an `Array`:
 ```javascript
 const store = haro(),
-   data = [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}];
+  notes = [
+    { title: 'Call Alice', content: 'Discuss Q2 roadmap.' },
+    { title: 'Email Carlos', content: 'Send project update.' }
+  ];
 
-store.batch(data, 'set')
-console.log(store.toArray()); // [{name: 'John Doe', age: 30}, {name: 'Jane Doe', age: 28}]
+store.batch(notes, 'set');
+console.log(store.toArray());
+// → [
+//   { title: 'Call Alice', content: 'Discuss Q2 roadmap.' },
+//   { title: 'Email Carlos', content: 'Send project update.' }
+// ]
 ```
 
 ### values()
@@ -594,6 +662,24 @@ store.batch(data, 'set');
 console.log(store.where({name: 'John Doe', age: 30})); // [{guid: 'abc', name: 'John Doe', age: 30}]
 ```
 
+## Contributing
+
+Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/avoidwork/haro/issues) or submit a pull request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/my-feature`)
+3. Commit your changes (`git commit -am 'Add new feature'`)
+4. Push to the branch (`git push origin feature/my-feature`)
+5. Open a pull request
+
+## Support
+
+For questions, suggestions, or support, please open an issue on [GitHub](https://github.com/avoidwork/haro/issues), or contact the maintainer.
+
 ## License
-Copyright (c) 2024 Jason Mulligan
-Licensed under the BSD-3 license
+
+This project is licensed under the BSD-3 license - see the [LICENSE](./LICENSE) file for details.
+
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md) for release notes and version history.

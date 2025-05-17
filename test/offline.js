@@ -189,6 +189,47 @@ describe("Read", function () {
 		assert.strictEqual(store.where({company: "Insectus", tags: "aaaaa"}).length, 0, "Should be '0'");
 		assert.strictEqual(store.where({}).length, 0, "Should be '0'");
 	});
+
+	it("should cover all predicate array and RegExp branches in Haro.where", function () {
+		store.batch([
+			{ guid: "a", tags: ["x", "y"], company: "Foo" },
+			{ guid: "b", tags: ["x", "z"], company: "Foo" },
+			{ guid: "c", tags: ["y", "z"], company: "Bar" },
+			{ guid: "d", tags: "z", company: "Bar" },
+			{ guid: "e", tags: "y", company: "Baz" },
+			{ guid: "f", tags: ["x", "y", "z"], company: "Baz" }
+		], "set");
+
+		// pred is array, val is array, op === '&&'
+		assert.deepStrictEqual(
+			store.where({tags: ["x", "y"]}, true, "&&").map(r => r.guid).sort(),
+			["a", "f"],
+			"Array pred/val with && should match only those containing all"
+		);
+
+		// pred is array, val is array, op !== '&&'
+		assert.ok(store.where({tags: ["x", "y"]}, true, "||").some(r => r.guid === "a"), "Array pred/val with || should match at least one");
+
+		// pred is array, val is not array, op === '&&'
+		assert.deepStrictEqual(
+			store.where({tags: ["y", "z"]}, true, "&&").map(r => r.guid).sort(),
+			["c", "f"],
+			"Array pred, non-array val, &&"
+		);
+
+		// pred is array, val is not array, op !== '&&'
+		assert.ok(store.where({tags: ["y", "z"]}, true, "||").some(r => r.guid === "e"), "Array pred, non-array val, ||");
+
+		// pred is RegExp, val is array, op === '&&'
+		assert.deepStrictEqual(
+			store.where({tags: /x|y/, company: "Baz"}, true, "&&").map(r => r.guid).sort(),
+			["e"],
+			"RegExp pred, array val, &&"
+		);
+
+		// pred is RegExp, val is array, op !== '&&'
+		assert.ok(store.where({tags: /x|y/, company: "Baz"}, true, "||").some(r => r.guid === "f"), "RegExp pred, array val, ||");
+	});
 });
 
 describe("Update", function () {
@@ -378,6 +419,17 @@ describe("Reindex", function () {
 	it("should add a missing index when re-indexing", function () {
 		store.set(null, data[0]);
 		store.reindex("latitude");
+	});
+});
+
+describe("Reindex", function () {
+	const store = haro(null, { key: "id", index: ["tags"] });
+
+	it("setIndex branch for missing index key", function () {
+		store.set("1", { id: "1", tags: ["a"] });
+		store.indexes.delete("tags");
+		store.setIndex(["tags"], store.indexes, "|", "1", { id: "1", tags: ["a"] }, "tags");
+		assert.ok(store.indexes.get("tags"));
 	});
 });
 

@@ -2,6 +2,15 @@ import globals from "globals";
 import pluginJs from "@eslint/js";
 
 export default [
+	// Mocha environment for test files
+	{
+		files: ["test/**/*.js"],
+		languageOptions: {
+			globals: {
+				...globals.mocha
+			}
+		}
+	},
 	{
 		languageOptions: {
 			globals: {
