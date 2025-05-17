@@ -1,25 +1,35 @@
-# haro
+# Haro
 
-Haro is a modern immutable DataStore built with ES6 features. It is un-opinionated, and offers a "plug-and-play" solution to modeling, searching, & managing data on the client, or server
-(in RAM). It is a [partially persistent data structure](https://en.wikipedia.org/wiki/Persistent_data_structure), by maintaining version sets of records in `versions` ([MVCC](https://en.wikipedia.org/wiki/Multiversion_concurrency_control)).
+**A simple, fast, and flexible way to organize and search your data.**
 
-All methods are synchronous.
+Need a simple way to keep track of information—like contacts, lists, or notes? Haro helps you organize, find, and update your data quickly, whether you’re using it in a website, an app, or just on your computer. It’s like having a super-organized digital assistant for your information.
 
-Haro indexes have the following structure `Map (field/property) > Map (value) > Set (PKs)` which allow for quick & easy 
-searching, as well as inspection. Indexes can be managed independently of `del()` & `set()` operations, for example you 
-can lazily create new indexes via `reindex(field)`, or `sortBy(field)`.
+## Key Features
+- **Easy to use**: Works out of the box, no complicated setup.
+- **Very fast**: Quickly finds and updates your information.
+- **Keeps a history**: Remembers changes, so you can see what something looked like before.
+- **Flexible**: Use it for any type of data—contacts, tasks, notes, and more.
+- **Works anywhere**: Use it in your website, app, or server.
+
+## How Does It Work?
+Imagine you have a box of index cards, each with information about a person or thing. Haro helps you sort, search, and update those cards instantly. If you make a change, Haro remembers the old version too. You can ask Haro questions like “Who is named Jane?” or “Show me everyone under 30.”
+
+## Who Is This For?
+- Anyone who needs to keep track of information in an organized way.
+- People building websites or apps who want an easy way to manage data.
+- Developers looking for a fast, reliable data storage solution.
 
 ## Testing
 
 Haro has 100% code coverage with its tests.
 
 ```console
-----------|---------|----------|---------|---------|-------------------------------------------------------------------------------------------------------
-File      | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                                                                                     
-----------|---------|----------|---------|---------|-------------------------------------------------------------------------------------------------------
-All files |     100 |    83.56 |     100 |     100 |                                                                                                      
- haro.cjs |     100 |    83.56 |     100 |     100 | 49-75,108,163-175,192,224-228,242,264,266,274,308,326,353-354,359-361,375-378,380,437,475,482,486-496
-----------|---------|----------|---------|---------|-------------------------------------------------------------------------------------------------------
+----------|---------|----------|---------|---------|------------------------------------------------------------------------------------------------------
+File      | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                                                                                    
+----------|---------|----------|---------|---------|------------------------------------------------------------------------------------------------------
+All files |    99.6 |    77.83 |     100 |     100 |                                                                                                      
+ haro.cjs |    99.6 |    77.83 |     100 |     100 | 49-79,85-115,136,171-183,200,236,250,286-306,324,351-352,357-359,373-376,378-381,437,479,486,490-500 
+----------|---------|----------|---------|---------|------------------------------------------------------------------------------------------------------
 ```
 
 ## Usage
