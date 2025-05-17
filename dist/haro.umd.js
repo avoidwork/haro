@@ -49,10 +49,6 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 		this.id = id;
 		this.index = Array.isArray(index) ? [...index] : [];
 		this.indexes = new Map();
-		// Initialize indexes Map for each index key
-		for (const idx of this.index) {
-			this.indexes.set(idx, new Map());
-		}
 		this.key = key;
 		this.versions = new Map();
 		this.versioning = versioning;
@@ -61,13 +57,11 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 			enumerable: true,
 			get: () => Array.from(this.data.keys())
 		});
-
 		Object.defineProperty(this, STRING_SIZE, {
 			enumerable: true,
 			get: () => this.data.size
 		});
-
-		return this.reindex();
+		this.reindex();
 	}
 
 	batch (args, type = STRING_SET) {
@@ -103,21 +97,18 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 	}
 
 	clone (arg) {
-		return JSON.parse(JSON.stringify(arg, null, INT_0));
+		return JSON.parse(JSON.stringify(arg));
 	}
 
 	del (key = STRING_EMPTY, batch = false) {
-		if (this.data.has(key) === false) {
+		if (!this.data.has(key)) {
 			throw new Error(STRING_RECORD_NOT_FOUND);
 		}
-
 		const og = this.get(key, true);
-
 		this.beforeDelete(key, batch);
 		this.delIndex(this.index, this.indexes, this.delimiter, key, og);
 		this.data.delete(key);
 		this.ondelete(key, batch);
-
 		if (this.versioning) {
 			this.versions.delete(key);
 		}
@@ -126,14 +117,14 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 	delIndex (index, indexes, delimiter, key, data) {
 		index.forEach(i => {
 			const idx = indexes.get(i);
-
 			if (!idx) return;
-			this.each(i.includes(delimiter) ? this.indexKeys(i, delimiter, data) : Array.isArray(data[i]) ? data[i] : [data[i]], value => {
+			const values = i.includes(delimiter) ?
+				this.indexKeys(i, delimiter, data) :
+				Array.isArray(data[i]) ? data[i] : [data[i]];
+			this.each(values, value => {
 				if (idx.has(value)) {
 					const o = idx.get(value);
-
 					o.delete(key);
-
 					if (o.size === INT_0) {
 						idx.delete(value);
 					}
@@ -175,13 +166,11 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 	}
 
 	find (where = {}, raw = false) {
-		const key = Object.keys(where).sort((a, b) => a.localeCompare(b)).join(this.delimiter),
-			index = this.indexes.get(key) ?? new Map();
+		const key = Object.keys(where).sort().join(this.delimiter);
+		const index = this.indexes.get(key) ?? new Map();
 		let result = [];
-
 		if (index.size > 0) {
 			const keys = this.indexKeys(key, this.delimiter, where);
-
 			result = Array.from(keys.reduce((a, v) => {
 				if (index.has(v)) {
 					index.get(v).forEach(k => a.add(k));
@@ -198,15 +187,14 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 		if (typeof fn !== STRING_FUNCTION) {
 			throw new Error(STRING_INVALID_FUNCTION);
 		}
+		const x = raw ? (k, v) => v : (k, v) => Object.freeze([k, Object.freeze(v)]);
+		const result = this.reduce((a, v, k, ctx) => {
+			if (fn.call(ctx, v)) {
+				a.push(x(k, v));
+			}
 
-		const x = raw ? (k, v) => v : (k, v) => Object.freeze([k, Object.freeze(v)]),
-			result = this.reduce((a, v, k, ctx) => {
-				if (fn.call(ctx, v)) {
-					a.push(x(k, v));
-				}
-
-				return a;
-			}, []);
+			return a;
+		}, []);
 
 		return raw ? result : Object.freeze(result);
 	}
@@ -371,31 +359,25 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 		if (key === null) {
 			key = data[this.key] ?? this.uuid();
 		}
-
-		let x = { ...data, [this.key]: key };
-
+		let x = {...data, [this.key]: key};
 		this.beforeSet(key, x, batch, override);
-
-		if (this.data.has(key) === false) {
+		if (!this.data.has(key)) {
 			if (this.versioning) {
 				this.versions.set(key, new Set());
 			}
 		} else {
-			let og = this.get(key, true);
+			const og = this.get(key, true);
 			this.delIndex(this.index, this.indexes, this.delimiter, key, og);
-
 			if (this.versioning) {
 				this.versions.get(key).add(Object.freeze(this.clone(og)));
 			}
-
-			if (override === false) {
+			if (!override) {
 				x = this.merge(this.clone(og), x);
 			}
 		}
-
 		this.data.set(key, x);
 		this.setIndex(this.index, this.indexes, this.delimiter, key, x, null);
-		let result = this.get(key);
+		const result = this.get(key);
 		this.onset(result, batch);
 
 		return result;
@@ -404,21 +386,20 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 	setIndex (index, indexes, delimiter, key, data, indice) {
 		this.each(indice === null ? index : [indice], i => {
 			let lindex = indexes.get(i);
-
 			if (!lindex) {
 				lindex = new Map();
 				indexes.set(i, lindex);
 			}
 			if (i.includes(delimiter)) {
 				this.each(this.indexKeys(i, delimiter, data), c => {
-					if (lindex.has(c) === false) {
+					if (!lindex.has(c)) {
 						lindex.set(c, new Set());
 					}
 					lindex.get(c).add(key);
 				});
 			} else {
 				this.each(Array.isArray(data[i]) ? data[i] : [data[i]], d => {
-					if (lindex.has(d) === false) {
+					if (!lindex.has(d)) {
 						lindex.set(d, new Set());
 					}
 					lindex.get(d).add(key);
