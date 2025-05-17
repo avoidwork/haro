@@ -381,6 +381,17 @@ describe("Reindex", function () {
 	});
 });
 
+describe("Reindex", function () {
+	const store = haro(null, { key: "id", index: ["tags"] });
+
+	it("setIndex branch for missing index key", function () {
+		store.set("1", { id: "1", tags: ["a"] });
+		store.indexes.delete("tags");
+		store.setIndex(["tags"], store.indexes, "|", "1", { id: "1", tags: ["a"] }, "tags");
+		assert.ok(store.indexes.get("tags"));
+	});
+});
+
 describe("Sort By", function () {
 	const store = haro(null, {key: "guid"});
 

@@ -1,7 +1,7 @@
 /**
  * haro
  *
- * @copyright 2024 Jason Mulligan <jason.mulligan@avoidwork.com>
+ * @copyright 2025 Jason Mulligan <jason.mulligan@avoidwork.com>
  * @license BSD-3-Clause
  * @version 15.2.5
  */
@@ -43,12 +43,16 @@ function randomUUID () {
 }
 
 const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : randomUUID;class Haro {
-	constructor ({delimiter = STRING_PIPE, id = this.uuid(), index = [], key = STRING_EMPTY, versioning = false} = {}) {
+	constructor ({delimiter = STRING_PIPE, id = this.uuid(), index = [], key = "id", versioning = false} = {}) {
 		this.data = new Map();
 		this.delimiter = delimiter;
 		this.id = id;
-		this.index = index;
+		this.index = Array.isArray(index) ? [...index] : [];
 		this.indexes = new Map();
+		// Initialize indexes Map for each index key
+		for (const idx of this.index) {
+			this.indexes.set(idx, new Map());
+		}
 		this.key = key;
 		this.versions = new Map();
 		this.versioning = versioning;
@@ -77,6 +81,7 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 	}
 
 	beforeClear () {
+		// Hook for custom logic before clear; override in subclass if needed
 	}
 
 	beforeDelete (key = STRING_EMPTY, batch = false) {
@@ -122,6 +127,7 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 		index.forEach(i => {
 			const idx = indexes.get(i);
 
+			if (!idx) return;
 			this.each(i.includes(delimiter) ? this.indexKeys(i, delimiter, data) : Array.isArray(data[i]) ? data[i] : [data[i]], value => {
 				if (idx.has(value)) {
 					const o = idx.get(value);
@@ -260,7 +266,7 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 	merge (a, b, override = false) {
 		if (Array.isArray(a) && Array.isArray(b)) {
 			a = override ? b : a.concat(b);
-		} else if (a instanceof Object && b instanceof Object) {
+		} else if (typeof a === "object" && a !== null && typeof b === "object" && b !== null) {
 			this.each(Object.keys(b), i => {
 				a[i] = this.merge(a[i], b[i], override);
 			});
@@ -276,6 +282,7 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 	}
 
 	onclear () {
+		// Hook for custom logic after clear; override in subclass if needed
 	}
 
 	ondelete (key = STRING_EMPTY, batch = false) {
@@ -365,7 +372,7 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 			key = data[this.key] ?? this.uuid();
 		}
 
-		let x = {...data, [this.key]: key};
+		let x = this.key ? { ...data, [this.key]: key } : { ...data };
 
 		this.beforeSet(key, x, batch, override);
 
@@ -396,14 +403,17 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 
 	setIndex (index, indexes, delimiter, key, data, indice) {
 		this.each(indice === null ? index : [indice], i => {
-			const lindex = indexes.get(i);
+			let lindex = indexes.get(i);
 
+			if (!lindex) {
+				lindex = new Map();
+				indexes.set(i, lindex);
+			}
 			if (i.includes(delimiter)) {
 				this.each(this.indexKeys(i, delimiter, data), c => {
 					if (lindex.has(c) === false) {
 						lindex.set(c, new Set());
 					}
-
 					lindex.get(c).add(key);
 				});
 			} else {
@@ -411,7 +421,6 @@ const uuid = typeof crypto === STRING_OBJECT ? crypto.randomUUID.bind(crypto) : 
 					if (lindex.has(d) === false) {
 						lindex.set(d, new Set());
 					}
-
 					lindex.get(d).add(key);
 				});
 			}
