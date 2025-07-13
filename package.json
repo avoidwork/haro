@@ -46,7 +46,7 @@
   "homepage": "https://github.com/avoidwork/haro",
   "engineStrict": true,
   "engines": {
-    "node": ">=16.7.0"
+    "node": ">=17.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.31.0",
@@ -57,7 +57,6 @@
     "globals": "^16.3.0",
     "husky": "^9.1.7",
     "mocha": "^11.7.1",
-    "precise": "^4.0.3",
     "rollup": "^4.45.0"
   }
 }

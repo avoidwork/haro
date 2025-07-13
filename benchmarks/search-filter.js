@@ -199,7 +199,7 @@ function benchmarkSearchOperations (dataSizes) {
 }
 
 /**
- * Benchmarks WHERE operations with different operators
+ * Benchmarks WHERE operations with different operators and complex predicates
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
@@ -209,7 +209,7 @@ function benchmarkWhereOperations (dataSizes) {
 	dataSizes.forEach(size => {
 		const testData = generateSearchTestData(size);
 		const store = haro(testData, {
-			index: ["department", "skills", "city", "active", "tags"]
+			index: ["department", "skills", "city", "active", "tags", "age", "salary", "department|active", "city|department"]
 		});
 
 		// Simple where operations
@@ -218,11 +218,11 @@ function benchmarkWhereOperations (dataSizes) {
 		});
 		results.push(whereDeptResult);
 
-		// Array where operations with OR
+		// Array where operations with OR (default)
 		const whereArrayOrResult = benchmark(`WHERE array OR operation (${size} records)`, () => {
 			store.where({
 				skills: ["JavaScript", "Python"]
-			}, false, "||");
+			}, "||");
 		});
 		results.push(whereArrayOrResult);
 
@@ -230,9 +230,27 @@ function benchmarkWhereOperations (dataSizes) {
 		const whereArrayAndResult = benchmark(`WHERE array AND operation (${size} records)`, () => {
 			store.where({
 				skills: ["JavaScript", "React"]
-			}, false, "&&");
+			}, "&&");
 		});
 		results.push(whereArrayAndResult);
+
+		// Multiple array fields with OR
+		const whereMultiArrayOrResult = benchmark(`WHERE multiple arrays OR (${size} records)`, () => {
+			store.where({
+				skills: ["JavaScript", "Python"],
+				tags: ["tag0", "tag1"]
+			}, "||");
+		});
+		results.push(whereMultiArrayOrResult);
+
+		// Multiple array fields with AND
+		const whereMultiArrayAndResult = benchmark(`WHERE multiple arrays AND (${size} records)`, () => {
+			store.where({
+				skills: ["JavaScript"],
+				tags: ["tag0"]
+			}, "&&");
+		});
+		results.push(whereMultiArrayAndResult);
 
 		// Regex where operations
 		const whereRegexResult = benchmark(`WHERE with regex (${size} records)`, () => {
@@ -242,8 +260,17 @@ function benchmarkWhereOperations (dataSizes) {
 		});
 		results.push(whereRegexResult);
 
-		// Complex where operations
-		const whereComplexResult = benchmark(`WHERE complex conditions (${size} records)`, () => {
+		// Multiple regex patterns
+		const whereMultiRegexResult = benchmark(`WHERE multiple regex (${size} records)`, () => {
+			store.where({
+				department: /^(Engineering|Marketing)$/,
+				city: /^(New|San)/
+			});
+		});
+		results.push(whereMultiRegexResult);
+
+		// Complex where operations with mixed types
+		const whereComplexResult = benchmark(`WHERE complex mixed conditions (${size} records)`, () => {
 			store.where({
 				department: "Engineering",
 				active: true,
@@ -251,6 +278,52 @@ function benchmarkWhereOperations (dataSizes) {
 			});
 		});
 		results.push(whereComplexResult);
+
+		// Very complex where with all predicate types
+		const whereVeryComplexResult = benchmark(`WHERE very complex predicates (${size} records)`, () => {
+			store.where({
+				department: ["Engineering", "Marketing"],
+				active: true,
+				skills: ["JavaScript", "Python"],
+				city: /^(New|San)/
+			}, "||");
+		});
+		results.push(whereVeryComplexResult);
+
+		// Nested field matching (if metadata fields are indexed)
+		const whereNestedResult = benchmark(`WHERE nested field matching (${size} records)`, () => {
+			store.where({
+				department: "Engineering",
+				tags: ["tag0", "tag1"]
+			});
+		});
+		results.push(whereNestedResult);
+
+		// Performance comparison: where vs filter for same conditions
+		const whereVsFilterResult = benchmark(`WHERE vs FILTER comparison (${size} records)`, () => {
+			const wherePredicate = { department: "Engineering", active: true };
+			const whereResults = store.where(wherePredicate);
+			const filterResults = store.filter(record =>
+				record.department === "Engineering" && record.active === true
+			);
+
+			return { whereCount: whereResults.length, filterCount: filterResults.length };
+		});
+		results.push(whereVsFilterResult);
+
+		// Edge case: empty predicate
+		const whereEmptyResult = benchmark(`WHERE empty predicate (${size} records)`, () => {
+			store.where({});
+		});
+		results.push(whereEmptyResult);
+
+		// Edge case: non-indexed field
+		const whereNonIndexedResult = benchmark(`WHERE non-indexed field (${size} records)`, () => {
+			store.where({
+				email: "user0@example.com"
+			});
+		});
+		results.push(whereNonIndexedResult);
 	});
 
 	return results;

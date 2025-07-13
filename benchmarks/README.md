@@ -11,6 +11,10 @@ The benchmark suite consists of several modules that test different aspects of H
 - **Index Operations** - Indexing performance and benefits
 - **Memory Usage** - Memory consumption patterns and efficiency
 - **Comparison** - Performance vs native JavaScript structures
+- **Utility Operations** - Helper methods (clone, merge, freeze, forEach, uuid)
+- **Pagination** - Limit-based pagination performance
+- **Persistence** - Dump/override operations for data serialization
+- **Immutable Comparison** - Performance comparison between mutable and immutable modes
 
 ## Quick Start
 
@@ -38,6 +42,27 @@ node benchmarks/index.js --memory-only
 # Run only comparison benchmarks
 node benchmarks/index.js --comparison-only
 
+# Run only utility operations benchmarks
+node benchmarks/index.js --utilities-only
+
+# Run only pagination benchmarks
+node benchmarks/index.js --pagination-only
+
+# Run only persistence benchmarks
+node benchmarks/index.js --persistence-only
+
+# Run only immutable vs mutable comparison
+node benchmarks/index.js --immutable-only
+
+# Run only core benchmarks (basic, search, index)
+node benchmarks/index.js --core-only
+
+# Run only advanced benchmarks (memory, comparison, utilities, etc.)
+node benchmarks/index.js --advanced-only
+
+# Exclude specific benchmarks
+node benchmarks/index.js --no-memory --no-persistence
+
 # Run quietly (minimal output)
 node benchmarks/index.js --quiet
 ```
@@ -59,6 +84,18 @@ node benchmarks/memory-usage.js
 
 # Performance comparisons
 node benchmarks/comparison.js
+
+# Utility operations
+node benchmarks/utility-operations.js
+
+# Pagination benchmarks
+node benchmarks/pagination.js
+
+# Persistence operations
+node benchmarks/persistence.js
+
+# Immutable vs mutable comparison
+node benchmarks/immutable-comparison.js
 ```
 
 ## Benchmark Categories
@@ -153,6 +190,79 @@ Compares Haro performance with native JavaScript structures:
 - Sorting operations
 - Memory usage
 
+### 6. Utility Operations (`utility-operations.js`)
+
+Tests performance of helper and utility methods:
+
+- **CLONE operations**: Deep cloning of objects and arrays
+- **MERGE operations**: Object and array merging with different strategies
+- **FREEZE operations**: Object freezing for immutability
+- **forEach operations**: Iteration with different callback complexities
+- **UUID operations**: UUID generation and uniqueness testing
+
+**Data Sizes Tested**: 100, 1,000, 5,000 records
+
+**Key Features Tested**:
+- Simple vs complex object cloning
+- Array vs object merging strategies
+- Performance vs safety trade-offs
+- UUID generation rates and uniqueness
+
+### 7. Pagination (`pagination.js`)
+
+Tests pagination and data limiting performance:
+
+- **LIMIT operations**: Basic pagination with different page sizes
+- **OFFSET operations**: Performance across different offset positions
+- **PAGE SIZE optimization**: Finding optimal page sizes
+- **SEQUENTIAL pagination**: Simulating real browsing patterns
+- **COMBINED operations**: Pagination with filtering and sorting
+
+**Data Sizes Tested**: 1,000, 10,000, 50,000 records
+
+**Key Features Tested**:
+- Small vs large page sizes
+- First page vs middle vs last page performance
+- Memory efficiency of chunked vs full data access
+- Integration with query operations
+
+### 8. Persistence (`persistence.js`)
+
+Tests data serialization and restoration performance:
+
+- **DUMP operations**: Exporting records and indexes
+- **OVERRIDE operations**: Importing and restoring data
+- **ROUND-TRIP operations**: Complete export/import cycles
+- **COMPLEX objects**: Performance with nested data structures
+- **MEMORY efficiency**: Memory usage during persistence operations
+
+**Data Sizes Tested**: 100, 1,000, 5,000 records
+
+**Key Features Tested**:
+- Records vs indexes export/import
+- Data integrity validation
+- Memory impact of persistence operations
+- Complex object serialization performance
+
+### 9. Immutable Comparison (`immutable-comparison.js`)
+
+Compares performance between immutable and mutable modes:
+
+- **STORE CREATION**: Setup performance comparison
+- **CRUD operations**: Create, Read, Update, Delete in both modes
+- **QUERY operations**: Find, filter, search, where performance
+- **TRANSFORMATION**: Map, reduce, sort, forEach comparison
+- **MEMORY usage**: Memory consumption patterns
+- **DATA SAFETY**: Mutation protection analysis
+
+**Data Sizes Tested**: 100, 1,000, 5,000 records
+
+**Key Features Tested**:
+- Performance vs safety trade-offs
+- Memory overhead of immutable mode
+- Operation-specific performance differences
+- Data protection effectiveness
+
 ## Understanding Results
 
 ### Performance Metrics
@@ -191,7 +301,14 @@ node --expose-gc benchmarks/memory-usage.js
 Modify the `dataSizes` array in each benchmark file to test different data volumes:
 
 ```javascript
+// For basic operations and queries
 const dataSizes = [100, 1000, 10000, 50000, 100000];
+
+// For memory-intensive tests
+const dataSizes = [100, 1000, 5000];
+
+// For complex operations like persistence
+const dataSizes = [50, 500, 2000];
 ```
 
 ### Performance Optimization
@@ -203,6 +320,11 @@ Based on benchmark results, consider these optimizations:
 3. **Use batch operations** for bulk data operations
 4. **Enable versioning** only when needed
 5. **Consider memory limits** for large datasets
+6. **Use immutable mode** for data safety in multi-consumer environments
+7. **Implement pagination** for large result sets using `limit()`
+8. **Use utility methods** (clone, merge, freeze) for safe data manipulation
+9. **Consider persistence** for data backup and restoration needs
+10. **Optimize WHERE queries** with proper indexing and operators
 
 ## Interpreting Results
 

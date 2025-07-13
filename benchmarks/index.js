@@ -3,6 +3,10 @@ import { runSearchFilterBenchmarks } from "./search-filter.js";
 import { runIndexOperationsBenchmarks } from "./index-operations.js";
 import { runMemoryBenchmarks } from "./memory-usage.js";
 import { runComparisonBenchmarks } from "./comparison.js";
+import { runUtilityOperationsBenchmarks } from "./utility-operations.js";
+import { runPaginationBenchmarks } from "./pagination.js";
+import { runPersistenceBenchmarks } from "./persistence.js";
+import { runImmutableComparisonBenchmarks } from "./immutable-comparison.js";
 
 /**
  * Formats duration in milliseconds to human-readable format
@@ -25,7 +29,7 @@ function formatDuration (ms) {
  * @returns {Object} Summary report
  */
 function generateSummaryReport (results) {
-	const { basicOps, searchFilter, indexOps, memory, comparison } = results;
+	const { basicOps, searchFilter, indexOps, memory, comparison, utilities, pagination, persistence, immutableComparison } = results;
 
 	const summary = {
 		totalTests: 0,
@@ -111,6 +115,42 @@ function generateSummaryReport (results) {
 		};
 	}
 
+	// Process utility operations
+	if (utilities && utilities.length > 0) {
+		summary.categories.utilityOperations = {
+			testCount: utilities.length,
+			totalTime: utilities.reduce((sum, test) => sum + test.totalTime, 0),
+			avgOpsPerSecond: utilities.reduce((sum, test) => sum + test.opsPerSecond, 0) / utilities.length
+		};
+	}
+
+	// Process pagination results
+	if (pagination && pagination.length > 0) {
+		summary.categories.pagination = {
+			testCount: pagination.length,
+			totalTime: pagination.reduce((sum, test) => sum + test.totalTime, 0),
+			avgOpsPerSecond: pagination.reduce((sum, test) => sum + test.opsPerSecond, 0) / pagination.length
+		};
+	}
+
+	// Process persistence results
+	if (persistence && persistence.length > 0) {
+		summary.categories.persistence = {
+			testCount: persistence.length,
+			totalTime: persistence.reduce((sum, test) => sum + test.totalTime, 0),
+			avgOpsPerSecond: persistence.filter(test => test.opsPerSecond > 0).reduce((sum, test) => sum + test.opsPerSecond, 0) / persistence.filter(test => test.opsPerSecond > 0).length || 0
+		};
+	}
+
+	// Process immutable comparison results
+	if (immutableComparison && immutableComparison.length > 0) {
+		summary.categories.immutableComparison = {
+			testCount: immutableComparison.length,
+			totalTime: immutableComparison.reduce((sum, test) => sum + test.totalTime, 0),
+			avgOpsPerSecond: immutableComparison.filter(test => test.opsPerSecond > 0).reduce((sum, test) => sum + test.opsPerSecond, 0) / immutableComparison.filter(test => test.opsPerSecond > 0).length || 0
+		};
+	}
+
 	// Calculate totals
 	summary.totalTests = Object.values(summary.categories).reduce((sum, cat) => sum + cat.testCount, 0);
 	summary.totalTime = Object.values(summary.categories).reduce((sum, cat) => sum + cat.totalTime, 0);
@@ -136,6 +176,22 @@ function generateSummaryReport (results) {
 
 	if (summary.categories.comparison) {
 		summary.recommendations.push("📊 Review comparison results to understand trade-offs vs native structures");
+	}
+
+	if (summary.categories.utilityOperations && summary.categories.utilityOperations.avgOpsPerSecond > 1000) {
+		summary.recommendations.push("✅ Utility operations (clone, merge, freeze) perform well");
+	}
+
+	if (summary.categories.pagination && summary.categories.pagination.avgOpsPerSecond > 100) {
+		summary.recommendations.push("✅ Pagination performance is suitable for typical UI requirements");
+	}
+
+	if (summary.categories.persistence) {
+		summary.recommendations.push("💾 Persistence operations available for data serialization needs");
+	}
+
+	if (summary.categories.immutableComparison) {
+		summary.recommendations.push("🔒 Review immutable vs mutable comparison for data safety vs performance trade-offs");
 	}
 
 	return summary;
@@ -205,6 +261,10 @@ async function runAllBenchmarks (options = {}) {
 		includeIndex = true,
 		includeMemory = true,
 		includeComparison = true,
+		includeUtilities = true,
+		includePagination = true,
+		includePersistence = true,
+		includeImmutableComparison = true,
 		verbose = true
 	} = options;
 
@@ -254,6 +314,34 @@ async function runAllBenchmarks (options = {}) {
 			if (verbose) console.log("✅ Comparison benchmarks completed\n");
 		}
 
+		// Run utility operations benchmarks
+		if (includeUtilities) {
+			if (verbose) console.log("⏳ Running utility operations benchmarks...");
+			results.utilities = runUtilityOperationsBenchmarks();
+			if (verbose) console.log("✅ Utility operations benchmarks completed\n");
+		}
+
+		// Run pagination benchmarks
+		if (includePagination) {
+			if (verbose) console.log("⏳ Running pagination benchmarks...");
+			results.pagination = runPaginationBenchmarks();
+			if (verbose) console.log("✅ Pagination benchmarks completed\n");
+		}
+
+		// Run persistence benchmarks
+		if (includePersistence) {
+			if (verbose) console.log("⏳ Running persistence benchmarks...");
+			results.persistence = runPersistenceBenchmarks();
+			if (verbose) console.log("✅ Persistence benchmarks completed\n");
+		}
+
+		// Run immutable vs mutable comparison benchmarks
+		if (includeImmutableComparison) {
+			if (verbose) console.log("⏳ Running immutable vs mutable comparison benchmarks...");
+			results.immutableComparison = runImmutableComparisonBenchmarks();
+			if (verbose) console.log("✅ Immutable vs mutable comparison benchmarks completed\n");
+		}
+
 		const endTime = Date.now();
 		const totalDuration = endTime - startTime;
 
@@ -285,63 +373,150 @@ function parseCliArguments () {
 		includeIndex: true,
 		includeMemory: true,
 		includeComparison: true,
+		includeUtilities: true,
+		includePagination: true,
+		includePersistence: true,
+		includeImmutableComparison: true,
 		verbose: true
+	};
+
+	// Helper function to disable all categories except the specified one
+	const runOnlyCategory = category => {
+		Object.keys(options).forEach(key => {
+			if (key.startsWith("include") && key !== category) {
+				options[key] = false;
+			}
+		});
 	};
 
 	args.forEach(arg => {
 		switch (arg) { // eslint-disable-line default-case
 			case "--basic-only":
-				options.includeSearch = false;
-				options.includeIndex = false;
-				options.includeMemory = false;
-				options.includeComparison = false;
+				runOnlyCategory("includeBasic");
 				break;
 			case "--search-only":
-				options.includeBasic = false;
-				options.includeIndex = false;
-				options.includeMemory = false;
-				options.includeComparison = false;
+				runOnlyCategory("includeSearch");
 				break;
 			case "--index-only":
-				options.includeBasic = false;
-				options.includeSearch = false;
-				options.includeMemory = false;
-				options.includeComparison = false;
+				runOnlyCategory("includeIndex");
 				break;
 			case "--memory-only":
-				options.includeBasic = false;
-				options.includeSearch = false;
-				options.includeIndex = false;
-				options.includeComparison = false;
+				runOnlyCategory("includeMemory");
 				break;
 			case "--comparison-only":
+				runOnlyCategory("includeComparison");
+				break;
+			case "--utilities-only":
+				runOnlyCategory("includeUtilities");
+				break;
+			case "--pagination-only":
+				runOnlyCategory("includePagination");
+				break;
+			case "--persistence-only":
+				runOnlyCategory("includePersistence");
+				break;
+			case "--immutable-only":
+				runOnlyCategory("includeImmutableComparison");
+				break;
+			case "--core-only":
+				// Run only core benchmarks (basic, search, index)
+				options.includeMemory = false;
+				options.includeComparison = false;
+				options.includeUtilities = false;
+				options.includePagination = false;
+				options.includePersistence = false;
+				options.includeImmutableComparison = false;
+				break;
+			case "--advanced-only":
+				// Run only advanced benchmarks
 				options.includeBasic = false;
 				options.includeSearch = false;
 				options.includeIndex = false;
+				break;
+			case "--no-basic":
+				options.includeBasic = false;
+				break;
+			case "--no-search":
+				options.includeSearch = false;
+				break;
+			case "--no-index":
+				options.includeIndex = false;
+				break;
+			case "--no-memory":
 				options.includeMemory = false;
+				break;
+			case "--no-comparison":
+				options.includeComparison = false;
+				break;
+			case "--no-utilities":
+				options.includeUtilities = false;
+				break;
+			case "--no-pagination":
+				options.includePagination = false;
+				break;
+			case "--no-persistence":
+				options.includePersistence = false;
+				break;
+			case "--no-immutable":
+				options.includeImmutableComparison = false;
 				break;
 			case "--quiet":
 				options.verbose = false;
 				break;
 			case "--help":
 				console.log(`
-Haro Benchmark Suite
+Haro Benchmark Suite v16.0.0
 
 Usage: node benchmarks/index.js [options]
 
-Options:
-  --basic-only      Run only basic operations benchmarks
-  --search-only     Run only search and filter benchmarks  
-  --index-only      Run only index operations benchmarks
-  --memory-only     Run only memory usage benchmarks
-  --comparison-only Run only comparison benchmarks
-  --quiet           Suppress verbose output
-  --help            Show this help message
+SINGLE CATEGORY OPTIONS:
+  --basic-only           Run only basic CRUD operations benchmarks
+  --search-only          Run only search and filter benchmarks  
+  --index-only           Run only index operations benchmarks
+  --memory-only          Run only memory usage benchmarks
+  --comparison-only      Run only vs native structures benchmarks
+  --utilities-only       Run only utility operations benchmarks (clone, merge, freeze, etc.)
+  --pagination-only      Run only pagination/limit benchmarks
+  --persistence-only     Run only dump/override persistence benchmarks
+  --immutable-only       Run only immutable vs mutable comparison benchmarks
+
+CATEGORY GROUP OPTIONS:
+  --core-only            Run only core benchmarks (basic, search, index)
+  --advanced-only        Run only advanced benchmarks (memory, comparison, utilities, etc.)
+
+EXCLUSION OPTIONS:
+  --no-basic             Exclude basic operations benchmarks
+  --no-search            Exclude search and filter benchmarks
+  --no-index             Exclude index operations benchmarks  
+  --no-memory            Exclude memory usage benchmarks
+  --no-comparison        Exclude comparison benchmarks
+  --no-utilities         Exclude utility operations benchmarks
+  --no-pagination        Exclude pagination benchmarks
+  --no-persistence       Exclude persistence benchmarks
+  --no-immutable         Exclude immutable vs mutable benchmarks
+
+OUTPUT OPTIONS:
+  --quiet                Suppress verbose output
+  --help                 Show this help message
+
+BENCHMARK CATEGORIES:
+  Basic Operations       CRUD operations (set, get, delete, batch)
+  Search & Filter        Query operations (find, filter, search, where)
+  Index Operations       Indexing performance and benefits
+  Memory Usage           Memory consumption and efficiency analysis
+  Comparison             Performance vs native JavaScript structures
+  Utility Operations     Helper methods (clone, merge, freeze, forEach, uuid)
+  Pagination             Limit-based pagination performance
+  Persistence            Dump/override operations for data serialization
+  Immutable Comparison   Performance comparison between mutable and immutable modes
 
 Examples:
   node benchmarks/index.js                    # Run all benchmarks
   node benchmarks/index.js --basic-only       # Run basic operations only
+  node benchmarks/index.js --core-only        # Run core benchmarks only
+  node benchmarks/index.js --no-memory        # Run all except memory benchmarks
   node benchmarks/index.js --quiet            # Run all benchmarks quietly
+  node benchmarks/index.js --utilities-only   # Test utility methods only
         `);
 				process.exit(0);
 				break;
