@@ -17,9 +17,10 @@
     "types/haro.d.ts"
   ],
   "scripts": {
+    "benchmark": "node benchmarks/index.js",
     "build": "npm run lint && npm run rollup",
     "changelog": "auto-changelog -p",
-    "lint": "eslint --fix *.js src/*.js tests/**/*.js",
+    "lint": "eslint --fix *.js benchmarks/*.js src/*.js tests/**/*.js",
     "mocha": "c8 mocha tests/**/*.js",
     "rollup": "rollup --config",
     "test": "npm run lint && npm run mocha",
