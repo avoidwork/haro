@@ -43,6 +43,22 @@ describe("Searching and Filtering", () => {
 			const results = store.search(null);
 			assert.strictEqual(results.length, 0);
 		});
+
+		it("should return frozen results in immutable mode with raw=false", () => {
+			const immutableStore = new Haro({
+				index: ["name", "tags"],
+				immutable: true
+			});
+
+			immutableStore.set("user1", {id: "user1", name: "Alice", tags: ["admin"]});
+			immutableStore.set("user2", {id: "user2", name: "Bob", tags: ["user"]});
+
+			// Call search with raw=false (default) and immutable=true to cover lines 695-696
+			const results = immutableStore.search("Alice", "name", false);
+			assert.strictEqual(Object.isFrozen(results), true, "Search results should be frozen in immutable mode");
+			assert.strictEqual(results.length, 1);
+			assert.strictEqual(results[0][1].name, "Alice");
+		});
 	});
 
 	describe("filter()", () => {
