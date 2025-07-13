@@ -16,7 +16,8 @@ export default [
 			globals: {
 				...globals.node,
 				it: true,
-				describe: true
+				describe: true,
+				crypto: true
 			},
 			parserOptions: {
 				ecmaVersion: 2022

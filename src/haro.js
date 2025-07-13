@@ -1,4 +1,4 @@
-import {uuid} from "./uuid.js";
+import {randomUUID as uuid} from "crypto";
 import {
 	INT_0,
 	STRING_COMMA,
