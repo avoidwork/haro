@@ -18,7 +18,21 @@ import {
 	STRING_SIZE
 } from "./constants.js";
 
+/**
+ * Haro is a modern immutable DataStore for collections of records
+ * @class
+ */
 export class Haro {
+	/**
+	 * Creates a new Haro instance
+	 * @param {Object} [config={}] - Configuration object
+	 * @param {string} [config.delimiter=STRING_PIPE] - Delimiter for composite indexes
+	 * @param {string} [config.id=this.uuid()] - Unique identifier for this instance
+	 * @param {Array} [config.index=[]] - Array of field names to index
+	 * @param {string} [config.key="id"] - Primary key field name
+	 * @param {boolean} [config.versioning=false] - Enable versioning of records
+	 * @constructor
+	 */
 	constructor ({delimiter = STRING_PIPE, id = this.uuid(), index = [], key = "id", versioning = false} = {}) {
 		this.data = new Map();
 		this.delimiter = delimiter;
@@ -41,28 +55,59 @@ export class Haro {
 		return this.reindex();
 	}
 
+	/**
+	 * Performs batch operations on multiple records
+	 * @param {Array} args - Array of records to process
+	 * @param {string} [type=STRING_SET] - Type of operation (SET or DEL)
+	 * @returns {Array} Array of results from the batch operation
+	 */
 	batch (args, type = STRING_SET) {
 		const fn = type === STRING_DEL ? i => this.del(i, true) : i => this.set(null, i, true, true);
 
 		return this.onbatch(this.beforeBatch(args, type).map(fn), type);
 	}
 
+	/**
+	 * Hook for custom logic before batch operations
+	 * @param {*} arg - Arguments passed to batch operation
+	 * @param {string} [type=STRING_EMPTY] - Type of batch operation
+	 * @returns {*} Modified arguments
+	 */
 	beforeBatch (arg, type = STRING_EMPTY) { // eslint-disable-line no-unused-vars
 		return arg;
 	}
 
+	/**
+	 * Hook for custom logic before clear operation
+	 */
 	beforeClear () {
 		// Hook for custom logic before clear; override in subclass if needed
 	}
 
+	/**
+	 * Hook for custom logic before delete operation
+	 * @param {string} [key=STRING_EMPTY] - Key of record to delete
+	 * @param {boolean} [batch=false] - Whether this is part of a batch operation
+	 * @returns {Array} Array containing key and batch flag
+	 */
 	beforeDelete (key = STRING_EMPTY, batch = false) {
 		return [key, batch];
 	}
 
+	/**
+	 * Hook for custom logic before set operation
+	 * @param {string} [key=STRING_EMPTY] - Key of record to set
+	 * @param {boolean} [batch=false] - Whether this is part of a batch operation
+	 * @returns {Array} Array containing key and batch flag
+	 */
 	beforeSet (key = STRING_EMPTY, batch = false) {
 		return [key, batch];
 	}
 
+	/**
+	 * Clears all data from the store
+	 * @returns {Haro} This instance for method chaining
+	 */
 	clear () {
 		this.beforeClear();
 		this.data.clear();
@@ -73,10 +118,21 @@ export class Haro {
 		return this;
 	}
 
+	/**
+	 * Creates a deep clone of the given argument
+	 * @param {*} arg - Value to clone
+	 * @returns {*} Deep clone of the argument
+	 */
 	clone (arg) {
 		return JSON.parse(JSON.stringify(arg));
 	}
 
+	/**
+	 * Deletes a record from the store
+	 * @param {string} [key=STRING_EMPTY] - Key of record to delete
+	 * @param {boolean} [batch=false] - Whether this is part of a batch operation
+	 * @throws {Error} Throws error if record not found
+	 */
 	del (key = STRING_EMPTY, batch = false) {
 		if (!this.data.has(key)) {
 			throw new Error(STRING_RECORD_NOT_FOUND);
@@ -91,6 +147,14 @@ export class Haro {
 		}
 	}
 
+	/**
+	 * Removes entries from indexes for a deleted record
+	 * @param {Array} index - Array of index names
+	 * @param {Map} indexes - Map of indexes
+	 * @param {string} delimiter - Delimiter for composite indexes
+	 * @param {string} key - Key of record being deleted
+	 * @param {Object} data - Data of record being deleted
+	 */
 	delIndex (index, indexes, delimiter, key, data) {
 		index.forEach(i => {
 			const idx = indexes.get(i);
@@ -110,6 +174,11 @@ export class Haro {
 		});
 	}
 
+	/**
+	 * Exports data or indexes from the store
+	 * @param {string} [type=STRING_RECORDS] - Type of data to dump (RECORDS or INDEXES)
+	 * @returns {Array} Array of records or indexes
+	 */
 	dump (type = STRING_RECORDS) {
 		let result;
 
@@ -130,6 +199,12 @@ export class Haro {
 		return result;
 	}
 
+	/**
+	 * Utility method to iterate over an array
+	 * @param {Array} [arr=[]] - Array to iterate over
+	 * @param {Function} fn - Function to call for each element
+	 * @returns {Array} The original array
+	 */
 	each (arr = [], fn) {
 		for (const [idx, value] of arr.entries()) {
 			fn(value, idx);
@@ -138,10 +213,20 @@ export class Haro {
 		return arr;
 	}
 
+	/**
+	 * Returns an iterator of [key, value] pairs for each element in the data
+	 * @returns {Iterator} Iterator of entries
+	 */
 	entries () {
 		return this.data.entries();
 	}
 
+	/**
+	 * Finds records matching the given criteria using indexes
+	 * @param {Object} [where={}] - Object with field-value pairs to match
+	 * @param {boolean} [raw=false] - Whether to return raw data or frozen records
+	 * @returns {Array} Array of matching records
+	 */
 	find (where = {}, raw = false) {
 		const key = Object.keys(where).sort((a, b) => a.localeCompare(b)).join(this.delimiter);
 		const index = this.indexes.get(key) ?? new Map();
@@ -160,6 +245,13 @@ export class Haro {
 		return raw ? result : this.list(...result);
 	}
 
+	/**
+	 * Filters records using a predicate function
+	 * @param {Function} fn - Predicate function to test each record
+	 * @param {boolean} [raw=false] - Whether to return raw data or frozen records
+	 * @returns {Array} Array of records that pass the predicate
+	 * @throws {Error} Throws error if fn is not a function
+	 */
 	filter (fn, raw = false) {
 		if (typeof fn !== STRING_FUNCTION) {
 			throw new Error(STRING_INVALID_FUNCTION);
@@ -176,22 +268,46 @@ export class Haro {
 		return raw ? result : Object.freeze(result);
 	}
 
+	/**
+	 * Executes a function for each record in the store
+	 * @param {Function} fn - Function to execute for each record
+	 * @param {*} [ctx] - Context to use as 'this' when executing the function
+	 * @returns {Haro} This instance for method chaining
+	 */
 	forEach (fn, ctx) {
 		this.data.forEach((value, key) => fn(this.clone(value), this.clone(key)), ctx ?? this.data);
 
 		return this;
 	}
 
+	/**
+	 * Gets a record by key
+	 * @param {string} key - Key of record to retrieve
+	 * @param {boolean} [raw=false] - Whether to return raw data or frozen record
+	 * @returns {*} The record or null if not found
+	 */
 	get (key, raw = false) {
 		const result = this.clone(this.data.get(key) ?? null);
 
 		return raw ? result : this.list(key, result);
 	}
 
+	/**
+	 * Checks if a key exists in the store
+	 * @param {string} key - Key to check
+	 * @returns {boolean} True if key exists, false otherwise
+	 */
 	has (key) {
 		return this.data.has(key);
 	}
 
+	/**
+	 * Generates index keys for composite indexes
+	 * @param {string} [arg=STRING_EMPTY] - Composite index field names joined by delimiter
+	 * @param {string} [delimiter=STRING_PIPE] - Delimiter used in composite index
+	 * @param {Object} [data={}] - Data object to extract values from
+	 * @returns {Array} Array of index keys
+	 */
 	indexKeys (arg = STRING_EMPTY, delimiter = STRING_PIPE, data = {}) {
 		return arg.split(delimiter).reduce((a, li, lidx) => {
 			const result = [];
@@ -202,20 +318,43 @@ export class Haro {
 		}, []);
 	}
 
+	/**
+	 * Returns an iterator of keys in the store
+	 * @returns {Iterator} Iterator of keys
+	 */
 	keys () {
 		return this.data.keys();
 	}
 
+	/**
+	 * Returns a limited number of records with offset
+	 * @param {number} [offset=INT_0] - Number of records to skip
+	 * @param {number} [max=INT_0] - Maximum number of records to return
+	 * @param {boolean} [raw=false] - Whether to return raw data or frozen records
+	 * @returns {Array} Array of records
+	 */
 	limit (offset = INT_0, max = INT_0, raw = false) {
 		const result = this.registry.slice(offset, offset + max).map(i => this.get(i, raw));
 
 		return raw ? result : this.list(...result);
 	}
 
+	/**
+	 * Creates a frozen array from the given arguments
+	 * @param {...*} args - Arguments to freeze into an array
+	 * @returns {Array} Frozen array of frozen arguments
+	 */
 	list (...args) {
 		return Object.freeze(args.map(i => Object.freeze(i)));
 	}
 
+	/**
+	 * Maps over all records in the store
+	 * @param {Function} fn - Function to apply to each record
+	 * @param {boolean} [raw=false] - Whether to return raw data or frozen records
+	 * @returns {Array} Array of mapped results
+	 * @throws {Error} Throws error if fn is not a function
+	 */
 	map (fn, raw = false) {
 		if (typeof fn !== STRING_FUNCTION) {
 			throw new Error(STRING_INVALID_FUNCTION);
@@ -228,6 +367,13 @@ export class Haro {
 		return raw ? result : this.list(...result);
 	}
 
+	/**
+	 * Merges two values together
+	 * @param {*} a - First value
+	 * @param {*} b - Second value
+	 * @param {boolean} [override=false] - Whether to override arrays instead of concatenating
+	 * @returns {*} Merged result
+	 */
 	merge (a, b, override = false) {
 		if (Array.isArray(a) && Array.isArray(b)) {
 			a = override ? b : a.concat(b);
@@ -242,26 +388,59 @@ export class Haro {
 		return a;
 	}
 
+	/**
+	 * Hook for custom logic after batch operations
+	 * @param {*} arg - Result of batch operation
+	 * @param {string} [type=STRING_EMPTY] - Type of batch operation
+	 * @returns {*} Modified result
+	 */
 	onbatch (arg, type = STRING_EMPTY) { // eslint-disable-line no-unused-vars
 		return arg;
 	}
 
+	/**
+	 * Hook for custom logic after clear operation
+	 */
 	onclear () {
 		// Hook for custom logic after clear; override in subclass if needed
 	}
 
+	/**
+	 * Hook for custom logic after delete operation
+	 * @param {string} [key=STRING_EMPTY] - Key of deleted record
+	 * @param {boolean} [batch=false] - Whether this was part of a batch operation
+	 * @returns {Array} Array containing key and batch flag
+	 */
 	ondelete (key = STRING_EMPTY, batch = false) {
 		return [key, batch];
 	}
 
+	/**
+	 * Hook for custom logic after override operation
+	 * @param {string} [type=STRING_EMPTY] - Type of override operation
+	 * @returns {string} The type parameter
+	 */
 	onoverride (type = STRING_EMPTY) {
 		return type;
 	}
 
+	/**
+	 * Hook for custom logic after set operation
+	 * @param {Object} [arg={}] - Record that was set
+	 * @param {boolean} [batch=false] - Whether this was part of a batch operation
+	 * @returns {Array} Array containing record and batch flag
+	 */
 	onset (arg = {}, batch = false) {
 		return [arg, batch];
 	}
 
+	/**
+	 * Replaces all data or indexes in the store
+	 * @param {Array} data - Data to replace with
+	 * @param {string} [type=STRING_RECORDS] - Type of data (RECORDS or INDEXES)
+	 * @returns {boolean} True if operation succeeded
+	 * @throws {Error} Throws error if type is invalid
+	 */
 	override (data, type = STRING_RECORDS) {
 		const result = true;
 
@@ -279,6 +458,13 @@ export class Haro {
 		return result;
 	}
 
+	/**
+	 * Reduces all records to a single value
+	 * @param {Function} fn - Reducer function
+	 * @param {*} [accumulator] - Initial accumulator value
+	 * @param {boolean} [raw=false] - Whether to work with raw data
+	 * @returns {*} Reduced result
+	 */
 	reduce (fn, accumulator, raw = false) {
 		let a = accumulator ?? this.data.keys().next().value;
 
@@ -289,6 +475,11 @@ export class Haro {
 		return a;
 	}
 
+	/**
+	 * Rebuilds indexes for specified fields
+	 * @param {string|Array} [index] - Index field(s) to rebuild, or all if not specified
+	 * @returns {Haro} This instance for method chaining
+	 */
 	reindex (index) {
 		const indices = index ? [index] : this.index;
 
@@ -302,6 +493,13 @@ export class Haro {
 		return this;
 	}
 
+	/**
+	 * Searches for records matching a value across indexes
+	 * @param {*} value - Value to search for (string, function, or regex)
+	 * @param {string|Array} [index] - Index(es) to search in, or all if not specified
+	 * @param {boolean} [raw=false] - Whether to return raw data or frozen records
+	 * @returns {Array} Array of matching records
+	 */
 	search (value, index, raw = false) {
 		const result = new Map(),
 			fn = typeof value === STRING_FUNCTION,
@@ -334,6 +532,14 @@ export class Haro {
 		return raw ? Array.from(result.values()) : this.list(...Array.from(result.values()));
 	}
 
+	/**
+	 * Sets a record in the store
+	 * @param {string|null} [key=null] - Key for the record, or null to use record's key field
+	 * @param {Object} [data={}] - Data to set
+	 * @param {boolean} [batch=false] - Whether this is part of a batch operation
+	 * @param {boolean} [override=false] - Whether to override existing data instead of merging
+	 * @returns {Array} Frozen array containing the key and record
+	 */
 	set (key = null, data = {}, batch = false, override = false) {
 		if (key === null) {
 			key = data[this.key] ?? this.uuid();
@@ -362,6 +568,15 @@ export class Haro {
 		return result;
 	}
 
+	/**
+	 * Adds entries to indexes for a record
+	 * @param {Array} index - Array of index names
+	 * @param {Map} indexes - Map of indexes
+	 * @param {string} delimiter - Delimiter for composite indexes
+	 * @param {string} key - Key of record being indexed
+	 * @param {Object} data - Data of record being indexed
+	 * @param {string|null} indice - Specific index to update, or null for all
+	 */
 	setIndex (index, indexes, delimiter, key, data, indice) {
 		this.each(indice === null ? index : [indice], i => {
 			let lindex = indexes.get(i);
@@ -387,10 +602,23 @@ export class Haro {
 		});
 	}
 
+	/**
+	 * Sorts all records using a comparator function
+	 * @param {Function} fn - Comparator function for sorting
+	 * @param {boolean} [frozen=true] - Whether to return frozen records
+	 * @returns {Array} Sorted array of records
+	 */
 	sort (fn, frozen = true) {
 		return frozen ? Object.freeze(this.limit(INT_0, this.data.size, true).sort(fn).map(i => Object.freeze(i))) : this.limit(INT_0, this.data.size, true).sort(fn);
 	}
 
+	/**
+	 * Sorts records by a specific indexed field
+	 * @param {string} [index=STRING_EMPTY] - Index field to sort by
+	 * @param {boolean} [raw=false] - Whether to return raw data or frozen records
+	 * @returns {Array} Array of records sorted by the index field
+	 * @throws {Error} Throws error if index field is empty
+	 */
 	sortBy (index = STRING_EMPTY, raw = false) {
 		if (index === STRING_EMPTY) {
 			throw new Error(STRING_INVALID_FIELD);
@@ -411,6 +639,11 @@ export class Haro {
 		return raw ? result : this.list(...result);
 	}
 
+	/**
+	 * Converts the store data to an array
+	 * @param {boolean} [frozen=true] - Whether to return frozen records
+	 * @returns {Array} Array of all records
+	 */
 	toArray (frozen = true) {
 		const result = Array.from(this.data.values());
 
@@ -422,14 +655,29 @@ export class Haro {
 		return result;
 	}
 
+	/**
+	 * Generates a UUID
+	 * @returns {string} UUID string
+	 */
 	uuid () {
 		return uuid();
 	}
 
+	/**
+	 * Returns an iterator of values in the store
+	 * @returns {Iterator} Iterator of values
+	 */
 	values () {
 		return this.data.values();
 	}
 
+	/**
+	 * Filters records using predicate logic with support for AND/OR operations
+	 * @param {Object} [predicate={}] - Object with field-value pairs for filtering
+	 * @param {boolean} [raw=false] - Whether to return raw data or frozen records
+	 * @param {string} [op=STRING_DOUBLE_PIPE] - Operator for array matching ('||' for OR, '&&' for AND)
+	 * @returns {Array} Array of records matching the predicate
+	 */
 	where (predicate = {}, raw = false, op = STRING_DOUBLE_PIPE) {
 		const keys = this.index.filter(i => i in predicate);
 
@@ -477,6 +725,12 @@ export class Haro {
 
 }
 
+/**
+ * Factory function to create a new Haro instance
+ * @param {Array|null} [data=null] - Initial data to populate the store
+ * @param {Object} [config={}] - Configuration object passed to Haro constructor
+ * @returns {Haro} New Haro instance
+ */
 export function haro (data = null, config = {}) {
 	const obj = new Haro(config);
 
