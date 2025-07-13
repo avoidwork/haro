@@ -96,7 +96,7 @@ export class Haro {
 	 * Lifecycle hook executed before batch operations for custom preprocessing
 	 * @param {Array<Object>} arg - Arguments passed to batch operation
 	 * @param {string} [type=STRING_EMPTY] - Type of batch operation ('set' or 'del')
-	 * @returns {Array<Object>} Modified arguments (override this method to implement custom logic)
+	 * @returns {void} Override this method in subclasses to implement custom logic
 	 */
 	beforeBatch (arg, type = STRING_EMPTY) { // eslint-disable-line no-unused-vars
 		// Hook for custom logic before batch; override in subclass if needed
@@ -104,8 +104,7 @@ export class Haro {
 
 	/**
 	 * Lifecycle hook executed before clear operation for custom preprocessing
-	 * @returns {void}
-	 * Override this method in subclasses to implement custom logic
+	 * @returns {void} Override this method in subclasses to implement custom logic
 	 * @example
 	 * class MyStore extends Haro {
 	 *   beforeClear() {
@@ -121,7 +120,7 @@ export class Haro {
 	 * Lifecycle hook executed before delete operation for custom preprocessing
 	 * @param {string} [key=STRING_EMPTY] - Key of record to delete
 	 * @param {boolean} [batch=false] - Whether this is part of a batch operation
-	 * @returns {Array<string|boolean>} Array containing [key, batch] for further processing
+	 * @returns {void} Override this method in subclasses to implement custom logic
 	 */
 	beforeDelete (key = STRING_EMPTY, batch = false) { // eslint-disable-line no-unused-vars
 		// Hook for custom logic before delete; override in subclass if needed
@@ -130,12 +129,12 @@ export class Haro {
 	/**
 	 * Lifecycle hook executed before set operation for custom preprocessing
 	 * @param {string} [key=STRING_EMPTY] - Key of record to set
-	 * @param {Object} data - Record data being set
+	 * @param {Object} [data={}] - Record data being set
 	 * @param {boolean} [batch=false] - Whether this is part of a batch operation
 	 * @param {boolean} [override=false] - Whether to override existing data
-	 * @returns {Array<string|boolean>} Array containing [key, batch] for further processing
+	 * @returns {void} Override this method in subclasses to implement custom logic
 	 */
-	beforeSet (key = STRING_EMPTY, data, batch = false, override = false) { // eslint-disable-line no-unused-vars
+	beforeSet (key = STRING_EMPTY, data = {}, batch = false, override = false) { // eslint-disable-line no-unused-vars
 		// Hook for custom logic before set; override in subclass if needed
 	}
 
@@ -320,10 +319,9 @@ export class Haro {
 		if (typeof fn !== STRING_FUNCTION) {
 			throw new Error(STRING_INVALID_FUNCTION);
 		}
-		const x = this.immutable ? (k, v) => Object.freeze([k, Object.freeze(v)]) : (k, v) => v;
-		let result = this.reduce((a, v, k, ctx) => {
-			if (fn.call(ctx, v)) {
-				a.push(x(k, v));
+		let result = this.reduce((a, v) => {
+			if (fn(v)) {
+				a.push(v);
 			}
 
 			return a;
@@ -349,10 +347,13 @@ export class Haro {
 	 *   console.log(`${key}: ${record.name}`);
 	 * });
 	 */
-	forEach (fn, ctx) {
+	forEach (fn, ctx = this) {
 		this.data.forEach((value, key) => {
-			fn(this.clone(value), key); // Only clone value, key is primitive
-		}, ctx ?? this.data);
+			if (this.immutable) {
+				value = this.clone(value);
+			}
+			fn.call(ctx, value, key);
+		}, this);
 
 		return this;
 	}
@@ -619,8 +620,8 @@ export class Haro {
 	 * const totalAge = store.reduce((sum, record) => sum + record.age, 0);
 	 * const names = store.reduce((acc, record) => acc.concat(record.name), []);
 	 */
-	reduce (fn, accumulator) {
-		let a = accumulator ?? this.data.keys().next().value;
+	reduce (fn, accumulator = []) {
+		let a = accumulator;
 		this.forEach((v, k) => {
 			a = fn(a, v, k, this);
 		}, this);
