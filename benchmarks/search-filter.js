@@ -77,7 +77,7 @@ function benchmarkFindOperations (dataSizes) {
 	dataSizes.forEach(size => {
 		const testData = generateSearchTestData(size);
 		const store = haro(testData, {
-			index: ["department", "age", "city", "active", "department|active", "city|department"]
+			index: ["department", "age", "city", "active", "active|department", "city|department"]
 		});
 
 		// Simple find operations
