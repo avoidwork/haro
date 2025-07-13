@@ -272,4 +272,104 @@ describe("Utility Methods", () => {
 			assert.strictEqual(values[1].name, "Jane");
 		});
 	});
+
+	describe("sortKeys()", () => {
+		it("should sort strings using localeCompare", () => {
+			const result = store.sortKeys("apple", "banana");
+			assert.strictEqual(result < 0, true, "apple should come before banana");
+
+			const result2 = store.sortKeys("zebra", "apple");
+			assert.strictEqual(result2 > 0, true, "zebra should come after apple");
+
+			const result3 = store.sortKeys("same", "same");
+			assert.strictEqual(result3, 0, "identical strings should return 0");
+		});
+
+		it("should sort numbers using numeric comparison", () => {
+			const result = store.sortKeys(5, 10);
+			assert.strictEqual(result, -5, "5 should come before 10");
+
+			const result2 = store.sortKeys(20, 3);
+			assert.strictEqual(result2, 17, "20 should come after 3");
+
+			const result3 = store.sortKeys(7, 7);
+			assert.strictEqual(result3, 0, "identical numbers should return 0");
+		});
+
+		it("should handle negative numbers correctly", () => {
+			const result = store.sortKeys(-5, 3);
+			assert.strictEqual(result, -8, "-5 should come before 3");
+
+			const result2 = store.sortKeys(-10, -2);
+			assert.strictEqual(result2, -8, "-10 should come before -2");
+		});
+
+		it("should handle floating point numbers", () => {
+			const result = store.sortKeys(3.14, 2.71);
+			assert.strictEqual(result > 0, true, "3.14 should come after 2.71");
+			assert.strictEqual(Math.abs(result - 0.43) < 0.01, true, "result should be approximately 0.43");
+
+			const result2 = store.sortKeys(1.5, 1.5);
+			assert.strictEqual(result2, 0, "identical floats should return 0");
+		});
+
+		it("should convert mixed types to strings and sort", () => {
+			const result = store.sortKeys(10, "5");
+			assert.strictEqual(result < 0, true, "number 10 as string should come before string '5'");
+
+			const result2 = store.sortKeys("abc", 123);
+			assert.strictEqual(result2 > 0, true, "string 'abc' should come after number 123 as string");
+		});
+
+		it("should handle null and undefined values", () => {
+			const result = store.sortKeys(null, "test");
+			assert.strictEqual(result < 0, true, "null should come before 'test'");
+
+			const result2 = store.sortKeys(undefined, "test");
+			assert.strictEqual(result2 > 0, true, "undefined should come after 'test'");
+
+			const result3 = store.sortKeys(null, undefined);
+			assert.strictEqual(result3 < 0, true, "null should come before undefined");
+		});
+
+		it("should handle boolean values", () => {
+			const result = store.sortKeys(true, false);
+			assert.strictEqual(result > 0, true, "true should come after false");
+
+			const result2 = store.sortKeys(false, "test");
+			assert.strictEqual(result2 < 0, true, "false should come before 'test'");
+		});
+
+		it("should handle objects by converting to string", () => {
+			const obj1 = {name: "test"};
+			const obj2 = {value: 123};
+			const result = store.sortKeys(obj1, obj2);
+
+			// Objects get converted to "[object Object]" so they should be equal
+			assert.strictEqual(result, 0, "objects should be equal when converted to string");
+		});
+
+		it("should work as Array.sort comparator", () => {
+			const mixed = ["zebra", "apple", "banana"];
+			mixed.sort(store.sortKeys.bind(store));
+			assert.deepStrictEqual(mixed, ["apple", "banana", "zebra"]);
+
+			const numbers = [10, 3, 7, 1];
+			numbers.sort(store.sortKeys.bind(store));
+			assert.deepStrictEqual(numbers, [1, 3, 7, 10]);
+
+			const mixedTypes = [5, "3", 1, "10"];
+			mixedTypes.sort(store.sortKeys.bind(store));
+			// When converted to strings: "1", "10", "3", "5"
+			assert.deepStrictEqual(mixedTypes, [1, "10", "3", 5]);
+		});
+
+		it("should handle special string characters", () => {
+			const result = store.sortKeys("café", "cafe");
+			assert.strictEqual(typeof result, "number", "should return a number");
+
+			const result2 = store.sortKeys("ñ", "n");
+			assert.strictEqual(typeof result2, "number", "should handle accented characters");
+		});
+	});
 });

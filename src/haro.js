@@ -96,10 +96,11 @@ export class Haro {
 	 * Lifecycle hook executed before batch operations for custom preprocessing
 	 * @param {Array<Object>} arg - Arguments passed to batch operation
 	 * @param {string} [type=STRING_EMPTY] - Type of batch operation ('set' or 'del')
-	 * @returns {void} Override this method in subclasses to implement custom logic
+	 * @returns {Array<Object>} The arguments array (possibly modified) to be processed
 	 */
 	beforeBatch (arg, type = STRING_EMPTY) { // eslint-disable-line no-unused-vars
 		// Hook for custom logic before batch; override in subclass if needed
+		return arg;
 	}
 
 	/**
@@ -285,7 +286,7 @@ export class Haro {
 	 * const admins = store.find({role: 'admin'});
 	 */
 	find (where = {}, raw = false) {
-		const key = Object.keys(where).sort((a, b) => a.localeCompare(b)).join(this.delimiter);
+		const key = Object.keys(where).sort(this.sortKeys).join(this.delimiter);
 		const index = this.indexes.get(key) ?? new Map();
 		let result = [];
 		if (index.size > 0) {
@@ -416,7 +417,7 @@ export class Haro {
 	 * // Returns ['John|IT']
 	 */
 	indexKeys (arg = STRING_EMPTY, delimiter = STRING_PIPE, data = {}) {
-		const fields = arg.split(delimiter).sort((a, b) => a.localeCompare(b));
+		const fields = arg.split(delimiter).sort(this.sortKeys);
 		const fieldsLen = fields.length;
 		let result = [""];
 		for (let i = 0; i < fieldsLen; i++) {
@@ -786,6 +787,33 @@ export class Haro {
 	}
 
 	/**
+	 * Comparator function for sorting keys with type-aware comparison logic
+	 * @param {*} a - First value to compare
+	 * @param {*} b - Second value to compare
+	 * @returns {number} Negative number if a < b, positive if a > b, zero if equal
+	 * @example
+	 * const keys = ['name', 'age', 'email'];
+	 * keys.sort(store.sortKeys); // Alphabetical sort
+	 *
+	 * const mixed = [10, '5', 'abc', 3];
+	 * mixed.sort(store.sortKeys); // Type-aware sort: numbers first, then strings
+	 */
+	sortKeys (a, b) {
+		// Handle string comparison
+		if (typeof a === "string" && typeof b === "string") {
+			return a.localeCompare(b);
+		}
+		// Handle numeric comparison
+		if (typeof a === "number" && typeof b === "number") {
+			return a - b;
+		}
+
+		// Handle mixed types or other types by converting to string
+
+		return String(a).localeCompare(String(b));
+	}
+
+	/**
 	 * Sorts records by a specific indexed field in ascending order
 	 * @param {string} [index=STRING_EMPTY] - Index field name to sort by
 	 * @param {boolean} [raw=false] - Whether to return raw data without processing
@@ -806,7 +834,7 @@ export class Haro {
 		}
 		const lindex = this.indexes.get(index);
 		lindex.forEach((idx, key) => keys.push(key));
-		this.each(keys.sort((a, b) => a.localeCompare(b)), i => lindex.get(i).forEach(key => result.push(this.get(key, raw))));
+		this.each(keys.sort(this.sortKeys), i => lindex.get(i).forEach(key => result.push(this.get(key, raw))));
 		if (this.immutable) {
 			result = Object.freeze(result);
 		}

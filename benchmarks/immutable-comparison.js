@@ -428,8 +428,8 @@ function benchmarkDataSafety (dataSizes) {
 		const immutableStore = haro(testData, { immutable: true });
 
 		// Test mutation safety
-		const mutableRecord = mutableStore.get("0");
-		const immutableRecord = immutableStore.get("0");
+		const mutableRecord = mutableStore.get(0);
+		const immutableRecord = immutableStore.get(0);
 
 		// Attempt to mutate records
 		const mutationStart = performance.now();
@@ -453,8 +453,8 @@ function benchmarkDataSafety (dataSizes) {
 		const mutationEnd = performance.now();
 
 		// Check if mutations actually occurred
-		const mutableRecordAfter = mutableStore.get("0");
-		const immutableRecordAfter = immutableStore.get("0");
+		const mutableRecordAfter = mutableStore.get(0);
+		const immutableRecordAfter = immutableStore.get(0);
 
 		results.push({
 			name: `Data safety analysis (${testData.length} records)`,

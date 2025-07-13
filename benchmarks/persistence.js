@@ -173,7 +173,7 @@ function benchmarkOverrideOperations (dataSizes) {
 			originalSize: sourceStore.size,
 			restoredSize: targetStore.size,
 			integrityMatch: sourceStore.size === targetStore.size,
-			sampleRecordMatch: JSON.stringify(sourceStore.get("0")) === JSON.stringify(targetStore.get("0"))
+			sampleRecordMatch: JSON.stringify(sourceStore.get(0)) === JSON.stringify(targetStore.get(0))
 		};
 		results.push(integrityResult);
 	});
