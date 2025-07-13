@@ -205,16 +205,31 @@ class EventedStore extends Haro {
 
 ## Testing
 
-Haro maintains comprehensive test coverage across all features:
+Haro maintains comprehensive test coverage across all features with **148 passing tests**:
 
 ```
----------------------------|---------|----------|---------|---------|-------------------
-File                       | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
----------------------------|---------|----------|---------|---------|-------------------
-All files                  |     100 |    97.56 |     100 |     100 |                   
- src/haro.js              |     100 |    97.56 |     100 |     100 | 245,334,445       
----------------------------|---------|----------|---------|---------|-------------------
+--------------|---------|----------|---------|---------|-------------------------
+File          | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s       
+--------------|---------|----------|---------|---------|-------------------------
+All files     |     100 |    96.95 |     100 |     100 |                         
+ constants.js |     100 |      100 |     100 |     100 |                         
+ haro.js      |     100 |    96.94 |     100 |     100 | 205-208,667,678,972-976 
+--------------|---------|----------|---------|---------|-------------------------
 ```
+
+### Test Organization
+
+The test suite is organized into focused areas:
+
+- **Basic CRUD Operations** - Core data manipulation (set, get, delete, clear)
+- **Indexing** - Index creation, composite indexes, and reindexing
+- **Searching & Filtering** - find(), where(), search(), filter(), and sortBy() methods
+- **Immutable Mode** - Data freezing and immutability guarantees
+- **Versioning** - MVCC-style record versioning
+- **Lifecycle Hooks** - beforeSet, onset, ondelete, etc.
+- **Utility Methods** - clone(), merge(), limit(), map(), reduce(), etc.
+- **Error Handling** - Validation and error scenarios
+- **Factory Function** - haro() factory with various initialization patterns
 
 ### Running Tests
 
