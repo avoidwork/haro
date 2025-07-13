@@ -4,7 +4,7 @@ import pluginJs from "@eslint/js";
 export default [
 	// Mocha environment for test files
 	{
-		files: ["test/**/*.js"],
+		files: ["tests/**/*.js"],
 		languageOptions: {
 			globals: {
 				...globals.mocha
