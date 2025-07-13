@@ -90,6 +90,39 @@ describe("Indexing", () => {
 		});
 	});
 
+	describe("setIndex()", () => {
+		it("should create new index when it doesn't exist", () => {
+			const store = new Haro({
+				index: ["name"]
+			});
+
+			// Add data first
+			store.set("1", {name: "Alice", age: 30});
+
+			// Now manually call setIndex to trigger index creation for new field
+			store.setIndex("1", {category: "admin"}, "category");
+
+			// Verify the new index was created
+			assert.ok(store.indexes.has("category"), "New index should be created");
+			const categoryIndex = store.indexes.get("category");
+			assert.ok(categoryIndex.has("admin"), "Index should contain the value");
+			assert.ok(categoryIndex.get("admin").has("1"), "Index should map value to key");
+		});
+
+		it("should handle array values in index creation", () => {
+			const store = new Haro({
+				index: ["tags"]
+			});
+
+			// This will trigger the index creation path for array values
+			store.set("1", {name: "Alice", tags: ["developer", "admin"]});
+
+			const tagsIndex = store.indexes.get("tags");
+			assert.ok(tagsIndex.has("developer"), "Index should contain array element");
+			assert.ok(tagsIndex.has("admin"), "Index should contain array element");
+		});
+	});
+
 	describe("reindex()", () => {
 		it("should rebuild all indexes", () => {
 			indexedStore.set("user1", {id: "user1", name: "John", age: 30});
