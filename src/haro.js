@@ -62,7 +62,6 @@ export class Haro {
 		this.key = key;
 		this.versions = new Map();
 		this.versioning = versioning;
-
 		Object.defineProperty(this, STRING_REGISTRY, {
 			enumerable: true,
 			get: () => Array.from(this.data.keys())
@@ -229,7 +228,6 @@ export class Haro {
 	 */
 	dump (type = STRING_RECORDS) {
 		let result;
-
 		if (type === STRING_RECORDS) {
 			result = Array.from(this.entries());
 		} else {
@@ -284,7 +282,7 @@ export class Haro {
 	 * const users = store.find({department: 'engineering', active: true});
 	 * const admins = store.find({role: 'admin'});
 	 */
-	find (where = {}) {
+	find (where = {}, raw = false) {
 		const key = Object.keys(where).sort((a, b) => a.localeCompare(b)).join(this.delimiter);
 		const index = this.indexes.get(key) ?? new Map();
 		let result = [];
@@ -296,10 +294,13 @@ export class Haro {
 				}
 
 				return a;
-			}, new Set())).map(i => this.get(i));
+			}, new Set())).map(i => this.get(i, raw));
+		}
+		if (!raw && this.immutable) {
+			result = Object.freeze(result);
 		}
 
-		return this.immutable ? this.freeze(...result) : result;
+		return result;
 	}
 
 	/**
@@ -311,20 +312,27 @@ export class Haro {
 	 * const adults = store.filter(record => record.age >= 18);
 	 * const recent = store.filter(record => record.created > Date.now() - 86400000);
 	 */
-	filter (fn) {
+	filter (fn, raw = false) {
 		if (typeof fn !== STRING_FUNCTION) {
 			throw new Error(STRING_INVALID_FUNCTION);
 		}
 		const x = this.immutable ? (k, v) => Object.freeze([k, Object.freeze(v)]) : (k, v) => v;
-		const result = this.reduce((a, v, k, ctx) => {
+		let result = this.reduce((a, v, k, ctx) => {
 			if (fn.call(ctx, v)) {
 				a.push(x(k, v));
 			}
 
 			return a;
 		}, []);
+		if (!raw) {
+			result = result.map(i => this.list(i));
 
-		return this.immutable ? Object.freeze(result) : result;
+			if (this.immutable) {
+				result = Object.freeze(result);
+			}
+		}
+
+		return result;
 	}
 
 	/**
@@ -368,13 +376,11 @@ export class Haro {
 	 */
 	get (key, raw = false) {
 		let result = this.data.get(key) ?? null;
-
 		if (result !== null && !raw) {
+			result = this.list(result);
 			if (this.immutable) {
-				result = this.clone(result);
+				result = Object.freeze(result);
 			}
-
-			return this.immutable ? this.freeze(key, result) : result;
 		}
 
 		return result;
@@ -405,17 +411,15 @@ export class Haro {
 	 * // Returns ['John|IT']
 	 */
 	indexKeys (arg = STRING_EMPTY, delimiter = STRING_PIPE, data = {}) {
-		const fields = arg.split(delimiter);
+		const fields = arg.split(delimiter).sort((a, b) => a.localeCompare(b));
 		const fieldsLen = fields.length;
 		let result = [""];
-
 		for (let i = 0; i < fieldsLen; i++) {
 			const field = fields[i];
 			const values = Array.isArray(data[field]) ? data[field] : [data[field]];
 			const newResult = [];
 			const resultLen = result.length;
 			const valuesLen = values.length;
-
 			for (let j = 0; j < resultLen; j++) {
 				for (let k = 0; k < valuesLen; k++) {
 					const newKey = i === 0 ? values[k] : `${result[j]}${delimiter}${values[k]}`;
@@ -449,8 +453,25 @@ export class Haro {
 	 * const page1 = store.limit(0, 10);   // First 10 records
 	 * const page2 = store.limit(10, 10);  // Next 10 records
 	 */
-	limit (offset = INT_0, max = INT_0) {
-		const result = this.registry.slice(offset, offset + max).map(i => this.get(i));
+	limit (offset = INT_0, max = INT_0, raw = false) {
+		let result = this.registry.slice(offset, offset + max).map(i => this.get(i, raw));
+		if (!raw && this.immutable) {
+			result = Object.freeze(result);
+		}
+
+		return result;
+	}
+
+	/**
+	 * Converts a record into a [key, value] pair array format
+	 * @param {Object} arg - Record object to convert to list format
+	 * @returns {Array<*>} Array containing [key, record] where key is extracted from record's key field
+	 * @example
+	 * const record = {id: 'user123', name: 'John', age: 30};
+	 * const pair = store.list(record); // ['user123', {id: 'user123', name: 'John', age: 30}]
+	 */
+	list (arg) {
+		const result = [arg[this.key], arg];
 
 		return this.immutable ? this.freeze(...result) : result;
 	}
@@ -464,16 +485,20 @@ export class Haro {
 	 * const names = store.map(record => record.name);
 	 * const summaries = store.map(record => ({id: record.id, name: record.name}));
 	 */
-	map (fn) {
+	map (fn, raw = false) {
 		if (typeof fn !== STRING_FUNCTION) {
 			throw new Error(STRING_INVALID_FUNCTION);
 		}
-
-		const result = [];
-
+		let result = [];
 		this.forEach((value, key) => result.push(fn(value, key)));
+		if (!raw) {
+			result = result.map(i => this.list(i));
+			if (this.immutable) {
+				result = Object.freeze(result);
+			}
+		}
 
-		return this.immutable ? this.freeze(...result) : result;
+		return result;
 	}
 
 	/**
@@ -565,7 +590,6 @@ export class Haro {
 	 */
 	override (data, type = STRING_RECORDS) {
 		const result = true;
-
 		if (type === STRING_INDEXES) {
 			this.indexes = new Map(data.map(i => [i[0], new Map(i[1].map(ii => [ii[0], new Set(ii[1])]))]));
 		} else if (type === STRING_RECORDS) {
@@ -574,7 +598,6 @@ export class Haro {
 		} else {
 			throw new Error(STRING_INVALID_TYPE);
 		}
-
 		this.onoverride(type);
 
 		return result;
@@ -591,7 +614,6 @@ export class Haro {
 	 */
 	reduce (fn, accumulator) {
 		let a = accumulator ?? this.data.keys().next().value;
-
 		this.forEach((v, k) => {
 			a = fn(a, v, k, this);
 		}, this);
@@ -610,11 +632,9 @@ export class Haro {
 	 */
 	reindex (index) {
 		const indices = index ? [index] : this.index;
-
 		if (index && this.index.includes(index) === false) {
 			this.index.push(index);
 		}
-
 		this.each(indices, i => this.indexes.set(i, new Map()));
 		this.forEach((data, key) => this.each(indices, i => this.setIndex(this.index, this.indexes, this.delimiter, key, data, i)));
 
@@ -631,15 +651,12 @@ export class Haro {
 	 * const nameResults = store.search('john', 'name'); // Search only name index
 	 * const regexResults = store.search(/^admin/, 'role'); // Regex search
 	 */
-	search (value, index) {
+	search (value, index, raw = false) {
 		const result = new Set(); // Use Set for unique keys
 		const fn = typeof value === STRING_FUNCTION;
 		const rgex = value && typeof value.test === STRING_FUNCTION;
-
 		if (!value) return this.immutable ? this.freeze() : [];
-
 		const indices = index ? Array.isArray(index) ? index : [index] : this.index;
-
 		for (const i of indices) {
 			const idx = this.indexes.get(i);
 			if (idx) {
@@ -664,10 +681,12 @@ export class Haro {
 				}
 			}
 		}
+		let records = Array.from(result).map(key => this.get(key, raw));
+		if (!raw && this.immutable) {
+			records = Object.freeze(records);
+		}
 
-		const records = Array.from(result).map(key => this.get(key));
-
-		return this.immutable ? this.freeze(...records) : records;
+		return records;
 	}
 
 	/**
@@ -755,8 +774,12 @@ export class Haro {
 	 */
 	sort (fn, frozen = false) {
 		const dataSize = this.data.size;
+		let result = this.limit(INT_0, dataSize, true).sort(fn);
+		if (frozen) {
+			result = this.freeze(...result);
+		}
 
-		return frozen ? Object.freeze(this.limit(INT_0, dataSize, true).sort(fn).map(i => Object.freeze(i))) : this.limit(INT_0, dataSize, true).sort(fn);
+		return result;
 	}
 
 	/**
@@ -768,24 +791,23 @@ export class Haro {
 	 * const byAge = store.sortBy('age');
 	 * const byName = store.sortBy('name');
 	 */
-	sortBy (index = STRING_EMPTY) {
+	sortBy (index = STRING_EMPTY, raw = false) {
 		if (index === STRING_EMPTY) {
 			throw new Error(STRING_INVALID_FIELD);
 		}
-
-		const result = [],
-			keys = [];
-
+		let result = [];
+		const keys = [];
 		if (this.indexes.has(index) === false) {
 			this.reindex(index);
 		}
-
 		const lindex = this.indexes.get(index);
-
 		lindex.forEach((idx, key) => keys.push(key));
-		this.each(keys.sort(), i => lindex.get(i).forEach(key => result.push(this.get(key))));
+		this.each(keys.sort(), i => lindex.get(i).forEach(key => result.push(this.get(key, raw))));
+		if (this.immutable) {
+			result = Object.freeze(result);
+		}
 
-		return this.immutable ? this.freeze(...result) : result;
+		return result;
 	}
 
 	/**
@@ -797,7 +819,6 @@ export class Haro {
 	 */
 	toArray () {
 		const result = Array.from(this.data.values());
-
 		if (this.immutable) {
 			this.each(result, i => Object.freeze(i));
 			Object.freeze(result);
@@ -842,7 +863,6 @@ export class Haro {
 		return keys.every(key => {
 			const pred = predicate[key];
 			const val = record[key];
-
 			if (Array.isArray(pred)) {
 				if (Array.isArray(val)) {
 					return op === "&&" ? pred.every(p => val.includes(p)) : pred.some(p => val.includes(p));
@@ -884,17 +904,14 @@ export class Haro {
 
 		// Try to use indexes for better performance
 		const indexedKeys = keys.filter(k => this.indexes.has(k));
-
 		if (indexedKeys.length > 0) {
 			// Use index-based filtering for better performance
 			let candidateKeys = new Set();
 			let first = true;
-
 			for (const key of indexedKeys) {
 				const pred = predicate[key];
 				const idx = this.indexes.get(key);
 				const matchingKeys = new Set();
-
 				if (Array.isArray(pred)) {
 					for (const p of pred) {
 						if (idx.has(p)) {
@@ -908,7 +925,6 @@ export class Haro {
 						matchingKeys.add(k);
 					}
 				}
-
 				if (first) {
 					candidateKeys = matchingKeys;
 					first = false;
@@ -917,7 +933,6 @@ export class Haro {
 					candidateKeys = new Set([...candidateKeys].filter(k => matchingKeys.has(k)));
 				}
 			}
-
 			// Filter candidates with full predicate logic
 			const results = [];
 			for (const key of candidateKeys) {
