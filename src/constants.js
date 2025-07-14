@@ -5,10 +5,6 @@ export const STRING_PIPE = "|";
 export const STRING_DOUBLE_PIPE = "||";
 export const STRING_DOUBLE_AND = "&&";
 
-// String constants - Single letters
-export const STRING_A = "a";
-export const STRING_B = "b";
-
 // String constants - Operation and type names
 export const STRING_ID = "id";
 export const STRING_DEL = "del";
@@ -30,9 +26,3 @@ export const STRING_RECORD_NOT_FOUND = "Record not found";
 
 // Integer constants
 export const INT_0 = 0;
-export const INT_1 = 1;
-export const INT_3 = 3;
-export const INT_4 = 4;
-export const INT_8 = 8;
-export const INT_9 = 9;
-export const INT_16 = 16;

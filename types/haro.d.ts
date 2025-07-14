@@ -4,343 +4,365 @@
 export interface HaroConfig {
   delimiter?: string;
   id?: string;
+  immutable?: boolean;
   index?: string[];
   key?: string;
   versioning?: boolean;
 }
 
 /**
- * Haro is a modern immutable DataStore for collections of records
+ * Haro is a modern immutable DataStore for collections of records with indexing,
+ * versioning, and batch operations support. It provides a Map-like interface
+ * with advanced querying capabilities through indexes.
  */
 export class Haro {
   data: Map<string, any>;
   delimiter: string;
   id: string;
+  immutable: boolean;
   index: string[];
   indexes: Map<string, Map<any, Set<string>>>;
   key: string;
-  versions: Map<string, any>;
+  versions: Map<string, Set<any>>;
   versioning: boolean;
   readonly registry: string[];
   readonly size: number;
 
   /**
-   * Creates a new Haro instance
-   * @param config - Configuration object
+   * Creates a new Haro instance with specified configuration
+   * @param config - Configuration object for the store
    */
   constructor(config?: HaroConfig);
 
   /**
-   * Performs batch operations on multiple records
+   * Performs batch operations on multiple records for efficient bulk processing
    * @param args - Array of records to process
-   * @param type - Type of operation (SET or DEL)
+   * @param type - Type of operation: 'set' for upsert, 'del' for delete
    * @returns Array of results from the batch operation
    */
   batch(args: any[], type?: string): any[];
 
   /**
-   * Hook for custom logic before batch operations
+   * Lifecycle hook executed before batch operations for custom preprocessing
    * @param arg - Arguments passed to batch operation
-   * @param type - Type of batch operation
-   * @returns Modified arguments
+   * @param type - Type of batch operation ('set' or 'del')
+   * @returns The arguments array (possibly modified) to be processed
    */
   beforeBatch(arg: any, type?: string): any;
 
   /**
-   * Hook for custom logic before clear operation
+   * Lifecycle hook executed before clear operation for custom preprocessing
    */
   beforeClear(): void;
 
   /**
-   * Hook for custom logic before delete operation
+   * Lifecycle hook executed before delete operation for custom preprocessing
    * @param key - Key of record to delete
    * @param batch - Whether this is part of a batch operation
-   * @returns Array containing key and batch flag
    */
-  beforeDelete(key?: string, batch?: boolean): [string, boolean];
+  beforeDelete(key?: string, batch?: boolean): void;
 
   /**
-   * Hook for custom logic before set operation
+   * Lifecycle hook executed before set operation for custom preprocessing
    * @param key - Key of record to set
+   * @param data - Record data being set
    * @param batch - Whether this is part of a batch operation
-   * @returns Array containing key and batch flag
+   * @param override - Whether to override existing data
    */
-  beforeSet(key?: string, batch?: boolean): [string, boolean];
+  beforeSet(key?: string, data?: any, batch?: boolean, override?: boolean): void;
 
   /**
-   * Clears all data from the store
+   * Removes all records, indexes, and versions from the store
    * @returns This instance for method chaining
    */
   clear(): Haro;
 
   /**
-   * Creates a deep clone of the given argument
-   * @param arg - Value to clone
+   * Creates a deep clone of the given value, handling objects, arrays, and primitives
+   * @param arg - Value to clone (any type)
    * @returns Deep clone of the argument
    */
   clone(arg: any): any;
 
   /**
-   * Deletes a record from the store
+   * Deletes a record from the store and removes it from all indexes
    * @param key - Key of record to delete
    * @param batch - Whether this is part of a batch operation
-   * @throws Throws error if record not found
+   * @throws Throws error if record with the specified key is not found
    */
-  del(key?: string, batch?: boolean): void;
+  delete(key?: string, batch?: boolean): void;
 
   /**
-   * Removes entries from indexes for a deleted record
-   * @param index - Array of index names
-   * @param indexes - Map of indexes
-   * @param delimiter - Delimiter for composite indexes
+   * Internal method to remove entries from indexes for a deleted record
    * @param key - Key of record being deleted
    * @param data - Data of record being deleted
+   * @returns This instance for method chaining
    */
-  delIndex(index: string[], indexes: Map<string, Map<any, Set<string>>>, delimiter: string, key: string, data: any): void;
+  deleteIndex(key: string, data: any): Haro;
 
   /**
-   * Exports data or indexes from the store
-   * @param type - Type of data to dump (RECORDS or INDEXES)
-   * @returns Array of records or indexes
+   * Exports complete store data or indexes for persistence or debugging
+   * @param type - Type of data to export: 'records' or 'indexes'
+   * @returns Array of [key, value] pairs for records, or serialized index structure
    */
   dump(type?: string): any[];
 
   /**
-   * Utility method to iterate over an array
+   * Utility method to iterate over an array with a callback function
    * @param arr - Array to iterate over
-   * @param fn - Function to call for each element
-   * @returns The original array
+   * @param fn - Function to call for each element (element, index)
+   * @returns The original array for method chaining
    */
   each(arr: any[], fn: (value: any, index: number) => void): any[];
 
   /**
-   * Returns an iterator of [key, value] pairs for each element in the data
-   * @returns Iterator of entries
+   * Returns an iterator of [key, value] pairs for each record in the store
+   * @returns Iterator of [key, value] pairs
    */
   entries(): IterableIterator<[string, any]>;
 
   /**
-   * Finds records matching the given criteria using indexes
-   * @param where - Object with field-value pairs to match
-   * @param raw - Whether to return raw data or frozen records
-   * @returns Array of matching records
+   * Finds records matching the specified criteria using indexes for optimal performance
+   * @param where - Object with field-value pairs to match against
+   * @param raw - Whether to return raw data without processing
+   * @returns Array of matching records (frozen if immutable mode)
    */
   find(where?: Record<string, any>, raw?: boolean): any[];
 
   /**
-   * Filters records using a predicate function
-   * @param fn - Predicate function to test each record
-   * @param raw - Whether to return raw data or frozen records
-   * @returns Array of filtered records
+   * Filters records using a predicate function, similar to Array.filter
+   * @param fn - Predicate function to test each record (record, key, store)
+   * @param raw - Whether to return raw data without processing
+   * @returns Array of records that pass the predicate test
    */
-  filter(fn: (value: any, key: string) => boolean, raw?: boolean): any[];
+  filter(fn: (value: any) => boolean, raw?: boolean): any[];
 
   /**
-   * Executes a provided function once for each key/value pair
-   * @param fn - Function to execute for each element
-   * @param ctx - Optional context object
+   * Executes a function for each record in the store, similar to Array.forEach
+   * @param fn - Function to execute for each record (value, key)
+   * @param ctx - Context object to use as 'this' when executing the function
+   * @returns This instance for method chaining
    */
-  forEach(fn: (value: any, key: string) => void, ctx?: any): void;
+  forEach(fn: (value: any, key: string) => void, ctx?: any): Haro;
 
   /**
-   * Gets a record from the store
-   * @param key - Key of record to get
-   * @param raw - Whether to return raw data or frozen record
-   * @returns The record or undefined if not found
+   * Creates a frozen array from the given arguments for immutable data handling
+   * @param args - Arguments to freeze into an array
+   * @returns Frozen array containing frozen arguments
    */
-  get(key: string, raw?: boolean): any;
+  freeze(...args: any[]): readonly any[];
 
   /**
-   * Checks if a record exists in the store
-   * @param key - Key to check
+   * Retrieves a record by its key
+   * @param key - Key of record to retrieve
+   * @param raw - Whether to return raw data (true) or processed/frozen data (false)
+   * @returns The record if found, null if not found
+   */
+  get(key: string, raw?: boolean): any | null;
+
+  /**
+   * Checks if a record with the specified key exists in the store
+   * @param key - Key to check for existence
    * @returns True if record exists, false otherwise
    */
   has(key: string): boolean;
 
   /**
-   * Generates index keys for composite indexes
-   * @param arg - Index definition
-   * @param delimiter - Delimiter for composite indexes
-   * @param data - Data object
-   * @returns Array of index keys
+   * Generates index keys for composite indexes from data values
+   * @param arg - Composite index field names joined by delimiter
+   * @param delimiter - Delimiter used in composite index
+   * @param data - Data object to extract field values from
+   * @returns Array of generated index keys
    */
-  indexKeys(arg?: string, delimiter?: string, data?: Record<string, any>): any[];
+  indexKeys(arg?: string, delimiter?: string, data?: Record<string, any>): string[];
 
   /**
-   * Returns an iterator of keys
-   * @returns Iterator of keys
+   * Returns an iterator of all keys in the store
+   * @returns Iterator of record keys
    */
   keys(): IterableIterator<string>;
 
   /**
-   * Returns a limited subset of records
-   * @param offset - Starting offset
-   * @param max - Maximum number of records
-   * @param raw - Whether to return raw data or frozen records
-   * @returns Array of records
+   * Returns a limited subset of records with offset support for pagination
+   * @param offset - Number of records to skip from the beginning
+   * @param max - Maximum number of records to return
+   * @param raw - Whether to return raw data without processing
+   * @returns Array of records within the specified range
    */
   limit(offset?: number, max?: number, raw?: boolean): any[];
 
   /**
-   * Creates a frozen array of records
-   * @param args - Records to include in the list
-   * @returns Frozen array of records
+   * Converts a record into a [key, value] pair array format
+   * @param arg - Record object to convert to list format
+   * @returns Array containing [key, record] where key is extracted from record's key field
    */
-  list(...args: any[]): readonly any[];
+  list(arg: any): any[];
 
   /**
-   * Maps over records using a function
-   * @param fn - Function to map each record
-   * @param raw - Whether to return raw data or frozen records
-   * @returns Array of mapped values
+   * Transforms all records using a mapping function, similar to Array.map
+   * @param fn - Function to transform each record (record, key)
+   * @param raw - Whether to return raw data without processing
+   * @returns Array of transformed results
    */
   map(fn: (value: any, key: string) => any, raw?: boolean): any[];
 
   /**
-   * Merges two objects
-   * @param a - First object
-   * @param b - Second object
-   * @param override - Whether to override existing properties
-   * @returns Merged object
+   * Internal helper method for predicate matching with support for arrays and regex
+   * @param record - Record to test against predicate
+   * @param predicate - Predicate object with field-value pairs
+   * @param op - Operator for array matching ('||' for OR, '&&' for AND)
+   * @returns True if record matches predicate criteria
+   */
+  matchesPredicate(record: any, predicate: Record<string, any>, op: string): boolean;
+
+  /**
+   * Merges two values together with support for arrays and objects
+   * @param a - First value (target)
+   * @param b - Second value (source)
+   * @param override - Whether to override arrays instead of concatenating
+   * @returns Merged result
    */
   merge(a: any, b: any, override?: boolean): any;
 
   /**
-   * Hook for custom logic after batch operations
+   * Lifecycle hook executed after batch operations for custom postprocessing
    * @param arg - Result of batch operation
-   * @param type - Type of batch operation
-   * @returns Modified result
+   * @param type - Type of batch operation that was performed
+   * @returns Modified result (override this method to implement custom logic)
    */
   onbatch(arg: any, type?: string): any;
 
   /**
-   * Hook for custom logic after clear operation
+   * Lifecycle hook executed after clear operation for custom postprocessing
    */
   onclear(): void;
 
   /**
-   * Hook for custom logic after delete operation
+   * Lifecycle hook executed after delete operation for custom postprocessing
    * @param key - Key of deleted record
    * @param batch - Whether this was part of a batch operation
    */
   ondelete(key?: string, batch?: boolean): void;
 
   /**
-   * Hook for custom logic after override operation
-   * @param type - Type of override operation
+   * Lifecycle hook executed after override operation for custom postprocessing
+   * @param type - Type of override operation that was performed
    */
   onoverride(type?: string): void;
 
   /**
-   * Hook for custom logic after set operation
-   * @param arg - Set operation result
+   * Lifecycle hook executed after set operation for custom postprocessing
+   * @param arg - Record that was set
    * @param batch - Whether this was part of a batch operation
    */
   onset(arg?: any, batch?: boolean): void;
 
   /**
-   * Overrides the data store with new data
-   * @param data - New data to load
-   * @param type - Type of data being loaded
-   * @returns This instance for method chaining
+   * Replaces all store data or indexes with new data for bulk operations
+   * @param data - Data to replace with (format depends on type)
+   * @param type - Type of data: 'records' or 'indexes'
+   * @returns True if operation succeeded
    */
-  override(data: any, type?: string): Haro;
+  override(data: any[], type?: string): boolean;
 
   /**
-   * Reduces records to a single value using a function
-   * @param fn - Reducer function
+   * Reduces all records to a single value using a reducer function
+   * @param fn - Reducer function (accumulator, value, key, store)
    * @param accumulator - Initial accumulator value
-   * @param raw - Whether to use raw data or frozen records
-   * @returns Reduced value
+   * @returns Final reduced value
    */
-  reduce(fn: (accumulator: any, value: any, key: string) => any, accumulator: any, raw?: boolean): any;
+  reduce(fn: (accumulator: any, value: any, key: string, store: Haro) => any, accumulator?: any): any;
 
   /**
-   * Rebuilds indexes for the store
-   * @param index - Optional specific index to rebuild
+   * Rebuilds indexes for specified fields or all fields for data consistency
+   * @param index - Specific index field(s) to rebuild, or all if not specified
    * @returns This instance for method chaining
    */
-  reindex(index?: string[]): Haro;
+  reindex(index?: string | string[]): Haro;
 
   /**
-   * Searches for records by value in specific indexes
-   * @param value - Value to search for
-   * @param index - Index to search in
-   * @param raw - Whether to return raw data or frozen records
+   * Searches for records containing a value across specified indexes
+   * @param value - Value to search for (string, function, or RegExp)
+   * @param index - Index(es) to search in, or all if not specified
+   * @param raw - Whether to return raw data without processing
    * @returns Array of matching records
    */
-  search(value: any, index: string, raw?: boolean): any[];
+  search(value: any, index?: string | string[], raw?: boolean): any[];
 
   /**
-   * Sets a record in the store
-   * @param key - Key for the record (null for auto-generation)
-   * @param data - Data to store
+   * Sets or updates a record in the store with automatic indexing
+   * @param key - Key for the record, or null to use record's key field
+   * @param data - Record data to set
    * @param batch - Whether this is part of a batch operation
-   * @param override - Whether to override existing record
-   * @returns The stored record
+   * @param override - Whether to override existing data instead of merging
+   * @returns The stored record (frozen if immutable mode)
    */
   set(key?: string | null, data?: any, batch?: boolean, override?: boolean): any;
 
   /**
-   * Adds entries to indexes for a record
-   * @param index - Array of index names
-   * @param indexes - Map of indexes
-   * @param delimiter - Delimiter for composite indexes
+   * Internal method to add entries to indexes for a record
    * @param key - Key of record being indexed
    * @param data - Data of record being indexed
-   * @param indice - Optional specific index to update
+   * @param indice - Specific index to update, or null for all
+   * @returns This instance for method chaining
    */
-  setIndex(index: string[], indexes: Map<string, Map<any, Set<string>>>, delimiter: string, key: string, data: any, indice?: string): void;
+  setIndex(key: string, data: any, indice?: string | null): Haro;
 
   /**
-   * Sorts records using a comparison function
-   * @param fn - Comparison function
-   * @param frozen - Whether to return frozen array
+   * Sorts all records using a comparator function
+   * @param fn - Comparator function for sorting (a, b) => number
+   * @param frozen - Whether to return frozen records
    * @returns Sorted array of records
    */
   sort(fn: (a: any, b: any) => number, frozen?: boolean): any[];
 
   /**
-   * Sorts records by a specific index
-   * @param index - Index to sort by
-   * @param raw - Whether to return raw data or frozen records
-   * @returns Sorted array of records
+   * Comparator function for sorting keys with type-aware comparison logic
+   * @param a - First value to compare
+   * @param b - Second value to compare
+   * @returns Negative number if a < b, positive if a > b, zero if equal
+   */
+  sortKeys(a: any, b: any): number;
+
+  /**
+   * Sorts records by a specific indexed field in ascending order
+   * @param index - Index field name to sort by
+   * @param raw - Whether to return raw data without processing
+   * @returns Array of records sorted by the specified field
    */
   sortBy(index?: string, raw?: boolean): any[];
 
   /**
-   * Converts the store to an array
-   * @param frozen - Whether to return frozen array
-   * @returns Array of records
+   * Converts all store data to a plain array of records
+   * @returns Array containing all records in the store
    */
-  toArray(frozen?: boolean): any[];
+  toArray(): any[];
 
   /**
-   * Generates a UUID
-   * @returns UUID string
+   * Generates a RFC4122 v4 UUID for record identification
+   * @returns UUID string in standard format
    */
   uuid(): string;
 
   /**
-   * Returns an iterator of values
-   * @returns Iterator of values
+   * Returns an iterator of all values in the store
+   * @returns Iterator of record values
    */
   values(): IterableIterator<any>;
 
   /**
-   * Finds records matching complex criteria
-   * @param predicate - Object with field-value pairs to match
-   * @param raw - Whether to return raw data or frozen records
-   * @param op - Logical operator for combining criteria
-   * @returns Array of matching records
+   * Advanced filtering with predicate logic supporting AND/OR operations on arrays
+   * @param predicate - Object with field-value pairs for filtering
+   * @param op - Operator for array matching ('||' for OR, '&&' for AND)
+   * @returns Array of records matching the predicate criteria
    */
-  where(predicate?: Record<string, any>, raw?: boolean, op?: string): any[];
+  where(predicate?: Record<string, any>, op?: string): any[];
 }
 
 /**
- * Factory function to create a new Haro instance
- * @param data - Optional initial data to load
- * @param config - Configuration object
- * @returns New Haro instance
+ * Factory function to create a new Haro instance with optional initial data
+ * @param data - Initial data to populate the store
+ * @param config - Configuration object passed to Haro constructor
+ * @returns New Haro instance configured and optionally populated
  */
-export function haro(data?: any, config?: HaroConfig): Haro; 
+export function haro(data?: any[] | null, config?: HaroConfig): Haro; 

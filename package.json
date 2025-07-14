@@ -14,7 +14,7 @@
   "files": [
     "dist/haro.cjs",
     "dist/haro.js",
-    "types/haro.d.ts"
+    "types"
   ],
   "scripts": {
     "benchmark": "node benchmarks/index.js",
