@@ -2,20 +2,21 @@ import {randomUUID as uuid} from "crypto";
 import {
 	INT_0,
 	STRING_COMMA,
-	STRING_DEL,
+	STRING_DEL, STRING_DOUBLE_AND,
 	STRING_DOUBLE_PIPE,
 	STRING_EMPTY,
 	STRING_FUNCTION,
+	STRING_ID,
 	STRING_INDEXES,
 	STRING_INVALID_FIELD,
 	STRING_INVALID_FUNCTION,
-	STRING_INVALID_TYPE,
+	STRING_INVALID_TYPE, STRING_NUMBER, STRING_OBJECT,
 	STRING_PIPE,
 	STRING_RECORD_NOT_FOUND,
 	STRING_RECORDS,
 	STRING_REGISTRY,
 	STRING_SET,
-	STRING_SIZE
+	STRING_SIZE, STRING_STRING
 } from "./constants.js";
 
 /**
@@ -41,7 +42,7 @@ export class Haro {
 	 * @param {string} [config.id] - Unique identifier for this instance (auto-generated if not provided)
 	 * @param {boolean} [config.immutable=false] - Return frozen/immutable objects for data safety
 	 * @param {string[]} [config.index=[]] - Array of field names to create indexes for
-	 * @param {string} [config.key="id"] - Primary key field name used for record identification
+	 * @param {string} [config.key=STRING_ID] - Primary key field name used for record identification
 	 * @param {boolean} [config.versioning=false] - Enable versioning to track record changes
 	 * @constructor
 	 * @example
@@ -52,7 +53,7 @@ export class Haro {
 	 *   immutable: true
 	 * });
 	 */
-	constructor ({delimiter = STRING_PIPE, id = this.uuid(), immutable = false, index = [], key = "id", versioning = false} = {}) {
+	constructor ({delimiter = STRING_PIPE, id = this.uuid(), immutable = false, index = [], key = STRING_ID, versioning = false} = {}) {
 		this.data = new Map();
 		this.delimiter = delimiter;
 		this.id = id;
@@ -522,7 +523,7 @@ export class Haro {
 	merge (a, b, override = false) {
 		if (Array.isArray(a) && Array.isArray(b)) {
 			a = override ? b : a.concat(b);
-		} else if (typeof a === "object" && a !== null && typeof b === "object" && b !== null) {
+		} else if (typeof a === STRING_OBJECT && a !== null && typeof b === STRING_OBJECT && b !== null) {
 			this.each(Object.keys(b), i => {
 				a[i] = this.merge(a[i], b[i], override);
 			});
@@ -800,11 +801,11 @@ export class Haro {
 	 */
 	sortKeys (a, b) {
 		// Handle string comparison
-		if (typeof a === "string" && typeof b === "string") {
+		if (typeof a === STRING_STRING && typeof b === STRING_STRING) {
 			return a.localeCompare(b);
 		}
 		// Handle numeric comparison
-		if (typeof a === "number" && typeof b === "number") {
+		if (typeof a === STRING_NUMBER && typeof b === STRING_NUMBER) {
 			return a - b;
 		}
 
@@ -896,13 +897,13 @@ export class Haro {
 			const val = record[key];
 			if (Array.isArray(pred)) {
 				if (Array.isArray(val)) {
-					return op === "&&" ? pred.every(p => val.includes(p)) : pred.some(p => val.includes(p));
+					return op === STRING_DOUBLE_AND ? pred.every(p => val.includes(p)) : pred.some(p => val.includes(p));
 				} else {
-					return op === "&&" ? pred.every(p => val === p) : pred.some(p => val === p);
+					return op === STRING_DOUBLE_AND ? pred.every(p => val === p) : pred.some(p => val === p);
 				}
 			} else if (pred instanceof RegExp) {
 				if (Array.isArray(val)) {
-					return op === "&&" ? val.every(v => pred.test(v)) : val.some(v => pred.test(v));
+					return op === STRING_DOUBLE_AND ? val.every(v => pred.test(v)) : val.some(v => pred.test(v));
 				} else {
 					return pred.test(val);
 				}
