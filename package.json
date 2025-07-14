@@ -1,6 +1,6 @@
 {
   "name": "haro",
-  "version": "15.2.6",
+  "version": "16.0.0",
   "description": "Haro is a modern immutable DataStore",
   "type": "module",
   "types": "types/haro.d.ts",
@@ -14,17 +14,16 @@
   "files": [
     "dist/haro.cjs",
     "dist/haro.js",
-    "types/haro.d.ts"
+    "types"
   ],
   "scripts": {
-    "build": "npm run lint && npm run rollup && npm run mocha",
-    "benchmark": "node benchmark/benchmark.js",
+    "benchmark": "node benchmarks/index.js",
+    "build": "npm run lint && npm run rollup",
     "changelog": "auto-changelog -p",
-    "lint": "eslint --fix *.js src/*.js test/*.js",
-    "mocha": "nyc mocha test/*.js",
+    "lint": "eslint --fix *.js benchmarks/*.js src/*.js tests/**/*.js",
+    "mocha": "c8 mocha tests/**/*.js",
     "rollup": "rollup --config",
     "test": "npm run lint && npm run mocha",
-    "types": "npx -p typescript tsc src/haro.js --declaration --allowJs --emitDeclarationOnly --outDir types",
     "prepare": "husky"
   },
   "repository": {
@@ -47,19 +46,17 @@
   "homepage": "https://github.com/avoidwork/haro",
   "engineStrict": true,
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=17.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.6.0",
+    "@eslint/js": "^9.31.0",
     "@rollup/plugin-terser": "^0.4.4",
     "auto-changelog": "^2.5.0",
-    "eslint": "^9.27.0",
-    "globals": "^16.1.0",
+    "c8": "^10.1.3",
+    "eslint": "^9.31.0",
+    "globals": "^16.3.0",
     "husky": "^9.1.7",
-    "mocha": "^11.3.0",
-    "nyc": "^17.1.0",
-    "precise": "^4.0.3",
-    "rollup": "^4.40.2",
-    "typescript": "^5.8.3"
+    "mocha": "^11.7.1",
+    "rollup": "^4.45.0"
   }
 }
