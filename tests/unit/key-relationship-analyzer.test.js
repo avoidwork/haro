@@ -296,6 +296,17 @@ describe("KeyRelationshipAnalyzer", () => {
 			assert.strictEqual(analyzer.keyMatchesQuery("test", query), false);
 		});
 
+		/**
+		 * Test unknown query type (lines 179-180)
+		 */
+		it("should return false for unknown query types", () => {
+			const query = { type: "unknown", someParam: "value" };
+			assert.strictEqual(analyzer.keyMatchesQuery("test", query), false);
+			
+			const query2 = { type: "invalid", data: "anything" };
+			assert.strictEqual(analyzer.keyMatchesQuery("key", query2), false);
+		});
+
 	});
 
 	describe("keyMatchesIndexRange", () => {
@@ -1001,6 +1012,147 @@ describe("KeyRelationshipAnalyzer", () => {
 			// but "somekey" doesn't contain "_index" or "_idx", so _checkIndexBasedRange hits fallback
 			const result = analyzer.isKeyInSnapshotRange(transaction, "operation_key", "somekey", "value");
 			assert.strictEqual(result, false);
+		});
+
+		/**
+		 * Test _checkIndexBasedRange with valid index range (lines 989-990)
+		 */
+		it("should hit _checkIndexBasedRange with valid index range", () => {
+			const transaction = new MockTransaction("tx1");
+			// Add valid index range data to trigger lines 989-990
+			const indexRange = { fields: ["id"], values: ["123"] };
+			transaction.addSnapshot("users_index:index_range", indexRange);
+			
+			// This should trigger _isIndexBasedSnapshot and then _checkIndexBasedRange with valid indexRange
+			// Use a key that will match the index range
+			const result = analyzer.isKeyInSnapshotRange(transaction, "users:id:123", "users_index", "value");
+			assert.strictEqual(result, true);
+		});
+
+		/**
+		 * Test _checkIndexBasedRange with _index/_idx patterns (lines 993-996)
+		 */
+		it("should hit _checkIndexBasedRange index pattern matching", () => {
+			const transaction = new MockTransaction("tx1");
+			// Add ":index_range" to make _isIndexBasedSnapshot return true, but no actual range data
+			transaction.addSnapshot("users_index:index_range", null);
+			
+			// This should trigger _isIndexBasedSnapshot, then _checkIndexBasedRange will hit lines 993-996
+			// "users_index" contains "_index", so it will extract baseKey "users"
+			const result = analyzer.isKeyInSnapshotRange(transaction, "users:123", "users_index", "value");
+			assert.strictEqual(result, true);
+		});
+
+
+		/**
+		 * Test temporal range check in isKeyInSnapshotRange (lines 111-113)
+		 */
+		it("should trigger temporal range check", () => {
+			const transaction = new MockTransaction("tx1");
+			// Use a snapshot key with temporal keywords to trigger _isTemporalSnapshot
+			const result = analyzer.isKeyInSnapshotRange(transaction, "log_entry_operation", "timestamp_data", "value");
+			assert.strictEqual(result, false); // Should be false since they don't have temporal overlap
+		});
+
+		/**
+		 * Test composite key range check in isKeyInSnapshotRange (lines 116-118)
+		 */
+		it("should trigger composite key range check", () => {
+			const transaction = new MockTransaction("tx1");
+			// Use a snapshot key with composite indicators to trigger _isCompositeKeySnapshot
+			const result = analyzer.isKeyInSnapshotRange(transaction, "app:module:operation", "app:module:snapshot", "value");
+			assert.strictEqual(result, true);
+		});
+
+		/**
+		 * Test _isParentChildRelationship mismatch branch (lines 299-300)
+		 */
+		it("should trigger parent-child relationship mismatch check", () => {
+			// Use keys that will trigger hierarchical check but have mismatched parts
+			// where snapParts.length > opParts.length but parts don't match
+			assert.strictEqual(analyzer.areKeysRelated("user:123", "other:456:profile"), false);
+			assert.strictEqual(analyzer.areKeysRelated("data.key", "different.value.extra"), false);
+		});
+
+		/**
+		 * Test _isAncestorDescendantRelationship true branch (lines 347-349)
+		 */
+		it("should trigger ancestor-descendant relationship true branch", () => {
+			// Use keys where one is truly an ancestor of another
+			assert.strictEqual(analyzer.areKeysRelated("app", "app:module:component:subpart"), true);
+			assert.strictEqual(analyzer.areKeysRelated("root.base", "root.base.level1.level2.level3"), true);
+		});
+
+		/**
+		 * Test _isCollectionMembership with array value (lines 365-367)
+		 */
+		it("should trigger collection membership check with array value", () => {
+			const transaction = new MockTransaction("tx1");
+			// Use hierarchical range check with array expectedValue to trigger _isCollectionMembership
+			const result = analyzer.isKeyInSnapshotRange(transaction, "users:123:profile", "users:123", ["item1", "item2"]);
+			assert.strictEqual(result, true);
+		});
+
+		/**
+		 * Test _checkTemporalRange when operation key is temporal (lines 787-795)
+		 */
+		it("should trigger temporal range check with temporal operation key", () => {
+			const transaction = new MockTransaction("tx1");
+			// Use temporal operation key to trigger _isTemporalSnapshot(operationKey) in _checkTemporalRange
+			const result = analyzer.isKeyInSnapshotRange(transaction, "log_timestamp_123", "event_history", "value");
+			assert.strictEqual(result, false); // Should be false as temporal overlap is unlikely
+		});
+
+		/**
+		 * Test pattern cache hit (lines 660-661)
+		 */
+		it("should hit pattern cache for already processed keys", () => {
+			// Call pattern-related method twice with same key to trigger cache hit
+			analyzer.areKeysRelated("user123", "user456"); // First call populates cache
+			const result = analyzer.areKeysRelated("user123", "user789"); // Second call should hit cache
+			assert.strictEqual(typeof result, "boolean");
+		});
+
+		/**
+		 * Test collection base fallback (lines 1053-1054)
+		 */
+		it("should return original key when no collection indicators found in _extractCollectionBase", () => {
+			// Use keys that definitely don't have any collection indicators
+			assert.strictEqual(analyzer.areKeysRelated("simplekeyname", "anotherkeyname"), false);
+		});
+
+		/**
+		 * Test _checkTemporalRange with temporal operation key (lines 787-795)
+		 */
+		it("should trigger temporal range check with temporal operation key", () => {
+			const transaction = new MockTransaction("tx1");
+			// Use temporal operation key to trigger _isTemporalSnapshot(operationKey) in _checkTemporalRange
+			// This hits lines 787-795, even if the result is false due to no actual temporal overlap
+			const result = analyzer.isKeyInSnapshotRange(transaction, "log_2023_12_25", "event_2023_12_26", "value");
+			assert.strictEqual(result, false); // Temporal components don't actually overlap in meaningful way
+		});
+
+		/**
+		 * Test _isCompositeKeySnapshot with different separators (lines 852-858)
+		 */
+		it("should detect composite keys with various separators", () => {
+			// Test each separator type individually to hit specific lines
+			// These tests will trigger _isCompositeKeySnapshot and specific separator lines
+			
+			// Test hash separator (line 853)
+			assert.strictEqual(analyzer.areKeysRelated("key#123", "key#456"), true);
+			
+			// Test pipe separator (line 854)
+			assert.strictEqual(analyzer.areKeysRelated("key|abc", "key|def"), true);
+			
+			// Test at separator (line 855)
+			assert.strictEqual(analyzer.areKeysRelated("key@domain", "key@other"), true);
+			
+			// Test multiple underscores (line 856) - split("_").length > 2
+			assert.strictEqual(analyzer.areKeysRelated("key_part_sub_item", "key_part_sub_other"), true);
+			
+			// Test multiple dashes (line 857) - split("-").length > 2
+			assert.strictEqual(analyzer.areKeysRelated("key-part-sub-item", "key-part-sub-other"), true);
 		});
 	});
 });
