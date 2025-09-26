@@ -16,7 +16,7 @@ const bannerShort = `/*!
 */`;
 const defaultOutBase = {compact: true, banner: bannerLong, name: pkg.name};
 const cjOutBase = {...defaultOutBase, compact: false, format: "cjs", exports: "named"};
-const esmOutBase = {...defaultOutBase, format: "esm"};
+const esmOutBase = {...defaultOutBase, format: "esm", exports: "named"};
 const umdOutBase = {...defaultOutBase, format: "umd"};
 const minOutBase = {banner: bannerShort, name: pkg.name, plugins: [terser()], sourcemap: true};
 
@@ -24,6 +24,15 @@ const minOutBase = {banner: bannerShort, name: pkg.name, plugins: [terser()], so
 export default [
 	{
 		input: `./src/${pkg.name}.js`,
+		external: ["crypto"],
+		onwarn (warning, warn) {
+			// Suppress specific warnings since we're targeting environments where crypto is a global
+			if (warning.code === "MISSING_NODE_BUILTINS" ||
+				warning.code === "MIXED_EXPORTS" && warning.message.includes("src/haro.js")) {
+				return;
+			}
+			warn(warning);
+		},
 		output: [
 			{
 				...cjOutBase,
@@ -31,23 +40,27 @@ export default [
 			},
 			{
 				...esmOutBase,
-				file: `dist/${pkg.name}.js`
+				file: `dist/${pkg.name}.js`,
+				globals: {crypto: "crypto"}
 			},
 			{
 				...esmOutBase,
 				...minOutBase,
-				file: `dist/${pkg.name}.min.js`
+				file: `dist/${pkg.name}.min.js`,
+				globals: {crypto: "crypto"}
 			},
 			{
 				...umdOutBase,
 				file: `dist/${pkg.name}.umd.js`,
-				name: "lru"
+				name: "haro",
+				globals: {crypto: "crypto"}
 			},
 			{
 				...umdOutBase,
 				...minOutBase,
 				file: `dist/${pkg.name}.umd.min.js`,
-				name: "lru"
+				name: "haro",
+				globals: {crypto: "crypto"}
 			}
 		]
 	}
