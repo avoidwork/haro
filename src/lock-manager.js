@@ -118,7 +118,6 @@ export class LockManager {
 	 * @returns {number} Number of locks released
 	 */
 	releaseAllLocks (transactionId) {
-		console.log(`DEBUG: releaseAllLocks called for transaction ${transactionId}`);
 		let released = 0;
 
 		for (const [recordKey, lock] of this.locks) {
@@ -133,7 +132,6 @@ export class LockManager {
 			}
 		}
 
-		console.log(`DEBUG: releaseAllLocks released ${released} locks for transaction ${transactionId}`);
 		return released;
 	}
 
