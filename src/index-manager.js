@@ -496,7 +496,7 @@ export class IndexManager {
 			}
 		}
 
-		return result || new Set();
+		return result;
 	}
 
 	/**
