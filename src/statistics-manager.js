@@ -106,7 +106,7 @@ export class StatisticsManager {
 		const stats = this.getStats();
 
 		return {
-			recordsPerIndex: stats.records / Math.max(1, Object.keys(stats.indexes || {}).length),
+			recordsPerIndex: stats.records / Math.max(1, Object.keys(stats.indexes).length),
 			memoryPerRecord: stats.memory.total / Math.max(1, stats.records),
 			indexEfficiency: this._calculateIndexEfficiency(stats),
 			overheadRatio: stats.memory.overhead / Math.max(1, stats.memory.data)
@@ -161,7 +161,7 @@ export class StatisticsManager {
 			summary: {
 				totalRecords: stats.records,
 				totalMemory: stats.memory.total,
-				activeIndexes: Object.keys(stats.indexes || {}).length,
+				activeIndexes: Object.keys(stats.indexes).length,
 				versioning: !!this.versionManager,
 				transactions: !!this.transactionManager,
 				optimization: !!this.queryOptimizer
