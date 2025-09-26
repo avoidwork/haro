@@ -5,9 +5,9 @@ export { Transaction } from "./transaction-individual.js";
 export { TransactionManager } from "./transaction-manager.js";
 
 // Also re-export constants that were previously defined in this file
-export { 
-	TransactionStates, 
-	OperationTypes, 
-	IsolationLevels, 
-	LockTypes 
+export {
+	TransactionStates,
+	OperationTypes,
+	IsolationLevels,
+	LockTypes
 } from "./constants.js";
