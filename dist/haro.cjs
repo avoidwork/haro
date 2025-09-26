@@ -7949,9 +7949,9 @@ class Haro {
 	 * Search records (backwards compatibility)
 	 * @param {*} value - Search value
 	 * @param {string|Array<string>} [fields] - Fields to search
-	 * @returns {Array<Object>} Matching records
+	 * @returns {RecordCollection} Matching records
 	 */
-	search (value, fields, raw = false) {
+	search (value, fields) {
 		// Function-based search (full scan)
 		if (typeof value === "function") {
 			return this.filter(value);
@@ -7988,16 +7988,8 @@ class Haro {
 			}
 		}
 
-		// Convert keys to records
-		const results = [];
-		for (const key of matchingKeys) {
-			const record = this.storageManager.get(key);
-			if (record) {
-				results.push(raw ? record : record);
-			}
-		}
-
-		return results;
+		// Use shared method to convert keys to RecordCollection
+		return this._keysToRecordCollection(matchingKeys);
 	}
 
 	/**
@@ -8011,16 +8003,20 @@ class Haro {
 		const matchingKeys = new Set();
 
 		try {
-			// Get all index entries for this field
-			const indexStorage = this.indexManager._indexes.get(indexName);
-			if (!indexStorage) {
-				return matchingKeys;
-			}
-
-			// Search through index keys
-			for (const [indexKey, recordKeys] of indexStorage._data.entries()) {
-				if (this._matchesValue(indexKey, value)) {
-					recordKeys.forEach(key => matchingKeys.add(key));
+			// For exact matches, use IndexManager's findByIndex method
+			if (typeof value === "string" && !value.includes("*") && !value.includes("?")) {
+				const exactKeys = this.indexManager.findByIndex(indexName, value);
+				exactKeys.forEach(key => matchingKeys.add(key));
+			} else {
+				// For partial matches, search through all index keys
+				const indexStorage = this.indexManager._indexes.get(indexName);
+				if (indexStorage) {
+					// Use correct property name: _storage instead of _data
+					for (const [indexKey, recordKeys] of indexStorage._storage.entries()) {
+						if (this._matchesValue(indexKey, value)) {
+							recordKeys.forEach(key => matchingKeys.add(key));
+						}
+					}
 				}
 			}
 		} catch {
@@ -8033,15 +8029,37 @@ class Haro {
 	/**
 	 * Perform full scan search when no indexes available
 	 * @param {*} value - Search value
-	 * @returns {Array<Object>} Matching records
+	 * @returns {RecordCollection} Matching records
 	 * @private
 	 */
 	_fullScanSearch (value) {
 		const records = this.values();
-
-		return records.filter(record => {
+		const matchingRecords = records.filter(record => {
 			return this._searchInRecord(record, value);
 		});
+
+		// Extract keys and use shared conversion method
+		const matchingKeys = matchingRecords.map(record => record[this.config.key]);
+
+		return this._keysToRecordCollection(matchingKeys);
+	}
+
+	/**
+	 * Convert a set of keys to a RecordCollection efficiently
+	 * @param {Set<string>|Array<string>} keys - Record keys
+	 * @returns {RecordCollection} Collection of Record objects
+	 * @private
+	 */
+	_keysToRecordCollection (keys) {
+		const results = [];
+		for (const key of keys) {
+			const recordData = this.storageManager.get(key);
+			if (recordData) {
+				results.push(RecordFactory.create(key, recordData));
+			}
+		}
+
+		return new RecordCollection(results);
 	}
 
 	/**

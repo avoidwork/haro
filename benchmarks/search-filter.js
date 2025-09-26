@@ -445,7 +445,7 @@ function printResults (results) {
 function runSearchFilterBenchmarks () {
 	console.log("🔍 Running Search & Filter Benchmarks...\n");
 
-	const dataSizes = [1000, 10000, 50000];
+	const dataSizes = [100, 500, 1000];
 	const allResults = [];
 
 	console.log("Testing FIND operations...");
