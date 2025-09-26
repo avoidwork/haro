@@ -19,10 +19,11 @@ import {
 	ConfigValidator,
 	Constraints
 } from "./validation.js";
+import { IsolationLevels } from "./constants.js";
 import { Record, RecordCollection, RecordFactory } from "./record.js";
 import { IndexManager, IndexTypes } from "./index-manager.js";
 import { VersionManager, RetentionPolicies } from "./version-manager.js";
-import { TransactionManager, IsolationLevels } from "./transaction.js";
+import { TransactionManager } from "./transaction-manager.js";
 import { QueryOptimizer, QueryTypes } from "./query-optimizer.js";
 
 /**
