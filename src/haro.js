@@ -7,7 +7,6 @@ import {
 	HaroError,
 	ValidationError,
 	RecordNotFoundError,
-	IndexError,
 	ConfigurationError,
 	TransactionError,
 	QueryError,
@@ -23,7 +22,7 @@ import {
 import { Record, RecordCollection, RecordFactory } from "./record.js";
 import { IndexManager, IndexTypes } from "./index-manager.js";
 import { VersionManager, RetentionPolicies } from "./version-manager.js";
-import { TransactionManager, Transaction, IsolationLevels } from "./transaction.js";
+import { TransactionManager, IsolationLevels } from "./transaction.js";
 import { QueryOptimizer, QueryTypes } from "./query-optimizer.js";
 
 /**
@@ -374,7 +373,7 @@ export class Haro {
 
 			// Validate against schema if configured
 			if (validate && this.config.schema) {
-				recordData = this.config.schema.validate(recordData);
+				this.config.schema.validate(recordData);
 			}
 
 			// Execute in transaction if provided
@@ -471,6 +470,7 @@ export class Haro {
 	 * Delete a record with proper cleanup
 	 * @param {string} key - Record key
 	 * @param {Object} [options={}] - Delete options
+	 * @returns {boolean} True if deleted successfully
 	 * @throws {RecordNotFoundError} If record not found
 	 */
 	delete (key, options = {}) {
@@ -512,6 +512,8 @@ export class Haro {
 		if (!batch) {
 			this.ondelete(key);
 		}
+
+		return true;
 	}
 
 	/**
@@ -785,13 +787,13 @@ export class Haro {
 	}
 
 	// Lifecycle hooks (override in subclasses)
-	beforeSet (key, data, options) {}
-	onset (record) {}
-	beforeDelete (key, batch) {}
-	ondelete (key) {}
+	beforeSet () {}
+	onset () {}
+	beforeDelete () {}
+	ondelete () {}
 	beforeClear () {}
 	onclear () {}
-	onbatch (results, type) {}
+	onbatch () {}
 
 	/**
 	 * Merge two records
@@ -848,11 +850,10 @@ export class Haro {
 	/**
 	 * Filter by function predicate
 	 * @param {Function} predicate - Filter function
-	 * @param {Object} options - Filter options
 	 * @returns {RecordCollection} Filtered records
 	 * @private
 	 */
-	_filterByFunction (predicate, options) {
+	_filterByFunction (predicate) {
 		const records = [];
 
 		for (const [key, recordData] of this._store.entries()) {
@@ -903,11 +904,12 @@ export class Haro {
 				this.delete(key, { transaction: null });
 
 				return true;
-			case "find":
+			case "find": {
 				const criteria = key; // In this context, key is criteria
-				const options = data; // In this context, data is options
+				const findOptions = data; // In this context, data is options
 
-				return this.find(criteria, { ...options, transaction: null });
+				return this.find(criteria, { ...findOptions, transaction: null });
+			}
 			default:
 				throw new TransactionError(`Unknown operation: ${operation}`, transaction.id, operation);
 		}

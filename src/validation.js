@@ -192,9 +192,9 @@ export class FieldConstraint {
 	 */
 	_isURL (value) {
 		try {
-			new URL(value);
+			const url = new URL(value);
 
-			return true;
+			return Boolean(url);
 		} catch {
 			return false;
 		}

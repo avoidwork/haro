@@ -229,10 +229,9 @@ export class DataStatistics {
 	/**
 	 * Get selectivity estimate for a field value
 	 * @param {string} fieldName - Field name
-	 * @param {*} value - Field value
 	 * @returns {number} Selectivity estimate (0-1)
 	 */
-	getSelectivity (fieldName, value) {
+	getSelectivity (fieldName) {
 		const fieldStats = this.fieldStatistics.get(fieldName);
 		if (!fieldStats) {
 			return 0.1; // Default selectivity
@@ -424,7 +423,7 @@ export class QueryOptimizer {
 		// Estimate costs for each strategy
 		const costedStrategies = strategies.map(strategy => ({
 			...strategy,
-			estimatedCost: this._estimateStrategyCost(strategy, context)
+			estimatedCost: this._estimateStrategyCost(strategy)
 		}));
 
 		// Sort by estimated cost
@@ -474,31 +473,29 @@ export class QueryOptimizer {
 
 		switch (strategy.type) {
 			case "index_lookup":
-				this._addIndexLookupSteps(plan, query, strategy, context);
+				this._addIndexLookupSteps(plan, strategy);
 				break;
 			case "filtered_scan":
-				this._addFilteredScanSteps(plan, query, strategy, context);
+				this._addFilteredScanSteps(plan, query, strategy);
 				break;
 			case "full_scan":
-				this._addFullScanSteps(plan, query, context);
+				this._addFullScanSteps(plan);
 				break;
 			default:
-				this._addFullScanSteps(plan, query, context);
+				this._addFullScanSteps(plan);
 		}
 
 		// Add post-processing steps
-		this._addPostProcessingSteps(plan, query, context);
+		this._addPostProcessingSteps(plan, query);
 	}
 
 	/**
 	 * Add index lookup steps to plan
 	 * @param {QueryPlan} plan - Query plan
-	 * @param {Object} query - Query object
 	 * @param {Object} strategy - Execution strategy
-	 * @param {Object} context - Query context
 	 * @private
 	 */
-	_addIndexLookupSteps (plan, query, strategy, context) {
+	_addIndexLookupSteps (plan, strategy) {
 		const step = new QueryPlanStep(
 			"index_lookup",
 			{
@@ -506,7 +503,7 @@ export class QueryOptimizer {
 				lookupKey: strategy.lookupKey
 			},
 			CostFactors.INDEX_LOOKUP,
-			this._estimateIndexLookupRows(strategy.indexName, strategy.lookupKey)
+			this._estimateIndexLookupRows(strategy.indexName)
 		);
 
 		plan.addStep(step);
@@ -517,13 +514,12 @@ export class QueryOptimizer {
 	 * @param {QueryPlan} plan - Query plan
 	 * @param {Object} query - Query object
 	 * @param {Object} strategy - Execution strategy
-	 * @param {Object} context - Query context
 	 * @private
 	 */
-	_addFilteredScanSteps (plan, query, strategy, context) {
+	_addFilteredScanSteps (plan, query, strategy) {
 		// First, index lookup for partial filtering
 		if (strategy.indexName) {
-			this._addIndexLookupSteps(plan, query, strategy, context);
+			this._addIndexLookupSteps(plan, strategy);
 		}
 
 		// Then, filter remaining records
@@ -540,11 +536,9 @@ export class QueryOptimizer {
 	/**
 	 * Add full scan steps to plan
 	 * @param {QueryPlan} plan - Query plan
-	 * @param {Object} query - Query object
-	 * @param {Object} context - Query context
 	 * @private
 	 */
-	_addFullScanSteps (plan, query, context) {
+	_addFullScanSteps (plan) {
 		const step = new QueryPlanStep(
 			"full_scan",
 			{ scanType: "sequential" },
@@ -559,10 +553,9 @@ export class QueryOptimizer {
 	 * Add post-processing steps (sort, limit, etc.)
 	 * @param {QueryPlan} plan - Query plan
 	 * @param {Object} query - Query object
-	 * @param {Object} context - Query context
 	 * @private
 	 */
-	_addPostProcessingSteps (plan, query, context) {
+	_addPostProcessingSteps (plan, query) {
 		// Add sort step if needed
 		if (query.sort || query.sortBy) {
 			const sortStep = new QueryPlanStep(
@@ -632,21 +625,21 @@ export class QueryOptimizer {
 	/**
 	 * Estimate cost of an execution strategy
 	 * @param {Object} strategy - Execution strategy
-	 * @param {Object} context - Query context
 	 * @returns {number} Estimated cost
 	 * @private
 	 */
-	_estimateStrategyCost (strategy, context) {
+	_estimateStrategyCost (strategy) {
 		switch (strategy.type) {
 			case "index_lookup":
 				return CostFactors.INDEX_LOOKUP +
-					   this._estimateIndexLookupRows(strategy.indexName, strategy.lookupKey) * CostFactors.MEMORY_ACCESS;
+					this._estimateIndexLookupRows(strategy.indexName, strategy.lookupKey) * CostFactors.MEMORY_ACCESS;
 
-			case "filtered_scan":
+			case "filtered_scan": {
 				const indexCost = strategy.indexName ? CostFactors.INDEX_LOOKUP : 0;
 				const filterCost = CostFactors.FILTER_EVALUATION * this.statistics.totalRecords;
 
 				return indexCost + filterCost;
+			}
 
 			case "full_scan":
 				return CostFactors.FULL_SCAN * this.statistics.totalRecords;
@@ -659,11 +652,10 @@ export class QueryOptimizer {
 	/**
 	 * Estimate number of rows returned by index lookup
 	 * @param {string} indexName - Index name
-	 * @param {string} lookupKey - Lookup key
 	 * @returns {number} Estimated row count
 	 * @private
 	 */
-	_estimateIndexLookupRows (indexName, lookupKey) {
+	_estimateIndexLookupRows (indexName) {
 		const indexStats = this.statistics.indexStatistics.get(indexName);
 		if (!indexStats) {
 			return this.statistics.totalRecords * 0.1; // Default 10%

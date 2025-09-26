@@ -214,7 +214,7 @@ export class VersionHistory {
 	 */
 	_applyRetentionPolicy () {
 		if (!this.policy || this.policy.type === RetentionPolicies.NONE) {
-			return;
+			return 0;
 		}
 
 		let removed = 0;
@@ -228,6 +228,9 @@ export class VersionHistory {
 				break;
 			case RetentionPolicies.SIZE:
 				removed = this._applySizePolicy();
+				break;
+			default:
+				removed = 0;
 				break;
 		}
 
@@ -439,7 +442,7 @@ export class VersionManager {
 	 * @returns {Object} Cleanup results
 	 */
 	cleanup (options = {}) {
-		const { force = false, recordKeys } = options;
+		const { recordKeys } = options;
 		const results = {
 			historiesProcessed: 0,
 			versionsRemoved: 0,
@@ -451,25 +454,25 @@ export class VersionManager {
 
 		for (const recordKey of keysToProcess) {
 			const history = this.histories.get(recordKey);
-			if (!history) continue;
+			if (history) {
+				const oldCount = history.getCount();
+				const oldSize = history.getTotalSize();
 
-			const oldCount = history.getCount();
-			const oldSize = history.getTotalSize();
+				// Apply retention policy
+				history._applyRetentionPolicy();
 
-			// Apply retention policy
-			const removed = history._applyRetentionPolicy();
+				const newCount = history.getCount();
+				const newSize = history.getTotalSize();
 
-			const newCount = history.getCount();
-			const newSize = history.getTotalSize();
+				results.historiesProcessed++;
+				results.versionsRemoved += oldCount - newCount;
+				results.sizeFreed += oldSize - newSize;
 
-			results.historiesProcessed++;
-			results.versionsRemoved += oldCount - newCount;
-			results.sizeFreed += oldSize - newSize;
-
-			// Remove empty histories
-			if (newCount === 0) {
-				this.histories.delete(recordKey);
-				this.stats.totalHistories--;
+				// Remove empty histories
+				if (newCount === 0) {
+					this.histories.delete(recordKey);
+					this.stats.totalHistories--;
+				}
 			}
 		}
 
