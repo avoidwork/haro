@@ -10,7 +10,7 @@ export class Schema {
 	 * @param {boolean} [options.strict=false] - Whether to allow additional fields
 	 * @param {boolean} [options.stripUnknown=false] - Whether to remove unknown fields
 	 */
-	constructor(fields = {}, { strict = false, stripUnknown = false } = {}) {
+	constructor (fields = {}, { strict = false, stripUnknown = false } = {}) {
 		this.fields = fields;
 		this.strict = strict;
 		this.stripUnknown = stripUnknown;
@@ -22,7 +22,7 @@ export class Schema {
 	 * @returns {Object} Validated/normalized record
 	 * @throws {ValidationError} If validation fails
 	 */
-	validate(record) {
+	validate (record) {
 		if (!record || typeof record !== "object") {
 			throw new ValidationError("Record must be an object", "record", record);
 		}
@@ -60,7 +60,7 @@ export class Schema {
 	 * @param {FieldConstraint} constraint - Field constraint
 	 * @returns {Schema} This schema for chaining
 	 */
-	addField(fieldName, constraint) {
+	addField (fieldName, constraint) {
 		this.fields[fieldName] = constraint;
 
 		return this;
@@ -71,7 +71,7 @@ export class Schema {
 	 * @param {string} fieldName - Name of the field
 	 * @returns {Schema} This schema for chaining
 	 */
-	removeField(fieldName) {
+	removeField (fieldName) {
 		delete this.fields[fieldName];
 
 		return this;

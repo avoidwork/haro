@@ -10,7 +10,7 @@ export const Constraints = {
 	 * @param {Object} [options={}] - Additional constraint options
 	 * @returns {FieldConstraint} String constraint
 	 */
-	requiredString(options = {}) {
+	requiredString (options = {}) {
 		return new FieldConstraint({ type: DataTypes.STRING, required: true, ...options });
 	},
 
@@ -19,7 +19,7 @@ export const Constraints = {
 	 * @param {Object} [options={}] - Additional constraint options
 	 * @returns {FieldConstraint} String constraint
 	 */
-	optionalString(options = {}) {
+	optionalString (options = {}) {
 		return new FieldConstraint({ type: DataTypes.STRING, required: false, ...options });
 	},
 
@@ -28,7 +28,7 @@ export const Constraints = {
 	 * @param {Object} [options={}] - Additional constraint options
 	 * @returns {FieldConstraint} Number constraint
 	 */
-	requiredNumber(options = {}) {
+	requiredNumber (options = {}) {
 		return new FieldConstraint({ type: DataTypes.NUMBER, required: true, ...options });
 	},
 
@@ -37,7 +37,7 @@ export const Constraints = {
 	 * @param {Object} [options={}] - Additional constraint options
 	 * @returns {FieldConstraint} Number constraint
 	 */
-	optionalNumber(options = {}) {
+	optionalNumber (options = {}) {
 		return new FieldConstraint({ type: DataTypes.NUMBER, required: false, ...options });
 	},
 
@@ -46,7 +46,7 @@ export const Constraints = {
 	 * @param {boolean} [required=true] - Whether field is required
 	 * @returns {FieldConstraint} UUID constraint
 	 */
-	uuid(required = true) {
+	uuid (required = true) {
 		return new FieldConstraint({ type: DataTypes.UUID, required });
 	},
 
@@ -55,7 +55,7 @@ export const Constraints = {
 	 * @param {boolean} [required=true] - Whether field is required
 	 * @returns {FieldConstraint} Email constraint
 	 */
-	email(required = true) {
+	email (required = true) {
 		return new FieldConstraint({ type: DataTypes.EMAIL, required });
 	},
 
@@ -65,7 +65,7 @@ export const Constraints = {
 	 * @param {boolean} [required=true] - Whether field is required
 	 * @returns {FieldConstraint} Enum constraint
 	 */
-	enum(values, required = true) {
+	enum (values, required = true) {
 		return new FieldConstraint({ enum: values, required });
 	},
 
@@ -74,7 +74,7 @@ export const Constraints = {
 	 * @param {boolean} [required=true] - Whether field is required
 	 * @returns {FieldConstraint} Date constraint
 	 */
-	date(required = true) {
+	date (required = true) {
 		return new FieldConstraint({ type: DataTypes.DATE, required });
 	}
 };

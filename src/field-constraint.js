@@ -16,7 +16,7 @@ export class FieldConstraint {
 	 * @param {Array} [options.enum] - Allowed values
 	 * @param {RegExp} [options.pattern] - Pattern for string validation
 	 */
-	constructor({
+	constructor ({
 		type = DataTypes.ANY,
 		required = false,
 		default: defaultValue,
@@ -43,7 +43,7 @@ export class FieldConstraint {
 	 * @returns {*} Validated/normalized value
 	 * @throws {ValidationError} If validation fails
 	 */
-	validate(value, fieldName = "field") {
+	validate (value, fieldName = "field") {
 		// Handle undefined values
 		if (value === undefined || value === null) {
 			if (this.required) {

@@ -11,7 +11,7 @@ export class ConfigValidator {
 	 * @returns {Object} Validated configuration
 	 * @throws {ConfigurationError} If configuration is invalid
 	 */
-	static validate(config = {}) {
+	static validate (config = {}) {
 		const validated = { ...config };
 
 		// Validate delimiter
