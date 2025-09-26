@@ -1,3 +1,5 @@
+import { ValidationError } from "./errors.js";
+
 /**
  * Manages lifecycle hooks and events
  */
@@ -26,7 +28,7 @@ export class LifecycleManager {
 	 */
 	registerHook (event, handler) {
 		if (typeof handler !== "function") {
-			throw new Error(`Hook handler for '${event}' must be a function`);
+			throw new ValidationError(`Hook handler for '${event}' must be a function`, "handler", handler);
 		}
 		this.hooks[event] = handler;
 	}
