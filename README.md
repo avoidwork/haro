@@ -1,10 +1,10 @@
-# Haro - Enterprise-Ready Data Store
+# Haro
 
 [![npm version](https://badge.fury.io/js/haro.svg)](https://badge.fury.io/js/haro)
 [![Node.js Version](https://img.shields.io/node/v/haro.svg)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
-Haro provides a robust, scalable, and maintainable data store with advanced capabilities including transactions, schema validation, query optimization, and streaming support.
+Haro is a data store library for enterprise applications. It provides ACID transactions, schema validation, query optimization, and streaming support for both client and server applications.
 
 ## 🆕 New Enterprise Features
 - **ACID Transactions**: Full transaction support with isolation levels
