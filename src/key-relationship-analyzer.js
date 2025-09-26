@@ -155,10 +155,6 @@ export class KeyRelationshipAnalyzer {
 	 * @returns {boolean} True if key matches query
 	 */
 	keyMatchesQuery (key, queryInfo) {
-		if (!queryInfo || typeof queryInfo !== "object") {
-			return false;
-		}
-
 		if (queryInfo.type === "range") {
 			return this.keyMatchesRange(key, queryInfo);
 		}
@@ -191,10 +187,6 @@ export class KeyRelationshipAnalyzer {
 	 * @returns {boolean} True if key matches index range
 	 */
 	keyMatchesIndexRange (key, indexRange) {
-		if (!indexRange || typeof indexRange !== "object") {
-			return false;
-		}
-
 		if (indexRange.fields && Array.isArray(indexRange.fields)) {
 			for (const field of indexRange.fields) {
 				if (key.includes(field)) {
