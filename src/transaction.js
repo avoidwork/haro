@@ -800,7 +800,7 @@ export class TransactionManager {
 
 		// Build edges based on lock conflicts
 		for (const lockInfo of lockStats.recordsLocked) {
-			const { recordKey, type: lockType, holders } = lockInfo;
+			const { recordKey, holders } = lockInfo;
 
 			// Find transactions waiting for this lock
 			const waitingTransactions = this._findTransactionsWaitingForLock(recordKey, transactions);
@@ -965,7 +965,6 @@ export class TransactionManager {
 	 */
 	_detectCyclesInResourceGraph (resourceGraph) {
 		const cycles = [];
-		const visited = new Set();
 
 		// Convert resource graph to wait-for graph
 		const waitForGraph = new Map();
@@ -1367,20 +1366,18 @@ export class TransactionManager {
 		// Look for transactions that might have added/removed records that would
 		// affect the snapshot consistency
 		for (const [txId, otherTx] of this.transactions) {
-			if (txId === transaction.id || !this._transactionsOverlap(transaction, otherTx)) {
-				continue;
-			}
-
-			// Check if other transaction has operations that could create phantom reads
-			if (this._hasPhantomConflict(transaction, otherTx, key, expectedValue)) {
-				return true;
+			if (txId !== transaction.id && this._transactionsOverlap(transaction, otherTx)) {
+				// Check if other transaction has operations that could create phantom reads
+				if (this._hasPhantomConflict(transaction, otherTx, key, expectedValue)) {
+					return true;
+				}
 			}
 		}
 
 		// 3. Check for serialization anomalies specific to snapshots
 		// This detects cases where the snapshot assumption is violated by
 		// concurrent transaction effects
-		if (this._hasSerializationAnomalyInSnapshot(transaction, key, expectedValue)) {
+		if (this._hasSerializationAnomalyInSnapshot(transaction, key)) {
 			return true;
 		}
 
@@ -1401,22 +1398,20 @@ export class TransactionManager {
 		// the snapshot's validity through phantom reads
 
 		for (const operation of otherTransaction.operations) {
-			// Skip read operations as they don't create phantoms
-			if (operation.type === "read") {
-				continue;
-			}
+			// Only check non-read operations as they can create phantoms
+			if (operation.type !== "read") {
+				// Check for direct key conflicts
+				if (operation.key === key) {
+					// Direct modification of snapshot key by concurrent transaction
+					return true;
+				}
 
-			// Check for direct key conflicts
-			if (operation.key === key) {
-				// Direct modification of snapshot key by concurrent transaction
-				return true;
-			}
-
-			// Check for range-based phantom conflicts
-			// This is a simplified check - in a real implementation you would
-			// need to understand the query predicates that created the snapshot
-			if (this._isKeyInSnapshotRange(transaction, operation.key, key, expectedValue)) {
-				return true;
+				// Check for range-based phantom conflicts
+				// This is a simplified check - in a real implementation you would
+				// need to understand the query predicates that created the snapshot
+				if (this._isKeyInSnapshotRange(transaction, operation.key, key, expectedValue)) {
+					return true;
+				}
 			}
 		}
 
@@ -1463,12 +1458,12 @@ export class TransactionManager {
 
 		// 6. Check for semantic key relationships
 		if (this._hasSemanticRelationship(operationKey, snapshotKey)) {
-			return this._checkSemanticRange(operationKey, snapshotKey, expectedValue);
+			return this._checkSemanticRange(operationKey, snapshotKey);
 		}
 
 		// 7. Check for temporal range relationships
 		if (this._isTemporalSnapshot(snapshotKey)) {
-			return this._checkTemporalRange(operationKey, snapshotKey, expectedValue);
+			return this._checkTemporalRange(operationKey, snapshotKey);
 		}
 
 		// 8. Check for composite key range relationships
@@ -1524,8 +1519,8 @@ export class TransactionManager {
 	 */
 	_hasExplicitRangeMetadata (transaction, snapshotKey) {
 		return transaction.snapshot.has(`${snapshotKey}:range`) ||
-			   transaction.snapshot.has(`${snapshotKey}:query`) ||
-			   transaction.snapshot.has(`${snapshotKey}:predicate`);
+			transaction.snapshot.has(`${snapshotKey}:query`) ||
+			transaction.snapshot.has(`${snapshotKey}:predicate`);
 	}
 
 	/**
@@ -1570,12 +1565,12 @@ export class TransactionManager {
 	 * @private
 	 */
 	_isPatternBasedSnapshot (snapshotKey) {
-		return snapshotKey.includes("*") || 
-			   snapshotKey.includes("?") || 
-			   snapshotKey.includes("[") ||
-			   snapshotKey.includes("{") ||
-			   snapshotKey.endsWith("_range") ||
-			   snapshotKey.endsWith("_pattern");
+		return snapshotKey.includes("*") ||
+			snapshotKey.includes("?") ||
+			snapshotKey.includes("[") ||
+			snapshotKey.includes("{") ||
+			snapshotKey.endsWith("_range") ||
+			snapshotKey.endsWith("_pattern");
 	}
 
 	/**
@@ -1591,10 +1586,12 @@ export class TransactionManager {
 			const pattern = snapshotKey.replace(/\*/g, ".*");
 			try {
 				const regex = new RegExp(`^${pattern}$`);
+
 				return regex.test(operationKey);
 			} catch {
 				// Fallback to simple prefix matching
 				const prefix = snapshotKey.split("*")[0];
+
 				return operationKey.startsWith(prefix);
 			}
 		}
@@ -1604,6 +1601,7 @@ export class TransactionManager {
 			const pattern = snapshotKey.replace(/\?/g, ".");
 			try {
 				const regex = new RegExp(`^${pattern}$`);
+
 				return regex.test(operationKey);
 			} catch {
 				return false;
@@ -1614,6 +1612,7 @@ export class TransactionManager {
 		if (snapshotKey.includes("[")) {
 			try {
 				const regex = new RegExp(`^${snapshotKey}$`);
+
 				return regex.test(operationKey);
 			} catch {
 				return false;
@@ -1625,7 +1624,7 @@ export class TransactionManager {
 			const beforeBrace = snapshotKey.substring(0, snapshotKey.indexOf("{"));
 			const afterBrace = snapshotKey.substring(snapshotKey.indexOf("}") + 1);
 			const choices = snapshotKey.substring(
-				snapshotKey.indexOf("{") + 1, 
+				snapshotKey.indexOf("{") + 1,
 				snapshotKey.indexOf("}")
 			).split(",");
 
@@ -1640,6 +1639,7 @@ export class TransactionManager {
 		// Handle range and pattern suffixes
 		if (snapshotKey.endsWith("_range") || snapshotKey.endsWith("_pattern")) {
 			const baseKey = snapshotKey.replace(/_range$|_pattern$/, "");
+
 			return operationKey.startsWith(baseKey);
 		}
 
@@ -1656,7 +1656,7 @@ export class TransactionManager {
 	_hasHierarchicalRelationship (operationKey, snapshotKey) {
 		// Check for common hierarchical separators
 		const separators = [":", "/", ".", "_", "-"];
-		
+
 		for (const sep of separators) {
 			if (operationKey.includes(sep) && snapshotKey.includes(sep)) {
 				return true;
@@ -1676,22 +1676,22 @@ export class TransactionManager {
 	 */
 	_checkHierarchicalRange (operationKey, snapshotKey, expectedValue) {
 		const separators = [":", "/", ".", "_", "-"];
-		
+
 		for (const sep of separators) {
 			if (operationKey.includes(sep) && snapshotKey.includes(sep)) {
 				const opParts = operationKey.split(sep);
 				const snapParts = snapshotKey.split(sep);
-				
+
 				// Check for parent-child relationships
 				if (this._isParentChildRelationship(opParts, snapParts)) {
 					return true;
 				}
-				
+
 				// Check for sibling relationships
 				if (this._isSiblingRelationship(opParts, snapParts)) {
 					return true;
 				}
-				
+
 				// Check for collection membership
 				if (this._isCollectionMembership(opParts, snapParts, expectedValue)) {
 					return true;
@@ -1717,9 +1717,10 @@ export class TransactionManager {
 					return false;
 				}
 			}
+
 			return true;
 		}
-		
+
 		// Snapshot key is child of operation key
 		if (snapParts.length > opParts.length) {
 			for (let i = 0; i < opParts.length; i++) {
@@ -1727,6 +1728,7 @@ export class TransactionManager {
 					return false;
 				}
 			}
+
 			return true;
 		}
 
@@ -1750,6 +1752,7 @@ export class TransactionManager {
 				}
 			}
 			// Last parts are different (making them siblings)
+
 			return opParts[opParts.length - 1] !== snapParts[snapParts.length - 1];
 		}
 
@@ -1766,9 +1769,9 @@ export class TransactionManager {
 	 */
 	_isCollectionMembership (opParts, snapParts, expectedValue) {
 		// Check if snapshot represents a collection query
-		if (Array.isArray(expectedValue) || 
-			(expectedValue && typeof expectedValue === "object" && expectedValue.length !== undefined)) {
-			
+		if (Array.isArray(expectedValue) ||
+			expectedValue && typeof expectedValue === "object" && expectedValue.length !== undefined) {
+
 			// Operation might be adding/removing from the collection
 			return this._isParentChildRelationship(opParts, snapParts) ||
 				   this._isSiblingRelationship(opParts, snapParts);
@@ -1809,6 +1812,7 @@ export class TransactionManager {
 		// Infer index range from key patterns
 		if (snapshotKey.includes("_index") || snapshotKey.includes("_idx")) {
 			const baseKey = snapshotKey.replace(/_index.*$|_idx.*$/, "");
+
 			return operationKey.startsWith(baseKey);
 		}
 
@@ -1861,7 +1865,7 @@ export class TransactionManager {
 		];
 
 		for (const prefix of semanticPrefixes) {
-			if (operationKey.toLowerCase().includes(prefix) && 
+			if (operationKey.toLowerCase().includes(prefix) &&
 				snapshotKey.toLowerCase().includes(prefix)) {
 				return true;
 			}
@@ -1874,11 +1878,10 @@ export class TransactionManager {
 	 * Check semantic range for key inclusion
 	 * @param {string} operationKey - Key to check
 	 * @param {string} snapshotKey - Snapshot key
-	 * @param {*} expectedValue - Expected value from snapshot
 	 * @returns {boolean} True if key is in semantic range
 	 * @private
 	 */
-	_checkSemanticRange (operationKey, snapshotKey, expectedValue) {
+	_checkSemanticRange (operationKey, snapshotKey) {
 		// Extract semantic identifiers
 		const opSemantics = this._extractSemanticIdentifiers(operationKey);
 		const snapSemantics = this._extractSemanticIdentifiers(snapshotKey);
@@ -1903,12 +1906,12 @@ export class TransactionManager {
 	 */
 	_extractSemanticIdentifiers (key) {
 		const identifiers = [];
-		
+
 		// Extract common patterns: entity:id, entity_id, entityId
 		const patterns = [
-			/(\w+):(\w+)/g,        // entity:id
-			/(\w+)_(\w+)/g,        // entity_id
-			/([a-z]+)([A-Z]\w+)/g  // entityId (camelCase)
+			/(\w+):(\w+)/g, // entity:id
+			/(\w+)_(\w+)/g, // entity_id
+			/([a-z]+)([A-Z]\w+)/g // entityId (camelCase)
 		];
 
 		for (const pattern of patterns) {
@@ -1946,8 +1949,8 @@ export class TransactionManager {
 		];
 
 		for (const [singular, plural] of singularPlural) {
-			if ((id1 === singular && id2 === plural) || 
-				(id1 === plural && id2 === singular)) {
+			if (id1 === singular && id2 === plural ||
+				id1 === plural && id2 === singular) {
 				return true;
 			}
 		}
@@ -1967,7 +1970,7 @@ export class TransactionManager {
 			"datetime", "ts", "epoch", "iso", "utc", "log", "event", "history"
 		];
 
-		return temporalKeywords.some(keyword => 
+		return temporalKeywords.some(keyword =>
 			snapshotKey.toLowerCase().includes(keyword)
 		);
 	}
@@ -1976,11 +1979,10 @@ export class TransactionManager {
 	 * Check temporal range for key inclusion
 	 * @param {string} operationKey - Key to check
 	 * @param {string} snapshotKey - Snapshot key
-	 * @param {*} expectedValue - Expected value from snapshot
 	 * @returns {boolean} True if key is in temporal range
 	 * @private
 	 */
-	_checkTemporalRange (operationKey, snapshotKey, expectedValue) {
+	_checkTemporalRange (operationKey, snapshotKey) {
 		// If both keys are temporal, they might affect each other
 		if (this._isTemporalSnapshot(operationKey)) {
 			// Extract temporal components
@@ -1988,7 +1990,7 @@ export class TransactionManager {
 			const snapTemporal = this._extractTemporalComponents(snapshotKey);
 
 			// Check for temporal proximity or overlap
-			return this._haveTemporalOverlap(opTemporal, snapTemporal, expectedValue);
+			return this._haveTemporalOverlap(opTemporal, snapTemporal);
 		}
 
 		return false;
@@ -2009,10 +2011,10 @@ export class TransactionManager {
 		};
 
 		// Check for various temporal formats
-		if (/\d{4}-\d{2}-\d{2}/.test(key)) components.hasDate = true;
-		if (/\d{2}:\d{2}:\d{2}/.test(key)) components.hasTime = true;
-		if (/\d{13}/.test(key)) components.hasTimestamp = true; // 13-digit timestamp
-		if (/\d{10}/.test(key)) components.hasEpoch = true; // 10-digit epoch
+		if ((/\d{4}-\d{2}-\d{2}/).test(key)) components.hasDate = true;
+		if ((/\d{2}:\d{2}:\d{2}/).test(key)) components.hasTime = true;
+		if ((/\d{13}/).test(key)) components.hasTimestamp = true; // 13-digit timestamp
+		if ((/\d{10}/).test(key)) components.hasEpoch = true; // 10-digit epoch
 
 		return components;
 	}
@@ -2021,16 +2023,15 @@ export class TransactionManager {
 	 * Check if temporal components have overlap
 	 * @param {Object} opTemporal - Operation temporal components
 	 * @param {Object} snapTemporal - Snapshot temporal components
-	 * @param {*} expectedValue - Expected value from snapshot
 	 * @returns {boolean} True if temporal overlap exists
 	 * @private
 	 */
-	_haveTemporalOverlap (opTemporal, snapTemporal, expectedValue) {
+	_haveTemporalOverlap (opTemporal, snapTemporal) {
 		// If both have similar temporal characteristics, assume possible overlap
-		return (opTemporal.hasDate && snapTemporal.hasDate) ||
-			   (opTemporal.hasTime && snapTemporal.hasTime) ||
-			   (opTemporal.hasTimestamp && snapTemporal.hasTimestamp) ||
-			   (opTemporal.hasEpoch && snapTemporal.hasEpoch);
+		return opTemporal.hasDate && snapTemporal.hasDate ||
+			   opTemporal.hasTime && snapTemporal.hasTime ||
+			   opTemporal.hasTimestamp && snapTemporal.hasTimestamp ||
+			   opTemporal.hasEpoch && snapTemporal.hasEpoch;
 	}
 
 	/**
@@ -2045,8 +2046,8 @@ export class TransactionManager {
 			   snapshotKey.includes("#") ||
 			   snapshotKey.includes("|") ||
 			   snapshotKey.includes("@") ||
-			   (snapshotKey.split("_").length > 2) ||
-			   (snapshotKey.split("-").length > 2);
+			   snapshotKey.split("_").length > 2 ||
+			   snapshotKey.split("-").length > 2;
 	}
 
 	/**
@@ -2058,12 +2059,12 @@ export class TransactionManager {
 	 */
 	_checkCompositeKeyRange (operationKey, snapshotKey) {
 		const separators = [":", "#", "|", "@", "_", "-"];
-		
+
 		for (const sep of separators) {
 			if (operationKey.includes(sep) && snapshotKey.includes(sep)) {
 				const opParts = operationKey.split(sep);
 				const snapParts = snapshotKey.split(sep);
-				
+
 				// Check for partial key matches (prefix matching)
 				if (this._hasCompositeKeyOverlap(opParts, snapParts)) {
 					return true;
@@ -2083,7 +2084,7 @@ export class TransactionManager {
 	 */
 	_hasCompositeKeyOverlap (opParts, snapParts) {
 		const minLength = Math.min(opParts.length, snapParts.length);
-		
+
 		// Check if any prefix matches
 		for (let i = 1; i <= minLength; i++) {
 			let allMatch = true;
@@ -2125,6 +2126,7 @@ export class TransactionManager {
 		if (queryInfo.type === "pattern") {
 			try {
 				const regex = new RegExp(queryInfo.pattern || "");
+
 				return regex.test(key);
 			} catch {
 				return false;
@@ -2142,11 +2144,10 @@ export class TransactionManager {
 	 * Check for serialization anomalies in snapshot data
 	 * @param {Transaction} transaction - Transaction with snapshot
 	 * @param {string} key - Snapshot key
-	 * @param {*} expectedValue - Expected value from snapshot
 	 * @returns {boolean} True if serialization anomaly detected
 	 * @private
 	 */
-	_hasSerializationAnomalyInSnapshot (transaction, key, expectedValue) {
+	_hasSerializationAnomalyInSnapshot (transaction, key) {
 		// Check for serialization anomalies that violate snapshot isolation
 		// This includes detecting when the snapshot assumption leads to
 		// non-serializable execution
@@ -2155,22 +2156,21 @@ export class TransactionManager {
 		// data and write to disjoint sets, but their combined effect violates
 		// the snapshot assumption
 		for (const [txId, otherTx] of this.transactions) {
-			if (txId === transaction.id ||
-				!otherTx.isActive() ||
-				!this._transactionsOverlap(transaction, otherTx)) {
-				continue;
-			}
+			if (txId !== transaction.id &&
+				otherTx.isActive() &&
+				this._transactionsOverlap(transaction, otherTx)) {
 
-			// Check for write-skew: both transactions read similar data
-			// but write to different keys
-			if (this._hasWriteSkewAnomaly(transaction, otherTx, key, expectedValue)) {
-				return true;
-			}
+				// Check for write-skew: both transactions read similar data
+				// but write to different keys
+				if (this._hasWriteSkewAnomaly(transaction, otherTx, key)) {
+					return true;
+				}
 
-			// Check for read-write dependency cycles that violate
-			// snapshot isolation guarantees
-			if (this._hasDependencyCycle(transaction, otherTx, key)) {
-				return true;
+				// Check for read-write dependency cycles that violate
+				// snapshot isolation guarantees
+				if (this._hasDependencyCycle(transaction, otherTx)) {
+					return true;
+				}
 			}
 		}
 
@@ -2182,11 +2182,10 @@ export class TransactionManager {
 	 * @param {Transaction} tx1 - First transaction
 	 * @param {Transaction} tx2 - Second transaction
 	 * @param {string} key - Key being checked
-	 * @param {*} expectedValue - Expected value
 	 * @returns {boolean} True if write-skew detected
 	 * @private
 	 */
-	_hasWriteSkewAnomaly (tx1, tx2, key, expectedValue) {
+	_hasWriteSkewAnomaly (tx1, tx2, key) {
 		// Write-skew occurs when:
 		// 1. Both transactions read overlapping data
 		// 2. Both transactions write to disjoint sets
@@ -2301,22 +2300,22 @@ export class TransactionManager {
 	 */
 	_hasHierarchicalKeyRelationship (key1, key2) {
 		const separators = [":", "/", ".", "_", "-"];
-		
+
 		for (const sep of separators) {
 			if (key1.includes(sep) && key2.includes(sep)) {
 				const parts1 = key1.split(sep);
 				const parts2 = key2.split(sep);
-				
+
 				// Parent-child relationship
 				if (this._isParentChildRelationship(parts1, parts2)) {
 					return true;
 				}
-				
+
 				// Sibling relationship
 				if (this._isSiblingRelationship(parts1, parts2)) {
 					return true;
 				}
-				
+
 				// Ancestor-descendant relationship
 				if (this._isAncestorDescendantRelationship(parts1, parts2)) {
 					return true;
@@ -2339,7 +2338,7 @@ export class TransactionManager {
 		// Check if one key is an ancestor of the other (not just immediate parent)
 		const shorter = parts1.length < parts2.length ? parts1 : parts2;
 		const longer = parts1.length < parts2.length ? parts2 : parts1;
-		
+
 		if (shorter.length < longer.length) {
 			// Check if shorter is prefix of longer
 			for (let i = 0; i < shorter.length; i++) {
@@ -2347,9 +2346,10 @@ export class TransactionManager {
 					return false;
 				}
 			}
+
 			return true;
 		}
-		
+
 		return false;
 	}
 
@@ -2391,15 +2391,15 @@ export class TransactionManager {
 			// User-related entities
 			["user", "profile"], ["user", "account"], ["user", "session"],
 			["profile", "account"], ["account", "session"],
-			
+
 			// Commerce entities
 			["user", "order"], ["user", "cart"], ["user", "payment"],
 			["order", "product"], ["order", "payment"], ["cart", "product"],
-			
+
 			// Content entities
 			["user", "post"], ["user", "comment"], ["user", "message"],
 			["post", "comment"], ["thread", "message"], ["document", "file"],
-			
+
 			// Workspace entities
 			["user", "workspace"], ["workspace", "document"], ["workspace", "folder"],
 			["folder", "file"], ["document", "file"]
@@ -2409,7 +2409,7 @@ export class TransactionManager {
 		for (const [entity1, entity2] of entityRelations) {
 			const hasEntity1InBoth = semantics1.includes(entity1) && semantics2.includes(entity2);
 			const hasEntity2InBoth = semantics1.includes(entity2) && semantics2.includes(entity1);
-			
+
 			if (hasEntity1InBoth || hasEntity2InBoth) {
 				return true;
 			}
@@ -2430,7 +2430,7 @@ export class TransactionManager {
 		if (this._isPatternBasedSnapshot(key1)) {
 			return this._checkPatternBasedRange(key2, key1);
 		}
-		
+
 		if (this._isPatternBasedSnapshot(key2)) {
 			return this._checkPatternBasedRange(key1, key2);
 		}
@@ -2450,7 +2450,7 @@ export class TransactionManager {
 		// Check for similar structures
 		const pattern1 = this._extractKeyPattern(key1);
 		const pattern2 = this._extractKeyPattern(key2);
-		
+
 		return this._patternsAreSimilar(pattern1, pattern2);
 	}
 
@@ -2463,8 +2463,8 @@ export class TransactionManager {
 	_extractKeyPattern (key) {
 		// Replace specific values with placeholders to identify structural patterns
 		return key
-			.replace(/\d+/g, "#")           // Numbers become #
-			.replace(/[a-f0-9]{8,}/g, "&")  // Hashes/UUIDs become &
+			.replace(/\d+/g, "#") // Numbers become #
+			.replace(/[a-f0-9]{8,}/g, "&") // Hashes/UUIDs become &
 			.replace(/\w{1,3}(?=:|_|-)/g, "@"); // Short prefixes become @
 	}
 
@@ -2483,6 +2483,7 @@ export class TransactionManager {
 
 		// Check for similar structure with different details
 		const similarity = this._calculatePatternSimilarity(pattern1, pattern2);
+
 		return similarity > 0.7; // 70% similarity threshold
 	}
 
@@ -2497,12 +2498,13 @@ export class TransactionManager {
 		const len1 = pattern1.length;
 		const len2 = pattern2.length;
 		const maxLen = Math.max(len1, len2);
-		
+
 		if (maxLen === 0) return 1;
-		
+
 		// Simple Levenshtein distance-based similarity
 		const distance = this._levenshteinDistance(pattern1, pattern2);
-		return 1 - (distance / maxLen);
+
+		return 1 - distance / maxLen;
 	}
 
 	/**
@@ -2514,15 +2516,15 @@ export class TransactionManager {
 	 */
 	_levenshteinDistance (str1, str2) {
 		const matrix = [];
-		
+
 		for (let i = 0; i <= str2.length; i++) {
 			matrix[i] = [i];
 		}
-		
+
 		for (let j = 0; j <= str1.length; j++) {
 			matrix[0][j] = j;
 		}
-		
+
 		for (let i = 1; i <= str2.length; i++) {
 			for (let j = 1; j <= str1.length; j++) {
 				if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
@@ -2530,13 +2532,13 @@ export class TransactionManager {
 				} else {
 					matrix[i][j] = Math.min(
 						matrix[i - 1][j - 1] + 1, // substitution
-						matrix[i][j - 1] + 1,     // insertion
-						matrix[i - 1][j] + 1      // deletion
+						matrix[i][j - 1] + 1, // insertion
+						matrix[i - 1][j] + 1 // deletion
 					);
 				}
 			}
 		}
-		
+
 		return matrix[str2.length][str1.length];
 	}
 
@@ -2549,7 +2551,7 @@ export class TransactionManager {
 	 */
 	_hasCompositeKeyRelationship (key1, key2) {
 		// Use existing composite key logic
-		return this._checkCompositeKeyRange(key1, key2) || 
+		return this._checkCompositeKeyRange(key1, key2) ||
 			   this._checkCompositeKeyRange(key2, key1);
 	}
 
@@ -2565,8 +2567,8 @@ export class TransactionManager {
 		if (this._isTemporalSnapshot(key1) && this._isTemporalSnapshot(key2)) {
 			const temporal1 = this._extractTemporalComponents(key1);
 			const temporal2 = this._extractTemporalComponents(key2);
-			
-			return this._haveTemporalOverlap(temporal1, temporal2, null);
+
+			return this._haveTemporalOverlap(temporal1, temporal2);
 		}
 
 		return false;
@@ -2583,15 +2585,15 @@ export class TransactionManager {
 		// Check if either key is index-based and affects the other
 		const isIndex1 = this._isIndexKey(key1);
 		const isIndex2 = this._isIndexKey(key2);
-		
+
 		if (isIndex1 || isIndex2) {
 			// Extract base key from index key
 			const base1 = this._extractBaseKeyFromIndex(key1);
 			const base2 = this._extractBaseKeyFromIndex(key2);
-			
+
 			// Check if base keys are related
-			return base1 === base2 || 
-				   key1.startsWith(base2) || 
+			return base1 === base2 ||
+				   key1.startsWith(base2) ||
 				   key2.startsWith(base1) ||
 				   base1.startsWith(base2) ||
 				   base2.startsWith(base1);
@@ -2640,12 +2642,12 @@ export class TransactionManager {
 		// Check for collection indicators
 		const isCollection1 = this._isCollectionKey(key1);
 		const isCollection2 = this._isCollectionKey(key2);
-		
+
 		if (isCollection1 || isCollection2) {
 			// Extract collection base and check for membership
 			const base1 = this._extractCollectionBase(key1);
 			const base2 = this._extractCollectionBase(key2);
-			
+
 			return base1 === base2 ||
 				   key1.startsWith(base2) ||
 				   key2.startsWith(base1);
@@ -2665,7 +2667,7 @@ export class TransactionManager {
 			"_list", "_array", "_set", "_collection",
 			"_items", "_elements", "_members", "_entries"
 		];
-		
+
 		return collectionIndicators.some(indicator => key.includes(indicator));
 	}
 
@@ -2677,13 +2679,13 @@ export class TransactionManager {
 	 */
 	_extractCollectionBase (collectionKey) {
 		const indicators = ["_list", "_array", "_set", "_collection", "_items", "_elements", "_members", "_entries"];
-		
+
 		for (const indicator of indicators) {
 			if (collectionKey.includes(indicator)) {
 				return collectionKey.replace(indicator, "");
 			}
 		}
-		
+
 		return collectionKey;
 	}
 
@@ -2700,15 +2702,15 @@ export class TransactionManager {
 			// User dependencies
 			["user_id", "user_email"], ["user_id", "user_profile"],
 			["account_id", "user_id"], ["session_id", "user_id"],
-			
+
 			// Order dependencies
 			["order_id", "user_id"], ["order_id", "order_total"],
 			["payment_id", "order_id"], ["shipping_id", "order_id"],
-			
+
 			// Content dependencies
 			["post_id", "user_id"], ["comment_id", "post_id"],
 			["message_id", "thread_id"], ["file_id", "folder_id"],
-			
+
 			// Workspace dependencies
 			["document_id", "workspace_id"], ["task_id", "project_id"]
 		];
@@ -2719,8 +2721,8 @@ export class TransactionManager {
 
 		// Check for any dependency match
 		for (const [dep1, dep2] of dependencies) {
-			if ((norm1.includes(dep1) && norm2.includes(dep2)) ||
-				(norm1.includes(dep2) && norm2.includes(dep1))) {
+			if (norm1.includes(dep1) && norm2.includes(dep2) ||
+				norm1.includes(dep2) && norm2.includes(dep1)) {
 				return true;
 			}
 		}
@@ -2736,8 +2738,8 @@ export class TransactionManager {
 	 */
 	_normalizeKeyForDependency (key) {
 		return key.toLowerCase()
-			.replace(/[:\-\/\.]/g, "_")  // Convert separators to underscores
-			.replace(/([a-z])([A-Z])/g, "$1_$2")  // Convert camelCase to snake_case
+			.replace(/[:\-/.]/g, "_") // Convert separators to underscores
+			.replace(/([a-z])([A-Z])/g, "$1_$2") // Convert camelCase to snake_case
 			.toLowerCase();
 	}
 
@@ -2745,11 +2747,10 @@ export class TransactionManager {
 	 * Check for dependency cycles between transactions
 	 * @param {Transaction} tx1 - First transaction
 	 * @param {Transaction} tx2 - Second transaction
-	 * @param {string} key - Key being checked
 	 * @returns {boolean} True if dependency cycle detected
 	 * @private
 	 */
-	_hasDependencyCycle (tx1, tx2, key) {
+	_hasDependencyCycle (tx1, tx2) {
 		// Check for read-write dependency cycles that could violate
 		// snapshot isolation
 
