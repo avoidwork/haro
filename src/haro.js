@@ -1,7 +1,3 @@
-/**
- * @fileoverview Improved Haro class with all design flaws addressed
- */
-
 import { randomUUID as uuid } from "crypto";
 import {
 	HaroError,
@@ -12,13 +8,11 @@ import {
 	QueryError,
 	ErrorRecovery
 } from "./errors.js";
-import {
-	DataTypes,
-	FieldConstraint,
-	Schema,
-	ConfigValidator,
-	Constraints
-} from "./validation.js";
+import { DataTypes } from "./data-types.js";
+import { FieldConstraint } from "./field-constraint.js";
+import { Schema } from "./schema.js";
+import { ConfigValidator } from "./config-validator.js";
+import { Constraints } from "./constraint-utils.js";
 import { IsolationLevels } from "./constants.js";
 import { Record, RecordCollection, RecordFactory } from "./record.js";
 import { IndexManager, IndexTypes } from "./index-manager.js";

@@ -23,7 +23,7 @@ export class Schema {
 	 * @throws {ValidationError} If validation fails
 	 */
 	validate (record) {
-		if (!record || typeof record !== "object") {
+		if (!record || typeof record !== "object" || Array.isArray(record)) {
 			throw new ValidationError("Record must be an object", "record", record);
 		}
 
