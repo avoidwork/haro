@@ -4,7 +4,7 @@
 [![Node.js Version](https://img.shields.io/node/v/haro.svg)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
-A comprehensive refactoring of Haro that addresses all major design flaws and adds enterprise-ready features. Haro provides a robust, scalable, and maintainable data store with advanced capabilities including transactions, schema validation, query optimization, and streaming support.
+Haro provides a robust, scalable, and maintainable data store with advanced capabilities including transactions, schema validation, query optimization, and streaming support.
 
 ## 🆕 New Enterprise Features
 - **ACID Transactions**: Full transaction support with isolation levels
@@ -29,18 +29,10 @@ pnpm add haro
 ### Basic Usage
 
 ```javascript
-import { Haro, Schema, Constraints } from 'haro';
+import { haro } from 'haro';
 
-// Create a store with schema validation
-const schema = new Schema({
-  id: Constraints.uuid(),
-  name: Constraints.requiredString({ min: 2 }),
-  email: Constraints.email(),
-  age: Constraints.optionalNumber({ min: 0, max: 150 })
-});
-
-const store = new Haro({
-  schema,
+// Create a basic store with simple configuration
+const store = haro({
   index: ['email', 'name', 'age'],
   versioning: true,
   immutable: true
@@ -60,62 +52,70 @@ console.log(user.metadata);      // Version, timestamps, etc.
 
 ### Advanced Features
 
-```javascript
-// Enable all enterprise features
-const enterpriseStore = new Haro({
-  schema: mySchema,
-  index: ['department', 'role', 'department|role'],
-  versioning: true,
-  retentionPolicy: { type: 'count', maxCount: 10 },
-  enableTransactions: true,
-  enableOptimization: true,
-  immutable: true
-});
+Haro provides enterprise-grade features for demanding applications across client and server environments:
 
-// Use transactions
-const transaction = enterpriseStore.beginTransaction();
-try {
-  enterpriseStore.set('user1', userData, { transaction });
-  enterpriseStore.set('user2', userData2, { transaction });
-  await enterpriseStore.commitTransaction(transaction);
-} catch (error) {
-  await enterpriseStore.abortTransaction(transaction);
-}
+#### Schema Validation
 
-// Stream large datasets
-const stream = enterpriseStore.stream({ batchSize: 1000 })
-  .filter(record => record.get('active'))
-  .map(record => ({ id: record.key, name: record.get('name') }))
-  .take(100);
+Type-safe data validation with comprehensive constraint support. Define schemas with built-in validators for UUIDs, emails, enums, and custom validation functions. Essential for maintaining data integrity in production applications, whether validating API payloads on the server or user inputs in web applications. Prevents invalid data from corrupting your store and provides clear error messages for debugging.
 
-const results = await stream.readAll();
-```
+#### ACID Transactions
+
+Full ACID-compliant transactions with configurable isolation levels ensure data consistency across multiple operations. Critical for financial applications, e-commerce systems, and any scenario requiring atomic operations. On the server side, handle complex business logic safely across multiple records. In client applications, manage local state changes that must succeed or fail together, such as shopping cart updates or form submissions with dependent fields.
+
+#### Streaming
+
+Memory-efficient processing of large datasets without loading everything into memory. Transform, filter, and process millions of records with configurable batch sizes. Perfect for server-side ETL operations, report generation, or data export. In client applications, handle large lists, infinite scroll implementations, or progressive data loading without freezing the UI. Supports functional programming patterns with chainable transformations.
+
+#### Version Management
+
+Track data changes over time with configurable retention policies. Audit trails for compliance, undo/redo functionality in editors, and conflict resolution in collaborative applications. Server applications benefit from automatic data history for debugging and rollback capabilities. Client-side applications can implement sophisticated undo systems, draft management, or offline synchronization with conflict detection.
 
 ## 🎯 API Reference
 
+### Imports
+
+```javascript
+// Factory function (simple usage)
+import { haro } from 'haro';
+const store = haro(config);
+
+// Classes (advanced usage with schema)
+import Haro, { Schema, Constraints } from 'haro';
+const store = new Haro(config);
+
+// Utilities
+import { DataTypes, FieldConstraint, ErrorRecovery } from 'haro';
+```
+
 ### Core Methods
+
+All stores (factory or class-based) provide these methods:
 
 | Method | Description | Returns |
 |--------|-------------|---------|
 | `set(key, data, options)` | Create/update record | `Record` |
 | `get(key, options)` | Retrieve record | `Record \| null` |
 | `delete(key, options)` | Remove record | `void` |
+| `has(key)` | Check if record exists | `boolean` |
 | `find(criteria, options)` | Query with indexes | `RecordCollection` |
 | `where(predicate, options)` | Advanced filtering | `RecordCollection` |
 | `batch(operations, type, options)` | Bulk operations | `Array<Record>` |
+| `stream(options)` | Create data stream | `DataStream` |
+| `clear(options)` | Clear all data | `void` |
+| `getStats()` | Get store statistics | `object` |
 
-### Schema Definition
+### Schema API
+
+Schema validation is only available when using the `Haro` class:
 
 ```javascript
-import { Schema, Constraints, DataTypes } from 'haro';
+import Haro, { Schema, Constraints, DataTypes, FieldConstraint } from 'haro';
 
+// Create schema with built-in constraints
 const userSchema = new Schema({
-  // Required fields
-  id: Constraints.uuid(),
+  id: Constraints.uuid(),                    // Required UUID
   name: Constraints.requiredString({ min: 2, max: 100 }),
-  email: Constraints.email(),
-  
-  // Optional fields with constraints
+  email: Constraints.email(),                // Built-in email validation
   age: Constraints.optionalNumber({ min: 0, max: 150 }),
   role: Constraints.enum(['admin', 'user', 'guest']),
   
@@ -126,64 +126,146 @@ const userSchema = new Schema({
     validator: (value) => value.length >= 8 || 'Password must be at least 8 characters'
   })
 });
+
+// Use schema with store
+const store = new Haro({ schema: userSchema });
 ```
 
-### Transaction Management
+**Available Constraints:**
+- `Constraints.requiredString(options)`
+- `Constraints.optionalString(options)`
+- `Constraints.requiredNumber(options)`
+- `Constraints.optionalNumber(options)`
+- `Constraints.uuid(required = true)`
+- `Constraints.email(required = true)`
+- `Constraints.enum(values, required = true)`
+- `Constraints.date(required = true)`
+
+### Transaction API
+
+ACID-compliant transactions require `enableTransactions: true` in configuration:
 
 ```javascript
+import Haro, { IsolationLevels } from 'haro';
+
+const store = new Haro({
+  enableTransactions: true,
+  schema: mySchema
+});
+
 // Basic transaction
 const tx = store.beginTransaction();
-store.set('key1', data1, { transaction: tx });
-store.set('key2', data2, { transaction: tx });
-await store.commitTransaction(tx);
+try {
+  store.set('key1', data1, { transaction: tx });
+  store.set('key2', data2, { transaction: tx });
+  await store.commitTransaction(tx);
+} catch (error) {
+  await store.abortTransaction(tx);
+}
 
-// Transaction with isolation level
+// Advanced transaction options
 const tx = store.beginTransaction({
   isolationLevel: IsolationLevels.REPEATABLE_READ,
-  timeout: 30000
+  timeout: 30000,
+  readOnly: false
 });
 
 // Atomic batch operations
 const results = store.batch(operations, 'set', { atomic: true });
 ```
 
-### Streaming Large Datasets
+**Transaction Methods:**
+- `beginTransaction(options)` - Start new transaction
+- `commitTransaction(transaction)` - Commit transaction
+- `abortTransaction(transaction)` - Abort transaction
+- `getTransaction(id)` - Get transaction by ID
+
+**Isolation Levels:**
+- `READ_UNCOMMITTED`
+- `READ_COMMITTED`  
+- `REPEATABLE_READ`
+- `SERIALIZABLE`
+
+### Streaming API
+
+Memory-efficient processing of large datasets:
 
 ```javascript
-// Basic streaming
-const stream = store.stream();
-while (!stream.ended) {
-  const batch = await stream.read(1000);
+// Basic streaming (works with factory or class)
+const stream = store.stream({ batchSize: 1000 });
+
+// Manual batching
+while (!stream.getStats().ended) {
+  const batch = await stream.read();
   await processBatch(batch);
 }
 
-// Transformed streaming
+// Stream transformations
 const processedStream = store.stream()
   .filter(record => record.get('status') === 'active')
-  .map(record => transformRecord(record))
+  .map(record => ({
+    id: record.key,
+    name: record.get('name'),
+    email: record.get('email')
+  }))
   .take(10000);
 
+// Read all at once or in batches
+const allResults = await processedStream.readAll();
+
+// Or process in batches
 for await (const batch of processedStream) {
   await processTransformedBatch(batch);
 }
 ```
+
+**Stream Methods:**
+- `stream.read(batchSize)` - Read next batch
+- `stream.readAll()` - Read all remaining data
+- `stream.filter(predicate)` - Filter records
+- `stream.map(transform)` - Transform records
+- `stream.take(limit)` - Limit results
+- `stream.getStats()` - Get stream statistics
+
+**Stream Options:**
+- `batchSize` - Records per batch (default: 100)
+- `timeout` - Read timeout in ms
 
 ## 🔧 Configuration Options
 
 ### Store Configuration
 
 ```javascript
-const store = new Haro({
-  // Data validation
-  schema: mySchema,                    // Schema for validation
-  
+// Simple configuration using factory function
+import { haro } from 'haro';
+
+const store = haro({
   // Performance
   index: ['field1', 'field2', 'field1|field2'],  // Indexes to create
-  enableOptimization: true,            // Enable query optimization
   
   // Data integrity
   immutable: true,                     // Deep immutability
   versioning: true,                    // Enable versioning
+  
+  // Basic options
+  key: 'id',                          // Primary key field
+  delimiter: '|'                      // Composite index delimiter
+});
+
+// Advanced configuration using Haro class (for schema validation)
+import Haro from 'haro';
+
+const enterpriseStore = new Haro({
+  // Data validation (requires class usage)
+  schema: mySchema,                    // Schema for validation
+  
+  // Performance
+  index: ['field1', 'field2', 'field1|field2'],
+  enableOptimization: true,            // Enable query optimization
+  
+  // Data integrity
+  immutable: true,
+  versioning: true,
   retentionPolicy: {                   // Version retention
     type: 'count',
     maxCount: 10
@@ -193,8 +275,8 @@ const store = new Haro({
   enableTransactions: true,            // ACID transactions
   
   // Basic options
-  key: 'id',                          // Primary key field
-  delimiter: '|'                      // Composite index delimiter
+  key: 'id',
+  delimiter: '|'
 });
 ```
 
@@ -276,28 +358,37 @@ try {
 ### Drop-in Replacement
 
 ```javascript
-// Before
-import { Haro } from 'haro';
-const store = new Haro({ index: ['name'] });
+// Simple usage - use factory function
+import { haro } from 'haro';
+const store = haro({ index: ['name'] });
 
-// After - same API, better internals
-import { Haro } from 'haro';
-const store = new Haro({ index: ['name'] });
+// Advanced usage - use classes for schema validation
+import Haro, { Schema, Constraints } from 'haro';
+const store = new Haro({ 
+  schema: mySchema,
+  index: ['name'] 
+});
 ```
 
 ### Recommended Upgrades
 
 ```javascript
-// Gradually add new features
-const store = new Haro({
-  // Start with basic improvements
+// Start simple with factory function
+import { haro } from 'haro';
+
+const store = haro({
   index: ['name', 'email'],
   immutable: true,
-  
-  // Add schema validation
+  versioning: true
+});
+
+// Upgrade to classes when you need schema validation
+import Haro, { Schema, Constraints } from 'haro';
+
+const store = new Haro({
   schema: mySchema,
-  
-  // Enable advanced features
+  index: ['name', 'email'],
+  immutable: true,
   versioning: true,
   enableTransactions: true,
   enableOptimization: true
