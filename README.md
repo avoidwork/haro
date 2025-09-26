@@ -319,11 +319,22 @@ Haro provides significant memory improvements:
 ### Benchmarks
 
 ```bash
-# Run performance tests
-npm run benchmark:improved
+# Run all benchmarks
+npm run benchmark
 
-# Compare with original Haro
-npm run benchmark:comparison
+# Run specific benchmark categories
+node benchmarks/index.js --basic-only
+node benchmarks/index.js --search-only
+node benchmarks/index.js --index-only
+node benchmarks/index.js --memory-only
+node benchmarks/index.js --comparison-only
+
+# Run individual benchmark files
+node benchmarks/basic-operations.js
+node benchmarks/search-filter.js
+node benchmarks/index-operations.js
+node benchmarks/memory-usage.js
+node benchmarks/comparison.js
 ```
 
 ## 🔒 Error Handling
