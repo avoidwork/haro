@@ -1,7 +1,7 @@
 ------------------------------|---------|----------|---------|---------|----------------------------
 File                          | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s          
 ------------------------------|---------|----------|---------|---------|----------------------------
-All files                     |   99.42 |     98.6 |   99.54 |   99.42 |                            
+All files                     |    96.1 |     98.6 |   94.19 |    96.1 |                            
  batch-manager.js             |     100 |      100 |     100 |     100 |                            
  config-validator.js          |     100 |      100 |     100 |     100 |                            
  constants.js                 |     100 |      100 |     100 |     100 |                            
@@ -12,7 +12,7 @@ All files                     |   99.42 |     98.6 |   99.54 |   99.42 |
  deadlock-detector.js         |     100 |      100 |     100 |     100 |                            
  errors.js                    |     100 |      100 |     100 |     100 |                            
  field-constraint.js          |     100 |      100 |     100 |     100 |                            
- haro.js                      |     100 |      100 |     100 |     100 |                            
+ haro.js                      |   69.28 |      100 |      52 |   69.28 | ...829-851,861-881,889-908 
  immutable-store.js           |     100 |      100 |     100 |     100 |                            
  index-manager.js             |     100 |      100 |     100 |     100 |                            
  isolation-validator.js       |     100 |      100 |     100 |     100 |                            
@@ -24,7 +24,7 @@ All files                     |   99.42 |     98.6 |   99.54 |   99.42 |
  record.js                    |     100 |      100 |     100 |     100 |                            
  schema.js                    |     100 |      100 |     100 |     100 |                            
  statistics-manager.js        |     100 |      100 |     100 |     100 |                            
- storage-manager.js           |     100 |      100 |     100 |     100 |                            
+ storage-manager.js           |   95.94 |      100 |   91.66 |   95.94 | 90-95                      
  stream-manager.js            |     100 |      100 |     100 |     100 |                            
  transaction-individual.js    |     100 |      100 |     100 |     100 |                            
  transaction-manager.js       |     100 |      100 |     100 |     100 |                            

@@ -205,7 +205,7 @@ function benchmarkDeletionComparison (dataSizes) {
 			const keys = Array.from(store.keys());
 			for (let i = 0; i < Math.min(100, keys.length); i++) {
 				try {
-					store.del(keys[i]);
+					store.delete(keys[i]);
 				} catch (e) { // eslint-disable-line no-unused-vars
 					// Record might already be deleted
 				}

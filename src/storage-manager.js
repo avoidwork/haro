@@ -83,6 +83,18 @@ export class StorageManager {
 	}
 
 	/**
+	 * Get all storage values
+	 * @returns {Array<Object>} Array of values
+	 */
+	values () {
+		if (this.config.immutable) {
+			return this._store.values();
+		}
+
+		return Array.from(this._store.values());
+	}
+
+	/**
 	 * Get all storage entries
 	 * @returns {Array<[string, Object]>} Array of [key, value] pairs
 	 */

@@ -249,7 +249,7 @@ function benchmarkIndexModificationOperations (dataSizes) {
 			if (keys.length > 0) {
 				const randomKey = keys[Math.floor(Math.random() * keys.length)];
 				try {
-					store.del(randomKey);
+					store.delete(randomKey);
 				} catch (e) { // eslint-disable-line no-unused-vars
 					// Record might already be deleted
 				}

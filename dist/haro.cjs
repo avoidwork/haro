@@ -6634,6 +6634,18 @@ class StorageManager {
 	}
 
 	/**
+	 * Get all storage values
+	 * @returns {Array<Object>} Array of values
+	 */
+	values () {
+		if (this.config.immutable) {
+			return this._store.values();
+		}
+
+		return Array.from(this._store.values());
+	}
+
+	/**
 	 * Get all storage entries
 	 * @returns {Array<[string, Object]>} Array of [key, value] pairs
 	 */
@@ -7893,6 +7905,270 @@ class Haro {
 	}
 
 	/**
+	 * Get all record keys (backwards compatibility)
+	 * @returns {Array<string>} Array of record keys
+	 */
+	keys () {
+		return this.storageManager.keys();
+	}
+
+	/**
+	 * Get all record values (backwards compatibility)
+	 * @returns {Array<Object>} Array of record values
+	 */
+	values () {
+		return this.storageManager.values();
+	}
+
+	/**
+	 * Get all record entries as [key, value] pairs (backwards compatibility)
+	 * @returns {Array<[string, Object]>} Array of [key, value] pairs
+	 */
+	entries () {
+		return this.storageManager.entries();
+	}
+
+	/**
+	 * Convert store to array (backwards compatibility)
+	 * @returns {Array<Object>} Array of all records
+	 */
+	toArray () {
+		return this.values();
+	}
+
+	/**
+	 * Filter records using a predicate (backwards compatibility)
+	 * @param {Function} predicate - Filter predicate
+	 * @returns {Array<Object>} Filtered records
+	 */
+	filter (predicate) {
+		return this.values().filter(predicate);
+	}
+
+	/**
+	 * Search records (backwards compatibility)
+	 * @param {*} value - Search value
+	 * @param {string|Array<string>} [fields] - Fields to search
+	 * @returns {Array<Object>} Matching records
+	 */
+	search (value, fields, raw = false) {
+		// Function-based search (full scan)
+		if (typeof value === "function") {
+			return this.filter(value);
+		}
+
+		// If no fields specified, search all available indexes
+		if (!fields) {
+			const availableIndexes = this.indexManager.listIndexes();
+			if (availableIndexes.length === 0) {
+				// No indexes, full scan
+				return this._fullScanSearch(value);
+			}
+			fields = availableIndexes;
+		}
+
+		const fieldArray = Array.isArray(fields) ? fields : [fields];
+		const matchingKeys = new Set();
+
+		// Try to use indexes for each field
+		for (const field of fieldArray) {
+			if (this.indexManager.hasIndex(field)) {
+				// Use index-based search
+				const indexKeys = this._searchIndex(field, value);
+				indexKeys.forEach(key => matchingKeys.add(key));
+			} else {
+				// Fallback to field-based search for non-indexed fields
+				const records = this.values();
+				records.forEach(record => {
+					const fieldValue = this._getFieldValue(record, field);
+					if (this._matchesValue(fieldValue, value)) {
+						matchingKeys.add(record[this.config.key]);
+					}
+				});
+			}
+		}
+
+		// Convert keys to records
+		const results = [];
+		for (const key of matchingKeys) {
+			const record = this.storageManager.get(key);
+			if (record) {
+				results.push(raw ? record : record);
+			}
+		}
+
+		return results;
+	}
+
+	/**
+	 * Search within a specific index
+	 * @param {string} indexName - Index name
+	 * @param {*} value - Search value
+	 * @returns {Set<string>} Set of matching record keys
+	 * @private
+	 */
+	_searchIndex (indexName, value) {
+		const matchingKeys = new Set();
+
+		try {
+			// Get all index entries for this field
+			const indexStorage = this.indexManager._indexes.get(indexName);
+			if (!indexStorage) {
+				return matchingKeys;
+			}
+
+			// Search through index keys
+			for (const [indexKey, recordKeys] of indexStorage._data.entries()) {
+				if (this._matchesValue(indexKey, value)) {
+					recordKeys.forEach(key => matchingKeys.add(key));
+				}
+			}
+		} catch {
+			// Fallback to empty set on error
+		}
+
+		return matchingKeys;
+	}
+
+	/**
+	 * Perform full scan search when no indexes available
+	 * @param {*} value - Search value
+	 * @returns {Array<Object>} Matching records
+	 * @private
+	 */
+	_fullScanSearch (value) {
+		const records = this.values();
+
+		return records.filter(record => {
+			return this._searchInRecord(record, value);
+		});
+	}
+
+	/**
+	 * Search within a record for a value
+	 * @param {Object} record - Record to search
+	 * @param {*} value - Value to search for
+	 * @returns {boolean} True if found
+	 * @private
+	 */
+	_searchInRecord (record, value) {
+		for (const fieldValue of Object.values(record)) {
+			if (this._matchesValue(fieldValue, value)) {
+				return true;
+			}
+
+			// Search in nested objects and arrays
+			if (typeof fieldValue === "object" && fieldValue !== null) {
+				if (Array.isArray(fieldValue)) {
+					if (fieldValue.some(item => this._matchesValue(item, value))) {
+						return true;
+					}
+				} else if (this._searchInRecord(fieldValue, value)) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get field value from record (supports nested fields)
+	 * @param {Object} record - Record object
+	 * @param {string} field - Field path (e.g., "user.name")
+	 * @returns {*} Field value
+	 * @private
+	 */
+	_getFieldValue (record, field) {
+		const parts = field.split(".");
+		let value = record;
+
+		for (const part of parts) {
+			if (value && typeof value === "object") {
+				value = value[part];
+			} else {
+				return undefined;
+			}
+		}
+
+		return value;
+	}
+
+	/**
+	 * Check if a value matches the search criteria
+	 * @param {*} fieldValue - Field value to test
+	 * @param {*} searchValue - Search value
+	 * @returns {boolean} True if matches
+	 * @private
+	 */
+	_matchesValue (fieldValue, searchValue) {
+		if (searchValue instanceof RegExp) {
+			return searchValue.test(String(fieldValue));
+		}
+
+		if (typeof searchValue === "string") {
+			return String(fieldValue).toLowerCase().includes(searchValue.toLowerCase());
+		}
+
+		return fieldValue === searchValue;
+	}
+
+	/**
+	 * Map over records (backwards compatibility)
+	 * @param {Function} mapper - Mapping function
+	 * @returns {Array} Mapped results
+	 */
+	map (mapper) {
+		return this.values().map(mapper);
+	}
+
+	/**
+	 * Reduce records (backwards compatibility)
+	 * @param {Function} reducer - Reducer function
+	 * @param {*} [initialValue] - Initial value
+	 * @returns {*} Reduced result
+	 */
+	reduce (reducer, initialValue) {
+		const values = this.values();
+
+		return arguments.length > 1 ? values.reduce(reducer, initialValue) : values.reduce(reducer);
+	}
+
+	/**
+	 * Iterate over records (backwards compatibility)
+	 * @param {Function} callback - Callback function
+	 */
+	forEach (callback) {
+		this.values().forEach(callback);
+	}
+
+	/**
+	 * Sort records (backwards compatibility)
+	 * @param {Function} [compareFn] - Compare function
+	 * @returns {Array<Object>} Sorted records
+	 */
+	sort (compareFn) {
+		return this.values().sort(compareFn);
+	}
+
+	/**
+	 * Sort records by field (backwards compatibility)
+	 * @param {string} field - Field to sort by
+	 * @param {boolean} [ascending=true] - Sort direction
+	 * @returns {Array<Object>} Sorted records
+	 */
+	sortBy (field, ascending = true) {
+		return this.sort((a, b) => {
+			const aVal = a[field];
+			const bVal = b[field];
+			if (aVal < bVal) return ascending ? -1 : 1;
+			if (aVal > bVal) return ascending ? 1 : -1;
+
+			return 0;
+		});
+	}
+
+	/**
 	 * Find records using optimized queries
 	 * @param {Object} [criteria={}] - Search criteria
 	 * @param {Object} [options={}] - Query options
@@ -8100,6 +8376,209 @@ class Haro {
 			default:
 				throw new TransactionError(`Unknown operation: ${operation}`, transaction.id, operation);
 		}
+	}
+
+	/**
+	 * Get a limited subset of records with pagination support
+	 * @param {number} [offset=0] - Number of records to skip
+	 * @param {number} [max=0] - Maximum number of records to return (0 = all)
+	 * @returns {Array<Object>} Array of records within the specified range
+	 */
+	limit (offset = 0, max = 0) {
+		// Get keys first (much more efficient than getting all values)
+		const keys = this.keys();
+		const start = Math.max(0, offset);
+		const end = max > 0 ? start + max : keys.length;
+
+		// Get only the subset of keys we need
+		const limitedKeys = keys.slice(start, end);
+
+		// Batch retrieve only the records we need
+		const results = [];
+		for (const key of limitedKeys) {
+			results.push(this.storageManager.get(key));
+		}
+
+		return results;
+	}
+
+	/**
+	 * Rebuild indexes for specified fields or all fields
+	 * @param {string|Array<string>} [fields] - Specific fields to reindex (optional)
+	 * @returns {Haro} Store instance for chaining
+	 */
+	reindex (fields) {
+		if (fields) {
+			// For specific fields, we need to rebuild all indexes
+			// that contain those fields (IndexManager doesn't support partial rebuild)
+			this.indexManager.rebuild(this.entries());
+		} else {
+			// Rebuild all indexes
+			this.indexManager.rebuild(this.entries());
+		}
+
+		return this;
+	}
+
+	/**
+	 * Export store data or indexes for persistence
+	 * @param {string} [type='records'] - Type of data to export: 'records' or 'indexes'
+	 * @returns {Array} Array of [key, value] pairs or serialized index structure
+	 */
+	dump (type = "records") {
+		if (type === "indexes") {
+			// Export index definitions and statistics
+			const indexData = {};
+			const indexNames = this.indexManager.listIndexes();
+
+			for (const name of indexNames) {
+				const definition = this.indexManager.getIndexDefinition(name);
+				indexData[name] = {
+					fields: definition.fields,
+					type: definition.type,
+					delimiter: definition.delimiter,
+					unique: definition.unique
+				};
+			}
+
+			return indexData;
+		}
+
+		// Default to records
+		return this.entries();
+	}
+
+	/**
+	 * Import and restore data from a dump
+	 * @param {Array} data - Data to import (from dump)
+	 * @param {string} [type='records'] - Type of data: 'records' or 'indexes'
+	 * @returns {boolean} True if operation succeeded
+	 */
+	override (data, type = "records") {
+		try {
+			if (type === "indexes") {
+				// Recreate indexes from definitions
+				this.indexManager.clear();
+
+				for (const [name, definition] of Object.entries(data)) {
+					this.indexManager.createIndex(name, definition.fields, {
+						type: definition.type,
+						delimiter: definition.delimiter,
+						unique: definition.unique
+					});
+				}
+
+				// Rebuild indexes with current data
+				this.reindex();
+			} else {
+				// Clear existing data
+				this.clear();
+
+				// Import records
+				for (const [key, value] of data) {
+					this.set(key, value, true); // Use batch mode
+				}
+			}
+
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
+	/**
+	 * Generate a RFC4122 v4 UUID
+	 * @returns {string} UUID string
+	 */
+	uuid () {
+		return crypto.randomUUID();
+	}
+
+	/**
+	 * Deep clone utility function
+	 * @param {*} obj - Object to clone
+	 * @returns {*} Cloned object
+	 */
+	clone (obj) {
+		if (obj === null || typeof obj !== "object") {
+			return obj;
+		}
+
+		if (obj instanceof Date) {
+			return new Date(obj.getTime());
+		}
+
+		if (obj instanceof RegExp) {
+			return new RegExp(obj);
+		}
+
+		if (Array.isArray(obj)) {
+			return obj.map(item => this.clone(item));
+		}
+
+		const cloned = {};
+		for (const [key, value] of Object.entries(obj)) {
+			cloned[key] = this.clone(value);
+		}
+
+		return cloned;
+	}
+
+	/**
+	 * Merge multiple objects into one
+	 * @param {Object} target - Target object
+	 * @param {...Object} sources - Source objects to merge
+	 * @param {boolean} [deep=true] - Whether to perform deep merge
+	 * @returns {Object} Merged object
+	 */
+	merge (target, ...sources) {
+		if (!target || typeof target !== "object") {
+			return target;
+		}
+
+		const result = this.clone(target);
+
+		for (const source of sources) {
+			if (source && typeof source === "object") {
+				for (const [key, value] of Object.entries(source)) {
+					if (typeof value === "object" && value !== null && !Array.isArray(value) &&
+						typeof result[key] === "object" && result[key] !== null && !Array.isArray(result[key])) {
+						result[key] = this.merge(result[key], value);
+					} else {
+						result[key] = this.clone(value);
+					}
+				}
+			}
+		}
+
+		return result;
+	}
+
+	/**
+	 * Freeze objects for immutability
+	 * @param {...Object} objects - Objects to freeze
+	 * @returns {Object|Array} Frozen object(s)
+	 */
+	freeze (...objects) {
+		const freeze = obj => {
+			if (obj === null || typeof obj !== "object") {
+				return obj;
+			}
+
+			if (Array.isArray(obj)) {
+				obj.forEach(item => freeze(item));
+			} else {
+				Object.values(obj).forEach(value => freeze(value));
+			}
+
+			return Object.freeze(obj);
+		};
+
+		if (objects.length === 1) {
+			return freeze(objects[0]);
+		}
+
+		return objects.map(obj => freeze(obj));
 	}
 
 }
