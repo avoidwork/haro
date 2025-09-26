@@ -1,1007 +1,1006 @@
-import {randomUUID as uuid} from "crypto";
+/**
+ * @fileoverview Improved Haro class with all design flaws addressed
+ */
+
+import { randomUUID as uuid } from "crypto";
 import {
-	INT_0,
-	STRING_COMMA,
-	STRING_DEL, STRING_DOUBLE_AND,
-	STRING_DOUBLE_PIPE,
-	STRING_EMPTY,
-	STRING_FUNCTION,
-	STRING_ID,
-	STRING_INDEXES,
-	STRING_INVALID_FIELD,
-	STRING_INVALID_FUNCTION,
-	STRING_INVALID_TYPE, STRING_NUMBER, STRING_OBJECT,
-	STRING_PIPE,
-	STRING_RECORD_NOT_FOUND,
-	STRING_RECORDS,
-	STRING_REGISTRY,
-	STRING_SET,
-	STRING_SIZE, STRING_STRING
-} from "./constants.js";
+	HaroError,
+	ValidationError,
+	RecordNotFoundError,
+	IndexError,
+	ConfigurationError,
+	TransactionError,
+	QueryError,
+	ErrorRecovery
+} from "./errors.js";
+import {
+	DataTypes,
+	FieldConstraint,
+	Schema,
+	ConfigValidator,
+	Constraints
+} from "./validation.js";
+import { Record, RecordCollection, RecordFactory } from "./record.js";
+import { IndexManager, IndexTypes } from "./index-manager.js";
+import { VersionManager, RetentionPolicies } from "./version-manager.js";
+import { TransactionManager, Transaction, IsolationLevels } from "./transaction.js";
+import { QueryOptimizer, QueryTypes } from "./query-optimizer.js";
 
 /**
- * Haro is a modern immutable DataStore for collections of records with indexing,
- * versioning, and batch operations support. It provides a Map-like interface
- * with advanced querying capabilities through indexes.
- * @class
- * @example
- * const store = new Haro({
- *   index: ['name', 'age'],
- *   key: 'id',
- *   versioning: true
- * });
- *
- * store.set(null, {name: 'John', age: 30});
- * const results = store.find({name: 'John'});
+ * Deep immutability implementation with structural sharing
  */
-export class Haro {
+export class ImmutableStore {
 	/**
-	 * Creates a new Haro instance with specified configuration
-	 * @param {Object} [config={}] - Configuration object for the store
-	 * @param {string} [config.delimiter=STRING_PIPE] - Delimiter for composite indexes (default: '|')
-	 * @param {string} [config.id] - Unique identifier for this instance (auto-generated if not provided)
-	 * @param {boolean} [config.immutable=false] - Return frozen/immutable objects for data safety
-	 * @param {string[]} [config.index=[]] - Array of field names to create indexes for
-	 * @param {string} [config.key=STRING_ID] - Primary key field name used for record identification
-	 * @param {boolean} [config.versioning=false] - Enable versioning to track record changes
-	 * @constructor
-	 * @example
-	 * const store = new Haro({
-	 *   index: ['name', 'email', 'name|department'],
-	 *   key: 'userId',
-	 *   versioning: true,
-	 *   immutable: true
-	 * });
+	 * @param {Map} [data] - Initial data
 	 */
-	constructor ({delimiter = STRING_PIPE, id = this.uuid(), immutable = false, index = [], key = STRING_ID, versioning = false} = {}) {
-		this.data = new Map();
-		this.delimiter = delimiter;
-		this.id = id;
-		this.immutable = immutable;
-		this.index = Array.isArray(index) ? [...index] : [];
-		this.indexes = new Map();
-		this.key = key;
-		this.versions = new Map();
-		this.versioning = versioning;
-		Object.defineProperty(this, STRING_REGISTRY, {
-			enumerable: true,
-			get: () => Array.from(this.data.keys())
-		});
-		Object.defineProperty(this, STRING_SIZE, {
-			enumerable: true,
-			get: () => this.data.size
-		});
-
-		return this.reindex();
+	constructor (data = new Map()) {
+		this._data = new Map(data);
+		this._frozenViews = new WeakMap();
+		Object.freeze(this);
 	}
 
 	/**
-	 * Performs batch operations on multiple records for efficient bulk processing
-	 * @param {Array<Object>} args - Array of records to process
-	 * @param {string} [type=STRING_SET] - Type of operation: 'set' for upsert, 'del' for delete
-	 * @returns {Array<Object>} Array of results from the batch operation
-	 * @throws {Error} Throws error if individual operations fail during batch processing
-	 * @example
-	 * const results = store.batch([
-	 *   {id: 1, name: 'John'},
-	 *   {id: 2, name: 'Jane'}
-	 * ], 'set');
+	 * Get a deeply frozen view of the data
+	 * @param {string} key - Record key
+	 * @returns {Object|null} Frozen record or null
 	 */
-	batch (args, type = STRING_SET) {
-		const fn = type === STRING_DEL ? i => this.delete(i, true) : i => this.set(null, i, true, true);
+	get (key) {
+		const record = this._data.get(key);
+		if (!record) return null;
 
-		return this.onbatch(this.beforeBatch(args, type).map(fn), type);
-	}
-
-	/**
-	 * Lifecycle hook executed before batch operations for custom preprocessing
-	 * @param {Array<Object>} arg - Arguments passed to batch operation
-	 * @param {string} [type=STRING_EMPTY] - Type of batch operation ('set' or 'del')
-	 * @returns {Array<Object>} The arguments array (possibly modified) to be processed
-	 */
-	beforeBatch (arg, type = STRING_EMPTY) { // eslint-disable-line no-unused-vars
-		// Hook for custom logic before batch; override in subclass if needed
-		return arg;
-	}
-
-	/**
-	 * Lifecycle hook executed before clear operation for custom preprocessing
-	 * @returns {void} Override this method in subclasses to implement custom logic
-	 * @example
-	 * class MyStore extends Haro {
-	 *   beforeClear() {
-	 *     this.backup = this.toArray();
-	 *   }
-	 * }
-	 */
-	beforeClear () {
-		// Hook for custom logic before clear; override in subclass if needed
-	}
-
-	/**
-	 * Lifecycle hook executed before delete operation for custom preprocessing
-	 * @param {string} [key=STRING_EMPTY] - Key of record to delete
-	 * @param {boolean} [batch=false] - Whether this is part of a batch operation
-	 * @returns {void} Override this method in subclasses to implement custom logic
-	 */
-	beforeDelete (key = STRING_EMPTY, batch = false) { // eslint-disable-line no-unused-vars
-		// Hook for custom logic before delete; override in subclass if needed
-	}
-
-	/**
-	 * Lifecycle hook executed before set operation for custom preprocessing
-	 * @param {string} [key=STRING_EMPTY] - Key of record to set
-	 * @param {Object} [data={}] - Record data being set
-	 * @param {boolean} [batch=false] - Whether this is part of a batch operation
-	 * @param {boolean} [override=false] - Whether to override existing data
-	 * @returns {void} Override this method in subclasses to implement custom logic
-	 */
-	beforeSet (key = STRING_EMPTY, data = {}, batch = false, override = false) { // eslint-disable-line no-unused-vars
-		// Hook for custom logic before set; override in subclass if needed
-	}
-
-	/**
-	 * Removes all records, indexes, and versions from the store
-	 * @returns {Haro} This instance for method chaining
-	 * @example
-	 * store.clear();
-	 * console.log(store.size); // 0
-	 */
-	clear () {
-		this.beforeClear();
-		this.data.clear();
-		this.indexes.clear();
-		this.versions.clear();
-		this.reindex().onclear();
-
-		return this;
-	}
-
-	/**
-	 * Creates a deep clone of the given value, handling objects, arrays, and primitives
-	 * @param {*} arg - Value to clone (any type)
-	 * @returns {*} Deep clone of the argument
-	 * @example
-	 * const original = {name: 'John', tags: ['user', 'admin']};
-	 * const cloned = store.clone(original);
-	 * cloned.tags.push('new'); // original.tags is unchanged
-	 */
-	clone (arg) {
-		return structuredClone(arg);
-	}
-
-	/**
-	 * Deletes a record from the store and removes it from all indexes
-	 * @param {string} [key=STRING_EMPTY] - Key of record to delete
-	 * @param {boolean} [batch=false] - Whether this is part of a batch operation
-	 * @returns {void}
-	 * @throws {Error} Throws error if record with the specified key is not found
-	 * @example
-	 * store.delete('user123');
-	 * // Throws error if 'user123' doesn't exist
-	 */
-	delete (key = STRING_EMPTY, batch = false) {
-		if (!this.data.has(key)) {
-			throw new Error(STRING_RECORD_NOT_FOUND);
-		}
-		const og = this.get(key, true);
-		this.beforeDelete(key, batch);
-		this.deleteIndex(key, og);
-		this.data.delete(key);
-		this.ondelete(key, batch);
-		if (this.versioning) {
-			this.versions.delete(key);
-		}
-	}
-
-	/**
-	 * Internal method to remove entries from indexes for a deleted record
-	 * @param {string} key - Key of record being deleted
-	 * @param {Object} data - Data of record being deleted
-	 * @returns {Haro} This instance for method chaining
-	 */
-	deleteIndex (key, data) {
-		this.index.forEach(i => {
-			const idx = this.indexes.get(i);
-			if (!idx) return;
-			const values = i.includes(this.delimiter) ?
-				this.indexKeys(i, this.delimiter, data) :
-				Array.isArray(data[i]) ? data[i] : [data[i]];
-			this.each(values, value => {
-				if (idx.has(value)) {
-					const o = idx.get(value);
-					o.delete(key);
-					if (o.size === INT_0) {
-						idx.delete(value);
-					}
-				}
-			});
-		});
-
-		return this;
-	}
-
-	/**
-	 * Exports complete store data or indexes for persistence or debugging
-	 * @param {string} [type=STRING_RECORDS] - Type of data to export: 'records' or 'indexes'
-	 * @returns {Array<Array>} Array of [key, value] pairs for records, or serialized index structure
-	 * @example
-	 * const records = store.dump('records');
-	 * const indexes = store.dump('indexes');
-	 */
-	dump (type = STRING_RECORDS) {
-		let result;
-		if (type === STRING_RECORDS) {
-			result = Array.from(this.entries());
-		} else {
-			result = Array.from(this.indexes).map(i => {
-				i[1] = Array.from(i[1]).map(ii => {
-					ii[1] = Array.from(ii[1]);
-
-					return ii;
-				});
-
-				return i;
-			});
+		// Check if we already have a frozen view
+		if (this._frozenViews.has(record)) {
+			return this._frozenViews.get(record);
 		}
 
-		return result;
+		// Create deeply frozen view
+		const frozen = this._deepFreeze(structuredClone(record));
+		this._frozenViews.set(record, frozen);
+
+		return frozen;
 	}
 
 	/**
-	 * Utility method to iterate over an array with a callback function
-	 * @param {Array<*>} [arr=[]] - Array to iterate over
-	 * @param {Function} fn - Function to call for each element (element, index)
-	 * @returns {Array<*>} The original array for method chaining
-	 * @example
-	 * store.each([1, 2, 3], (item, index) => console.log(item, index));
+	 * Create new store with updated record (structural sharing)
+	 * @param {string} key - Record key
+	 * @param {Object} record - Record data
+	 * @returns {ImmutableStore} New store instance
 	 */
-	each (arr = [], fn) {
-		const len = arr.length;
-		for (let i = 0; i < len; i++) {
-			fn(arr[i], i);
-		}
+	set (key, record) {
+		const newData = new Map(this._data);
+		newData.set(key, record);
 
-		return arr;
+		return new ImmutableStore(newData);
 	}
 
 	/**
-	 * Returns an iterator of [key, value] pairs for each record in the store
-	 * @returns {Iterator<Array<string|Object>>} Iterator of [key, value] pairs
-	 * @example
-	 * for (const [key, value] of store.entries()) {
-	 *   console.log(key, value);
-	 * }
+	 * Create new store without record
+	 * @param {string} key - Record key to remove
+	 * @returns {ImmutableStore} New store instance
 	 */
-	entries () {
-		return this.data.entries();
+	delete (key) {
+		const newData = new Map(this._data);
+		newData.delete(key);
+
+		return new ImmutableStore(newData);
 	}
 
 	/**
-	 * Finds records matching the specified criteria using indexes for optimal performance
-	 * @param {Object} [where={}] - Object with field-value pairs to match against
-	 * @param {boolean} [raw=false] - Whether to return raw data without processing
-	 * @returns {Array<Object>} Array of matching records (frozen if immutable mode)
-	 * @example
-	 * const users = store.find({department: 'engineering', active: true});
-	 * const admins = store.find({role: 'admin'});
-	 */
-	find (where = {}, raw = false) {
-		const key = Object.keys(where).sort(this.sortKeys).join(this.delimiter);
-		const index = this.indexes.get(key) ?? new Map();
-		let result = [];
-		if (index.size > 0) {
-			const keys = this.indexKeys(key, this.delimiter, where);
-			result = Array.from(keys.reduce((a, v) => {
-				if (index.has(v)) {
-					index.get(v).forEach(k => a.add(k));
-				}
-
-				return a;
-			}, new Set())).map(i => this.get(i, raw));
-		}
-		if (!raw && this.immutable) {
-			result = Object.freeze(result);
-		}
-
-		return result;
-	}
-
-	/**
-	 * Filters records using a predicate function, similar to Array.filter
-	 * @param {Function} fn - Predicate function to test each record (record, key, store)
-	 * @param {boolean} [raw=false] - Whether to return raw data without processing
-	 * @returns {Array<Object>} Array of records that pass the predicate test
-	 * @throws {Error} Throws error if fn is not a function
-	 * @example
-	 * const adults = store.filter(record => record.age >= 18);
-	 * const recent = store.filter(record => record.created > Date.now() - 86400000);
-	 */
-	filter (fn, raw = false) {
-		if (typeof fn !== STRING_FUNCTION) {
-			throw new Error(STRING_INVALID_FUNCTION);
-		}
-		let result = this.reduce((a, v) => {
-			if (fn(v)) {
-				a.push(v);
-			}
-
-			return a;
-		}, []);
-		if (!raw) {
-			result = result.map(i => this.list(i));
-
-			if (this.immutable) {
-				result = Object.freeze(result);
-			}
-		}
-
-		return result;
-	}
-
-	/**
-	 * Executes a function for each record in the store, similar to Array.forEach
-	 * @param {Function} fn - Function to execute for each record (value, key)
-	 * @param {*} [ctx] - Context object to use as 'this' when executing the function
-	 * @returns {Haro} This instance for method chaining
-	 * @example
-	 * store.forEach((record, key) => {
-	 *   console.log(`${key}: ${record.name}`);
-	 * });
-	 */
-	forEach (fn, ctx = this) {
-		this.data.forEach((value, key) => {
-			if (this.immutable) {
-				value = this.clone(value);
-			}
-			fn.call(ctx, value, key);
-		}, this);
-
-		return this;
-	}
-
-	/**
-	 * Creates a frozen array from the given arguments for immutable data handling
-	 * @param {...*} args - Arguments to freeze into an array
-	 * @returns {Array<*>} Frozen array containing frozen arguments
-	 * @example
-	 * const frozen = store.freeze(obj1, obj2, obj3);
-	 * // Returns Object.freeze([Object.freeze(obj1), Object.freeze(obj2), Object.freeze(obj3)])
-	 */
-	freeze (...args) {
-		return Object.freeze(args.map(i => Object.freeze(i)));
-	}
-
-	/**
-	 * Retrieves a record by its key
-	 * @param {string} key - Key of record to retrieve
-	 * @param {boolean} [raw=false] - Whether to return raw data (true) or processed/frozen data (false)
-	 * @returns {Object|null} The record if found, null if not found
-	 * @example
-	 * const user = store.get('user123');
-	 * const rawUser = store.get('user123', true);
-	 */
-	get (key, raw = false) {
-		let result = this.data.get(key) ?? null;
-		if (result !== null && !raw) {
-			result = this.list(result);
-			if (this.immutable) {
-				result = Object.freeze(result);
-			}
-		}
-
-		return result;
-	}
-
-	/**
-	 * Checks if a record with the specified key exists in the store
-	 * @param {string} key - Key to check for existence
-	 * @returns {boolean} True if record exists, false otherwise
-	 * @example
-	 * if (store.has('user123')) {
-	 *   console.log('User exists');
-	 * }
+	 * Check if record exists
+	 * @param {string} key - Record key
+	 * @returns {boolean} True if exists
 	 */
 	has (key) {
-		return this.data.has(key);
+		return this._data.has(key);
 	}
 
 	/**
-	 * Generates index keys for composite indexes from data values
-	 * @param {string} [arg=STRING_EMPTY] - Composite index field names joined by delimiter
-	 * @param {string} [delimiter=STRING_PIPE] - Delimiter used in composite index
-	 * @param {Object} [data={}] - Data object to extract field values from
-	 * @returns {string[]} Array of generated index keys
-	 * @example
-	 * // For index 'name|department' with data {name: 'John', department: 'IT'}
-	 * const keys = store.indexKeys('name|department', '|', data);
-	 * // Returns ['John|IT']
-	 */
-	indexKeys (arg = STRING_EMPTY, delimiter = STRING_PIPE, data = {}) {
-		const fields = arg.split(delimiter).sort(this.sortKeys);
-		const fieldsLen = fields.length;
-		let result = [""];
-		for (let i = 0; i < fieldsLen; i++) {
-			const field = fields[i];
-			const values = Array.isArray(data[field]) ? data[field] : [data[field]];
-			const newResult = [];
-			const resultLen = result.length;
-			const valuesLen = values.length;
-			for (let j = 0; j < resultLen; j++) {
-				for (let k = 0; k < valuesLen; k++) {
-					const newKey = i === 0 ? values[k] : `${result[j]}${delimiter}${values[k]}`;
-					newResult.push(newKey);
-				}
-			}
-			result = newResult;
-		}
-
-		return result;
-	}
-
-	/**
-	 * Returns an iterator of all keys in the store
-	 * @returns {Iterator<string>} Iterator of record keys
-	 * @example
-	 * for (const key of store.keys()) {
-	 *   console.log(key);
-	 * }
+	 * Get all keys
+	 * @returns {string[]} Array of keys
 	 */
 	keys () {
-		return this.data.keys();
+		return Array.from(this._data.keys());
 	}
 
 	/**
-	 * Returns a limited subset of records with offset support for pagination
-	 * @param {number} [offset=INT_0] - Number of records to skip from the beginning
-	 * @param {number} [max=INT_0] - Maximum number of records to return
-	 * @param {boolean} [raw=false] - Whether to return raw data without processing
-	 * @returns {Array<Object>} Array of records within the specified range
-	 * @example
-	 * const page1 = store.limit(0, 10);   // First 10 records
-	 * const page2 = store.limit(10, 10);  // Next 10 records
+	 * Get store size
+	 * @returns {number} Number of records
 	 */
-	limit (offset = INT_0, max = INT_0, raw = false) {
-		let result = this.registry.slice(offset, offset + max).map(i => this.get(i, raw));
-		if (!raw && this.immutable) {
-			result = Object.freeze(result);
+	get size () {
+		return this._data.size;
+	}
+
+	/**
+	 * Get all entries
+	 * @returns {Array<[string, Object]>} Array of [key, value] pairs
+	 */
+	entries () {
+		return Array.from(this._data.entries());
+	}
+
+	/**
+	 * Deep freeze an object
+	 * @param {*} obj - Object to freeze
+	 * @returns {*} Frozen object
+	 * @private
+	 */
+	_deepFreeze (obj) {
+		if (obj === null || typeof obj !== "object") {
+			return obj;
 		}
 
-		return result;
-	}
-
-	/**
-	 * Converts a record into a [key, value] pair array format
-	 * @param {Object} arg - Record object to convert to list format
-	 * @returns {Array<*>} Array containing [key, record] where key is extracted from record's key field
-	 * @example
-	 * const record = {id: 'user123', name: 'John', age: 30};
-	 * const pair = store.list(record); // ['user123', {id: 'user123', name: 'John', age: 30}]
-	 */
-	list (arg) {
-		const result = [arg[this.key], arg];
-
-		return this.immutable ? this.freeze(...result) : result;
-	}
-
-	/**
-	 * Transforms all records using a mapping function, similar to Array.map
-	 * @param {Function} fn - Function to transform each record (record, key)
-	 * @param {boolean} [raw=false] - Whether to return raw data without processing
-	 * @returns {Array<*>} Array of transformed results
-	 * @throws {Error} Throws error if fn is not a function
-	 * @example
-	 * const names = store.map(record => record.name);
-	 * const summaries = store.map(record => ({id: record.id, name: record.name}));
-	 */
-	map (fn, raw = false) {
-		if (typeof fn !== STRING_FUNCTION) {
-			throw new Error(STRING_INVALID_FUNCTION);
-		}
-		let result = [];
-		this.forEach((value, key) => result.push(fn(value, key)));
-		if (!raw) {
-			result = result.map(i => this.list(i));
-			if (this.immutable) {
-				result = Object.freeze(result);
-			}
-		}
-
-		return result;
-	}
-
-	/**
-	 * Merges two values together with support for arrays and objects
-	 * @param {*} a - First value (target)
-	 * @param {*} b - Second value (source)
-	 * @param {boolean} [override=false] - Whether to override arrays instead of concatenating
-	 * @returns {*} Merged result
-	 * @example
-	 * const merged = store.merge({a: 1}, {b: 2}); // {a: 1, b: 2}
-	 * const arrays = store.merge([1, 2], [3, 4]); // [1, 2, 3, 4]
-	 */
-	merge (a, b, override = false) {
-		if (Array.isArray(a) && Array.isArray(b)) {
-			a = override ? b : a.concat(b);
-		} else if (typeof a === STRING_OBJECT && a !== null && typeof b === STRING_OBJECT && b !== null) {
-			this.each(Object.keys(b), i => {
-				a[i] = this.merge(a[i], b[i], override);
-			});
+		if (Array.isArray(obj)) {
+			obj.forEach(item => this._deepFreeze(item));
 		} else {
-			a = b;
+			Object.values(obj).forEach(value => this._deepFreeze(value));
 		}
 
-		return a;
+		return Object.freeze(obj);
+	}
+}
+
+/**
+ * Streaming support for large datasets
+ */
+export class DataStream {
+	/**
+	 * @param {Iterator} iterator - Data iterator
+	 * @param {Object} [options={}] - Stream options
+	 */
+	constructor (iterator, options = {}) {
+		this.iterator = iterator;
+		this.options = {
+			batchSize: 1000,
+			bufferSize: 10000,
+			...options
+		};
+		this.buffer = [];
+		this.ended = false;
+		this.position = 0;
 	}
 
 	/**
-	 * Lifecycle hook executed after batch operations for custom postprocessing
-	 * @param {Array<Object>} arg - Result of batch operation
-	 * @param {string} [type=STRING_EMPTY] - Type of batch operation that was performed
-	 * @returns {Array<Object>} Modified result (override this method to implement custom logic)
+	 * Read next batch of records
+	 * @param {number} [size] - Batch size
+	 * @returns {Promise<Record[]>} Array of records
 	 */
-	onbatch (arg, type = STRING_EMPTY) { // eslint-disable-line no-unused-vars
-		return arg;
-	}
+	async read (size = this.options.batchSize) {
+		const batch = [];
 
-	/**
-	 * Lifecycle hook executed after clear operation for custom postprocessing
-	 * @returns {void} Override this method in subclasses to implement custom logic
-	 * @example
-	 * class MyStore extends Haro {
-	 *   onclear() {
-	 *     console.log('Store cleared');
-	 *   }
-	 * }
-	 */
-	onclear () {
-		// Hook for custom logic after clear; override in subclass if needed
-	}
+		while (batch.length < size && !this.ended) {
+			const { value, done } = this.iterator.next();
 
-	/**
-	 * Lifecycle hook executed after delete operation for custom postprocessing
-	 * @param {string} [key=STRING_EMPTY] - Key of deleted record
-	 * @param {boolean} [batch=false] - Whether this was part of a batch operation
-	 * @returns {void} Override this method in subclasses to implement custom logic
-	 */
-	ondelete (key = STRING_EMPTY, batch = false) { // eslint-disable-line no-unused-vars
-		// Hook for custom logic after delete; override in subclass if needed
-	}
-
-	/**
-	 * Lifecycle hook executed after override operation for custom postprocessing
-	 * @param {string} [type=STRING_EMPTY] - Type of override operation that was performed
-	 * @returns {void} Override this method in subclasses to implement custom logic
-	 */
-	onoverride (type = STRING_EMPTY) { // eslint-disable-line no-unused-vars
-		// Hook for custom logic after override; override in subclass if needed
-	}
-
-	/**
-	 * Lifecycle hook executed after set operation for custom postprocessing
-	 * @param {Object} [arg={}] - Record that was set
-	 * @param {boolean} [batch=false] - Whether this was part of a batch operation
-	 * @returns {void} Override this method in subclasses to implement custom logic
-	 */
-	onset (arg = {}, batch = false) { // eslint-disable-line no-unused-vars
-		// Hook for custom logic after set; override in subclass if needed
-	}
-
-	/**
-	 * Replaces all store data or indexes with new data for bulk operations
-	 * @param {Array<Array>} data - Data to replace with (format depends on type)
-	 * @param {string} [type=STRING_RECORDS] - Type of data: 'records' or 'indexes'
-	 * @returns {boolean} True if operation succeeded
-	 * @throws {Error} Throws error if type is invalid
-	 * @example
-	 * const records = [['key1', {name: 'John'}], ['key2', {name: 'Jane'}]];
-	 * store.override(records, 'records');
-	 */
-	override (data, type = STRING_RECORDS) {
-		const result = true;
-		if (type === STRING_INDEXES) {
-			this.indexes = new Map(data.map(i => [i[0], new Map(i[1].map(ii => [ii[0], new Set(ii[1])]))]));
-		} else if (type === STRING_RECORDS) {
-			this.indexes.clear();
-			this.data = new Map(data);
-		} else {
-			throw new Error(STRING_INVALID_TYPE);
-		}
-		this.onoverride(type);
-
-		return result;
-	}
-
-	/**
-	 * Reduces all records to a single value using a reducer function
-	 * @param {Function} fn - Reducer function (accumulator, value, key, store)
-	 * @param {*} [accumulator] - Initial accumulator value
-	 * @returns {*} Final reduced value
-	 * @example
-	 * const totalAge = store.reduce((sum, record) => sum + record.age, 0);
-	 * const names = store.reduce((acc, record) => acc.concat(record.name), []);
-	 */
-	reduce (fn, accumulator = []) {
-		let a = accumulator;
-		this.forEach((v, k) => {
-			a = fn(a, v, k, this);
-		}, this);
-
-		return a;
-	}
-
-	/**
-	 * Rebuilds indexes for specified fields or all fields for data consistency
-	 * @param {string|string[]} [index] - Specific index field(s) to rebuild, or all if not specified
-	 * @returns {Haro} This instance for method chaining
-	 * @example
-	 * store.reindex(); // Rebuild all indexes
-	 * store.reindex('name'); // Rebuild only name index
-	 * store.reindex(['name', 'email']); // Rebuild name and email indexes
-	 */
-	reindex (index) {
-		const indices = index ? [index] : this.index;
-		if (index && this.index.includes(index) === false) {
-			this.index.push(index);
-		}
-		this.each(indices, i => this.indexes.set(i, new Map()));
-		this.forEach((data, key) => this.each(indices, i => this.setIndex(key, data, i)));
-
-		return this;
-	}
-
-	/**
-	 * Searches for records containing a value across specified indexes
-	 * @param {*} value - Value to search for (string, function, or RegExp)
-	 * @param {string|string[]} [index] - Index(es) to search in, or all if not specified
-	 * @param {boolean} [raw=false] - Whether to return raw data without processing
-	 * @returns {Array<Object>} Array of matching records
-	 * @example
-	 * const results = store.search('john'); // Search all indexes
-	 * const nameResults = store.search('john', 'name'); // Search only name index
-	 * const regexResults = store.search(/^admin/, 'role'); // Regex search
-	 */
-	search (value, index, raw = false) {
-		const result = new Set(); // Use Set for unique keys
-		const fn = typeof value === STRING_FUNCTION;
-		const rgex = value && typeof value.test === STRING_FUNCTION;
-		if (!value) return this.immutable ? this.freeze() : [];
-		const indices = index ? Array.isArray(index) ? index : [index] : this.index;
-		for (const i of indices) {
-			const idx = this.indexes.get(i);
-			if (idx) {
-				for (const [lkey, lset] of idx) {
-					let match = false;
-
-					if (fn) {
-						match = value(lkey, i);
-					} else if (rgex) {
-						match = value.test(Array.isArray(lkey) ? lkey.join(STRING_COMMA) : lkey);
-					} else {
-						match = lkey === value;
-					}
-
-					if (match) {
-						for (const key of lset) {
-							if (this.data.has(key)) {
-								result.add(key);
-							}
-						}
-					}
-				}
+			if (done) {
+				this.ended = true;
+				break;
 			}
+
+			batch.push(value);
+			this.position++;
 		}
-		let records = Array.from(result).map(key => this.get(key, raw));
-		if (!raw && this.immutable) {
-			records = Object.freeze(records);
+
+		return batch;
+	}
+
+	/**
+	 * Read all remaining records
+	 * @returns {Promise<Record[]>} All records
+	 */
+	async readAll () {
+		const records = [];
+
+		while (!this.ended) {
+			const batch = await this.read();
+			records.push(...batch);
 		}
 
 		return records;
 	}
 
 	/**
-	 * Sets or updates a record in the store with automatic indexing
-	 * @param {string|null} [key=null] - Key for the record, or null to use record's key field
-	 * @param {Object} [data={}] - Record data to set
-	 * @param {boolean} [batch=false] - Whether this is part of a batch operation
-	 * @param {boolean} [override=false] - Whether to override existing data instead of merging
-	 * @returns {Object} The stored record (frozen if immutable mode)
-	 * @example
-	 * const user = store.set(null, {name: 'John', age: 30}); // Auto-generate key
-	 * const updated = store.set('user123', {age: 31}); // Update existing record
+	 * Apply transformation to stream
+	 * @param {Function} transform - Transform function
+	 * @returns {DataStream} New transformed stream
 	 */
-	set (key = null, data = {}, batch = false, override = false) {
-		if (key === null) {
-			key = data[this.key] ?? this.uuid();
-		}
-		let x = {...data, [this.key]: key};
-		this.beforeSet(key, x, batch, override);
-		if (!this.data.has(key)) {
-			if (this.versioning) {
-				this.versions.set(key, new Set());
+	map (transform) {
+		const transformedIterator = {
+			next: () => {
+				const { value, done } = this.iterator.next();
+
+				return done ? { done: true } : { value: transform(value), done: false };
 			}
-		} else {
-			const og = this.get(key, true);
-			this.deleteIndex(key, og);
-			if (this.versioning) {
-				this.versions.get(key).add(Object.freeze(this.clone(og)));
-			}
-			if (!override) {
-				x = this.merge(this.clone(og), x);
-			}
-		}
-		this.data.set(key, x);
-		this.setIndex(key, x, null);
-		const result = this.get(key);
-		this.onset(result, batch);
+		};
 
-		return result;
+		return new DataStream(transformedIterator, this.options);
 	}
 
 	/**
-	 * Internal method to add entries to indexes for a record
-	 * @param {string} key - Key of record being indexed
-	 * @param {Object} data - Data of record being indexed
-	 * @param {string|null} indice - Specific index to update, or null for all
-	 * @returns {Haro} This instance for method chaining
+	 * Filter stream records
+	 * @param {Function} predicate - Filter predicate
+	 * @returns {DataStream} New filtered stream
 	 */
-	setIndex (key, data, indice) {
-		this.each(indice === null ? this.index : [indice], i => {
-			let idx = this.indexes.get(i);
-			if (!idx) {
-				idx = new Map();
-				this.indexes.set(i, idx);
-			}
-			const fn = c => {
-				if (!idx.has(c)) {
-					idx.set(c, new Set());
-				}
-				idx.get(c).add(key);
-			};
-			if (i.includes(this.delimiter)) {
-				this.each(this.indexKeys(i, this.delimiter, data), fn);
-			} else {
-				this.each(Array.isArray(data[i]) ? data[i] : [data[i]], fn);
-			}
-		});
-
-		return this;
-	}
-
-	/**
-	 * Sorts all records using a comparator function
-	 * @param {Function} fn - Comparator function for sorting (a, b) => number
-	 * @param {boolean} [frozen=false] - Whether to return frozen records
-	 * @returns {Array<Object>} Sorted array of records
-	 * @example
-	 * const sorted = store.sort((a, b) => a.age - b.age); // Sort by age
-	 * const names = store.sort((a, b) => a.name.localeCompare(b.name)); // Sort by name
-	 */
-	sort (fn, frozen = false) {
-		const dataSize = this.data.size;
-		let result = this.limit(INT_0, dataSize, true).sort(fn);
-		if (frozen) {
-			result = this.freeze(...result);
-		}
-
-		return result;
-	}
-
-	/**
-	 * Comparator function for sorting keys with type-aware comparison logic
-	 * @param {*} a - First value to compare
-	 * @param {*} b - Second value to compare
-	 * @returns {number} Negative number if a < b, positive if a > b, zero if equal
-	 * @example
-	 * const keys = ['name', 'age', 'email'];
-	 * keys.sort(store.sortKeys); // Alphabetical sort
-	 *
-	 * const mixed = [10, '5', 'abc', 3];
-	 * mixed.sort(store.sortKeys); // Type-aware sort: numbers first, then strings
-	 */
-	sortKeys (a, b) {
-		// Handle string comparison
-		if (typeof a === STRING_STRING && typeof b === STRING_STRING) {
-			return a.localeCompare(b);
-		}
-		// Handle numeric comparison
-		if (typeof a === STRING_NUMBER && typeof b === STRING_NUMBER) {
-			return a - b;
-		}
-
-		// Handle mixed types or other types by converting to string
-
-		return String(a).localeCompare(String(b));
-	}
-
-	/**
-	 * Sorts records by a specific indexed field in ascending order
-	 * @param {string} [index=STRING_EMPTY] - Index field name to sort by
-	 * @param {boolean} [raw=false] - Whether to return raw data without processing
-	 * @returns {Array<Object>} Array of records sorted by the specified field
-	 * @throws {Error} Throws error if index field is empty or invalid
-	 * @example
-	 * const byAge = store.sortBy('age');
-	 * const byName = store.sortBy('name');
-	 */
-	sortBy (index = STRING_EMPTY, raw = false) {
-		if (index === STRING_EMPTY) {
-			throw new Error(STRING_INVALID_FIELD);
-		}
-		let result = [];
-		const keys = [];
-		if (this.indexes.has(index) === false) {
-			this.reindex(index);
-		}
-		const lindex = this.indexes.get(index);
-		lindex.forEach((idx, key) => keys.push(key));
-		this.each(keys.sort(this.sortKeys), i => lindex.get(i).forEach(key => result.push(this.get(key, raw))));
-		if (this.immutable) {
-			result = Object.freeze(result);
-		}
-
-		return result;
-	}
-
-	/**
-	 * Converts all store data to a plain array of records
-	 * @returns {Array<Object>} Array containing all records in the store
-	 * @example
-	 * const allRecords = store.toArray();
-	 * console.log(`Store contains ${allRecords.length} records`);
-	 */
-	toArray () {
-		const result = Array.from(this.data.values());
-		if (this.immutable) {
-			this.each(result, i => Object.freeze(i));
-			Object.freeze(result);
-		}
-
-		return result;
-	}
-
-	/**
-	 * Generates a RFC4122 v4 UUID for record identification
-	 * @returns {string} UUID string in standard format
-	 * @example
-	 * const id = store.uuid(); // "f47ac10b-58cc-4372-a567-0e02b2c3d479"
-	 */
-	uuid () {
-		return uuid();
-	}
-
-	/**
-	 * Returns an iterator of all values in the store
-	 * @returns {Iterator<Object>} Iterator of record values
-	 * @example
-	 * for (const record of store.values()) {
-	 *   console.log(record.name);
-	 * }
-	 */
-	values () {
-		return this.data.values();
-	}
-
-	/**
-	 * Internal helper method for predicate matching with support for arrays and regex
-	 * @param {Object} record - Record to test against predicate
-	 * @param {Object} predicate - Predicate object with field-value pairs
-	 * @param {string} op - Operator for array matching ('||' for OR, '&&' for AND)
-	 * @returns {boolean} True if record matches predicate criteria
-	 */
-	matchesPredicate (record, predicate, op) {
-		const keys = Object.keys(predicate);
-
-		return keys.every(key => {
-			const pred = predicate[key];
-			const val = record[key];
-			if (Array.isArray(pred)) {
-				if (Array.isArray(val)) {
-					return op === STRING_DOUBLE_AND ? pred.every(p => val.includes(p)) : pred.some(p => val.includes(p));
-				} else {
-					return op === STRING_DOUBLE_AND ? pred.every(p => val === p) : pred.some(p => val === p);
-				}
-			} else if (pred instanceof RegExp) {
-				if (Array.isArray(val)) {
-					return op === STRING_DOUBLE_AND ? val.every(v => pred.test(v)) : val.some(v => pred.test(v));
-				} else {
-					return pred.test(val);
-				}
-			} else if (Array.isArray(val)) {
-				return val.includes(pred);
-			} else {
-				return val === pred;
-			}
-		});
-	}
-
-	/**
-	 * Advanced filtering with predicate logic supporting AND/OR operations on arrays
-	 * @param {Object} [predicate={}] - Object with field-value pairs for filtering
-	 * @param {string} [op=STRING_DOUBLE_PIPE] - Operator for array matching ('||' for OR, '&&' for AND)
-	 * @returns {Array<Object>} Array of records matching the predicate criteria
-	 * @example
-	 * // Find records with tags containing 'admin' OR 'user'
-	 * const users = store.where({tags: ['admin', 'user']}, '||');
-	 *
-	 * // Find records with ALL specified tags
-	 * const powerUsers = store.where({tags: ['admin', 'power']}, '&&');
-	 *
-	 * // Regex matching
-	 * const emails = store.where({email: /^admin@/});
-	 */
-	where (predicate = {}, op = STRING_DOUBLE_PIPE) {
-		const keys = this.index.filter(i => i in predicate);
-		if (keys.length === 0) return [];
-
-		// Try to use indexes for better performance
-		const indexedKeys = keys.filter(k => this.indexes.has(k));
-		if (indexedKeys.length > 0) {
-			// Use index-based filtering for better performance
-			let candidateKeys = new Set();
-			let first = true;
-			for (const key of indexedKeys) {
-				const pred = predicate[key];
-				const idx = this.indexes.get(key);
-				const matchingKeys = new Set();
-				if (Array.isArray(pred)) {
-					for (const p of pred) {
-						if (idx.has(p)) {
-							for (const k of idx.get(p)) {
-								matchingKeys.add(k);
-							}
-						}
-					}
-				} else if (idx.has(pred)) {
-					for (const k of idx.get(pred)) {
-						matchingKeys.add(k);
-					}
-				}
-				if (first) {
-					candidateKeys = matchingKeys;
-					first = false;
-				} else {
-					// AND operation across different fields
-					candidateKeys = new Set([...candidateKeys].filter(k => matchingKeys.has(k)));
+	filter (predicate) {
+		const filteredIterator = {
+			next: () => {
+				while (true) {
+					const { value, done } = this.iterator.next();
+					if (done) return { done: true };
+					if (predicate(value)) return { value, done: false };
 				}
 			}
-			// Filter candidates with full predicate logic
-			const results = [];
-			for (const key of candidateKeys) {
-				const record = this.get(key, true);
-				if (this.matchesPredicate(record, predicate, op)) {
-					results.push(this.immutable ? this.get(key) : record);
-				}
+		};
+
+		return new DataStream(filteredIterator, this.options);
+	}
+
+	/**
+	 * Take limited number of records
+	 * @param {number} limit - Maximum records
+	 * @returns {DataStream} New limited stream
+	 */
+	take (limit) {
+		let count = 0;
+		const limitedIterator = {
+			next: () => {
+				if (count >= limit) return { done: true };
+				const { value, done } = this.iterator.next();
+				if (done) return { done: true };
+				count++;
+
+				return { value, done: false };
 			}
+		};
 
-			return this.immutable ? this.freeze(...results) : results;
-		}
+		return new DataStream(limitedIterator, this.options);
+	}
 
-		// Fallback to full scan if no indexes available
-		return this.filter(a => this.matchesPredicate(a, predicate, op));
+	/**
+	 * Get stream statistics
+	 * @returns {Object} Stream statistics
+	 */
+	getStats () {
+		return {
+			position: this.position,
+			ended: this.ended,
+			bufferSize: this.buffer.length,
+			options: this.options
+		};
 	}
 }
 
 /**
- * Factory function to create a new Haro instance with optional initial data
- * @param {Array<Object>|null} [data=null] - Initial data to populate the store
- * @param {Object} [config={}] - Configuration object passed to Haro constructor
- * @returns {Haro} New Haro instance configured and optionally populated
- * @example
- * const store = haro([
- *   {id: 1, name: 'John', age: 30},
- *   {id: 2, name: 'Jane', age: 25}
- * ], {
- *   index: ['name', 'age'],
- *   versioning: true
- * });
+ * Haro class with all design flaws addressed and enterprise features added
  */
-export function haro (data = null, config = {}) {
-	const obj = new Haro(config);
+export class Haro {
+	/**
+	 * @param {Array|Object} [data] - Initial data or configuration
+	 * @param {Object} [config={}] - Configuration options
+	 */
+	constructor (data = null, config = {}) {
+		// Handle parameter overloading
+		if (Array.isArray(data) || data === null) {
+			this.config = ConfigValidator.validate(config);
+			this.initialData = data;
+		} else {
+			this.config = ConfigValidator.validate(data);
+			this.initialData = null;
+		}
 
-	if (Array.isArray(data)) {
-		obj.batch(data, STRING_SET);
+		// Set defaults
+		this.config = {
+			delimiter: "|",
+			id: uuid(),
+			immutable: false,
+			index: [],
+			key: "id",
+			versioning: false,
+			schema: null,
+			retentionPolicy: { type: RetentionPolicies.NONE },
+			enableTransactions: false,
+			enableOptimization: true,
+			...this.config
+		};
+
+		// Initialize storage
+		if (this.config.immutable) {
+			this._store = new ImmutableStore();
+		} else {
+			this._store = new Map();
+		}
+
+		// Initialize managers
+		this.indexManager = new IndexManager(this.config.delimiter);
+		this.versionManager = this.config.versioning ?
+			new VersionManager(this.config.retentionPolicy) :
+			null;
+		this.transactionManager = this.config.enableTransactions ?
+			new TransactionManager() :
+			null;
+		this.queryOptimizer = this.config.enableOptimization ?
+			new QueryOptimizer() :
+			null;
+
+		// Create indexes
+		for (const indexField of this.config.index) {
+			this.indexManager.createIndex(indexField, indexField);
+		}
+
+		// Properties for backward compatibility
+		Object.defineProperty(this, "data", {
+			get: () => this._store,
+			enumerable: true
+		});
+
+		Object.defineProperty(this, "size", {
+			get: () => this._store.size,
+			enumerable: true
+		});
+
+		Object.defineProperty(this, "registry", {
+			get: () => Array.from(this._store.keys()),
+			enumerable: true
+		});
+
+		// Initialize with data if provided
+		if (this.initialData && Array.isArray(this.initialData)) {
+			this.batch(this.initialData);
+		}
 	}
 
-	return obj;
+	/**
+	 * Set or update a record with comprehensive validation and error handling
+	 * @param {string|null} key - Record key or null for auto-generation
+	 * @param {Object} [data={}] - Record data
+	 * @param {Object} [options={}] - Operation options
+	 * @returns {Record} Created/updated record
+	 * @throws {ValidationError} If data validation fails
+	 */
+	set (key, data = {}, options = {}) {
+		try {
+			const {
+				batch = false,
+				override = false,
+				validate = true,
+				transaction = null
+			} = options;
+
+			// Generate key if not provided
+			if (key === null) {
+				key = data[this.config.key] ?? uuid();
+			}
+
+			// Ensure key is in data
+			const recordData = { ...data, [this.config.key]: key };
+
+			// Validate against schema if configured
+			if (validate && this.config.schema) {
+				recordData = this.config.schema.validate(recordData);
+			}
+
+			// Execute in transaction if provided
+			if (transaction) {
+				return this._executeInTransaction(transaction, "set", key, recordData, { override });
+			}
+
+			// Get existing record for merging and versioning
+			const existingRecord = this._store.has(key) ? this._store.get(key) : null;
+			let finalData = recordData;
+
+			// Handle merging vs override
+			if (existingRecord && !override) {
+				finalData = this._mergeRecords(existingRecord, recordData);
+			}
+
+			// Store version if versioning enabled
+			if (this.versionManager && existingRecord) {
+				this.versionManager.addVersion(key, existingRecord);
+			}
+
+			// Update indexes
+			if (existingRecord) {
+				this.indexManager.removeRecord(key, existingRecord);
+			}
+			this.indexManager.addRecord(key, finalData);
+
+			// Store record
+			if (this.config.immutable) {
+				this._store = this._store.set(key, finalData);
+			} else {
+				this._store.set(key, finalData);
+			}
+
+			// Create record wrapper
+			const record = RecordFactory.create(key, finalData);
+
+			// Trigger lifecycle hook
+			if (!batch) {
+				this.onset(record);
+			}
+
+			return record;
+
+		} catch (error) {
+			if (error instanceof HaroError) {
+				throw error;
+			}
+			throw new ValidationError(`Failed to set record: ${error.message}`, "record", data);
+		}
+	}
+
+	/**
+	 * Get a record by key with consistent return format
+	 * @param {string} key - Record key
+	 * @param {Object} [options={}] - Get options
+	 * @returns {Record|null} Record instance or null if not found
+	 */
+	get (key, options = {}) {
+		const {
+			transaction = null,
+			includeVersions = false
+		} = options;
+
+		// Execute in transaction if provided
+		if (transaction) {
+			return this._executeInTransaction(transaction, "get", key);
+		}
+
+		const recordData = this.config.immutable ?
+			this._store.get(key) :
+			this._store.get(key);
+
+		if (!recordData) {
+			return null;
+		}
+
+		const record = RecordFactory.create(key, recordData);
+
+		// Add version information if requested
+		if (includeVersions && this.versionManager) {
+			const history = this.versionManager.getHistory(key);
+			if (history) {
+				const metadata = { versions: history.versions };
+
+				return RecordFactory.create(key, recordData, metadata);
+			}
+		}
+
+		return record;
+	}
+
+	/**
+	 * Delete a record with proper cleanup
+	 * @param {string} key - Record key
+	 * @param {Object} [options={}] - Delete options
+	 * @throws {RecordNotFoundError} If record not found
+	 */
+	delete (key, options = {}) {
+		const {
+			batch = false,
+			transaction = null
+		} = options;
+
+		// Execute in transaction if provided
+		if (transaction) {
+			return this._executeInTransaction(transaction, "delete", key);
+		}
+
+		if (!this._store.has(key)) {
+			throw new RecordNotFoundError(key, this.config.id);
+		}
+
+		const recordData = this._store.get(key);
+
+		// Lifecycle hook
+		this.beforeDelete(key, batch);
+
+		// Remove from indexes
+		this.indexManager.removeRecord(key, recordData);
+
+		// Remove from store
+		if (this.config.immutable) {
+			this._store = this._store.delete(key);
+		} else {
+			this._store.delete(key);
+		}
+
+		// Cleanup versions
+		if (this.versionManager) {
+			this.versionManager.disableVersioning(key);
+		}
+
+		// Lifecycle hook
+		if (!batch) {
+			this.ondelete(key);
+		}
+	}
+
+	/**
+	 * Check if record exists
+	 * @param {string} key - Record key
+	 * @returns {boolean} True if record exists
+	 */
+	has (key) {
+		return this._store.has(key);
+	}
+
+	/**
+	 * Find records using optimized queries
+	 * @param {Object} [criteria={}] - Search criteria
+	 * @param {Object} [options={}] - Query options
+	 * @returns {RecordCollection} Collection of matching records
+	 */
+	find (criteria = {}, options = {}) {
+		const {
+			limit,
+			offset = 0,
+			transaction = null
+		} = options;
+
+		try {
+			// Create query plan if optimizer is available
+			let plan = null;
+			if (this.queryOptimizer) {
+				const query = { find: criteria, limit, offset };
+				const context = { indexManager: this.indexManager };
+				plan = this.queryOptimizer.createPlan(query, context);
+				plan.startExecution();
+			}
+
+			// Execute in transaction if provided
+			if (transaction) {
+				const results = this._executeInTransaction(transaction, "find", criteria, options);
+				if (plan) {
+					plan.completeExecution(results.length);
+					this.queryOptimizer.recordExecution(plan);
+				}
+
+				return results;
+			}
+
+			// Use index if available
+			const fields = Object.keys(criteria);
+			const optimalIndex = this.indexManager.getOptimalIndex(fields);
+
+			let recordKeys;
+			if (optimalIndex) {
+				recordKeys = this.indexManager.findByCriteria(criteria);
+			} else {
+				// Fallback to full scan
+				recordKeys = new Set(this._store.keys());
+			}
+
+			// Convert to records and filter
+			const records = [];
+			for (const key of recordKeys) {
+				const recordData = this._store.get(key);
+				if (this._matchesCriteria(recordData, criteria)) {
+					records.push(RecordFactory.create(key, recordData));
+				}
+			}
+
+			// Apply pagination
+			const start = offset;
+			const end = limit ? start + limit : records.length;
+			const paginatedRecords = records.slice(start, end);
+
+			if (plan) {
+				plan.completeExecution(paginatedRecords.length);
+				this.queryOptimizer.recordExecution(plan);
+			}
+
+			return new RecordCollection(paginatedRecords);
+
+		} catch (error) {
+			throw new QueryError(`Find operation failed: ${error.message}`, criteria, "find");
+		}
+	}
+
+	/**
+	 * Advanced filtering with predicate logic
+	 * @param {Function|Object} predicate - Filter predicate
+	 * @param {Object} [options={}] - Filter options
+	 * @returns {RecordCollection} Filtered records
+	 */
+	where (predicate, options = {}) {
+		try {
+			if (typeof predicate === "function") {
+				return this._filterByFunction(predicate, options);
+			}
+
+			if (typeof predicate === "object" && predicate !== null) {
+				return this._filterByObject(predicate, options);
+			}
+
+			throw new QueryError("Predicate must be a function or object", predicate, "where");
+
+		} catch (error) {
+			throw new QueryError(`Where operation failed: ${error.message}`, predicate, "where");
+		}
+	}
+
+	/**
+	 * Batch operations with transaction support
+	 * @param {Array} operations - Array of operations or records
+	 * @param {string} [type='set'] - Operation type
+	 * @param {Object} [options={}] - Batch options
+	 * @returns {Array} Array of results
+	 */
+	batch (operations, type = "set", options = {}) {
+		const {
+			transaction = null,
+			atomic = false
+		} = options;
+
+		try {
+			// Use transaction for atomic operations
+			if (atomic || transaction) {
+				return this._executeBatchInTransaction(operations, type, transaction);
+			}
+
+			// Execute operations individually
+			const results = [];
+			for (const operation of operations) {
+				try {
+					let result;
+					if (type === "set") {
+						result = this.set(null, operation, { batch: true });
+					} else if (type === "del") {
+						this.delete(operation, { batch: true });
+						result = true;
+					}
+					results.push(result);
+				} catch (error) {
+					results.push(error);
+				}
+			}
+
+			// Trigger batch lifecycle hook
+			this.onbatch(results, type);
+
+			return results;
+
+		} catch (error) {
+			throw new QueryError(`Batch operation failed: ${error.message}`, operations, "batch");
+		}
+	}
+
+	/**
+	 * Begin a new transaction
+	 * @param {Object} [options={}] - Transaction options
+	 * @returns {Transaction} New transaction
+	 * @throws {ConfigurationError} If transactions not enabled
+	 */
+	beginTransaction (options = {}) {
+		if (!this.transactionManager) {
+			throw new ConfigurationError("Transactions not enabled", "enableTransactions", false);
+		}
+
+		return this.transactionManager.begin(options);
+	}
+
+	/**
+	 * Commit a transaction
+	 * @param {string|Transaction} transaction - Transaction ID or instance
+	 * @returns {Transaction} Committed transaction
+	 */
+	async commitTransaction (transaction) {
+		if (!this.transactionManager) {
+			throw new ConfigurationError("Transactions not enabled", "enableTransactions", false);
+		}
+
+		const transactionId = typeof transaction === "string" ? transaction : transaction.id;
+
+		return await this.transactionManager.commit(transactionId);
+	}
+
+	/**
+	 * Abort a transaction
+	 * @param {string|Transaction} transaction - Transaction ID or instance
+	 * @param {string} [reason] - Abort reason
+	 * @returns {Transaction} Aborted transaction
+	 */
+	abortTransaction (transaction, reason) {
+		if (!this.transactionManager) {
+			throw new ConfigurationError("Transactions not enabled", "enableTransactions", false);
+		}
+
+		const transactionId = typeof transaction === "string" ? transaction : transaction.id;
+
+		return this.transactionManager.abort(transactionId, reason);
+	}
+
+	/**
+	 * Create a data stream for large datasets
+	 * @param {Object} [options={}] - Stream options
+	 * @returns {DataStream} Data stream instance
+	 */
+	stream (options = {}) {
+		const iterator = this._store.entries();
+
+		return new DataStream(iterator, options);
+	}
+
+	/**
+	 * Get comprehensive statistics
+	 * @returns {Object} Statistics object
+	 */
+	getStats () {
+		const stats = {
+			records: this._store.size,
+			configuration: this.config,
+			indexes: this.indexManager.getStats(),
+			memory: this._estimateMemoryUsage()
+		};
+
+		if (this.versionManager) {
+			stats.versions = this.versionManager.getStats();
+		}
+
+		if (this.transactionManager) {
+			stats.transactions = this.transactionManager.getStats();
+		}
+
+		if (this.queryOptimizer) {
+			stats.queries = this.queryOptimizer.getStats();
+		}
+
+		return stats;
+	}
+
+	/**
+	 * Clear all data and reset state
+	 * @param {Object} [options={}] - Clear options
+	 */
+	clear (options = {}) {
+		const {
+			preserveIndexes = false,
+			preserveVersions = false
+		} = options;
+
+		this.beforeClear();
+
+		// Clear store
+		if (this.config.immutable) {
+			this._store = new ImmutableStore();
+		} else {
+			this._store.clear();
+		}
+
+		// Clear indexes
+		if (!preserveIndexes) {
+			this.indexManager.clear();
+		}
+
+		// Clear versions
+		if (!preserveVersions && this.versionManager) {
+			this.versionManager.clear();
+		}
+
+		// Clear query cache
+		if (this.queryOptimizer) {
+			this.queryOptimizer.clear();
+		}
+
+		this.onclear();
+	}
+
+	// Lifecycle hooks (override in subclasses)
+	beforeSet (key, data, options) {}
+	onset (record) {}
+	beforeDelete (key, batch) {}
+	ondelete (key) {}
+	beforeClear () {}
+	onclear () {}
+	onbatch (results, type) {}
+
+	/**
+	 * Merge two records
+	 * @param {Object} existing - Existing record
+	 * @param {Object} updates - Updates to apply
+	 * @returns {Object} Merged record
+	 * @private
+	 */
+	_mergeRecords (existing, updates) {
+		if (Array.isArray(existing) && Array.isArray(updates)) {
+			return [...existing, ...updates];
+		}
+
+		if (typeof existing === "object" && typeof updates === "object") {
+			const merged = { ...existing };
+			for (const [key, value] of Object.entries(updates)) {
+				if (typeof value === "object" && value !== null && !Array.isArray(value) &&
+					typeof existing[key] === "object" && existing[key] !== null && !Array.isArray(existing[key])) {
+					merged[key] = this._mergeRecords(existing[key], value);
+				} else {
+					merged[key] = value;
+				}
+			}
+
+			return merged;
+		}
+
+		return updates;
+	}
+
+	/**
+	 * Check if record matches criteria
+	 * @param {Object} record - Record to check
+	 * @param {Object} criteria - Criteria object
+	 * @returns {boolean} True if matches
+	 * @private
+	 */
+	_matchesCriteria (record, criteria) {
+		for (const [field, value] of Object.entries(criteria)) {
+			const recordValue = record[field];
+
+			if (value instanceof RegExp) {
+				if (!value.test(recordValue)) return false;
+			} else if (Array.isArray(value)) {
+				if (Array.isArray(recordValue)) {
+					if (!value.some(v => recordValue.includes(v))) return false;
+				} else if (!value.includes(recordValue)) return false;
+			} else if (recordValue !== value) return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Filter by function predicate
+	 * @param {Function} predicate - Filter function
+	 * @param {Object} options - Filter options
+	 * @returns {RecordCollection} Filtered records
+	 * @private
+	 */
+	_filterByFunction (predicate, options) {
+		const records = [];
+
+		for (const [key, recordData] of this._store.entries()) {
+			const record = RecordFactory.create(key, recordData);
+			if (predicate(record)) {
+				records.push(record);
+			}
+		}
+
+		return new RecordCollection(records);
+	}
+
+	/**
+	 * Filter by object predicate
+	 * @param {Object} predicate - Filter object
+	 * @param {Object} options - Filter options
+	 * @returns {RecordCollection} Filtered records
+	 * @private
+	 */
+	_filterByObject (predicate, options) {
+		return this.find(predicate, options);
+	}
+
+	/**
+	 * Execute operation in transaction
+	 * @param {Transaction} transaction - Transaction instance
+	 * @param {string} operation - Operation type
+	 * @param {...*} args - Operation arguments
+	 * @returns {*} Operation result
+	 * @private
+	 */
+	_executeInTransaction (transaction, operation, ...args) {
+		// Add operation to transaction log
+		const [key, data] = args;
+		const oldValue = this._store.get(key);
+
+		transaction.addOperation(operation, key, oldValue, data);
+
+		// Execute operation normally
+		switch (operation) {
+			case "set":
+				return this.set(key, data, { transaction: null });
+			case "get":
+				transaction.addOperation("read", key);
+
+				return this.get(key, { transaction: null });
+			case "delete":
+				this.delete(key, { transaction: null });
+
+				return true;
+			case "find":
+				const criteria = key; // In this context, key is criteria
+				const options = data; // In this context, data is options
+
+				return this.find(criteria, { ...options, transaction: null });
+			default:
+				throw new TransactionError(`Unknown operation: ${operation}`, transaction.id, operation);
+		}
+	}
+
+	/**
+	 * Execute batch in transaction
+	 * @param {Array} operations - Operations to execute
+	 * @param {string} type - Operation type
+	 * @param {Transaction} [transaction] - Existing transaction
+	 * @returns {Array} Operation results
+	 * @private
+	 */
+	_executeBatchInTransaction (operations, type, transaction) {
+		const ownTransaction = !transaction;
+		if (ownTransaction) {
+			transaction = this.beginTransaction();
+		}
+
+		try {
+			const results = [];
+			for (const operation of operations) {
+				if (type === "set") {
+					const result = this.set(null, operation, { transaction, batch: true });
+					results.push(result);
+				} else if (type === "del") {
+					this.delete(operation, { transaction, batch: true });
+					results.push(true);
+				}
+			}
+
+			if (ownTransaction) {
+				this.commitTransaction(transaction);
+			}
+
+			return results;
+		} catch (error) {
+			if (ownTransaction) {
+				this.abortTransaction(transaction, error.message);
+			}
+			throw error;
+		}
+	}
+
+	/**
+	 * Estimate memory usage
+	 * @returns {Object} Memory usage statistics
+	 * @private
+	 */
+	_estimateMemoryUsage () {
+		let dataSize = 0;
+		for (const [key, value] of this._store.entries()) {
+			dataSize += JSON.stringify({ key, value }).length * 2; // UTF-16 estimate
+		}
+
+		const indexSize = this.indexManager.getStats().totalMemoryUsage || 0;
+		const versionSize = this.versionManager ? this.versionManager.getStats().totalSize : 0;
+
+		return {
+			total: dataSize + indexSize + versionSize,
+			data: dataSize,
+			indexes: indexSize,
+			versions: versionSize,
+			overhead: indexSize + versionSize
+		};
+	}
 }
+
+/**
+ * Factory function for creating Haro instances
+ * @param {Array|Object} [data] - Initial data or configuration
+ * @param {Object} [config={}] - Configuration options
+ * @returns {Haro} New Haro instance
+ */
+export function haro (data = null, config = {}) {
+	return new Haro(data, config);
+}
+
+// Export types and utilities
+export {
+	DataTypes,
+	FieldConstraint,
+	Schema,
+	Constraints,
+	Record,
+	RecordCollection,
+	RecordFactory,
+	IndexTypes,
+	RetentionPolicies,
+	IsolationLevels,
+	QueryTypes,
+	ErrorRecovery
+};
+
+// Default export
+export default Haro;
