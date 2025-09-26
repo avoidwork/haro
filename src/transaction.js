@@ -1,24 +1,12 @@
 import { TransactionError, ConcurrencyError } from "./errors.js";
+import { 
+	TransactionStates, 
+	OperationTypes, 
+	IsolationLevels, 
+	LockTypes 
+} from "./constants.js";
 import { randomUUID as uuid } from "crypto";
 
-/**
- * Transaction states
- */
-export const TransactionStates = {
-	PENDING: "pending",
-	ACTIVE: "active",
-	COMMITTED: "committed",
-	ABORTED: "aborted"
-};
-
-/**
- * Operation types for transaction log
- */
-export const OperationTypes = {
-	SET: "set",
-	DELETE: "delete",
-	BATCH: "batch"
-};
 
 /**
  * Transaction operation entry
@@ -63,23 +51,6 @@ export class TransactionOperation {
 	}
 }
 
-/**
- * Transaction isolation levels
- */
-export const IsolationLevels = {
-	READ_UNCOMMITTED: 0,
-	READ_COMMITTED: 1,
-	REPEATABLE_READ: 2,
-	SERIALIZABLE: 3
-};
-
-/**
- * Lock types for concurrency control
- */
-export const LockTypes = {
-	SHARED: "shared",
-	EXCLUSIVE: "exclusive"
-};
 
 /**
  * Lock manager for controlling concurrent access

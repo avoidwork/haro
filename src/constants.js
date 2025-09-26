@@ -120,6 +120,11 @@ export const ISOLATION_READ_COMMITTED = 1;
 export const ISOLATION_REPEATABLE_READ = 2;
 export const ISOLATION_SERIALIZABLE = 3;
 
+// Operation types for transaction log
+export const OPERATION_TYPE_SET = "set";
+export const OPERATION_TYPE_DELETE = "delete";
+export const OPERATION_TYPE_BATCH = "batch";
+
 // Query types
 export const QUERY_TYPE_FIND = "find";
 export const QUERY_TYPE_FILTER = "filter";
@@ -155,3 +160,29 @@ export const COST_SORT_OPERATION = 50;
 export const COST_MEMORY_ACCESS = 1;
 export const COST_COMPARISON = 2;
 export const COST_REGEX_MATCH = 20;
+
+// Object wrappers for backward compatibility
+export const TransactionStates = {
+	PENDING: TRANSACTION_STATE_PENDING,
+	ACTIVE: TRANSACTION_STATE_ACTIVE,
+	COMMITTED: TRANSACTION_STATE_COMMITTED,
+	ABORTED: TRANSACTION_STATE_ABORTED
+};
+
+export const OperationTypes = {
+	SET: OPERATION_TYPE_SET,
+	DELETE: OPERATION_TYPE_DELETE,
+	BATCH: OPERATION_TYPE_BATCH
+};
+
+export const IsolationLevels = {
+	READ_UNCOMMITTED: ISOLATION_READ_UNCOMMITTED,
+	READ_COMMITTED: ISOLATION_READ_COMMITTED,
+	REPEATABLE_READ: ISOLATION_REPEATABLE_READ,
+	SERIALIZABLE: ISOLATION_SERIALIZABLE
+};
+
+export const LockTypes = {
+	SHARED: LOCK_TYPE_SHARED,
+	EXCLUSIVE: LOCK_TYPE_EXCLUSIVE
+};
