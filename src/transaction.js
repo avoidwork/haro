@@ -1433,29 +1433,51 @@ export class TransactionManager {
 	 * @private
 	 */
 	_isKeyInSnapshotRange (transaction, operationKey, snapshotKey, expectedValue) {
-		// Simplified range check for phantom read detection
-		// In a real implementation, this would use actual query predicates
-		// and index ranges that were used to create the snapshot
+		// Comprehensive range check for phantom read detection
+		// This implementation handles various snapshot range types and query predicates
 
-		// Check if this is a range-based snapshot (indicated by special metadata)
-		if (transaction.snapshot.has(`${snapshotKey}:range`)) {
-			// Get range information from snapshot metadata
-			const rangeInfo = transaction.snapshot.get(`${snapshotKey}:range`);
-			if (rangeInfo && typeof rangeInfo === "object") {
-				return this._keyMatchesRange(operationKey, rangeInfo);
-			}
+		// 1. Direct key match - always affects snapshot
+		if (operationKey === snapshotKey) {
+			return true;
 		}
 
-		// For non-range snapshots, check for prefix-based conflicts
-		// This handles cases where snapshot keys represent collections or patterns
-		if (snapshotKey.includes("*") || snapshotKey.includes(":")) {
-			const pattern = snapshotKey.replace("*", "");
-
-			return operationKey.startsWith(pattern);
+		// 2. Check for explicit range metadata stored with the snapshot
+		if (this._hasExplicitRangeMetadata(transaction, snapshotKey)) {
+			return this._checkExplicitRange(transaction, operationKey, snapshotKey);
 		}
 
-		// Default: only direct key matches affect snapshot
-		return operationKey === snapshotKey;
+		// 3. Infer range from snapshot key patterns
+		if (this._isPatternBasedSnapshot(snapshotKey)) {
+			return this._checkPatternBasedRange(operationKey, snapshotKey);
+		}
+
+		// 4. Check for hierarchical key relationships
+		if (this._hasHierarchicalRelationship(operationKey, snapshotKey)) {
+			return this._checkHierarchicalRange(operationKey, snapshotKey, expectedValue);
+		}
+
+		// 5. Check for index-based range queries
+		if (this._isIndexBasedSnapshot(transaction, snapshotKey)) {
+			return this._checkIndexBasedRange(transaction, operationKey, snapshotKey);
+		}
+
+		// 6. Check for semantic key relationships
+		if (this._hasSemanticRelationship(operationKey, snapshotKey)) {
+			return this._checkSemanticRange(operationKey, snapshotKey, expectedValue);
+		}
+
+		// 7. Check for temporal range relationships
+		if (this._isTemporalSnapshot(snapshotKey)) {
+			return this._checkTemporalRange(operationKey, snapshotKey, expectedValue);
+		}
+
+		// 8. Check for composite key range relationships
+		if (this._isCompositeKeySnapshot(snapshotKey)) {
+			return this._checkCompositeKeyRange(operationKey, snapshotKey);
+		}
+
+		// Default: no range relationship detected
+		return false;
 	}
 
 	/**
@@ -1490,6 +1512,629 @@ export class TransactionManager {
 		}
 
 		// Default: no match
+		return false;
+	}
+
+	/**
+	 * Check if snapshot has explicit range metadata
+	 * @param {Transaction} transaction - Transaction with snapshot
+	 * @param {string} snapshotKey - Key from snapshot
+	 * @returns {boolean} True if explicit range metadata exists
+	 * @private
+	 */
+	_hasExplicitRangeMetadata (transaction, snapshotKey) {
+		return transaction.snapshot.has(`${snapshotKey}:range`) ||
+			   transaction.snapshot.has(`${snapshotKey}:query`) ||
+			   transaction.snapshot.has(`${snapshotKey}:predicate`);
+	}
+
+	/**
+	 * Check explicit range metadata for key inclusion
+	 * @param {Transaction} transaction - Transaction with snapshot
+	 * @param {string} operationKey - Key to check
+	 * @param {string} snapshotKey - Snapshot key
+	 * @returns {boolean} True if key is in explicit range
+	 * @private
+	 */
+	_checkExplicitRange (transaction, operationKey, snapshotKey) {
+		// Check range metadata
+		const rangeInfo = transaction.snapshot.get(`${snapshotKey}:range`);
+		if (rangeInfo && typeof rangeInfo === "object") {
+			return this._keyMatchesRange(operationKey, rangeInfo);
+		}
+
+		// Check query metadata
+		const queryInfo = transaction.snapshot.get(`${snapshotKey}:query`);
+		if (queryInfo) {
+			return this._keyMatchesQuery(operationKey, queryInfo);
+		}
+
+		// Check predicate metadata
+		const predicateInfo = transaction.snapshot.get(`${snapshotKey}:predicate`);
+		if (predicateInfo && typeof predicateInfo === "function") {
+			try {
+				return predicateInfo(operationKey);
+			} catch {
+				// If predicate fails, assume no match
+				return false;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check if snapshot key represents a pattern-based range
+	 * @param {string} snapshotKey - Snapshot key to check
+	 * @returns {boolean} True if pattern-based
+	 * @private
+	 */
+	_isPatternBasedSnapshot (snapshotKey) {
+		return snapshotKey.includes("*") || 
+			   snapshotKey.includes("?") || 
+			   snapshotKey.includes("[") ||
+			   snapshotKey.includes("{") ||
+			   snapshotKey.endsWith("_range") ||
+			   snapshotKey.endsWith("_pattern");
+	}
+
+	/**
+	 * Check pattern-based range for key inclusion
+	 * @param {string} operationKey - Key to check
+	 * @param {string} snapshotKey - Pattern-based snapshot key
+	 * @returns {boolean} True if key matches pattern
+	 * @private
+	 */
+	_checkPatternBasedRange (operationKey, snapshotKey) {
+		// Handle wildcard patterns
+		if (snapshotKey.includes("*")) {
+			const pattern = snapshotKey.replace(/\*/g, ".*");
+			try {
+				const regex = new RegExp(`^${pattern}$`);
+				return regex.test(operationKey);
+			} catch {
+				// Fallback to simple prefix matching
+				const prefix = snapshotKey.split("*")[0];
+				return operationKey.startsWith(prefix);
+			}
+		}
+
+		// Handle single character wildcards
+		if (snapshotKey.includes("?")) {
+			const pattern = snapshotKey.replace(/\?/g, ".");
+			try {
+				const regex = new RegExp(`^${pattern}$`);
+				return regex.test(operationKey);
+			} catch {
+				return false;
+			}
+		}
+
+		// Handle character classes [a-z], [0-9], etc.
+		if (snapshotKey.includes("[")) {
+			try {
+				const regex = new RegExp(`^${snapshotKey}$`);
+				return regex.test(operationKey);
+			} catch {
+				return false;
+			}
+		}
+
+		// Handle choice patterns {opt1,opt2,opt3}
+		if (snapshotKey.includes("{") && snapshotKey.includes("}")) {
+			const beforeBrace = snapshotKey.substring(0, snapshotKey.indexOf("{"));
+			const afterBrace = snapshotKey.substring(snapshotKey.indexOf("}") + 1);
+			const choices = snapshotKey.substring(
+				snapshotKey.indexOf("{") + 1, 
+				snapshotKey.indexOf("}")
+			).split(",");
+
+			for (const choice of choices) {
+				const fullPattern = beforeBrace + choice.trim() + afterBrace;
+				if (operationKey === fullPattern || operationKey.startsWith(fullPattern)) {
+					return true;
+				}
+			}
+		}
+
+		// Handle range and pattern suffixes
+		if (snapshotKey.endsWith("_range") || snapshotKey.endsWith("_pattern")) {
+			const baseKey = snapshotKey.replace(/_range$|_pattern$/, "");
+			return operationKey.startsWith(baseKey);
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check if keys have hierarchical relationship
+	 * @param {string} operationKey - Key to check
+	 * @param {string} snapshotKey - Snapshot key
+	 * @returns {boolean} True if hierarchical relationship exists
+	 * @private
+	 */
+	_hasHierarchicalRelationship (operationKey, snapshotKey) {
+		// Check for common hierarchical separators
+		const separators = [":", "/", ".", "_", "-"];
+		
+		for (const sep of separators) {
+			if (operationKey.includes(sep) && snapshotKey.includes(sep)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check hierarchical range for key inclusion
+	 * @param {string} operationKey - Key to check
+	 * @param {string} snapshotKey - Snapshot key
+	 * @param {*} expectedValue - Expected value from snapshot
+	 * @returns {boolean} True if key is in hierarchical range
+	 * @private
+	 */
+	_checkHierarchicalRange (operationKey, snapshotKey, expectedValue) {
+		const separators = [":", "/", ".", "_", "-"];
+		
+		for (const sep of separators) {
+			if (operationKey.includes(sep) && snapshotKey.includes(sep)) {
+				const opParts = operationKey.split(sep);
+				const snapParts = snapshotKey.split(sep);
+				
+				// Check for parent-child relationships
+				if (this._isParentChildRelationship(opParts, snapParts)) {
+					return true;
+				}
+				
+				// Check for sibling relationships
+				if (this._isSiblingRelationship(opParts, snapParts)) {
+					return true;
+				}
+				
+				// Check for collection membership
+				if (this._isCollectionMembership(opParts, snapParts, expectedValue)) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check if keys represent parent-child relationship
+	 * @param {string[]} opParts - Operation key parts
+	 * @param {string[]} snapParts - Snapshot key parts
+	 * @returns {boolean} True if parent-child relationship
+	 * @private
+	 */
+	_isParentChildRelationship (opParts, snapParts) {
+		// Operation key is child of snapshot key
+		if (opParts.length > snapParts.length) {
+			for (let i = 0; i < snapParts.length; i++) {
+				if (opParts[i] !== snapParts[i]) {
+					return false;
+				}
+			}
+			return true;
+		}
+		
+		// Snapshot key is child of operation key
+		if (snapParts.length > opParts.length) {
+			for (let i = 0; i < opParts.length; i++) {
+				if (opParts[i] !== snapParts[i]) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check if keys represent sibling relationship
+	 * @param {string[]} opParts - Operation key parts
+	 * @param {string[]} snapParts - Snapshot key parts
+	 * @returns {boolean} True if sibling relationship
+	 * @private
+	 */
+	_isSiblingRelationship (opParts, snapParts) {
+		// Same depth, same parent path
+		if (opParts.length === snapParts.length && opParts.length > 1) {
+			// Check if all but last parts are the same
+			for (let i = 0; i < opParts.length - 1; i++) {
+				if (opParts[i] !== snapParts[i]) {
+					return false;
+				}
+			}
+			// Last parts are different (making them siblings)
+			return opParts[opParts.length - 1] !== snapParts[snapParts.length - 1];
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check if operation represents collection membership
+	 * @param {string[]} opParts - Operation key parts
+	 * @param {string[]} snapParts - Snapshot key parts
+	 * @param {*} expectedValue - Expected value from snapshot
+	 * @returns {boolean} True if collection membership
+	 * @private
+	 */
+	_isCollectionMembership (opParts, snapParts, expectedValue) {
+		// Check if snapshot represents a collection query
+		if (Array.isArray(expectedValue) || 
+			(expectedValue && typeof expectedValue === "object" && expectedValue.length !== undefined)) {
+			
+			// Operation might be adding/removing from the collection
+			return this._isParentChildRelationship(opParts, snapParts) ||
+				   this._isSiblingRelationship(opParts, snapParts);
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check if snapshot is index-based
+	 * @param {Transaction} transaction - Transaction with snapshot
+	 * @param {string} snapshotKey - Snapshot key
+	 * @returns {boolean} True if index-based snapshot
+	 * @private
+	 */
+	_isIndexBasedSnapshot (transaction, snapshotKey) {
+		return snapshotKey.includes("_index") ||
+			   snapshotKey.includes("_idx") ||
+			   snapshotKey.startsWith("idx_") ||
+			   transaction.snapshot.has(`${snapshotKey}:index_range`);
+	}
+
+	/**
+	 * Check index-based range for key inclusion
+	 * @param {Transaction} transaction - Transaction with snapshot
+	 * @param {string} operationKey - Key to check
+	 * @param {string} snapshotKey - Snapshot key
+	 * @returns {boolean} True if key affects index range
+	 * @private
+	 */
+	_checkIndexBasedRange (transaction, operationKey, snapshotKey) {
+		// Get index range information
+		const indexRange = transaction.snapshot.get(`${snapshotKey}:index_range`);
+		if (indexRange) {
+			return this._keyMatchesIndexRange(operationKey, indexRange);
+		}
+
+		// Infer index range from key patterns
+		if (snapshotKey.includes("_index") || snapshotKey.includes("_idx")) {
+			const baseKey = snapshotKey.replace(/_index.*$|_idx.*$/, "");
+			return operationKey.startsWith(baseKey);
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check if key matches an index range
+	 * @param {string} key - Key to check
+	 * @param {Object} indexRange - Index range specification
+	 * @returns {boolean} True if key matches index range
+	 * @private
+	 */
+	_keyMatchesIndexRange (key, indexRange) {
+		if (!indexRange || typeof indexRange !== "object") {
+			return false;
+		}
+
+		// Check field-based ranges
+		if (indexRange.fields && Array.isArray(indexRange.fields)) {
+			for (const field of indexRange.fields) {
+				if (key.includes(field)) {
+					return true;
+				}
+			}
+		}
+
+		// Check value-based ranges
+		if (indexRange.values) {
+			return this._keyMatchesRange(key, indexRange.values);
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check if keys have semantic relationship
+	 * @param {string} operationKey - Key to check
+	 * @param {string} snapshotKey - Snapshot key
+	 * @returns {boolean} True if semantic relationship exists
+	 * @private
+	 */
+	_hasSemanticRelationship (operationKey, snapshotKey) {
+		// Check for semantic prefixes that indicate relationships
+		const semanticPrefixes = [
+			"user", "account", "profile", "session",
+			"order", "product", "cart", "payment",
+			"post", "comment", "thread", "message",
+			"document", "file", "folder", "workspace"
+		];
+
+		for (const prefix of semanticPrefixes) {
+			if (operationKey.toLowerCase().includes(prefix) && 
+				snapshotKey.toLowerCase().includes(prefix)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check semantic range for key inclusion
+	 * @param {string} operationKey - Key to check
+	 * @param {string} snapshotKey - Snapshot key
+	 * @param {*} expectedValue - Expected value from snapshot
+	 * @returns {boolean} True if key is in semantic range
+	 * @private
+	 */
+	_checkSemanticRange (operationKey, snapshotKey, expectedValue) {
+		// Extract semantic identifiers
+		const opSemantics = this._extractSemanticIdentifiers(operationKey);
+		const snapSemantics = this._extractSemanticIdentifiers(snapshotKey);
+
+		// Check for shared semantic entities
+		for (const opSemantic of opSemantics) {
+			for (const snapSemantic of snapSemantics) {
+				if (this._areSemanticallySimilar(opSemantic, snapSemantic)) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Extract semantic identifiers from a key
+	 * @param {string} key - Key to analyze
+	 * @returns {string[]} Array of semantic identifiers
+	 * @private
+	 */
+	_extractSemanticIdentifiers (key) {
+		const identifiers = [];
+		
+		// Extract common patterns: entity:id, entity_id, entityId
+		const patterns = [
+			/(\w+):(\w+)/g,        // entity:id
+			/(\w+)_(\w+)/g,        // entity_id
+			/([a-z]+)([A-Z]\w+)/g  // entityId (camelCase)
+		];
+
+		for (const pattern of patterns) {
+			let match;
+			while ((match = pattern.exec(key)) !== null) {
+				identifiers.push(match[1].toLowerCase());
+				if (match[2]) {
+					identifiers.push(match[2].toLowerCase());
+				}
+			}
+		}
+
+		return identifiers;
+	}
+
+	/**
+	 * Check if semantic identifiers are similar
+	 * @param {string} id1 - First identifier
+	 * @param {string} id2 - Second identifier
+	 * @returns {boolean} True if semantically similar
+	 * @private
+	 */
+	_areSemanticallySimilar (id1, id2) {
+		// Direct match
+		if (id1 === id2) {
+			return true;
+		}
+
+		// Check for singular/plural variations
+		const singularPlural = [
+			["user", "users"], ["account", "accounts"], ["profile", "profiles"],
+			["order", "orders"], ["product", "products"], ["item", "items"],
+			["post", "posts"], ["comment", "comments"], ["message", "messages"],
+			["file", "files"], ["document", "documents"], ["folder", "folders"]
+		];
+
+		for (const [singular, plural] of singularPlural) {
+			if ((id1 === singular && id2 === plural) || 
+				(id1 === plural && id2 === singular)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check if snapshot is temporal (time-based)
+	 * @param {string} snapshotKey - Snapshot key
+	 * @returns {boolean} True if temporal snapshot
+	 * @private
+	 */
+	_isTemporalSnapshot (snapshotKey) {
+		const temporalKeywords = [
+			"timestamp", "time", "date", "created", "updated", "modified",
+			"datetime", "ts", "epoch", "iso", "utc", "log", "event", "history"
+		];
+
+		return temporalKeywords.some(keyword => 
+			snapshotKey.toLowerCase().includes(keyword)
+		);
+	}
+
+	/**
+	 * Check temporal range for key inclusion
+	 * @param {string} operationKey - Key to check
+	 * @param {string} snapshotKey - Snapshot key
+	 * @param {*} expectedValue - Expected value from snapshot
+	 * @returns {boolean} True if key is in temporal range
+	 * @private
+	 */
+	_checkTemporalRange (operationKey, snapshotKey, expectedValue) {
+		// If both keys are temporal, they might affect each other
+		if (this._isTemporalSnapshot(operationKey)) {
+			// Extract temporal components
+			const opTemporal = this._extractTemporalComponents(operationKey);
+			const snapTemporal = this._extractTemporalComponents(snapshotKey);
+
+			// Check for temporal proximity or overlap
+			return this._haveTemporalOverlap(opTemporal, snapTemporal, expectedValue);
+		}
+
+		return false;
+	}
+
+	/**
+	 * Extract temporal components from a key
+	 * @param {string} key - Key to analyze
+	 * @returns {Object} Temporal components
+	 * @private
+	 */
+	_extractTemporalComponents (key) {
+		const components = {
+			hasDate: false,
+			hasTime: false,
+			hasTimestamp: false,
+			hasEpoch: false
+		};
+
+		// Check for various temporal formats
+		if (/\d{4}-\d{2}-\d{2}/.test(key)) components.hasDate = true;
+		if (/\d{2}:\d{2}:\d{2}/.test(key)) components.hasTime = true;
+		if (/\d{13}/.test(key)) components.hasTimestamp = true; // 13-digit timestamp
+		if (/\d{10}/.test(key)) components.hasEpoch = true; // 10-digit epoch
+
+		return components;
+	}
+
+	/**
+	 * Check if temporal components have overlap
+	 * @param {Object} opTemporal - Operation temporal components
+	 * @param {Object} snapTemporal - Snapshot temporal components
+	 * @param {*} expectedValue - Expected value from snapshot
+	 * @returns {boolean} True if temporal overlap exists
+	 * @private
+	 */
+	_haveTemporalOverlap (opTemporal, snapTemporal, expectedValue) {
+		// If both have similar temporal characteristics, assume possible overlap
+		return (opTemporal.hasDate && snapTemporal.hasDate) ||
+			   (opTemporal.hasTime && snapTemporal.hasTime) ||
+			   (opTemporal.hasTimestamp && snapTemporal.hasTimestamp) ||
+			   (opTemporal.hasEpoch && snapTemporal.hasEpoch);
+	}
+
+	/**
+	 * Check if snapshot uses composite keys
+	 * @param {string} snapshotKey - Snapshot key
+	 * @returns {boolean} True if composite key snapshot
+	 * @private
+	 */
+	_isCompositeKeySnapshot (snapshotKey) {
+		// Check for composite key indicators
+		return snapshotKey.includes(":") ||
+			   snapshotKey.includes("#") ||
+			   snapshotKey.includes("|") ||
+			   snapshotKey.includes("@") ||
+			   (snapshotKey.split("_").length > 2) ||
+			   (snapshotKey.split("-").length > 2);
+	}
+
+	/**
+	 * Check composite key range for key inclusion
+	 * @param {string} operationKey - Key to check
+	 * @param {string} snapshotKey - Snapshot key
+	 * @returns {boolean} True if key is in composite range
+	 * @private
+	 */
+	_checkCompositeKeyRange (operationKey, snapshotKey) {
+		const separators = [":", "#", "|", "@", "_", "-"];
+		
+		for (const sep of separators) {
+			if (operationKey.includes(sep) && snapshotKey.includes(sep)) {
+				const opParts = operationKey.split(sep);
+				const snapParts = snapshotKey.split(sep);
+				
+				// Check for partial key matches (prefix matching)
+				if (this._hasCompositeKeyOverlap(opParts, snapParts)) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check if composite key parts have overlap
+	 * @param {string[]} opParts - Operation key parts
+	 * @param {string[]} snapParts - Snapshot key parts
+	 * @returns {boolean} True if overlap exists
+	 * @private
+	 */
+	_hasCompositeKeyOverlap (opParts, snapParts) {
+		const minLength = Math.min(opParts.length, snapParts.length);
+		
+		// Check if any prefix matches
+		for (let i = 1; i <= minLength; i++) {
+			let allMatch = true;
+			for (let j = 0; j < i; j++) {
+				if (opParts[j] !== snapParts[j]) {
+					allMatch = false;
+					break;
+				}
+			}
+			if (allMatch) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check if key matches a query specification
+	 * @param {string} key - Key to check
+	 * @param {Object} queryInfo - Query specification
+	 * @returns {boolean} True if key matches query
+	 * @private
+	 */
+	_keyMatchesQuery (key, queryInfo) {
+		if (!queryInfo || typeof queryInfo !== "object") {
+			return false;
+		}
+
+		// Handle different query types
+		if (queryInfo.type === "range") {
+			return this._keyMatchesRange(key, queryInfo);
+		}
+
+		if (queryInfo.type === "prefix") {
+			return key.startsWith(queryInfo.prefix || "");
+		}
+
+		if (queryInfo.type === "pattern") {
+			try {
+				const regex = new RegExp(queryInfo.pattern || "");
+				return regex.test(key);
+			} catch {
+				return false;
+			}
+		}
+
+		if (queryInfo.type === "in") {
+			return Array.isArray(queryInfo.values) && queryInfo.values.includes(key);
+		}
+
 		return false;
 	}
 

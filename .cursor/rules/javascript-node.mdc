@@ -1,6 +1,6 @@
 ---
-description: Node.js API service
-globs:
+description: Node.js module
+globs: *.js
 alwaysApply: true
 ---
 
