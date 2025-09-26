@@ -1,5 +1,5 @@
 import { TransactionError } from "./errors.js";
-import { TransactionStates, IsolationLevels, LockTypes } from "./constants.js";
+import { IsolationLevels, LockTypes } from "./constants.js";
 import { Transaction } from "./transaction-individual.js";
 import { LockManager } from "./lock-manager.js";
 
