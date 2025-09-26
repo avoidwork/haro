@@ -62,9 +62,9 @@ export class TypeDetector {
 	}
 
 	/**
-	 * Check if string is a UUID
+	 * Check if string is a RFC 4122 compliant UUID (versions 1-5)
 	 * @param {string} value - String to check
-	 * @returns {boolean} True if UUID format
+	 * @returns {boolean} True if valid RFC 4122 UUID format (versions 1, 2, 3, 4, or 5)
 	 */
 	static isUUID (value) {
 		const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -78,7 +78,8 @@ export class TypeDetector {
 	 * @returns {boolean} True if email format
 	 */
 	static isEmail (value) {
-		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		// WHATWG HTML5 compliant email validation pattern
+		const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
 		return emailRegex.test(value);
 	}
