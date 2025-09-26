@@ -21,7 +21,7 @@
     "build": "npm run lint && npm run rollup",
     "changelog": "auto-changelog -p",
     "lint": "eslint --fix *.js benchmarks/*.js src/*.js",
-    "mocha": "echo 'No tests found in tests directory'",
+    "mocha": "c8 --reporter=text mocha 'tests/unit/**/*.test.js'",
     "rollup": "rollup --config",
     "test": "npm run lint && npm run mocha",
     "prepare": "husky"
