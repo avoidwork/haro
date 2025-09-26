@@ -1,0 +1,34 @@
+------------------------------|---------|----------|---------|---------|----------------------------
+File                          | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s          
+------------------------------|---------|----------|---------|---------|----------------------------
+All files                     |   99.42 |     98.6 |   99.54 |   99.42 |                            
+ batch-manager.js             |     100 |      100 |     100 |     100 |                            
+ config-validator.js          |     100 |      100 |     100 |     100 |                            
+ constants.js                 |     100 |      100 |     100 |     100 |                            
+ constraints.js               |     100 |      100 |     100 |     100 |                            
+ crud-manager.js              |     100 |      100 |     100 |     100 |                            
+ data-stream.js               |     100 |      100 |     100 |     100 |                            
+ data-types.js                |     100 |      100 |     100 |     100 |                            
+ deadlock-detector.js         |     100 |      100 |     100 |     100 |                            
+ errors.js                    |     100 |      100 |     100 |     100 |                            
+ field-constraint.js          |     100 |      100 |     100 |     100 |                            
+ haro.js                      |     100 |      100 |     100 |     100 |                            
+ immutable-store.js           |     100 |      100 |     100 |     100 |                            
+ index-manager.js             |     100 |      100 |     100 |     100 |                            
+ isolation-validator.js       |     100 |      100 |     100 |     100 |                            
+ key-relationship-analyzer.js |   95.83 |    92.11 |   95.91 |   95.83 | ...8-599,787-795,1053-1054 
+ lifecycle-manager.js         |     100 |      100 |     100 |     100 |                            
+ lock-manager.js              |     100 |      100 |     100 |     100 |                            
+ query-manager.js             |     100 |      100 |     100 |     100 |                            
+ query-optimizer.js           |     100 |      100 |     100 |     100 |                            
+ record.js                    |     100 |      100 |     100 |     100 |                            
+ schema.js                    |     100 |      100 |     100 |     100 |                            
+ statistics-manager.js        |     100 |      100 |     100 |     100 |                            
+ storage-manager.js           |     100 |      100 |     100 |     100 |                            
+ stream-manager.js            |     100 |      100 |     100 |     100 |                            
+ transaction-individual.js    |     100 |      100 |     100 |     100 |                            
+ transaction-manager.js       |     100 |      100 |     100 |     100 |                            
+ transaction-operation.js     |     100 |      100 |     100 |     100 |                            
+ transaction-statistics.js    |     100 |      100 |     100 |     100 |                            
+ version-manager.js           |     100 |      100 |     100 |     100 |                            
+------------------------------|---------|----------|---------|---------|----------------------------
