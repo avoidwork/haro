@@ -1773,7 +1773,7 @@ export class TransactionManager {
 
 			// Operation might be adding/removing from the collection
 			return this._isParentChildRelationship(opParts, snapParts) ||
-				   this._isSiblingRelationship(opParts, snapParts);
+				this._isSiblingRelationship(opParts, snapParts);
 		}
 
 		return false;
@@ -1788,9 +1788,9 @@ export class TransactionManager {
 	 */
 	_isIndexBasedSnapshot (transaction, snapshotKey) {
 		return snapshotKey.includes("_index") ||
-			   snapshotKey.includes("_idx") ||
-			   snapshotKey.startsWith("idx_") ||
-			   transaction.snapshot.has(`${snapshotKey}:index_range`);
+			snapshotKey.includes("_idx") ||
+			snapshotKey.startsWith("idx_") ||
+			transaction.snapshot.has(`${snapshotKey}:index_range`);
 	}
 
 	/**
@@ -2028,9 +2028,9 @@ export class TransactionManager {
 	_haveTemporalOverlap (opTemporal, snapTemporal) {
 		// If both have similar temporal characteristics, assume possible overlap
 		return opTemporal.hasDate && snapTemporal.hasDate ||
-			   opTemporal.hasTime && snapTemporal.hasTime ||
-			   opTemporal.hasTimestamp && snapTemporal.hasTimestamp ||
-			   opTemporal.hasEpoch && snapTemporal.hasEpoch;
+			opTemporal.hasTime && snapTemporal.hasTime ||
+			opTemporal.hasTimestamp && snapTemporal.hasTimestamp ||
+			opTemporal.hasEpoch && snapTemporal.hasEpoch;
 	}
 
 	/**
@@ -2042,11 +2042,11 @@ export class TransactionManager {
 	_isCompositeKeySnapshot (snapshotKey) {
 		// Check for composite key indicators
 		return snapshotKey.includes(":") ||
-			   snapshotKey.includes("#") ||
-			   snapshotKey.includes("|") ||
-			   snapshotKey.includes("@") ||
-			   snapshotKey.split("_").length > 2 ||
-			   snapshotKey.split("-").length > 2;
+			snapshotKey.includes("#") ||
+			snapshotKey.includes("|") ||
+			snapshotKey.includes("@") ||
+			snapshotKey.split("_").length > 2 ||
+			snapshotKey.split("-").length > 2;
 	}
 
 	/**
@@ -2551,7 +2551,7 @@ export class TransactionManager {
 	_hasCompositeKeyRelationship (key1, key2) {
 		// Use existing composite key logic
 		return this._checkCompositeKeyRange(key1, key2) ||
-			   this._checkCompositeKeyRange(key2, key1);
+			this._checkCompositeKeyRange(key2, key1);
 	}
 
 	/**
@@ -2592,10 +2592,10 @@ export class TransactionManager {
 
 			// Check if base keys are related
 			return base1 === base2 ||
-				   key1.startsWith(base2) ||
-				   key2.startsWith(base1) ||
-				   base1.startsWith(base2) ||
-				   base2.startsWith(base1);
+				key1.startsWith(base2) ||
+				key2.startsWith(base1) ||
+				base1.startsWith(base2) ||
+				base2.startsWith(base1);
 		}
 
 		return false;
@@ -2609,10 +2609,10 @@ export class TransactionManager {
 	 */
 	_isIndexKey (key) {
 		return key.includes("_index") ||
-			   key.includes("_idx") ||
-			   key.startsWith("idx_") ||
-			   key.includes("_key") ||
-			   key.includes("_lookup");
+			key.includes("_idx") ||
+			key.startsWith("idx_") ||
+			key.includes("_key") ||
+			key.includes("_lookup");
 	}
 
 	/**
@@ -2648,8 +2648,8 @@ export class TransactionManager {
 			const base2 = this._extractCollectionBase(key2);
 
 			return base1 === base2 ||
-				   key1.startsWith(base2) ||
-				   key2.startsWith(base1);
+				key1.startsWith(base2) ||
+				key2.startsWith(base1);
 		}
 
 		return false;
