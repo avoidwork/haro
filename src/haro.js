@@ -12,7 +12,7 @@ import { DataTypes } from "./data-types.js";
 import { FieldConstraint } from "./field-constraint.js";
 import { Schema } from "./schema.js";
 import { ConfigValidator } from "./config-validator.js";
-import { Constraints } from "./constraint-utils.js";
+import { Constraints } from "./constraints.js";
 import { IsolationLevels } from "./constants.js";
 import { Record, RecordCollection, RecordFactory } from "./record.js";
 import { IndexManager, IndexTypes } from "./index-manager.js";
