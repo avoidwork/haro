@@ -21,7 +21,7 @@ export class BatchManager {
 	 * @param {Array} operations - Array of operations or records
 	 * @param {string} [type='set'] - Operation type
 	 * @param {Object} [options={}] - Batch options
-	 * @returns {Array} Array of results
+	 * @returns {Promise<Array>|Array} Array of results (Promise when using transactions)
 	 */
 	batch (operations, type = "set", options = {}) {
 		const {
@@ -67,10 +67,10 @@ export class BatchManager {
 	 * @param {Array} operations - Operations to execute
 	 * @param {string} type - Operation type
 	 * @param {Transaction} [transaction] - Existing transaction
-	 * @returns {Array} Operation results
+	 * @returns {Promise<Array>} Operation results
 	 * @private
 	 */
-	_executeBatchInTransaction (operations, type, transaction) {
+	async _executeBatchInTransaction (operations, type, transaction) {
 		if (!this.transactionManager) {
 			throw new TransactionError("Transaction manager not available for atomic batch operations");
 		}
@@ -93,7 +93,7 @@ export class BatchManager {
 			}
 
 			if (ownTransaction) {
-				this.transactionManager.commit(transaction.id);
+				await this.transactionManager.commit(transaction.id);
 			}
 
 			return results;

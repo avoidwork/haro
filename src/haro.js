@@ -35,17 +35,8 @@ export class Haro {
 	 * @param {Object} [config={}] - Configuration options
 	 */
 	constructor (data = null, config = {}) {
-		// Handle parameter overloading
-		if (Array.isArray(data) || data === null) {
-			this.config = ConfigValidator.validate(config);
-			this.initialData = data;
-		} else {
-			this.config = ConfigValidator.validate(data);
-			this.initialData = null;
-		}
-
-		// Set defaults
-		this.config = {
+		// Set defaults first
+		const defaults = {
 			delimiter: "|",
 			id: uuid(),
 			immutable: false,
@@ -55,9 +46,21 @@ export class Haro {
 			schema: null,
 			retentionPolicy: { type: RetentionPolicies.NONE },
 			enableTransactions: false,
-			enableOptimization: true,
-			...this.config
+			enableOptimization: true
 		};
+
+		// Handle parameter overloading and merge with defaults
+		let userConfig;
+		if (Array.isArray(data) || data === null) {
+			userConfig = ConfigValidator.validate(config);
+			this.initialData = data;
+		} else {
+			userConfig = ConfigValidator.validate(data);
+			this.initialData = null;
+		}
+
+		// Merge defaults with user configuration (user config takes precedence)
+		this.config = { ...defaults, ...userConfig };
 
 		// Initialize core managers
 		this.storageManager = new StorageManager({ immutable: this.config.immutable });
@@ -261,7 +264,7 @@ export class Haro {
 	 * @param {Array} operations - Array of operations or records
 	 * @param {string} [type='set'] - Operation type
 	 * @param {Object} [options={}] - Batch options
-	 * @returns {Array} Array of results
+	 * @returns {Promise<Array>|Array} Array of results (Promise when using transactions)
 	 */
 	batch (operations, type = "set", options = {}) {
 		// Delegate to batch manager
@@ -400,29 +403,37 @@ export class Haro {
 	 * @private
 	 */
 	_executeInTransaction (transaction, operation, ...args) {
-		// Add operation to transaction log
-		const [key, data] = args;
-		const oldValue = this.storageManager.get(key);
-
-		transaction.addOperation(operation, key, oldValue, data);
-
-		// Execute operation normally
+		// Handle different operation parameter patterns
 		switch (operation) {
-			case "set":
-				return this.set(key, data, { transaction: null });
-			case "get":
+			case "set": {
+				const [key, data, options = {}] = args;
+				const oldValue = this.storageManager.get(key);
+
+				transaction.addOperation(operation, key, oldValue, data);
+
+				return this.set(key, data, { ...options, transaction: null });
+			}
+			case "get": {
+				const [key, options = {}] = args;
+
 				transaction.addOperation("read", key);
 
-				return this.get(key, { transaction: null });
-			case "delete":
-				this.delete(key, { transaction: null });
+				return this.get(key, { ...options, transaction: null });
+			}
+			case "delete": {
+				const [key, options = {}] = args;
+				const oldValue = this.storageManager.get(key);
 
-				return true;
+				transaction.addOperation(operation, key, oldValue);
+
+				return this.delete(key, { ...options, transaction: null });
+			}
 			case "find": {
-				const criteria = key; // In this context, key is criteria
-				const findOptions = data; // In this context, data is options
+				const [criteria, options = {}] = args;
 
-				return this.find(criteria, { ...findOptions, transaction: null });
+				transaction.addOperation("read", "find_operation", null, criteria);
+
+				return this.find(criteria, { ...options, transaction: null });
 			}
 			default:
 				throw new TransactionError(`Unknown operation: ${operation}`, transaction.id, operation);

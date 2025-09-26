@@ -130,7 +130,8 @@ export class TransactionManager {
 		let cleaned = 0;
 
 		for (const [id, transaction] of this.transactions) {
-			if (transaction.endTime && transaction.endTime.getTime() < cutoffTime) {
+			// Special case: maxAge of 0 means clean ALL completed transactions
+			if (transaction.endTime && (maxAge === 0 || transaction.endTime.getTime() < cutoffTime)) {
 				this.transactions.delete(id);
 				cleaned++;
 			}

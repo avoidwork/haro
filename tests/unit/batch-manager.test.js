@@ -318,13 +318,13 @@ describe("BatchManager", () => {
 			});
 		});
 
-		it("should execute atomic batch operations with new transaction", () => {
+		it("should execute atomic batch operations with new transaction", async () => {
 			const operations = [
 				{ name: "John", age: 30 },
 				{ name: "Jane", age: 25 }
 			];
 
-			const results = batchManager.batch(operations, "set", { atomic: true });
+			const results = await batchManager.batch(operations, "set", { atomic: true });
 
 			assert.strictEqual(results.length, 2);
 			assert.strictEqual(mockTransactionManager.beginCalls.length, 1);
@@ -337,11 +337,11 @@ describe("BatchManager", () => {
 			assert.strictEqual(transaction.operations[0].type, "set");
 		});
 
-		it("should execute atomic batch operations with existing transaction", () => {
+		it("should execute atomic batch operations with existing transaction", async () => {
 			const existingTransaction = mockTransactionManager.begin();
 			const operations = [{ name: "John", age: 30 }];
 
-			const results = batchManager.batch(operations, "set", { transaction: existingTransaction });
+			const results = await batchManager.batch(operations, "set", { transaction: existingTransaction });
 
 			assert.strictEqual(results.length, 1);
 			// Should not create new transaction or commit existing one
@@ -350,14 +350,14 @@ describe("BatchManager", () => {
 			assert.strictEqual(existingTransaction.operations.length, 1);
 		});
 
-		it("should execute atomic delete operations", () => {
+		it("should execute atomic delete operations", async () => {
 			// Setup some data first
 			mockCrudManager.storageManager.set("key1", { name: "John" });
 			mockCrudManager.storageManager.set("key2", { name: "Jane" });
 
 			const operations = ["key1", "key2"];
 
-			const results = batchManager.batch(operations, "del", { atomic: true });
+			const results = await batchManager.batch(operations, "del", { atomic: true });
 
 			assert.strictEqual(results.length, 2);
 			assert.strictEqual(results[0], true);
@@ -371,7 +371,7 @@ describe("BatchManager", () => {
 			assert.strictEqual(transaction.operations[0].type, "delete");
 		});
 
-		it("should abort transaction on error during atomic operations", () => {
+		it("should abort transaction on error during atomic operations", async () => {
 			const operations = [
 				{ name: "John", age: 30 },
 				{ name: "Jane", age: 25 }
@@ -388,8 +388,8 @@ describe("BatchManager", () => {
 				return originalSet.call(mockCrudManager, key, data, options);
 			};
 
-			assert.throws(() => {
-				batchManager.batch(operations, "set", { atomic: true });
+			await assert.rejects(async () => {
+				await batchManager.batch(operations, "set", { atomic: true });
 			}, /Set operation failed/);
 
 			assert.strictEqual(mockTransactionManager.beginCalls.length, 1);
@@ -398,15 +398,15 @@ describe("BatchManager", () => {
 			assert.strictEqual(mockTransactionManager.abortCalls[0].reason, "Set operation failed");
 		});
 
-		it("should not abort external transaction on error", () => {
+		it("should not abort external transaction on error", async () => {
 			const existingTransaction = mockTransactionManager.begin();
 			const operations = [{ name: "John", age: 30 }];
 
 			// Make operation fail
 			mockCrudManager.shouldThrowOnSet = true;
 
-			assert.throws(() => {
-				batchManager.batch(operations, "set", { transaction: existingTransaction });
+			await assert.rejects(async () => {
+				await batchManager.batch(operations, "set", { transaction: existingTransaction });
 			}, /Mock set error/);
 
 			// Should not abort the external transaction
@@ -423,31 +423,31 @@ describe("BatchManager", () => {
 			});
 		});
 
-		it("should throw error when atomic operation requested without transaction manager", () => {
+		it("should throw error when atomic operation requested without transaction manager", async () => {
 			const operations = [{ name: "John", age: 30 }];
 
-			assert.throws(() => {
-				batchManager.batch(operations, "set", { atomic: true });
-			}, QueryError);
-
-			const error = (() => {
-				try {
-					batchManager.batch(operations, "set", { atomic: true });
-				} catch (err) {
-					return err;
-				}
-			})();
-
-			assert(error.message.includes("Transaction manager not available for atomic batch operations"));
+			const promise = batchManager.batch(operations, "set", { atomic: true });
+			
+			await assert.rejects(async () => {
+				await promise;
+			}, (err) => {
+				return err instanceof TransactionError && 
+					   err.message.includes("Transaction manager not available for atomic batch operations");
+			});
 		});
 
-		it("should throw error when transaction provided without transaction manager", () => {
+		it("should throw error when transaction provided without transaction manager", async () => {
 			const fakeTransaction = { id: "fake-tx" };
 			const operations = [{ name: "John", age: 30 }];
 
-			assert.throws(() => {
-				batchManager.batch(operations, "set", { transaction: fakeTransaction });
-			}, QueryError);
+			const promise = batchManager.batch(operations, "set", { transaction: fakeTransaction });
+			
+			await assert.rejects(async () => {
+				await promise;
+			}, (err) => {
+				return err instanceof TransactionError && 
+					   err.message.includes("Transaction manager not available for atomic batch operations");
+			});
 		});
 	});
 
@@ -486,12 +486,12 @@ describe("BatchManager", () => {
 			assert.strictEqual(error.context.operation, "batch");
 		});
 
-		it("should handle commit errors in atomic operations", () => {
+		it("should handle commit errors in atomic operations", async () => {
 			mockTransactionManager.shouldThrowOnCommit = true;
 			const operations = [{ name: "John", age: 30 }];
 
-			assert.throws(() => {
-				batchManager.batch(operations, "set", { atomic: true });
+			await assert.rejects(async () => {
+				await batchManager.batch(operations, "set", { atomic: true });
 			}, /Mock commit error/);
 
 			assert.strictEqual(mockTransactionManager.abortCalls.length, 1);
@@ -507,7 +507,7 @@ describe("BatchManager", () => {
 			});
 		});
 
-		it("should test _executeSetInTransaction through atomic operations", () => {
+		it("should test _executeSetInTransaction through atomic operations", async () => {
 			// Set up existing data to test old value retrieval
 			mockCrudManager.storageManager.set("existing-key", { name: "Old John" });
 
@@ -515,7 +515,7 @@ describe("BatchManager", () => {
 			const transaction = mockTransactionManager.begin();
 
 			// Call private method through public interface
-			const results = batchManager.batch(operations, "set", { transaction });
+			const results = await batchManager.batch(operations, "set", { transaction });
 
 			assert.strictEqual(results.length, 1);
 			assert.strictEqual(transaction.operations.length, 1);
@@ -549,7 +549,7 @@ describe("BatchManager", () => {
 			assert.deepStrictEqual(mockCrudManager.setCalls[0].data, { name: "Updated John", age: 30 });
 		});
 
-		it("should test _executeDeleteInTransaction through atomic operations", () => {
+		it("should test _executeDeleteInTransaction through atomic operations", async () => {
 			// Set up existing data
 			mockCrudManager.storageManager.set("key1", { name: "John" });
 
@@ -557,7 +557,7 @@ describe("BatchManager", () => {
 			const transaction = mockTransactionManager.begin();
 
 			// Call private method through public interface
-			const results = batchManager.batch(operations, "del", { transaction });
+			const results = await batchManager.batch(operations, "del", { transaction });
 
 			assert.strictEqual(results.length, 1);
 			assert.strictEqual(results[0], true);
@@ -585,8 +585,8 @@ describe("BatchManager", () => {
 			assert.strictEqual(mockLifecycleManager.onbatchCalls.length, 1);
 		});
 
-		it("should handle empty operations array with atomic option", () => {
-			const results = batchManager.batch([], "set", { atomic: true });
+		it("should handle empty operations array with atomic option", async () => {
+			const results = await batchManager.batch([], "set", { atomic: true });
 
 			assert.strictEqual(results.length, 0);
 			assert.strictEqual(mockTransactionManager.beginCalls.length, 1);
