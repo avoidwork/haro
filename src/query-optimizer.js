@@ -354,6 +354,20 @@ export class QueryOptimizer {
 		this.planCache = new Map();
 		this.executionHistory = [];
 		this.maxHistorySize = 1000;
+		this.cacheHits = 0;
+		this.totalCacheRequests = 0;
+
+		// Cost model adjustments based on learning
+		this.costAdjustments = new Map([
+			["INDEX_LOOKUP", 1.0],
+			["FULL_SCAN", 1.0],
+			["FILTER_EVALUATION", 1.0],
+			["SORT_OPERATION", 1.0],
+			["MEMORY_ACCESS", 1.0],
+			["COMPARISON", 1.0],
+			["REGEX_MATCH", 1.0]
+		]);
+		this.lastCostModelUpdate = new Date();
 	}
 
 	/**
@@ -366,14 +380,20 @@ export class QueryOptimizer {
 		const queryId = `query_${++this.queryCounter}`;
 		const plan = new QueryPlan(queryId, query);
 
+		// Track cache request
+		this.totalCacheRequests++;
+
 		// Check plan cache first
 		const cacheKey = this._generateCacheKey(query);
 		const cachedPlan = this.planCache.get(cacheKey);
 		if (cachedPlan && this._isCacheValid(cachedPlan)) {
+			// Cache hit
+			this.cacheHits++;
+
 			return this._copyPlan(cachedPlan, queryId);
 		}
 
-		// Create optimized plan
+		// Cache miss - create optimized plan
 		this._buildOptimizedPlan(plan, query, context);
 
 		// Cache the plan
@@ -429,7 +449,7 @@ export class QueryOptimizer {
 		// Sort by estimated cost
 		costedStrategies.sort((a, b) => a.estimatedCost - b.estimatedCost);
 
-		return costedStrategies[0] || { type: "full_scan", estimatedCost: CostFactors.FULL_SCAN * this.statistics.totalRecords };
+		return costedStrategies[0] || { type: "full_scan", estimatedCost: this._getAdjustedCostFactor("FULL_SCAN") * this.statistics.totalRecords };
 	}
 
 	/**
@@ -448,7 +468,17 @@ export class QueryOptimizer {
 				fieldCount: this.statistics.fieldStatistics.size
 			},
 			averageQueryCost: this._calculateAverageQueryCost(),
-			cacheHitRate: this._calculateCacheHitRate()
+			cacheHitRate: this._calculateCacheHitRate(),
+			cacheStatistics: {
+				totalRequests: this.totalCacheRequests,
+				hits: this.cacheHits,
+				misses: this.totalCacheRequests - this.cacheHits,
+				hitRate: this._calculateCacheHitRate()
+			},
+			costModel: {
+				adjustments: Object.fromEntries(this.costAdjustments),
+				lastUpdated: this.lastCostModelUpdate
+			}
 		};
 	}
 
@@ -459,6 +489,19 @@ export class QueryOptimizer {
 		this.planCache.clear();
 		this.executionHistory = [];
 		this.queryCounter = 0;
+		this.cacheHits = 0;
+		this.totalCacheRequests = 0;
+
+		// Reset cost adjustments to default values
+		this.costAdjustments.clear();
+		this.costAdjustments.set("INDEX_LOOKUP", 1.0);
+		this.costAdjustments.set("FULL_SCAN", 1.0);
+		this.costAdjustments.set("FILTER_EVALUATION", 1.0);
+		this.costAdjustments.set("SORT_OPERATION", 1.0);
+		this.costAdjustments.set("MEMORY_ACCESS", 1.0);
+		this.costAdjustments.set("COMPARISON", 1.0);
+		this.costAdjustments.set("REGEX_MATCH", 1.0);
+		this.lastCostModelUpdate = new Date();
 	}
 
 	/**
@@ -502,7 +545,7 @@ export class QueryOptimizer {
 				indexName: strategy.indexName,
 				lookupKey: strategy.lookupKey
 			},
-			CostFactors.INDEX_LOOKUP,
+			this._getAdjustedCostFactor("INDEX_LOOKUP"),
 			this._estimateIndexLookupRows(strategy.indexName)
 		);
 
@@ -526,7 +569,7 @@ export class QueryOptimizer {
 		const filterStep = new QueryPlanStep(
 			"filter",
 			{ predicate: query.filter || query.where },
-			CostFactors.FILTER_EVALUATION * this.statistics.totalRecords,
+			this._getAdjustedCostFactor("FILTER_EVALUATION") * this.statistics.totalRecords,
 			this.statistics.totalRecords * 0.1 // Assume 10% selectivity
 		);
 
@@ -542,7 +585,7 @@ export class QueryOptimizer {
 		const step = new QueryPlanStep(
 			"full_scan",
 			{ scanType: "sequential" },
-			CostFactors.FULL_SCAN * this.statistics.totalRecords,
+			this._getAdjustedCostFactor("FULL_SCAN") * this.statistics.totalRecords,
 			this.statistics.totalRecords
 		);
 
@@ -561,7 +604,7 @@ export class QueryOptimizer {
 			const sortStep = new QueryPlanStep(
 				"sort",
 				{ sortField: query.sortBy, sortFunction: query.sort },
-				CostFactors.SORT_OPERATION * plan.totalEstimatedRows,
+				this._getAdjustedCostFactor("SORT_OPERATION") * plan.totalEstimatedRows,
 				plan.totalEstimatedRows
 			);
 			plan.addStep(sortStep);
@@ -572,7 +615,7 @@ export class QueryOptimizer {
 			const limitStep = new QueryPlanStep(
 				"limit",
 				{ offset: query.offset || 0, max: query.limit },
-				CostFactors.MEMORY_ACCESS,
+				this._getAdjustedCostFactor("MEMORY_ACCESS"),
 				Math.min(query.limit, plan.totalEstimatedRows)
 			);
 			plan.addStep(limitStep);
@@ -631,22 +674,35 @@ export class QueryOptimizer {
 	_estimateStrategyCost (strategy) {
 		switch (strategy.type) {
 			case "index_lookup":
-				return CostFactors.INDEX_LOOKUP +
-					this._estimateIndexLookupRows(strategy.indexName, strategy.lookupKey) * CostFactors.MEMORY_ACCESS;
+				return this._getAdjustedCostFactor("INDEX_LOOKUP") +
+					this._estimateIndexLookupRows(strategy.indexName, strategy.lookupKey) * this._getAdjustedCostFactor("MEMORY_ACCESS");
 
 			case "filtered_scan": {
-				const indexCost = strategy.indexName ? CostFactors.INDEX_LOOKUP : 0;
-				const filterCost = CostFactors.FILTER_EVALUATION * this.statistics.totalRecords;
+				const indexCost = strategy.indexName ? this._getAdjustedCostFactor("INDEX_LOOKUP") : 0;
+				const filterCost = this._getAdjustedCostFactor("FILTER_EVALUATION") * this.statistics.totalRecords;
 
 				return indexCost + filterCost;
 			}
 
 			case "full_scan":
-				return CostFactors.FULL_SCAN * this.statistics.totalRecords;
+				return this._getAdjustedCostFactor("FULL_SCAN") * this.statistics.totalRecords;
 
 			default:
 				return Number.MAX_SAFE_INTEGER;
 		}
+	}
+
+	/**
+	 * Get cost factor adjusted by learned performance data
+	 * @param {string} factorName - Name of the cost factor
+	 * @returns {number} Adjusted cost factor
+	 * @private
+	 */
+	_getAdjustedCostFactor (factorName) {
+		const baseCost = CostFactors[factorName] || 1;
+		const adjustment = this.costAdjustments.get(factorName) || 1.0;
+
+		return baseCost * adjustment;
 	}
 
 	/**
@@ -726,9 +782,136 @@ export class QueryOptimizer {
 	 * @private
 	 */
 	_updateCostModel () {
-		// Analyze execution history to improve cost estimates
-		// This would use machine learning techniques in a real implementation
-		// For now, we'll keep it simple
+		if (this.executionHistory.length < 10) {
+			return; // Need sufficient data for meaningful analysis
+		}
+
+		this.lastCostModelUpdate = new Date();
+
+		// Analyze each operation type separately
+		const operationStats = this._analyzeOperationPerformance();
+
+		// Update cost adjustments based on performance analysis
+		for (const [operation, stats] of operationStats) {
+			if (stats.sampleSize >= 3) { // Only process operations with sufficient data
+				const currentAdjustment = this.costAdjustments.get(operation) || 1.0;
+				let newAdjustment = currentAdjustment;
+
+				// Calculate performance ratio (actual vs estimated)
+				const performanceRatio = stats.avgActualCost / stats.avgEstimatedCost;
+
+				if (stats.consistency > 0.7) { // Only adjust if performance is consistent
+					// Gradually adjust towards the observed performance
+					const learningRate = 0.1; // Conservative learning rate
+					newAdjustment = currentAdjustment * (1 + learningRate * (performanceRatio - 1));
+
+					// Clamp adjustments to reasonable bounds
+					newAdjustment = Math.max(0.1, Math.min(10.0, newAdjustment));
+
+					this.costAdjustments.set(operation, newAdjustment);
+				}
+			}
+		}
+
+		// Clear old execution history to prevent memory bloat
+		if (this.executionHistory.length > this.maxHistorySize * 0.8) {
+			this.executionHistory = this.executionHistory.slice(-Math.floor(this.maxHistorySize * 0.6));
+		}
+	}
+
+	/**
+	 * Analyze operation performance from execution history
+	 * @returns {Map} Map of operation -> performance statistics
+	 * @private
+	 */
+	_analyzeOperationPerformance () {
+		const operationStats = new Map();
+
+		// Process each execution in history
+		for (const execution of this.executionHistory) {
+			if (execution.steps && Array.isArray(execution.steps)) {
+				// Analyze each step in the execution
+				for (const step of execution.steps) {
+					if (step.operation && step.actualCost !== null && step.estimatedCost !== 0) {
+						const operation = this._mapOperationToCostFactor(step.operation);
+						if (operation) {
+							if (!operationStats.has(operation)) {
+								operationStats.set(operation, {
+									sampleSize: 0,
+									totalActualCost: 0,
+									totalEstimatedCost: 0,
+									costs: [],
+									estimatedCosts: []
+								});
+							}
+
+							const stats = operationStats.get(operation);
+							stats.sampleSize++;
+							stats.totalActualCost += step.actualCost;
+							stats.totalEstimatedCost += step.estimatedCost;
+							stats.costs.push(step.actualCost);
+							stats.estimatedCosts.push(step.estimatedCost);
+						}
+					}
+				}
+			}
+		}
+
+		// Calculate derived statistics
+		for (const [, stats] of operationStats) {
+			stats.avgActualCost = stats.totalActualCost / stats.sampleSize;
+			stats.avgEstimatedCost = stats.totalEstimatedCost / stats.sampleSize;
+
+			// Calculate consistency (inverse of coefficient of variation)
+			const variance = this._calculateVariance(stats.costs, stats.avgActualCost);
+			const stdDev = Math.sqrt(variance);
+			const coefficientOfVariation = stdDev / stats.avgActualCost;
+			stats.consistency = Math.max(0, 1 - coefficientOfVariation);
+
+			// Calculate accuracy (how close estimates were to actual)
+			const accuracyScores = stats.costs.map((actual, i) => {
+				const estimated = stats.estimatedCosts[i];
+
+				return 1 - Math.abs(actual - estimated) / Math.max(actual, estimated);
+			});
+			stats.accuracy = accuracyScores.reduce((sum, score) => sum + score, 0) / accuracyScores.length;
+		}
+
+		return operationStats;
+	}
+
+	/**
+	 * Map step operation to cost factor name
+	 * @param {string} operation - Operation name from step
+	 * @returns {string|null} Cost factor name
+	 * @private
+	 */
+	_mapOperationToCostFactor (operation) {
+		const mapping = {
+			"index_lookup": "INDEX_LOOKUP",
+			"full_scan": "FULL_SCAN",
+			"filter": "FILTER_EVALUATION",
+			"sort": "SORT_OPERATION",
+			"limit": "MEMORY_ACCESS",
+			"regex": "REGEX_MATCH"
+		};
+
+		return mapping[operation] || null;
+	}
+
+	/**
+	 * Calculate variance of a set of values
+	 * @param {number[]} values - Array of values
+	 * @param {number} mean - Mean of the values
+	 * @returns {number} Variance
+	 * @private
+	 */
+	_calculateVariance (values, mean) {
+		if (values.length <= 1) return 0;
+
+		const squaredDifferences = values.map(value => Math.pow(value - mean, 2));
+
+		return squaredDifferences.reduce((sum, diff) => sum + diff, 0) / (values.length - 1);
 	}
 
 	/**
@@ -750,7 +933,8 @@ export class QueryOptimizer {
 	 * @private
 	 */
 	_calculateCacheHitRate () {
-		// This would be tracked during plan creation in a real implementation
-		return 0.5; // Placeholder
+		if (this.totalCacheRequests === 0) return 0;
+
+		return this.cacheHits / this.totalCacheRequests;
 	}
 }
