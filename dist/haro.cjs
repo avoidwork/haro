@@ -9,7 +9,7 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-var crypto = require('crypto');
+const crypto = require('crypto');
 
 /**
  * Base error class for all Haro errors
