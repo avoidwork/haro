@@ -3,6 +3,10 @@
  * Handles hierarchical, semantic, pattern, temporal, and functional relationships
  */
 export class KeyRelationshipAnalyzer {
+	/**
+	 * Creates a new KeyRelationshipAnalyzer instance
+	 * Initializes caches for pattern and semantic analysis
+	 */
 	constructor () {
 		// Pattern cache for performance
 		this.patternCache = new Map();
@@ -206,7 +210,14 @@ export class KeyRelationshipAnalyzer {
 		return false;
 	}
 
-	// Hierarchical relationship methods
+	/**
+	 * Check if two keys have a hierarchical relationship
+	 * Analyzes parent-child, sibling, and ancestor-descendant relationships
+	 * @param {string} key1 - First key to compare
+	 * @param {string} key2 - Second key to compare
+	 * @returns {boolean} True if keys have hierarchical relationship
+	 * @private
+	 */
 	_hasHierarchicalKeyRelationship (key1, key2) {
 		const separators = [":", "/", ".", "_", "-"];
 
@@ -226,6 +237,13 @@ export class KeyRelationshipAnalyzer {
 		return key1.startsWith(key2) || key2.startsWith(key1);
 	}
 
+	/**
+	 * Check if operation key and snapshot key have hierarchical relationship for snapshot range
+	 * @param {string} operationKey - Key from operation
+	 * @param {string} snapshotKey - Key from snapshot
+	 * @returns {boolean} True if keys have hierarchical relationship
+	 * @private
+	 */
 	_hasHierarchicalRelationship (operationKey, snapshotKey) {
 		const separators = [":", "/", ".", "_", "-"];
 
@@ -238,6 +256,14 @@ export class KeyRelationshipAnalyzer {
 		return false;
 	}
 
+	/**
+	 * Check if operation key falls within hierarchical range of snapshot key
+	 * @param {string} operationKey - Key from operation
+	 * @param {string} snapshotKey - Key from snapshot
+	 * @param {*} expectedValue - Expected value from snapshot
+	 * @returns {boolean} True if operation key is in hierarchical range
+	 * @private
+	 */
 	_checkHierarchicalRange (operationKey, snapshotKey, expectedValue) {
 		const separators = [":", "/", ".", "_", "-"];
 
@@ -257,6 +283,13 @@ export class KeyRelationshipAnalyzer {
 		return false;
 	}
 
+	/**
+	 * Check if two key parts arrays have a parent-child relationship
+	 * @param {string[]} opParts - Parts from operation key
+	 * @param {string[]} snapParts - Parts from snapshot key
+	 * @returns {boolean} True if there's a parent-child relationship
+	 * @private
+	 */
 	_isParentChildRelationship (opParts, snapParts) {
 		if (opParts.length > snapParts.length) {
 			for (let i = 0; i < snapParts.length; i++) {
@@ -281,6 +314,13 @@ export class KeyRelationshipAnalyzer {
 		return false;
 	}
 
+	/**
+	 * Check if two key parts arrays have a sibling relationship
+	 * @param {string[]} opParts - Parts from operation key
+	 * @param {string[]} snapParts - Parts from snapshot key
+	 * @returns {boolean} True if there's a sibling relationship
+	 * @private
+	 */
 	_isSiblingRelationship (opParts, snapParts) {
 		if (opParts.length === snapParts.length && opParts.length > 1) {
 			for (let i = 0; i < opParts.length - 1; i++) {
@@ -295,6 +335,13 @@ export class KeyRelationshipAnalyzer {
 		return false;
 	}
 
+	/**
+	 * Check if two key parts arrays have an ancestor-descendant relationship
+	 * @param {string[]} parts1 - Parts from first key
+	 * @param {string[]} parts2 - Parts from second key
+	 * @returns {boolean} True if there's an ancestor-descendant relationship
+	 * @private
+	 */
 	_isAncestorDescendantRelationship (parts1, parts2) {
 		const shorter = parts1.length < parts2.length ? parts1 : parts2;
 		const longer = parts1.length < parts2.length ? parts2 : parts1;
@@ -312,6 +359,14 @@ export class KeyRelationshipAnalyzer {
 		return false;
 	}
 
+	/**
+	 * Check if operation key parts indicate collection membership relative to snapshot
+	 * @param {string[]} opParts - Parts from operation key
+	 * @param {string[]} snapParts - Parts from snapshot key
+	 * @param {*} expectedValue - Expected value from snapshot
+	 * @returns {boolean} True if operation key is collection member
+	 * @private
+	 */
 	_isCollectionMembership (opParts, snapParts, expectedValue) {
 		if (Array.isArray(expectedValue) ||
 			expectedValue && typeof expectedValue === "object" && expectedValue.length !== undefined) {
@@ -322,7 +377,13 @@ export class KeyRelationshipAnalyzer {
 		return false;
 	}
 
-	// Semantic relationship methods
+	/**
+	 * Check if two keys have semantic relationship based on their content meaning
+	 * @param {string} key1 - First key to compare
+	 * @param {string} key2 - Second key to compare
+	 * @returns {boolean} True if keys have semantic relationship
+	 * @private
+	 */
 	_hasSemanticKeyRelationship (key1, key2) {
 		const semantics1 = this._extractSemanticIdentifiers(key1);
 		const semantics2 = this._extractSemanticIdentifiers(key2);
@@ -338,6 +399,13 @@ export class KeyRelationshipAnalyzer {
 		return this._hasEntityRelationship(semantics1, semantics2);
 	}
 
+	/**
+	 * Check if operation key and snapshot key have semantic relationship for snapshot range
+	 * @param {string} operationKey - Key from operation
+	 * @param {string} snapshotKey - Key from snapshot
+	 * @returns {boolean} True if keys have semantic relationship
+	 * @private
+	 */
 	_hasSemanticRelationship (operationKey, snapshotKey) {
 		const semanticPrefixes = [
 			"user", "account", "profile", "session",
@@ -356,6 +424,13 @@ export class KeyRelationshipAnalyzer {
 		return false;
 	}
 
+	/**
+	 * Check if operation key falls within semantic range of snapshot key
+	 * @param {string} operationKey - Key from operation
+	 * @param {string} snapshotKey - Key from snapshot
+	 * @returns {boolean} True if operation key is in semantic range
+	 * @private
+	 */
 	_checkSemanticRange (operationKey, snapshotKey) {
 		const opSemantics = this._extractSemanticIdentifiers(operationKey);
 		const snapSemantics = this._extractSemanticIdentifiers(snapshotKey);
@@ -371,6 +446,12 @@ export class KeyRelationshipAnalyzer {
 		return false;
 	}
 
+	/**
+	 * Extract semantic identifiers from a key string using pattern matching
+	 * @param {string} key - Key to extract semantic identifiers from
+	 * @returns {string[]} Array of semantic identifiers found in the key
+	 * @private
+	 */
 	_extractSemanticIdentifiers (key) {
 		const cacheKey = `semantic:${key}`;
 		if (this.semanticCache.has(cacheKey)) {
@@ -399,6 +480,14 @@ export class KeyRelationshipAnalyzer {
 		return identifiers;
 	}
 
+	/**
+	 * Check if two semantic identifiers are similar
+	 * Handles singular/plural forms and semantic equivalence
+	 * @param {string} id1 - First identifier
+	 * @param {string} id2 - Second identifier
+	 * @returns {boolean} True if identifiers are semantically similar
+	 * @private
+	 */
 	_areSemanticallySimilar (id1, id2) {
 		if (id1 === id2) {
 			return true;
@@ -421,6 +510,13 @@ export class KeyRelationshipAnalyzer {
 		return false;
 	}
 
+	/**
+	 * Check if two semantic identifier arrays have entity relationships
+	 * @param {string[]} semantics1 - Semantic identifiers from first key
+	 * @param {string[]} semantics2 - Semantic identifiers from second key
+	 * @returns {boolean} True if entities have defined relationships
+	 * @private
+	 */
 	_hasEntityRelationship (semantics1, semantics2) {
 		const entityRelations = [
 			["user", "profile"], ["user", "account"], ["user", "session"],
@@ -445,7 +541,13 @@ export class KeyRelationshipAnalyzer {
 		return false;
 	}
 
-	// Pattern relationship methods
+	/**
+	 * Check if two keys have pattern-based relationship
+	 * @param {string} key1 - First key to compare
+	 * @param {string} key2 - Second key to compare
+	 * @returns {boolean} True if keys have pattern-based relationship
+	 * @private
+	 */
 	_hasPatternBasedKeyRelationship (key1, key2) {
 		if (this._isPatternBasedSnapshot(key1)) {
 			return this._checkPatternBasedRange(key2, key1);
@@ -458,6 +560,12 @@ export class KeyRelationshipAnalyzer {
 		return this._haveSimilarPatterns(key1, key2);
 	}
 
+	/**
+	 * Check if a snapshot key contains pattern-based wildcards or indicators
+	 * @param {string} snapshotKey - Key from snapshot to check
+	 * @returns {boolean} True if key contains pattern-based elements
+	 * @private
+	 */
 	_isPatternBasedSnapshot (snapshotKey) {
 		return snapshotKey.includes("*") ||
 			snapshotKey.includes("?") ||
@@ -467,6 +575,13 @@ export class KeyRelationshipAnalyzer {
 			snapshotKey.endsWith("_pattern");
 	}
 
+	/**
+	 * Check if operation key matches a pattern-based snapshot key range
+	 * @param {string} operationKey - Key from operation
+	 * @param {string} snapshotKey - Pattern-based snapshot key
+	 * @returns {boolean} True if operation key matches pattern
+	 * @private
+	 */
 	_checkPatternBasedRange (operationKey, snapshotKey) {
 		if (snapshotKey.includes("*")) {
 			const pattern = snapshotKey.replace(/\*/g, ".*");
@@ -527,6 +642,13 @@ export class KeyRelationshipAnalyzer {
 		return false;
 	}
 
+	/**
+	 * Check if two keys have similar structural patterns
+	 * @param {string} key1 - First key to compare
+	 * @param {string} key2 - Second key to compare
+	 * @returns {boolean} True if keys have similar patterns
+	 * @private
+	 */
 	_haveSimilarPatterns (key1, key2) {
 		const pattern1 = this._extractKeyPattern(key1);
 		const pattern2 = this._extractKeyPattern(key2);
@@ -534,6 +656,12 @@ export class KeyRelationshipAnalyzer {
 		return this._patternsAreSimilar(pattern1, pattern2);
 	}
 
+	/**
+	 * Extract structural pattern from a key by normalizing variable components
+	 * @param {string} key - Key to extract pattern from
+	 * @returns {string} Normalized pattern string
+	 * @private
+	 */
 	_extractKeyPattern (key) {
 		const cacheKey = `pattern:${key}`;
 		if (this.patternCache.has(cacheKey)) {
@@ -550,6 +678,13 @@ export class KeyRelationshipAnalyzer {
 		return pattern;
 	}
 
+	/**
+	 * Check if two patterns are similar based on similarity threshold
+	 * @param {string} pattern1 - First pattern to compare
+	 * @param {string} pattern2 - Second pattern to compare
+	 * @returns {boolean} True if patterns are similar (>70% similarity)
+	 * @private
+	 */
 	_patternsAreSimilar (pattern1, pattern2) {
 		if (pattern1 === pattern2) {
 			return true;
@@ -560,6 +695,13 @@ export class KeyRelationshipAnalyzer {
 		return similarity > 0.7;
 	}
 
+	/**
+	 * Calculate similarity score between two patterns using Levenshtein distance
+	 * @param {string} pattern1 - First pattern
+	 * @param {string} pattern2 - Second pattern
+	 * @returns {number} Similarity score between 0 and 1
+	 * @private
+	 */
 	_calculatePatternSimilarity (pattern1, pattern2) {
 		const len1 = pattern1.length;
 		const len2 = pattern2.length;
@@ -572,6 +714,13 @@ export class KeyRelationshipAnalyzer {
 		return 1 - distance / maxLen;
 	}
 
+	/**
+	 * Calculate Levenshtein distance between two strings
+	 * @param {string} str1 - First string
+	 * @param {string} str2 - Second string
+	 * @returns {number} Edit distance between strings
+	 * @private
+	 */
 	_levenshteinDistance (str1, str2) {
 		const matrix = [];
 
@@ -600,7 +749,13 @@ export class KeyRelationshipAnalyzer {
 		return matrix[str2.length][str1.length];
 	}
 
-	// Temporal relationship methods
+	/**
+	 * Check if two keys have temporal relationship based on time-related components
+	 * @param {string} key1 - First key to compare
+	 * @param {string} key2 - Second key to compare
+	 * @returns {boolean} True if keys have temporal relationship
+	 * @private
+	 */
 	_hasTemporalKeyRelationship (key1, key2) {
 		if (this._isTemporalSnapshot(key1) && this._isTemporalSnapshot(key2)) {
 			const temporal1 = this._extractTemporalComponents(key1);
@@ -612,6 +767,12 @@ export class KeyRelationshipAnalyzer {
 		return false;
 	}
 
+	/**
+	 * Check if a snapshot key contains temporal/time-related keywords
+	 * @param {string} snapshotKey - Key from snapshot to check
+	 * @returns {boolean} True if key contains temporal indicators
+	 * @private
+	 */
 	_isTemporalSnapshot (snapshotKey) {
 		const temporalKeywords = [
 			"timestamp", "time", "date", "created", "updated", "modified",
@@ -623,6 +784,13 @@ export class KeyRelationshipAnalyzer {
 		);
 	}
 
+	/**
+	 * Check if operation key falls within temporal range of snapshot key
+	 * @param {string} operationKey - Key from operation
+	 * @param {string} snapshotKey - Temporal snapshot key
+	 * @returns {boolean} True if operation key is in temporal range
+	 * @private
+	 */
 	_checkTemporalRange (operationKey, snapshotKey) {
 		if (this._isTemporalSnapshot(operationKey)) {
 			const opTemporal = this._extractTemporalComponents(operationKey);
@@ -634,6 +802,12 @@ export class KeyRelationshipAnalyzer {
 		return false;
 	}
 
+	/**
+	 * Extract temporal components from a key using regex patterns
+	 * @param {string} key - Key to extract temporal components from
+	 * @returns {Object} Object with temporal component flags
+	 * @private
+	 */
 	_extractTemporalComponents (key) {
 		const components = {
 			hasDate: false,
@@ -650,6 +824,13 @@ export class KeyRelationshipAnalyzer {
 		return components;
 	}
 
+	/**
+	 * Check if two temporal component objects have overlapping temporal elements
+	 * @param {Object} opTemporal - Temporal components from operation key
+	 * @param {Object} snapTemporal - Temporal components from snapshot key
+	 * @returns {boolean} True if temporal components overlap
+	 * @private
+	 */
 	_haveTemporalOverlap (opTemporal, snapTemporal) {
 		return opTemporal.hasDate && snapTemporal.hasDate ||
 			opTemporal.hasTime && snapTemporal.hasTime ||
@@ -657,12 +838,24 @@ export class KeyRelationshipAnalyzer {
 			opTemporal.hasEpoch && snapTemporal.hasEpoch;
 	}
 
-	// Composite key relationship methods
+	/**
+	 * Check if two keys have composite key relationship
+	 * @param {string} key1 - First key to compare
+	 * @param {string} key2 - Second key to compare
+	 * @returns {boolean} True if keys have composite key relationship
+	 * @private
+	 */
 	_hasCompositeKeyRelationship (key1, key2) {
 		return this._checkCompositeKeyRange(key1, key2) ||
 			this._checkCompositeKeyRange(key2, key1);
 	}
 
+	/**
+	 * Check if a snapshot key represents a composite key structure
+	 * @param {string} snapshotKey - Key from snapshot to check
+	 * @returns {boolean} True if key is composite key structure
+	 * @private
+	 */
 	_isCompositeKeySnapshot (snapshotKey) {
 		return snapshotKey.includes(":") ||
 			snapshotKey.includes("#") ||
@@ -672,6 +865,13 @@ export class KeyRelationshipAnalyzer {
 			snapshotKey.split("-").length > 2;
 	}
 
+	/**
+	 * Check if operation key falls within composite key range of snapshot key
+	 * @param {string} operationKey - Key from operation
+	 * @param {string} snapshotKey - Composite snapshot key
+	 * @returns {boolean} True if operation key is in composite key range
+	 * @private
+	 */
 	_checkCompositeKeyRange (operationKey, snapshotKey) {
 		const separators = [":", "#", "|", "@", "_", "-"];
 
@@ -689,6 +889,13 @@ export class KeyRelationshipAnalyzer {
 		return false;
 	}
 
+	/**
+	 * Check if operation key parts overlap with snapshot key parts in composite key
+	 * @param {string[]} opParts - Parts from operation key
+	 * @param {string[]} snapParts - Parts from snapshot key
+	 * @returns {boolean} True if key parts have composite overlap
+	 * @private
+	 */
 	_hasCompositeKeyOverlap (opParts, snapParts) {
 		const minLength = Math.min(opParts.length, snapParts.length);
 
@@ -708,7 +915,13 @@ export class KeyRelationshipAnalyzer {
 		return false;
 	}
 
-	// Index relationship methods
+	/**
+	 * Check if two keys have index-based relationship
+	 * @param {string} key1 - First key to compare
+	 * @param {string} key2 - Second key to compare
+	 * @returns {boolean} True if keys have index relationship
+	 * @private
+	 */
 	_hasIndexKeyRelationship (key1, key2) {
 		const isIndex1 = this._isIndexKey(key1);
 		const isIndex2 = this._isIndexKey(key2);
@@ -727,6 +940,12 @@ export class KeyRelationshipAnalyzer {
 		return false;
 	}
 
+	/**
+	 * Check if a key represents an index key structure
+	 * @param {string} key - Key to check
+	 * @returns {boolean} True if key is an index key
+	 * @private
+	 */
 	_isIndexKey (key) {
 		return key.includes("_index") ||
 			key.includes("_idx") ||
@@ -735,6 +954,12 @@ export class KeyRelationshipAnalyzer {
 			key.includes("_lookup");
 	}
 
+	/**
+	 * Extract base key from an index key by removing index-specific suffixes
+	 * @param {string} indexKey - Index key to extract base from
+	 * @returns {string} Base key without index identifiers
+	 * @private
+	 */
 	_extractBaseKeyFromIndex (indexKey) {
 		return indexKey
 			.replace(/_index.*$/, "")
@@ -744,6 +969,13 @@ export class KeyRelationshipAnalyzer {
 			.replace(/_lookup.*$/, "");
 	}
 
+	/**
+	 * Check if a snapshot key represents an index-based query
+	 * @param {Transaction} transaction - Transaction containing snapshot
+	 * @param {string} snapshotKey - Key from snapshot to check
+	 * @returns {boolean} True if snapshot is index-based
+	 * @private
+	 */
 	_isIndexBasedSnapshot (transaction, snapshotKey) {
 		return snapshotKey.includes("_index") ||
 			snapshotKey.includes("_idx") ||
@@ -751,6 +983,14 @@ export class KeyRelationshipAnalyzer {
 			transaction.snapshot.has(`${snapshotKey}:index_range`);
 	}
 
+	/**
+	 * Check if operation key falls within index-based range of snapshot key
+	 * @param {Transaction} transaction - Transaction containing snapshot
+	 * @param {string} operationKey - Key from operation
+	 * @param {string} snapshotKey - Index-based snapshot key
+	 * @returns {boolean} True if operation key is in index range
+	 * @private
+	 */
 	_checkIndexBasedRange (transaction, operationKey, snapshotKey) {
 		const indexRange = transaction.snapshot.get(`${snapshotKey}:index_range`);
 		if (indexRange) {
@@ -766,7 +1006,13 @@ export class KeyRelationshipAnalyzer {
 		return false;
 	}
 
-	// Collection relationship methods
+	/**
+	 * Check if two keys have collection-based relationship
+	 * @param {string} key1 - First key to compare
+	 * @param {string} key2 - Second key to compare
+	 * @returns {boolean} True if keys have collection relationship
+	 * @private
+	 */
 	_hasCollectionKeyRelationship (key1, key2) {
 		const isCollection1 = this._isCollectionKey(key1);
 		const isCollection2 = this._isCollectionKey(key2);
@@ -783,6 +1029,12 @@ export class KeyRelationshipAnalyzer {
 		return false;
 	}
 
+	/**
+	 * Check if a key represents a collection structure
+	 * @param {string} key - Key to check
+	 * @returns {boolean} True if key is a collection key
+	 * @private
+	 */
 	_isCollectionKey (key) {
 		const collectionIndicators = [
 			"_list", "_array", "_set", "_collection",
@@ -792,6 +1044,12 @@ export class KeyRelationshipAnalyzer {
 		return collectionIndicators.some(indicator => key.includes(indicator));
 	}
 
+	/**
+	 * Extract base key from a collection key by removing collection-specific suffixes
+	 * @param {string} collectionKey - Collection key to extract base from
+	 * @returns {string} Base key without collection identifiers
+	 * @private
+	 */
 	_extractCollectionBase (collectionKey) {
 		const indicators = ["_list", "_array", "_set", "_collection", "_items", "_elements", "_members", "_entries"];
 
@@ -804,7 +1062,13 @@ export class KeyRelationshipAnalyzer {
 		return collectionKey;
 	}
 
-	// Functional dependency methods
+	/**
+	 * Check if two keys have functional dependency relationship
+	 * @param {string} key1 - First key to compare
+	 * @param {string} key2 - Second key to compare
+	 * @returns {boolean} True if keys have functional dependency
+	 * @private
+	 */
 	_hasFunctionalDependency (key1, key2) {
 		const dependencies = [
 			["user_id", "user_email"], ["user_id", "user_profile"],
@@ -829,6 +1093,12 @@ export class KeyRelationshipAnalyzer {
 		return false;
 	}
 
+	/**
+	 * Normalize a key for functional dependency comparison by converting to standard format
+	 * @param {string} key - Key to normalize
+	 * @returns {string} Normalized key in lowercase with underscores
+	 * @private
+	 */
 	_normalizeKeyForDependency (key) {
 		return key.toLowerCase()
 			.replace(/[:\-/.]/g, "_")
@@ -836,13 +1106,27 @@ export class KeyRelationshipAnalyzer {
 			.toLowerCase();
 	}
 
-	// Explicit range methods
+	/**
+	 * Check if transaction snapshot has explicit range metadata for a key
+	 * @param {Transaction} transaction - Transaction containing snapshot
+	 * @param {string} snapshotKey - Key from snapshot to check
+	 * @returns {boolean} True if explicit range metadata exists
+	 * @private
+	 */
 	_hasExplicitRangeMetadata (transaction, snapshotKey) {
 		return transaction.snapshot.has(`${snapshotKey}:range`) ||
 			transaction.snapshot.has(`${snapshotKey}:query`) ||
 			transaction.snapshot.has(`${snapshotKey}:predicate`);
 	}
 
+	/**
+	 * Check if operation key matches explicit range metadata for snapshot key
+	 * @param {Transaction} transaction - Transaction containing snapshot
+	 * @param {string} operationKey - Key from operation
+	 * @param {string} snapshotKey - Key from snapshot with explicit range
+	 * @returns {boolean} True if operation key matches explicit range
+	 * @private
+	 */
 	_checkExplicitRange (transaction, operationKey, snapshotKey) {
 		const rangeInfo = transaction.snapshot.get(`${snapshotKey}:range`);
 		if (rangeInfo && typeof rangeInfo === "object") {
