@@ -354,6 +354,225 @@ describe("TransactionManager", () => {
 				manager.abort = originalAbort;
 			}
 		});
+
+		it("should call releaseAllLocks in finally block on successful commit", async () => {
+			const transaction = manager.begin();
+			transaction.writeSet.add("key1");
+
+			// Mock release to verify it's called
+			let releaseCalledInFinally = false;
+			const originalReleaseAllLocks = manager.lockManager.releaseAllLocks;
+			
+			manager.lockManager.releaseAllLocks = (txId) => {
+				releaseCalledInFinally = true;
+				assert.strictEqual(txId, transaction.id);
+				return originalReleaseAllLocks.call(manager.lockManager, txId);
+			};
+
+			try {
+				await manager.commit(transaction.id);
+
+				// Verify that locks were released in finally block on success
+				assert.strictEqual(releaseCalledInFinally, true);
+				assert.strictEqual(transaction.state, TransactionStates.COMMITTED);
+			} finally {
+				// Restore original method
+				manager.lockManager.releaseAllLocks = originalReleaseAllLocks;
+			}
+		});
+
+		it("should execute finally block with async abort that throws", async () => {
+			const transaction = manager.begin();
+			transaction.writeSet.add("key1");
+			
+			// Mock abort to throw, but finally should still execute
+			const originalAbort = manager.abort;
+			manager.abort = () => {
+				throw new Error("Abort also failed");
+			};
+
+			// Mock isolation validator to throw first
+			const originalValidateIsolation = manager.isolationValidator.validateIsolation;
+			manager.isolationValidator.validateIsolation = () => {
+				throw new Error("Isolation validation failed");
+			};
+
+			let finallyExecuted = false;
+			const originalReleaseAllLocks = manager.lockManager.releaseAllLocks;
+			manager.lockManager.releaseAllLocks = (txId) => {
+				finallyExecuted = true;
+				return originalReleaseAllLocks.call(manager.lockManager, txId);
+			};
+
+			try {
+				await assert.rejects(
+					manager.commit(transaction.id),
+					Error
+				);
+
+				// Verify finally block executed even when abort throws
+				assert.strictEqual(finallyExecuted, true);
+			} finally {
+				// Restore original methods
+				manager.abort = originalAbort;
+				manager.isolationValidator.validateIsolation = originalValidateIsolation;
+				manager.lockManager.releaseAllLocks = originalReleaseAllLocks;
+			}
+		});
+
+		it("should handle transaction commit method throwing error", async () => {
+			// Mock the Transaction prototype commit method before creating transaction
+			const originalCommit = Transaction.prototype.commit;
+			let transactionCommitCalled = false;
+			
+			Transaction.prototype.commit = function() {
+				transactionCommitCalled = true;
+				throw new Error("Transaction commit failed");
+			};
+
+			const transaction = manager.begin();
+			transaction.writeSet.add("key1");
+
+			let finallyExecuted = false;
+			const originalReleaseAllLocks = manager.lockManager.releaseAllLocks;
+			manager.lockManager.releaseAllLocks = (txId) => {
+				finallyExecuted = true;
+				return originalReleaseAllLocks.call(manager.lockManager, txId);
+			};
+
+			try {
+				await assert.rejects(
+					manager.commit(transaction.id),
+					Error
+				);
+
+				// Verify commit was called and finally block executed
+				assert.strictEqual(transactionCommitCalled, true);
+				assert.strictEqual(finallyExecuted, true);
+				assert.strictEqual(transaction.state, TransactionStates.ABORTED);
+			} finally {
+				// Restore original methods
+				Transaction.prototype.commit = originalCommit;
+				manager.lockManager.releaseAllLocks = originalReleaseAllLocks;
+			}
+		});
+
+		it("should commit transaction with empty writeSet bypassing lock acquisition", async () => {
+			const transaction = manager.begin();
+			// Don't add anything to writeSet - this bypasses the lock acquisition loop entirely
+			
+			let lockAcquisitionCalled = false;
+			let finallyExecuted = false;
+			
+			const originalAcquireLock = manager.lockManager.acquireLock;
+			const originalReleaseAllLocks = manager.lockManager.releaseAllLocks;
+			
+			manager.lockManager.acquireLock = async () => {
+				lockAcquisitionCalled = true;
+				return originalAcquireLock.apply(manager.lockManager, arguments);
+			};
+			
+			manager.lockManager.releaseAllLocks = (txId) => {
+				finallyExecuted = true;
+				return originalReleaseAllLocks.call(manager.lockManager, txId);
+			};
+
+			try {
+				const result = await manager.commit(transaction.id);
+
+				// Verify no locks were acquired but finally block still executed
+				assert.strictEqual(lockAcquisitionCalled, false);
+				assert.strictEqual(finallyExecuted, true);
+				assert.strictEqual(result, transaction);
+				assert.strictEqual(transaction.state, TransactionStates.COMMITTED);
+			} finally {
+				// Restore original methods
+				manager.lockManager.acquireLock = originalAcquireLock;
+				manager.lockManager.releaseAllLocks = originalReleaseAllLocks;
+			}
+		});
+
+		it("should handle releaseAllLocks throwing error in finally block after successful commit", async () => {
+			const transaction = manager.begin();
+			transaction.writeSet.add("key1");
+
+			const originalReleaseAllLocks = manager.lockManager.releaseAllLocks;
+			let commitCompleted = false;
+			let releaseAllLocksCalled = false;
+
+			// Override commit to track when it completes successfully
+			const originalCommit = Transaction.prototype.commit;
+			Transaction.prototype.commit = function(context) {
+				const result = originalCommit.call(this, context);
+				commitCompleted = true;
+				return result;
+			};
+
+			// Make releaseAllLocks throw AFTER commit succeeds
+			manager.lockManager.releaseAllLocks = (txId) => {
+				releaseAllLocksCalled = true;
+				// Verify commit completed before finally block
+				assert.strictEqual(commitCompleted, true);
+				throw new Error("Failed to release locks in finally");
+			};
+
+			try {
+				// The commit should succeed in try block, but finally should throw
+				await assert.rejects(
+					manager.commit(transaction.id),
+					/Failed to release locks in finally/
+				);
+
+				// Verify the sequence: commit succeeded, then finally threw
+				assert.strictEqual(commitCompleted, true);
+				assert.strictEqual(releaseAllLocksCalled, true);
+				assert.strictEqual(transaction.state, TransactionStates.COMMITTED);
+			} finally {
+				// Restore original methods
+				Transaction.prototype.commit = originalCommit;
+				manager.lockManager.releaseAllLocks = originalReleaseAllLocks;
+			}
+		});
+
+		it("should handle early return path without cleanup in finally block", async () => {
+			// Create transaction and then manually delete it to simulate race condition
+			const transaction = manager.begin();
+			const txId = transaction.id;
+			
+			// Manually remove transaction to create an edge case
+			manager.transactions.delete(txId);
+
+			// This should throw "Transaction not found" before reaching finally block
+			await assert.rejects(
+				manager.commit(txId),
+				/Transaction .* not found/
+			);
+		});
+
+		it("should handle synchronous error in lockManager acquireLock", async () => {
+			const transaction = manager.begin();
+			transaction.writeSet.add("key1");
+
+			const originalAcquireLock = manager.lockManager.acquireLock;
+			
+			// Make acquireLock throw synchronously (not async)
+			manager.lockManager.acquireLock = () => {
+				throw new Error("Synchronous lock error");
+			};
+
+			try {
+				await assert.rejects(
+					manager.commit(transaction.id),
+					/Synchronous lock error/
+				);
+				
+				// Transaction should be aborted
+				assert.strictEqual(transaction.state, TransactionStates.ABORTED);
+			} finally {
+				manager.lockManager.acquireLock = originalAcquireLock;
+			}
+		});
+
 	});
 
 	describe("abort()", () => {

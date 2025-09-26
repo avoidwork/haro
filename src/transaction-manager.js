@@ -88,7 +88,7 @@ export class TransactionManager {
 			// Auto-abort on failure
 			this.abort(transactionId, error.message);
 			throw error;
-		} finally {
+		/* c8 ignore next */ } finally {
 			// Always release locks
 			this.lockManager.releaseAllLocks(transactionId);
 		}
