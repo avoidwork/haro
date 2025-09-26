@@ -1273,7 +1273,6 @@ export class TransactionManager {
 		// For SERIALIZABLE, we need to detect any potential serialization conflicts
 		// This includes read-write conflicts where this transaction read something
 		// that another concurrent transaction modified
-
 		// Check for read-write conflicts
 		for (const readKey of transaction.readSet) {
 			const conflictingWrites = this._findConflictingWritesToRead(transaction, readKey);
