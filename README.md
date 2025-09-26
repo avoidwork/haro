@@ -6,14 +6,6 @@
 
 Haro is a data store library for enterprise applications. It provides ACID transactions, schema validation, query optimization, and streaming support for both client and server applications.
 
-## 🆕 New Enterprise Features
-- **ACID Transactions**: Full transaction support with isolation levels
-- **Query Optimization**: Intelligent query planning and caching
-- **Streaming Support**: Memory-efficient processing of large datasets
-- **Schema Validation**: TypeScript-like constraints in JavaScript
-- **Version Management**: Configurable retention policies
-- **Advanced Indexing**: Composite indexes, unique constraints, partial indexes
-
 ## 📦 Installation
 
 ```bash
@@ -69,6 +61,14 @@ Memory-efficient processing of large datasets without loading everything into me
 #### Version Management
 
 Track data changes over time with configurable retention policies. Audit trails for compliance, undo/redo functionality in editors, and conflict resolution in collaborative applications. Server applications benefit from automatic data history for debugging and rollback capabilities. Client-side applications can implement sophisticated undo systems, draft management, or offline synchronization with conflict detection.
+
+#### Query Optimization
+
+Intelligent query planning and caching that automatically selects the most efficient execution path for your queries. Analyzes query patterns and leverages indexes to minimize execution time. Essential for applications with complex filtering requirements or high query volumes. Server applications benefit from reduced CPU usage and faster response times, while client applications deliver smoother user experiences with instant search and filtering.
+
+#### Advanced Indexing
+
+Sophisticated indexing capabilities including composite indexes, unique constraints, and partial indexes with custom filter conditions. Enables sub-millisecond lookups on large datasets and supports complex query patterns. Critical for applications requiring fast search, real-time filtering, or complex data relationships. Both client and server applications benefit from dramatically improved query performance and reduced memory overhead.
 
 ## 🎯 API Reference
 
