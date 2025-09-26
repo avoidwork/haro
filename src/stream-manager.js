@@ -18,7 +18,18 @@ export class StreamManager {
 	 * @returns {DataStream} Data stream instance
 	 */
 	stream (options = {}) {
-		const iterator = this.storageManager.entries();
+		const entries = this.storageManager.entries();
+		let index = 0;
+
+		const iterator = {
+			next: () => {
+				if (index < entries.length) {
+					return { value: entries[index++], done: false };
+				}
+
+				return { done: true };
+			}
+		};
 
 		return new DataStream(iterator, options);
 	}
