@@ -181,7 +181,7 @@ describe("IsolationValidator", () => {
 	});
 
 	describe("_validateRepeatableRead", () => {
-		it("should detect repeatable read violations", () => {
+		it("should detect repeatable read violations", async () => {
 			// Use a fresh validator instance to avoid mocking interference
 			const freshValidator = new IsolationValidator();
 			
@@ -193,24 +193,17 @@ describe("IsolationValidator", () => {
 			
 			const conflictingTx = new MockTransaction("tx2", IsolationLevels.REPEATABLE_READ);
 			conflictingTx.startTime = new Date(now - 1000); // Started after tx1
-			conflictingTx.endTime = new Date(now - 500); // Ended well before now
+			conflictingTx.endTime = new Date(now - 500); // Ended before now
 			conflictingTx.addWrite("user:123"); // Only tx2 writes to the key
 			conflictingTx.commit();
+			
+			// Sleep for 1 second to ensure timing difference
+			await new Promise(resolve => setTimeout(resolve, 1000));
 			
 			const allTransactions = new Map([
 				["tx1", transaction],
 				["tx2", conflictingTx]
 			]);
-
-			console.log("DEBUG - transaction.readSet:", Array.from(transaction.readSet));
-			console.log("DEBUG - conflictingTx.writeSet:", Array.from(conflictingTx.writeSet));
-			console.log("DEBUG - conflictingTx.isCommitted():", conflictingTx.isCommitted());
-			console.log("DEBUG - conflictingTx.startTime > transaction.startTime:", conflictingTx.startTime > transaction.startTime);
-			console.log("DEBUG - conflictingTx.endTime < new Date():", conflictingTx.endTime < new Date());
-			
-			// Test the conflict detection directly
-			const hasConflict = freshValidator._hasReadSetConflict(transaction, "user:123", allTransactions);
-			console.log("DEBUG - hasConflict result:", hasConflict);
 
 			assert.throws(() => {
 				freshValidator._validateRepeatableRead(transaction, allTransactions);
@@ -258,6 +251,24 @@ describe("IsolationValidator", () => {
 				["tx2", otherTx]
 			]);
 
+			assert.doesNotThrow(() => {
+				validator._validateRepeatableRead(transaction, allTransactions);
+			});
+		});
+
+		it("should handle snapshot without conflicts (covers line 99)", () => {
+			const transaction = new MockTransaction("tx1", IsolationLevels.REPEATABLE_READ);
+			transaction.addSnapshot("safe:snapshot", "no-conflicts");
+			
+			const otherTx = new MockTransaction("tx2", IsolationLevels.REPEATABLE_READ);
+			otherTx.addWrite("unrelated:key");
+			
+			const allTransactions = new Map([
+				["tx1", transaction],
+				["tx2", otherTx]
+			]);
+
+			// This should iterate through snapshot but find no conflicts (hitting line 99)
 			assert.doesNotThrow(() => {
 				validator._validateRepeatableRead(transaction, allTransactions);
 			});
@@ -441,7 +452,7 @@ describe("IsolationValidator", () => {
 	});
 
 	describe("_hasReadSetConflict", () => {
-		it("should detect conflicts when another transaction modified read key", () => {
+		it("should detect conflicts when another transaction modified read key", async () => {
 			// Use a fresh validator instance to avoid mocking interference
 			const freshValidator = new IsolationValidator();
 			
@@ -452,13 +463,12 @@ describe("IsolationValidator", () => {
 			
 			const tx2 = new MockTransaction("tx2");
 			tx2.startTime = new Date(now - 1000); // Started after tx1
-			tx2.endTime = new Date(now - 500); // Ended well before now
+			tx2.endTime = new Date(now - 500); // Ended before now
 			tx2.addWrite("user:123");
 			tx2.commit();
 			
-			console.log("DEBUG _hasReadSetConflict - tx2.endTime:", tx2.endTime);
-			console.log("DEBUG _hasReadSetConflict - new Date():", new Date());
-			console.log("DEBUG _hasReadSetConflict - tx2.endTime < new Date():", tx2.endTime < new Date());
+			// Sleep for 1 second to ensure timing difference
+			await new Promise(resolve => setTimeout(resolve, 1000));
 			
 			const allTransactions = new Map([
 				["tx1", tx1],
@@ -466,7 +476,6 @@ describe("IsolationValidator", () => {
 			]);
 
 			const hasConflict = freshValidator._hasReadSetConflict(tx1, "user:123", allTransactions);
-			console.log("DEBUG _hasReadSetConflict - result:", hasConflict);
 			assert.strictEqual(hasConflict, true);
 		});
 
@@ -946,6 +955,70 @@ describe("IsolationValidator", () => {
 			assert.doesNotThrow(() => {
 				validator.validateIsolation(transaction, allTransactions);
 			});
+		});
+	});
+
+	describe("uncovered code paths", () => {
+		it("should trigger _hasSnapshotConflict early return via read set conflicts (lines 240-241)", async () => {
+			const now = Date.now();
+			const transaction = new MockTransaction("tx1");
+			transaction.startTime = new Date(now - 2000);
+			
+			const conflictingTx = new MockTransaction("tx2");
+			conflictingTx.startTime = new Date(now - 1000); // Started after tx1
+			conflictingTx.endTime = new Date(now - 500); // Ended before now
+			conflictingTx.addWrite("user:123");
+			conflictingTx.commit();
+			
+			// Sleep for 1 second to ensure timing difference
+			await new Promise(resolve => setTimeout(resolve, 1000));
+			
+			const allTransactions = new Map([
+				["tx1", transaction],
+				["tx2", conflictingTx]
+			]);
+
+			// This should trigger the early return in _hasSnapshotConflict (lines 240-241)
+			const hasConflict = validator._hasSnapshotConflict(transaction, "user:123", "someValue", allTransactions);
+			assert.strictEqual(hasConflict, true);
+		});
+
+		it("should trigger _hasSnapshotConflict default return when no conflicts (lines 256-257)", () => {
+			const transaction = new MockTransaction("tx1");
+			transaction.startTime = new Date();
+			
+			const otherTx = new MockTransaction("tx2");
+			otherTx.addRead("different:key");
+			
+			const allTransactions = new Map([
+				["tx1", transaction],
+				["tx2", otherTx]
+			]);
+
+			// This should reach the default return false in _hasSnapshotConflict (lines 256-257)
+			const hasConflict = validator._hasSnapshotConflict(transaction, "user:123", "someValue", allTransactions);
+			assert.strictEqual(hasConflict, false);
+		});
+
+		it("should trigger _hasSerializationAnomalyInSnapshot default return when no anomalies (lines 308-309)", () => {
+			const tx1 = new MockTransaction("tx1");
+			tx1.startTime = new Date();
+			tx1.addRead("unrelated:key1");
+			tx1.addWrite("unrelated:write1");
+			
+			const tx2 = new MockTransaction("tx2");
+			tx2.startTime = new Date();
+			tx2.addRead("unrelated:key2");
+			tx2.addWrite("unrelated:write2");
+			
+			const allTransactions = new Map([
+				["tx1", tx1],
+				["tx2", tx2]
+			]);
+
+			// This should reach the default return false in _hasSerializationAnomalyInSnapshot (lines 308-309)
+			const hasAnomaly = validator._hasSerializationAnomalyInSnapshot(tx1, "snapshot:key", allTransactions);
+			assert.strictEqual(hasAnomaly, false);
 		});
 	});
 });
