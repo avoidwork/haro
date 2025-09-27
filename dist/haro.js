@@ -1707,6 +1707,59 @@ class IndexManager {
 	}
 
 	/**
+	 * Rebuild indexes for a specific field
+	 * @param {string} field - Field to reindex
+	 * @param {Map<string, Object>} records - All records to reindex
+	 */
+	rebuildField (field, records) {
+		const indexNames = this.listIndexes();
+
+		// Find indexes that involve the specified field
+		const indexesToRebuild = indexNames.filter(indexName => {
+			const indexDef = this.getIndexDefinition(indexName);
+
+			return indexDef && indexDef.fields.includes(field);
+		});
+
+		// If we have indexes to rebuild
+		if (indexesToRebuild.length > 0) {
+			// Store definitions before dropping
+			const indexDefinitions = indexesToRebuild.map(indexName => {
+				const indexDef = this.getIndexDefinition(indexName);
+
+				return {
+					name: indexName,
+					fields: indexDef.fields,
+					options: {
+						type: indexDef.type,
+						unique: indexDef.unique,
+						filter: indexDef.filter,
+						transform: indexDef.transform,
+						delimiter: indexDef.delimiter
+					}
+				};
+			});
+
+			// Drop all indexes that need rebuilding
+			for (const indexName of indexesToRebuild) {
+				this.dropIndex(indexName);
+			}
+
+			// Recreate all dropped indexes
+			for (const indexDef of indexDefinitions) {
+				this.createIndex(indexDef.name, indexDef.fields, indexDef.options);
+			}
+
+			// Re-add all records once (this will populate all recreated indexes)
+			for (const [recordKey, recordData] of records) {
+				this.addRecord(recordKey, recordData);
+			}
+		}
+
+		this._stats.lastOptimized = new Date();
+	}
+
+	/**
 	 * Get comprehensive statistics
 	 * @returns {Object} Statistics object
 	 */
@@ -8514,12 +8567,18 @@ class Haro {
 	}
 
 	/**
-	 * Rebuild all indexes
+	 * Rebuild indexes for a specific field or all fields
+	 * @param {string} [field] - Specific field to reindex (optional)
 	 * @returns {Haro} Store instance for chaining
 	 */
-	reindex () {
-		// Rebuild all indexes (IndexManager doesn't support partial rebuild)
-		this.indexManager.rebuild(this.entries());
+	reindex (field) {
+		if (field) {
+			// Rebuild indexes for specific field
+			this.indexManager.rebuildField(field, this.entries());
+		} else {
+			// Rebuild all indexes
+			this.indexManager.rebuild(this.entries());
+		}
 
 		return this;
 	}

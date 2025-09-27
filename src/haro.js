@@ -609,12 +609,18 @@ export class Haro {
 	}
 
 	/**
-	 * Rebuild all indexes
+	 * Rebuild indexes for a specific field or all fields
+	 * @param {string} [field] - Specific field to reindex (optional)
 	 * @returns {Haro} Store instance for chaining
 	 */
-	reindex () {
-		// Rebuild all indexes (IndexManager doesn't support partial rebuild)
-		this.indexManager.rebuild(this.entries());
+	reindex (field) {
+		if (field) {
+			// Rebuild indexes for specific field
+			this.indexManager.rebuildField(field, this.entries());
+		} else {
+			// Rebuild all indexes
+			this.indexManager.rebuild(this.entries());
+		}
 
 		return this;
 	}

@@ -91,18 +91,18 @@ function benchmarkSingleIndexOperations (dataSizes) {
 		}, 10);
 		results.push(initialIndexResult);
 
-		// Reindex single field
-		const store = haro(testData, { index: ["category"] });
-		const reindexSingleResult = benchmark(`REINDEX single field (${size} records)`, () => {
+		// Reindex specific field
+		const store = haro(testData, { index: ["category", "status"] });
+		const reindexFieldResult = benchmark(`REINDEX specific field (${size} records)`, () => {
 			store.reindex("status");
-		}, 10);
-		results.push(reindexSingleResult);
+		}, 5);
+		results.push(reindexFieldResult);
 
 		// Reindex all fields
-		const reindexAllResult = benchmark(`REINDEX all fields (${size} records)`, () => {
+		const reindexAllFieldsResult = benchmark(`REINDEX all fields (${size} records)`, () => {
 			store.reindex();
 		}, 5);
-		results.push(reindexAllResult);
+		results.push(reindexAllFieldsResult);
 	});
 
 	return results;
@@ -142,12 +142,12 @@ function benchmarkCompositeIndexOperations (dataSizes) {
 
 		const queryCompositeResult = benchmark(`QUERY composite index (${size} records)`, () => {
 			store.find({ category: "A", status: "active" });
-		});
+		}, 50);
 		results.push(queryCompositeResult);
 
 		const queryTripleCompositeResult = benchmark(`QUERY triple composite (${size} records)`, () => {
 			store.find({ category: "A", status: "active", priority: "high" });
-		});
+		}, 50);
 		results.push(queryTripleCompositeResult);
 	});
 
@@ -179,13 +179,13 @@ function benchmarkArrayIndexOperations (dataSizes) {
 		const store = haro(testData, { index: ["tags"] });
 		const queryArrayResult = benchmark(`QUERY array index (${size} records)`, () => {
 			store.find({ tags: "tag1" });
-		});
+		}, 50);
 		results.push(queryArrayResult);
 
 		// Search array indexes
 		const searchArrayResult = benchmark(`SEARCH array index (${size} records)`, () => {
 			store.search("tag1", "tags");
-		});
+		}, 50);
 		results.push(searchArrayResult);
 	});
 
@@ -240,7 +240,7 @@ function benchmarkIndexModificationOperations (dataSizes) {
 				status: "updated",
 				timestamp: new Date()
 			});
-		}, 100);
+		}, 20);
 		results.push(setWithIndexResult);
 
 		// Benchmark DELETE operations with existing indexes
@@ -254,7 +254,7 @@ function benchmarkIndexModificationOperations (dataSizes) {
 					// Record might already be deleted
 				}
 			}
-		}, 50);
+		}, 10);
 		results.push(deleteWithIndexResult);
 
 		// Benchmark BATCH operations with existing indexes
@@ -265,7 +265,7 @@ function benchmarkIndexModificationOperations (dataSizes) {
 				status: "batch_updated"
 			}));
 			store.batch(batchData, "set");
-		}, 10);
+		}, 5);
 		results.push(batchWithIndexResult);
 	});
 
@@ -302,15 +302,9 @@ function benchmarkIndexMemoryOperations (dataSizes) {
 
 		// Benchmark index size measurement
 		const indexSizeResult = benchmark(`INDEX size check (${size} records)`, () => {
-			const indexes = store.indexes;
-			let totalSize = 0;
-			indexes.forEach(index => {
-				index.forEach(set => {
-					totalSize += set.size;
-				});
-			});
+			const indexStats = store.indexManager.getStats();
 
-			return totalSize;
+			return indexStats.totalMemory || 0;
 		}, 100);
 		results.push(indexSizeResult);
 	});
@@ -333,14 +327,14 @@ function benchmarkIndexComparison (dataSizes) {
 		const storeNoIndex = haro(testData);
 		const filterNoIndexResult = benchmark(`FILTER no index (${size} records)`, () => {
 			storeNoIndex.filter(record => record.category === "A");
-		}, 10);
+		}, 5);
 		results.push(filterNoIndexResult);
 
 		// Store with indexes
 		const storeWithIndex = haro(testData, { index: ["category"] });
 		const findWithIndexResult = benchmark(`FIND with index (${size} records)`, () => {
 			storeWithIndex.find({ category: "A" });
-		}, 100);
+		}, 50);
 		results.push(findWithIndexResult);
 
 		// Complex query without indexes
@@ -350,7 +344,7 @@ function benchmarkIndexComparison (dataSizes) {
         record.status === "active" &&
         record.priority === "high"
 			);
-		}, 10);
+		}, 3);
 		results.push(complexFilterResult);
 
 		// Complex query with indexes
@@ -361,7 +355,7 @@ function benchmarkIndexComparison (dataSizes) {
 				status: "active",
 				priority: "high"
 			});
-		}, 100);
+		}, 50);
 		results.push(complexFindResult);
 	});
 
@@ -397,7 +391,7 @@ function printResults (results) {
 function runIndexOperationsBenchmarks () {
 	console.log("📊 Running Index Operations Benchmarks...\n");
 
-	const dataSizes = [1000, 10000, 50000];
+	const dataSizes = [100, 500, 1000];
 	const allResults = [];
 
 	console.log("Testing single index operations...");
