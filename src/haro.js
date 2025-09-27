@@ -616,12 +616,15 @@ export class Haro {
 	 * @returns {Haro} Store instance for chaining
 	 */
 	reindex (field) {
+		// Get all records in entries format: Iterable<[key, data]>
+		const recordEntries = this.entries();
+
 		if (field) {
 			// Rebuild indexes for specific field
-			this.indexManager.rebuildField(field, this.entries());
+			this.indexManager.rebuildField(field, recordEntries);
 		} else {
 			// Rebuild all indexes
-			this.indexManager.rebuild(this.entries());
+			this.indexManager.rebuild(recordEntries);
 		}
 
 		return this;
@@ -652,7 +655,7 @@ export class Haro {
 		}
 
 		// Default to records
-		return this.entries();
+		return Array.from(this.entries());
 	}
 
 	/**

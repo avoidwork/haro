@@ -571,7 +571,7 @@ export class IndexManager {
 
 	/**
 	 * Rebuild all indexes from scratch
-	 * @param {Map<string, Object>} records - All records to reindex
+	 * @param {Iterable<[string, Object]>} records - All records to reindex (entries format)
 	 */
 	rebuild (records) {
 		// Clear all indexes
@@ -590,7 +590,7 @@ export class IndexManager {
 	/**
 	 * Rebuild indexes for a specific field
 	 * @param {string} field - Field to reindex
-	 * @param {Map<string, Object>} records - All records to reindex
+	 * @param {Iterable<[string, Object]>} records - All records to reindex (entries format)
 	 */
 	rebuildField (field, records) {
 		const indexNames = this.listIndexes();
