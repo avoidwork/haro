@@ -1,7 +1,5 @@
-import { ImmutableStore } from "./immutable-store.js";
-
 /**
- * Manages storage operations with support for both mutable and immutable stores
+ * Manages storage operations with Map-based storage
  */
 export class StorageManager {
 	/**
@@ -13,12 +11,8 @@ export class StorageManager {
 			...config
 		};
 
-		// Initialize storage based on configuration
-		if (this.config.immutable) {
-			this._store = new ImmutableStore();
-		} else {
-			this._store = new Map();
-		}
+		// Always use Map - immutability handled at Record level
+		this._store = new Map();
 	}
 
 	/**
@@ -37,11 +31,7 @@ export class StorageManager {
 	 * @returns {boolean} Success status
 	 */
 	set (key, data) {
-		if (this.config.immutable) {
-			this._store = this._store.set(key, data);
-		} else {
-			this._store.set(key, data);
-		}
+		this._store.set(key, data);
 
 		return true;
 	}
@@ -110,11 +100,7 @@ export class StorageManager {
 	 * Clear all storage
 	 */
 	clear () {
-		if (this.config.immutable) {
-			this._store = new ImmutableStore();
-		} else {
-			this._store.clear();
-		}
+		this._store.clear();
 	}
 
 	/**
@@ -124,13 +110,8 @@ export class StorageManager {
 	 */
 	override (data) {
 		try {
-			if (this.config.immutable) {
-				// Create new ImmutableStore from data
-				this._store = new ImmutableStore(new Map(data));
-			} else {
-				// Direct Map construction from 2D array
-				this._store = new Map(data);
-			}
+			// Direct Map construction from 2D array
+			this._store = new Map(data);
 
 			return true;
 		} catch {
@@ -140,7 +121,7 @@ export class StorageManager {
 
 	/**
 	 * Get underlying store (for compatibility)
-	 * @returns {Map|ImmutableStore} The underlying store
+	 * @returns {Map} The underlying store
 	 */
 	getStore () {
 		return this._store;

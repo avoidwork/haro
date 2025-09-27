@@ -15,7 +15,6 @@ import { IndexManager, IndexTypes } from "./index-manager.js";
 import { VersionManager, RetentionPolicies } from "./version-manager.js";
 import { TransactionManager } from "./transaction-manager.js";
 import { QueryOptimizer, QueryTypes } from "./query-optimizer.js";
-import { ImmutableStore } from "./immutable-store.js";
 import { DataStream } from "./data-stream.js";
 import { StorageManager } from "./storage-manager.js";
 import { CRUDManager } from "./crud-manager.js";
@@ -802,7 +801,6 @@ export {
 	IsolationLevels,
 	QueryTypes,
 	ErrorRecovery,
-	ImmutableStore,
 	DataStream
 };
 
