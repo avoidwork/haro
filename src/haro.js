@@ -312,11 +312,12 @@ export class Haro {
 	/**
 	 * Iterate over records (backwards compatibility)
 	 * @param {Function} callback - Callback function
+	 * @param {Object} [thisArg] - Value to use as this when executing callback
 	 * @param {Object} [options={}] - Options
 	 */
-	forEach (callback, options = {}) {
+	forEach (callback, thisArg, options = {}) {
 		// Delegate to QueryManager
-		this.queryManager.forEach(callback, options);
+		this.queryManager.forEach(callback, thisArg, options);
 	}
 
 	/**

@@ -189,27 +189,27 @@ function benchmarkPaginationModes (dataSizes) {
 		const immutableStore = haro(testData, { immutable: true });
 		const immutableResult = benchmark(`LIMIT immutable mode (50 items from ${size} records)`, () => {
 			immutableStore.limit(0, 50);
-		});
+		}, 10);
 		results.push(immutableResult);
 
 		// Test with mutable store
 		const mutableStore = haro(testData, { immutable: false });
 		const mutableResult = benchmark(`LIMIT mutable mode (50 items from ${size} records)`, () => {
 			mutableStore.limit(0, 50);
-		});
+		}, 10);
 		results.push(mutableResult);
 
-		// Test with raw data
-		const rawResult = benchmark(`LIMIT raw data (50 items from ${size} records)`, () => {
-			mutableStore.limit(0, 50, true);
-		});
-		results.push(rawResult);
+		// Test with default options
+		const defaultResult = benchmark(`LIMIT default options (50 items from ${size} records)`, () => {
+			mutableStore.limit(0, 50);
+		}, 10);
+		results.push(defaultResult);
 
-		// Test with processed data
-		const processedResult = benchmark(`LIMIT processed data (50 items from ${size} records)`, () => {
-			mutableStore.limit(0, 50, false);
-		});
-		results.push(processedResult);
+		// Test with transaction option
+		const transactionResult = benchmark(`LIMIT with transaction (50 items from ${size} records)`, () => {
+			mutableStore.limit(0, 50, {});
+		}, 10);
+		results.push(transactionResult);
 	});
 
 	return results;
@@ -388,7 +388,7 @@ function printResults (results) {
 function runPaginationBenchmarks () {
 	console.log("Starting Pagination Benchmarks...\n");
 
-	const dataSizes = [1000, 10000, 50000];
+	const dataSizes = [100, 500, 1000];
 	let allResults = [];
 
 	console.log("Testing basic limit operations...");

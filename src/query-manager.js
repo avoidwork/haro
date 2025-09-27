@@ -271,9 +271,16 @@ export class QueryManager {
 	/**
 	 * Execute a function for each record
 	 * @param {Function} callback - Callback function
+	 * @param {Object} [thisArg] - Value to use as this when executing callback
 	 * @param {Object} [options={}] - Options
 	 */
-	forEach (callback, options = {}) {
+	forEach (callback, thisArg, options = {}) {
+		// Handle overloaded parameters (callback, options) vs (callback, thisArg, options)
+		if (thisArg && !options && typeof thisArg === "object" && (thisArg.limit !== undefined || thisArg.offset !== undefined)) {
+			options = thisArg;
+			thisArg = undefined;
+		}
+
 		const { limit, offset = 0 } = options;
 		let count = 0;
 		let processedCount = 0;
@@ -281,7 +288,11 @@ export class QueryManager {
 		for (const [, recordData] of this.storageManager.entries()) {
 			if (count >= offset) {
 				// For backwards compatibility, pass plain objects to callback
-				callback(recordData, processedCount);
+				if (thisArg !== undefined) {
+					callback.call(thisArg, recordData, processedCount);
+				} else {
+					callback(recordData, processedCount);
+				}
 				processedCount++;
 				if (limit && processedCount >= limit) {
 					break;

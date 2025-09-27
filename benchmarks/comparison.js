@@ -150,19 +150,19 @@ function benchmarkQueryComparison (dataSizes) {
 		// Haro indexed query
 		const haroQueryResult = benchmark(`Haro FIND indexed (${size} records)`, () => {
 			haroStore.find({ category: "A" });
-		});
+		}, 50);
 		results.push(haroQueryResult);
 
 		// Haro filter query
 		const haroFilterResult = benchmark(`Haro FILTER (${size} records)`, () => {
 			haroStore.filter(record => record.category === "A");
-		});
+		}, 10);
 		results.push(haroFilterResult);
 
 		// Array filter query
 		const arrayFilterResult = benchmark(`Array FILTER (${size} records)`, () => {
 			arrayStore.filter(record => record.category === "A");
-		});
+		}, 10);
 		results.push(arrayFilterResult);
 
 		// Complex query comparison
@@ -172,7 +172,7 @@ function benchmarkQueryComparison (dataSizes) {
         record.status === "active" &&
         record.priority === "high"
 			);
-		});
+		}, 5);
 		results.push(haroComplexResult);
 
 		const arrayComplexResult = benchmark(`Array COMPLEX query (${size} records)`, () => {
@@ -181,7 +181,7 @@ function benchmarkQueryComparison (dataSizes) {
         record.status === "active" &&
         record.priority === "high"
 			);
-		});
+		}, 5);
 		results.push(arrayComplexResult);
 	});
 
@@ -546,7 +546,7 @@ function printMemoryResults (results) {
 function runComparisonBenchmarks () {
 	console.log("⚡ Running Haro vs Native Structures Comparison...\n");
 
-	const dataSizes = [1000, 10000, 50000];
+	const dataSizes = [100, 500, 1000];
 
 	console.log("Testing storage operations...");
 	const storageResults = benchmarkStorageComparison(dataSizes);

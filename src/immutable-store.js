@@ -75,6 +75,20 @@ export class ImmutableStore {
 	}
 
 	/**
+	 * Get all values as frozen objects
+	 * @returns {IterableIterator<Object>} Iterator of frozen values
+	 */
+	values () {
+		const self = this;
+
+		return (function* () {
+			for (const key of self._data.keys()) {
+				yield self.get(key);
+			}
+		}());
+	}
+
+	/**
 	 * Get store size
 	 * @returns {number} Number of records
 	 */
