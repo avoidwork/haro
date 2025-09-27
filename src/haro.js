@@ -633,25 +633,12 @@ export class Haro {
 	/**
 	 * Export store data or indexes for persistence
 	 * @param {string} [type='records'] - Type of data to export: 'records' or 'indexes'
-	 * @returns {Array} Array of [key, value] pairs or serialized index structure
+	 * @returns {Array|Object} Array of [key, value] pairs or complete index state
 	 */
 	dump (type = "records") {
 		if (type === "indexes") {
-			// Export index definitions and statistics
-			const indexData = {};
-			const indexNames = this.indexManager.listIndexes();
-
-			for (const name of indexNames) {
-				const definition = this.indexManager.getIndexDefinition(name);
-				indexData[name] = {
-					fields: definition.fields,
-					type: definition.type,
-					delimiter: definition.delimiter,
-					unique: definition.unique
-				};
-			}
-
-			return indexData;
+			// Export complete IndexManager state (definitions, data, and stats)
+			return this.indexManager.exportState();
 		}
 
 		// Default to records
@@ -660,26 +647,18 @@ export class Haro {
 
 	/**
 	 * Import and restore data from a dump
-	 * @param {Array} data - Data to import (from dump)
+	 * @param {Array|Object} data - Data to import (from dump)
 	 * @param {string} [type='records'] - Type of data: 'records' or 'indexes'
 	 * @returns {boolean} True if operation succeeded
 	 */
 	override (data, type = "records") {
 		try {
 			if (type === "indexes") {
-				// Recreate indexes from definitions
-				this.indexManager.clear();
-
-				for (const [name, definition] of Object.entries(data)) {
-					this.indexManager.createIndex(name, definition.fields, {
-						type: definition.type,
-						delimiter: definition.delimiter,
-						unique: definition.unique
-					});
+				// Import complete IndexManager state (no reindexing needed)
+				const success = this.indexManager.importState(data);
+				if (!success) {
+					return false;
 				}
-
-				// Rebuild indexes with current data
-				this.reindex();
 			} else {
 				// Clear existing data and indexes
 				this.clear();

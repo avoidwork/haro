@@ -683,6 +683,100 @@ export class IndexManager {
 	}
 
 	/**
+	 * Export complete IndexManager state for persistence
+	 * @returns {Object} Complete state object with _definitions, _indexes, _stats
+	 */
+	exportState () {
+		// Serialize definitions
+		const definitions = {};
+		for (const [name, definition] of this._definitions) {
+			definitions[name] = {
+				name: definition.name,
+				fields: definition.fields,
+				type: definition.type,
+				unique: definition.unique,
+				delimiter: definition.delimiter,
+				createdAt: definition.createdAt,
+				stats: definition.stats,
+				// Note: filter and transform functions cannot be serialized
+				filter: null,
+				transform: null
+			};
+		}
+
+		// Serialize index storage data
+		const indexes = {};
+		for (const [name, storage] of this._indexes) {
+			const storageData = {};
+			for (const indexKey of storage.keys()) {
+				const recordKeys = storage.get(indexKey);
+				storageData[indexKey] = Array.from(recordKeys);
+			}
+			indexes[name] = storageData;
+		}
+
+		return {
+			_definitions: definitions,
+			_indexes: indexes,
+			_stats: { ...this._stats }
+		};
+	}
+
+	/**
+	 * Import complete IndexManager state from persistence
+	 * @param {Object} state - State object with _definitions, _indexes, _stats
+	 * @returns {boolean} Success status
+	 */
+	importState (state) {
+		try {
+			// Clear current state
+			this._definitions.clear();
+			this._indexes.clear();
+
+			// Restore definitions
+			for (const [name, defData] of Object.entries(state._definitions)) {
+				const definition = new IndexDefinition(defData.name, defData.fields, {
+					type: defData.type,
+					unique: defData.unique,
+					delimiter: defData.delimiter
+				});
+
+				// Restore timestamps and stats
+				definition.createdAt = new Date(defData.createdAt);
+				definition.stats = { ...defData.stats };
+				if (definition.stats.lastUpdated) {
+					definition.stats.lastUpdated = new Date(definition.stats.lastUpdated);
+				}
+
+				this._definitions.set(name, definition);
+			}
+
+			// Restore index storage data - direct Map construction for maximum performance
+			for (const [name, storageData] of Object.entries(state._indexes)) {
+				const storage = new IndexStorage();
+
+				// Direct Map/Set construction instead of individual add() calls
+				for (const [indexKey, recordKeysArray] of Object.entries(storageData)) {
+					storage._storage.set(indexKey, new Set(recordKeysArray));
+					storage._refCounts.set(indexKey, recordKeysArray.length);
+				}
+
+				this._indexes.set(name, storage);
+			}
+
+			// Restore stats
+			this._stats = {
+				...state._stats,
+				lastOptimized: new Date(state._stats.lastOptimized)
+			};
+
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
+	/**
 	 * Update performance statistics
 	 * @param {number} operationTime - Time taken for operation in ms
 	 * @private
