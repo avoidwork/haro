@@ -594,7 +594,7 @@ function printResults (results) {
 function runImmutableComparisonBenchmarks () {
 	console.log("Starting Immutable vs Mutable Comparison Benchmarks...\n");
 
-	const dataSizes = [1000, 10000, 50000];
+	const dataSizes = [1000, 3000, 5000];
 	let allResults = [];
 
 	console.log("Testing store creation...");
