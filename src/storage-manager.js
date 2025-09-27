@@ -95,10 +95,6 @@ export class StorageManager {
 	 * @returns {Array<[string, Object]>} Array of [key, value] pairs
 	 */
 	entries () {
-		if (this.config.immutable && this._store.entries) {
-			return this._store.entries();
-		}
-
 		return Array.from(this._store.entries());
 	}
 

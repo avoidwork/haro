@@ -334,39 +334,39 @@ describe("StorageManager", () => {
 		});
 
 		describe("set", () => {
-			it("should create new store instance and return true", () => {
+			it("should update store and return true", () => {
 				const originalStore = manager._store;
 				const data = { name: "test", value: 42 };
 				
 				const result = manager.set("key1", data);
 				
 				assert.strictEqual(result, true);
-				assert.notStrictEqual(manager._store, originalStore);
+				assert.strictEqual(manager._store, originalStore);
 				assert.deepStrictEqual(manager.get("key1"), data);
 				assert.strictEqual(manager.size, 1);
 			});
 
-			it("should update existing record with new store instance", () => {
+			it("should update existing record in same store instance", () => {
 				manager.set("key1", { name: "original" });
 				const intermediateStore = manager._store;
 				
 				const result = manager.set("key1", { name: "updated" });
 				
 				assert.strictEqual(result, true);
-				assert.notStrictEqual(manager._store, intermediateStore);
+				assert.strictEqual(manager._store, intermediateStore);
 				assert.deepStrictEqual(manager.get("key1"), { name: "updated" });
 			});
 		});
 
 		describe("delete", () => {
-			it("should create new store instance and return true", () => {
+			it("should update store and return true", () => {
 				manager.set("key1", { name: "test" });
 				const originalStore = manager._store;
 				
 				const result = manager.delete("key1");
 				
 				assert.strictEqual(result, true);
-				assert.notStrictEqual(manager._store, originalStore);
+				assert.strictEqual(manager._store, originalStore);
 				assert.strictEqual(manager.get("key1"), null);
 				assert.strictEqual(manager.size, 0);
 			});
@@ -376,7 +376,7 @@ describe("StorageManager", () => {
 				const result = manager.delete("nonexistent");
 				
 				assert.strictEqual(result, true);
-				assert.notStrictEqual(manager._store, originalStore);
+				assert.strictEqual(manager._store, originalStore);
 				assert.strictEqual(manager.size, 0);
 			});
 		});

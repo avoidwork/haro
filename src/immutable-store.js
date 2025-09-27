@@ -114,27 +114,25 @@ export class ImmutableStore {
 		while (stack.length > 0) {
 			const current = stack.pop();
 
-			if (visited.has(current) || Object.isFrozen(current)) {
-				continue;
-			}
+			if (!visited.has(current) && !Object.isFrozen(current)) {
+				visited.add(current);
 
-			visited.add(current);
-
-			if (Array.isArray(current)) {
-				for (const item of current) {
-					if (item !== null && typeof item === "object" && !Object.isFrozen(item)) {
-						stack.push(item);
+				if (Array.isArray(current)) {
+					for (const item of current) {
+						if (item !== null && typeof item === "object" && !Object.isFrozen(item)) {
+							stack.push(item);
+						}
+					}
+				} else {
+					for (const value of Object.values(current)) {
+						if (value !== null && typeof value === "object" && !Object.isFrozen(value)) {
+							stack.push(value);
+						}
 					}
 				}
-			} else {
-				for (const value of Object.values(current)) {
-					if (value !== null && typeof value === "object" && !Object.isFrozen(value)) {
-						stack.push(value);
-					}
-				}
-			}
 
-			Object.freeze(current);
+				Object.freeze(current);
+			}
 		}
 
 		return obj;

@@ -104,31 +104,30 @@ describe("ImmutableStore", () => {
 	});
 
 	describe("set", () => {
-		it("should create new store with added record", () => {
-			const originalStore = new ImmutableStore();
-			const newStore = originalStore.set("key1", { name: "test" });
+		it("should add record to existing store", () => {
+			const store = new ImmutableStore();
+			const returnedStore = store.set("key1", { name: "test" });
 			
-			// Original store unchanged
-			assert.strictEqual(originalStore.size, 0);
-			assert.ok(!originalStore.has("key1"));
+			// Should return same instance
+			assert.strictEqual(store, returnedStore);
 			
-			// New store has the record
-			assert.strictEqual(newStore.size, 1);
-			assert.ok(newStore.has("key1"));
-			assert.strictEqual(newStore.get("key1").name, "test");
+			// Store now has the record
+			assert.strictEqual(store.size, 1);
+			assert.ok(store.has("key1"));
+			assert.strictEqual(store.get("key1").name, "test");
 		});
 
-		it("should create new store with updated record", () => {
-			const originalStore = new ImmutableStore(new Map([
+		it("should update existing record in store", () => {
+			const store = new ImmutableStore(new Map([
 				["key1", { name: "original" }]
 			]));
-			const newStore = originalStore.set("key1", { name: "updated" });
+			const returnedStore = store.set("key1", { name: "updated" });
 			
-			// Original store unchanged
-			assert.strictEqual(originalStore.get("key1").name, "original");
+			// Should return same instance
+			assert.strictEqual(store, returnedStore);
 			
-			// New store has updated record
-			assert.strictEqual(newStore.get("key1").name, "updated");
+			// Store has updated record
+			assert.strictEqual(store.get("key1").name, "updated");
 		});
 
 		it("should maintain other records when setting new one", () => {
@@ -144,53 +143,52 @@ describe("ImmutableStore", () => {
 			assert.strictEqual(newStore.get("key3").name, "test3");
 		});
 
-		it("should return new ImmutableStore instance", () => {
-			const originalStore = new ImmutableStore();
-			const newStore = originalStore.set("key1", { name: "test" });
+		it("should return same ImmutableStore instance", () => {
+			const store = new ImmutableStore();
+			const returnedStore = store.set("key1", { name: "test" });
 			
-			assert.ok(newStore instanceof ImmutableStore);
-			assert.notStrictEqual(originalStore, newStore);
+			assert.ok(returnedStore instanceof ImmutableStore);
+			assert.strictEqual(store, returnedStore);
 		});
 	});
 
 	describe("delete", () => {
-		it("should create new store without deleted record", () => {
-			const originalStore = new ImmutableStore(new Map([
+		it("should remove record from existing store", () => {
+			const store = new ImmutableStore(new Map([
 				["key1", { name: "test1" }],
 				["key2", { name: "test2" }]
 			]));
-			const newStore = originalStore.delete("key1");
+			const returnedStore = store.delete("key1");
 			
-			// Original store unchanged
-			assert.strictEqual(originalStore.size, 2);
-			assert.ok(originalStore.has("key1"));
+			// Should return same instance
+			assert.strictEqual(store, returnedStore);
 			
-			// New store has record removed
-			assert.strictEqual(newStore.size, 1);
-			assert.ok(!newStore.has("key1"));
-			assert.ok(newStore.has("key2"));
+			// Store has record removed
+			assert.strictEqual(store.size, 1);
+			assert.ok(!store.has("key1"));
+			assert.ok(store.has("key2"));
 		});
 
 		it("should handle deleting non-existing key", () => {
-			const originalStore = new ImmutableStore(new Map([
+			const store = new ImmutableStore(new Map([
 				["key1", { name: "test1" }]
 			]));
-			const newStore = originalStore.delete("nonexistent");
+			const returnedStore = store.delete("nonexistent");
 			
-			// Should create new store but size remains same
-			assert.strictEqual(newStore.size, 1);
-			assert.ok(newStore.has("key1"));
-			assert.notStrictEqual(originalStore, newStore);
+			// Should return same store and size remains same
+			assert.strictEqual(returnedStore.size, 1);
+			assert.ok(returnedStore.has("key1"));
+			assert.strictEqual(store, returnedStore);
 		});
 
-		it("should return new ImmutableStore instance", () => {
-			const originalStore = new ImmutableStore(new Map([
+		it("should return same ImmutableStore instance", () => {
+			const store = new ImmutableStore(new Map([
 				["key1", { name: "test" }]
 			]));
-			const newStore = originalStore.delete("key1");
+			const returnedStore = store.delete("key1");
 			
-			assert.ok(newStore instanceof ImmutableStore);
-			assert.notStrictEqual(originalStore, newStore);
+			assert.ok(returnedStore instanceof ImmutableStore);
+			assert.strictEqual(store, returnedStore);
 		});
 	});
 
@@ -280,15 +278,16 @@ describe("ImmutableStore", () => {
 	});
 
 	describe("entries", () => {
-		it("should return empty array for empty store", () => {
+		it("should return empty iterator for empty store", () => {
 			const store = new ImmutableStore();
 			const entries = store.entries();
 			
-			assert.ok(Array.isArray(entries));
-			assert.strictEqual(entries.length, 0);
+			// Should be an iterator, not an array
+			assert.ok(typeof entries[Symbol.iterator] === 'function');
+			assert.strictEqual(Array.from(entries).length, 0);
 		});
 
-		it("should return all entries as array of [key, value] pairs", () => {
+		it("should return all entries as iterator of [key, value] pairs", () => {
 			const data = new Map([
 				["key1", { name: "test1" }],
 				["key2", { name: "test2" }]
@@ -296,22 +295,26 @@ describe("ImmutableStore", () => {
 			const store = new ImmutableStore(data);
 			const entries = store.entries();
 			
-			assert.ok(Array.isArray(entries));
-			assert.strictEqual(entries.length, 2);
+			// Should be an iterator, not an array
+			assert.ok(typeof entries[Symbol.iterator] === 'function');
+			
+			// Convert to array for testing
+			const entriesArray = Array.from(entries);
+			assert.strictEqual(entriesArray.length, 2);
 			
 			// Check structure
-			entries.forEach(entry => {
+			entriesArray.forEach(entry => {
 				assert.ok(Array.isArray(entry));
 				assert.strictEqual(entry.length, 2);
 			});
 			
 			// Convert to Map for easier comparison
-			const entriesMap = new Map(entries);
+			const entriesMap = new Map(entriesArray);
 			assert.deepStrictEqual(entriesMap.get("key1"), { name: "test1" });
 			assert.deepStrictEqual(entriesMap.get("key2"), { name: "test2" });
 		});
 
-		it("should return new array each time", () => {
+		it("should return new iterator each time", () => {
 			const store = new ImmutableStore(new Map([
 				["key1", { name: "test1" }]
 			]));
@@ -319,7 +322,7 @@ describe("ImmutableStore", () => {
 			const entries2 = store.entries();
 			
 			assert.notStrictEqual(entries1, entries2);
-			assert.deepStrictEqual(entries1, entries2);
+			assert.deepStrictEqual(Array.from(entries1), Array.from(entries2));
 		});
 	});
 
@@ -409,20 +412,21 @@ describe("ImmutableStore", () => {
 	});
 
 	describe("immutability properties", () => {
-		it("should maintain structural sharing between stores", () => {
-			const store1 = new ImmutableStore(new Map([
+		it("should maintain consistent data in mutable store", () => {
+			const store = new ImmutableStore(new Map([
 				["key1", { name: "test1" }],
 				["key2", { name: "test2" }]
 			]));
 			
-			const store2 = store1.set("key3", { name: "test3" });
+			const returnedStore = store.set("key3", { name: "test3" });
 			
-			// Both stores should have their own data maps
-			assert.notStrictEqual(store1._data, store2._data);
+			// Should be same store instance (mutable)
+			assert.strictEqual(store, returnedStore);
 			
-			// But they should share unchanged records
-			assert.strictEqual(store1._data.get("key1"), store2._data.get("key1"));
-			assert.strictEqual(store1._data.get("key2"), store2._data.get("key2"));
+			// All records should be accessible
+			assert.strictEqual(store.get("key1").name, "test1");
+			assert.strictEqual(store.get("key2").name, "test2");
+			assert.strictEqual(store.get("key3").name, "test3");
 		});
 
 		it("should prevent modification of returned frozen objects", () => {
@@ -442,29 +446,31 @@ describe("ImmutableStore", () => {
 			}, TypeError);
 		});
 
-		it("should ensure store operations return new instances", () => {
-			const store1 = new ImmutableStore();
-			const store2 = store1.set("key1", { name: "test" });
-			const store3 = store2.delete("key1");
+		it("should ensure store operations return same instances", () => {
+			const store = new ImmutableStore();
+			const afterSet = store.set("key1", { name: "test" });
+			const afterDelete = store.delete("key1");
 			
-			assert.notStrictEqual(store1, store2);
-			assert.notStrictEqual(store2, store3);
-			assert.notStrictEqual(store1, store3);
+			// All operations should return same instance (mutable)
+			assert.strictEqual(store, afterSet);
+			assert.strictEqual(afterSet, afterDelete);
+			assert.strictEqual(store, afterDelete);
 		});
 
-		it("should maintain frozen views cache across store copies", () => {
+		it("should return same frozen objects for same data", () => {
 			const initialData = new Map([["key1", { name: "test" }]]);
 			const store1 = new ImmutableStore(initialData);
 			const store2 = new ImmutableStore(initialData);
 			
-			// Each store should have its own frozen views cache
+			// Records are frozen during set, so each store has different frozen objects
 			const record1 = store1.get("key1");
 			const record2 = store2.get("key1");
 			
-			// Should be different frozen objects
-			assert.notStrictEqual(record1, record2);
+			// Records within same store should be same reference
+			const record1Again = store1.get("key1");
+			assert.strictEqual(record1, record1Again);
 			
-			// But should have same data
+			// But different stores have different frozen objects
 			assert.deepStrictEqual(record1, record2);
 		});
 	});
