@@ -242,7 +242,7 @@ describe("QueryManager", () => {
 		});
 
 		it("should filter by function predicate", () => {
-			const result = queryManager.where(record => record.data.age > 30);
+			const result = queryManager.where(record => record.age > 30);
 
 			assert(result instanceof RecordCollection);
 			assert.strictEqual(result.length, 1);
@@ -250,21 +250,21 @@ describe("QueryManager", () => {
 		});
 
 		it("should filter by function predicate with limit", () => {
-			const result = queryManager.where(record => record.data.age >= 25, { limit: 1 });
+			const result = queryManager.where(record => record.age >= 25, { limit: 1 });
 
 			assert(result instanceof RecordCollection);
 			assert.strictEqual(result.length, 1);
 		});
 
 		it("should filter by function predicate with offset", () => {
-			const result = queryManager.where(record => record.data.age >= 25, { offset: 1 });
+			const result = queryManager.where(record => record.age >= 25, { offset: 1 });
 
 			assert(result instanceof RecordCollection);
 			assert.strictEqual(result.length, 3);
 		});
 
 		it("should filter by function predicate with both limit and offset", () => {
-			const result = queryManager.where(record => record.data.age >= 25, { limit: 1, offset: 1 });
+			const result = queryManager.where(record => record.age >= 25, { limit: 1, offset: 1 });
 
 			assert(result instanceof RecordCollection);
 			assert.strictEqual(result.length, 1);
@@ -410,7 +410,7 @@ describe("QueryManager", () => {
 		});
 
 		it("should filter records by function", () => {
-			const result = queryManager._filterByFunction(record => record.data.age > 30, {});
+			const result = queryManager._filterByFunction(record => record.age > 30, {});
 
 			assert(result instanceof RecordCollection);
 			assert.strictEqual(result.length, 1);
@@ -418,7 +418,7 @@ describe("QueryManager", () => {
 		});
 
 		it("should return empty collection when no records match", () => {
-			const result = queryManager._filterByFunction(record => record.data.age > 100, {});
+			const result = queryManager._filterByFunction(record => record.age > 100, {});
 
 			assert(result instanceof RecordCollection);
 			assert.strictEqual(result.length, 0);
@@ -426,7 +426,7 @@ describe("QueryManager", () => {
 
 		it("should apply limit option", () => {
 			const result = queryManager._filterByFunction(
-				record => record.data.age >= 25,
+				record => record.age >= 25,
 				{ limit: 2 }
 			);
 
@@ -436,7 +436,7 @@ describe("QueryManager", () => {
 
 		it("should apply offset option", () => {
 			const result = queryManager._filterByFunction(
-				record => record.data.age >= 25,
+				record => record.age >= 25,
 				{ offset: 2 }
 			);
 
@@ -446,7 +446,7 @@ describe("QueryManager", () => {
 
 		it("should apply both limit and offset", () => {
 			const result = queryManager._filterByFunction(
-				record => record.data.age >= 25,
+				record => record.age >= 25,
 				{ limit: 1, offset: 1 }
 			);
 

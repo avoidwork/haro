@@ -8275,6 +8275,13 @@ class Haro {
 	 * @returns {RecordCollection} Filtered records
 	 */
 	where (predicate, options = {}) {
+		const { transaction = null } = options;
+
+		// Execute in transaction if provided
+		if (transaction) {
+			return this._executeInTransaction(transaction, "where", predicate, options);
+		}
+
 		// Delegate to query manager
 		return this.queryManager.where(predicate, options);
 	}
@@ -8455,6 +8462,20 @@ class Haro {
 
 				return this.find(criteria, { ...options, transaction: null });
 			}
+			case "where": {
+				const [predicate, options = {}] = args;
+
+				transaction.addOperation("read", "where_operation", null, predicate);
+
+				return this.where(predicate, { ...options, transaction: null });
+			}
+			case "limit": {
+				const [offset, max, options = {}] = args;
+
+				transaction.addOperation("read", "limit_operation", null, { offset, max });
+
+				return this.limit(offset, max, { ...options, transaction: null });
+			}
 			default:
 				throw new TransactionError(`Unknown operation: ${operation}`, transaction.id, operation);
 		}
@@ -8464,9 +8485,17 @@ class Haro {
 	 * Get a limited subset of records with pagination support
 	 * @param {number} [offset=0] - Number of records to skip
 	 * @param {number} [max=0] - Maximum number of records to return (0 = all)
+	 * @param {Object} [options={}] - Options including transaction support
 	 * @returns {Array<Object>} Array of records within the specified range
 	 */
-	limit (offset = 0, max = 0) {
+	limit (offset = 0, max = 0, options = {}) {
+		const { transaction = null } = options;
+
+		// Execute in transaction if provided
+		if (transaction) {
+			return this._executeInTransaction(transaction, "limit", offset, max, options);
+		}
+
 		// Get keys first (much more efficient than getting all values)
 		const keys = this.keys();
 		const start = Math.max(0, offset);
@@ -8485,19 +8514,12 @@ class Haro {
 	}
 
 	/**
-	 * Rebuild indexes for specified fields or all fields
-	 * @param {string|Array<string>} [fields] - Specific fields to reindex (optional)
+	 * Rebuild all indexes
 	 * @returns {Haro} Store instance for chaining
 	 */
-	reindex (fields) {
-		if (fields) {
-			// For specific fields, we need to rebuild all indexes
-			// that contain those fields (IndexManager doesn't support partial rebuild)
-			this.indexManager.rebuild(this.entries());
-		} else {
-			// Rebuild all indexes
-			this.indexManager.rebuild(this.entries());
-		}
+	reindex () {
+		// Rebuild all indexes (IndexManager doesn't support partial rebuild)
+		this.indexManager.rebuild(this.entries());
 
 		return this;
 	}
