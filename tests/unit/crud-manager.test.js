@@ -204,9 +204,12 @@ describe("CRUDManager", () => {
 			assert.strictEqual(result.get("email"), "john@example.com");
 			assert.strictEqual(result.get("id"), key);
 
-			// Verify storage was updated
-			const storedData = mockStorageManager.get(key);
-			assert.deepStrictEqual(storedData, { ...data, id: key });
+			// Verify storage was updated with new format
+			const storedRecord = mockStorageManager.get(key);
+			assert.deepStrictEqual(storedRecord, { 
+				data: { ...data, id: key }, 
+				metadata: {} 
+			});
 
 			// Verify index was updated
 			assert.strictEqual(mockIndexManager.addRecordCalls.length, 1);

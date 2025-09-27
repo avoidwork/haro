@@ -53,30 +53,42 @@ export class CRUDManager {
 		}
 
 		// OPTIMIZATION: Single storage lookup instead of has() + get()
-		const existingRecord = this.storageManager.get(key);
+		const existingStoredRecord = this.storageManager.get(key);
 		let finalData = recordData;
+		let metadata = {};
+
+		// Extract existing data and metadata if record exists
+		let existingData = null;
+		if (existingStoredRecord) {
+			existingData = existingStoredRecord.data;
+			metadata = existingStoredRecord.metadata;
+		}
 
 		// Handle merging vs override
-		if (existingRecord && !override) {
-			finalData = this._mergeRecords(existingRecord, recordData);
+		if (existingData && !override) {
+			finalData = this._mergeRecords(existingData, recordData);
 		}
 
 		// Store version if versioning enabled
-		if (this.versionManager && existingRecord) {
-			this.versionManager.addVersion(key, existingRecord);
+		if (this.versionManager && existingData) {
+			this.versionManager.addVersion(key, existingData);
 		}
 
-		// Update indexes
-		if (existingRecord) {
-			this.indexManager.removeRecord(key, existingRecord);
+		// Update indexes (indexes work with data only)
+		if (existingData) {
+			this.indexManager.removeRecord(key, existingData);
 		}
 		this.indexManager.addRecord(key, finalData);
 
-		// Store record
-		this.storageManager.set(key, finalData);
+		// Store record with both data and metadata
+		const storedRecord = {
+			data: finalData,
+			metadata: metadata
+		};
+		this.storageManager.set(key, storedRecord);
 
 		// OPTIMIZATION: Create record wrapper without expensive metadata by default
-		const record = RecordFactory.create(key, finalData, {}, false);
+		const record = RecordFactory.create(key, finalData, metadata, false);
 
 		return record;
 	}
@@ -90,24 +102,25 @@ export class CRUDManager {
 	get (key, options = {}) {
 		const { includeVersions = false } = options;
 
-		const recordData = this.storageManager.get(key);
+		const storedRecord = this.storageManager.get(key);
 
-		if (!recordData) {
+		if (!storedRecord) {
 			return null;
 		}
 
-		// Optimized: only create full Record with metadata if versioning is requested
+		// Extract data and metadata from storage
+		const data = storedRecord.data;
+		let metadata = Object.assign({}, storedRecord.metadata);
+
+		// Add version information if requested
 		if (includeVersions && this.versionManager) {
 			const history = this.versionManager.getHistory(key);
 			if (history) {
-				const metadata = { versions: history.versions };
-
-				return RecordFactory.create(key, recordData, metadata);
+				metadata = Object.assign(metadata, { versions: history.versions });
 			}
 		}
 
-		// Default: create Record without expensive metadata operations
-		return RecordFactory.create(key, recordData);
+		return RecordFactory.create(key, data, metadata);
 	}
 
 	/**
@@ -122,10 +135,13 @@ export class CRUDManager {
 			throw new RecordNotFoundError(key, this.config.id);
 		}
 
-		const recordData = this.storageManager.get(key);
+		const storedRecord = this.storageManager.get(key);
+
+		// Extract data for index removal
+		const data = storedRecord.data;
 
 		// Remove from indexes
-		this.indexManager.removeRecord(key, recordData);
+		this.indexManager.removeRecord(key, data);
 
 		// Remove from store
 		this.storageManager.delete(key);
