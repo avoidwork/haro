@@ -160,7 +160,7 @@ export class Haro {
 		// Trigger lifecycle hook
 		this.lifecycleManager.beforeSet(key, data, options);
 
-		// Delegate to CRUD manager
+		// Delegate to CRUD manager (now optimized)
 		const record = this.crudManager.set(key, data, options);
 
 		// Trigger lifecycle hook
@@ -185,7 +185,7 @@ export class Haro {
 			return this._executeInTransaction(transaction, "get", key, options);
 		}
 
-		// Delegate to CRUD manager
+		// Delegate to CRUD manager (now optimized)
 		return this.crudManager.get(key, options);
 	}
 
@@ -227,7 +227,8 @@ export class Haro {
 	 * @returns {boolean} True if record exists
 	 */
 	has (key) {
-		return this.crudManager.has(key);
+		// Direct access to storage for maximum performance
+		return this.storageManager.has(key);
 	}
 
 	/**

@@ -10,14 +10,24 @@ export class Record {
 	constructor (key, data, metadata = {}) {
 		this._key = key;
 		this._data = data;
-		this._metadata = {
-			createdAt: new Date().toISOString(),
-			updatedAt: new Date().toISOString(),
-			version: 1,
-			...metadata
-		};
 
-		// Make the record immutable to prevent accidental modifications
+		// Optimized: only create full metadata if additional metadata is provided
+		if (Object.keys(metadata).length > 0) {
+			this._metadata = {
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
+				version: 1,
+				...metadata
+			};
+		} else {
+			// Minimal metadata for performance
+			this._metadata = {
+				version: 1
+			};
+		}
+
+		// Optimized: only freeze if not in performance-critical path
+		// Note: We'll add a flag later if needed, but for now keep freezing for safety
 		Object.freeze(this);
 	}
 
@@ -199,8 +209,14 @@ export class RecordCollection {
 	 * @param {Record[]} [records=[]] - Initial records
 	 */
 	constructor (records = []) {
-		this._records = [...records];
-		Object.freeze(this);
+		// Optimized: avoid unnecessary array copying for performance
+		// Collections are expected to be short-lived in most cases
+		this._records = records;
+
+		// Only freeze in development for debugging, skip in production for performance
+		if (process.env.NODE_ENV !== "production") {
+			Object.freeze(this);
+		}
 	}
 
 	/**
@@ -422,6 +438,7 @@ export const RecordFactory = {
 	create (key, data, metadata = {}) {
 		return new Record(key, data, metadata);
 	},
+
 
 	/**
 	 * Create a record from a plain object (key extracted from data)

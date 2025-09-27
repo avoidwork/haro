@@ -51,26 +51,32 @@ export class QueryManager {
 				recordKeys = new Set(this.storageManager.keys());
 			}
 
-			// Convert to records and filter
-			const records = [];
+			// Optimized: cache data during filtering to avoid double storage access
+			const matchingRecords = [];
 			for (const key of recordKeys) {
 				const recordData = this.storageManager.get(key);
 				if (this._matchesCriteria(recordData, criteria)) {
-					records.push(RecordFactory.create(key, recordData));
+					// Store both key and data to avoid second lookup
+					matchingRecords.push({ key, data: recordData });
 				}
 			}
 
-			// Apply pagination
+			// Apply pagination early to avoid creating unnecessary Records
 			const start = offset;
-			const end = limit ? start + limit : records.length;
-			const paginatedRecords = records.slice(start, end);
+			const end = limit ? start + limit : matchingRecords.length;
+			const paginatedRecords = matchingRecords.slice(start, end);
+
+			// Create Records from cached data (no additional storage access needed)
+			const records = paginatedRecords.map(({ key, data }) => {
+				return RecordFactory.create(key, data);
+			});
 
 			if (plan) {
-				plan.completeExecution(paginatedRecords.length);
+				plan.completeExecution(records.length);
 				this.queryOptimizer.recordExecution(plan);
 			}
 
-			return new RecordCollection(paginatedRecords);
+			return new RecordCollection(records);
 
 		} catch (error) {
 			throw new QueryError(`Find operation failed: ${error.message}`, criteria, "find");

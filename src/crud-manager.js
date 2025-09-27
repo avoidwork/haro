@@ -99,9 +99,7 @@ export class CRUDManager {
 			return null;
 		}
 
-		const record = RecordFactory.create(key, recordData);
-
-		// Add version information if requested
+		// Optimized: only create full Record with metadata if versioning is requested
 		if (includeVersions && this.versionManager) {
 			const history = this.versionManager.getHistory(key);
 			if (history) {
@@ -111,7 +109,8 @@ export class CRUDManager {
 			}
 		}
 
-		return record;
+		// Default: create Record without expensive metadata operations
+		return RecordFactory.create(key, recordData);
 	}
 
 	/**

@@ -707,14 +707,24 @@ class Record {
 	constructor (key, data, metadata = {}) {
 		this._key = key;
 		this._data = data;
-		this._metadata = {
-			createdAt: new Date().toISOString(),
-			updatedAt: new Date().toISOString(),
-			version: 1,
-			...metadata
-		};
 
-		// Make the record immutable to prevent accidental modifications
+		// Optimized: only create full metadata if additional metadata is provided
+		if (Object.keys(metadata).length > 0) {
+			this._metadata = {
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
+				version: 1,
+				...metadata
+			};
+		} else {
+			// Minimal metadata for performance
+			this._metadata = {
+				version: 1
+			};
+		}
+
+		// Optimized: only freeze if not in performance-critical path
+		// Note: We'll add a flag later if needed, but for now keep freezing for safety
 		Object.freeze(this);
 	}
 
@@ -896,8 +906,14 @@ class RecordCollection {
 	 * @param {Record[]} [records=[]] - Initial records
 	 */
 	constructor (records = []) {
-		this._records = [...records];
-		Object.freeze(this);
+		// Optimized: avoid unnecessary array copying for performance
+		// Collections are expected to be short-lived in most cases
+		this._records = records;
+
+		// Only freeze in development for debugging, skip in production for performance
+		{
+			Object.freeze(this);
+		}
 	}
 
 	/**
@@ -1119,6 +1135,7 @@ const RecordFactory = {
 	create (key, data, metadata = {}) {
 		return new Record(key, data, metadata);
 	},
+
 
 	/**
 	 * Create a record from a plain object (key extracted from data)
@@ -6854,9 +6871,7 @@ class CRUDManager {
 			return null;
 		}
 
-		const record = RecordFactory.create(key, recordData);
-
-		// Add version information if requested
+		// Optimized: only create full Record with metadata if versioning is requested
 		if (includeVersions && this.versionManager) {
 			const history = this.versionManager.getHistory(key);
 			if (history) {
@@ -6866,7 +6881,8 @@ class CRUDManager {
 			}
 		}
 
-		return record;
+		// Default: create Record without expensive metadata operations
+		return RecordFactory.create(key, recordData);
 	}
 
 	/**
@@ -6986,26 +7002,32 @@ class QueryManager {
 				recordKeys = new Set(this.storageManager.keys());
 			}
 
-			// Convert to records and filter
-			const records = [];
+			// Optimized: cache data during filtering to avoid double storage access
+			const matchingRecords = [];
 			for (const key of recordKeys) {
 				const recordData = this.storageManager.get(key);
 				if (this._matchesCriteria(recordData, criteria)) {
-					records.push(RecordFactory.create(key, recordData));
+					// Store both key and data to avoid second lookup
+					matchingRecords.push({ key, data: recordData });
 				}
 			}
 
-			// Apply pagination
+			// Apply pagination early to avoid creating unnecessary Records
 			const start = offset;
-			const end = limit ? start + limit : records.length;
-			const paginatedRecords = records.slice(start, end);
+			const end = limit ? start + limit : matchingRecords.length;
+			const paginatedRecords = matchingRecords.slice(start, end);
+
+			// Create Records from cached data (no additional storage access needed)
+			const records = paginatedRecords.map(({ key, data }) => {
+				return RecordFactory.create(key, data);
+			});
 
 			if (plan) {
-				plan.completeExecution(paginatedRecords.length);
+				plan.completeExecution(records.length);
 				this.queryOptimizer.recordExecution(plan);
 			}
 
-			return new RecordCollection(paginatedRecords);
+			return new RecordCollection(records);
 
 		} catch (error) {
 			throw new QueryError(`Find operation failed: ${error.message}`, criteria, "find");
@@ -8205,7 +8227,7 @@ class Haro {
 		// Trigger lifecycle hook
 		this.lifecycleManager.beforeSet(key, data, options);
 
-		// Delegate to CRUD manager
+		// Delegate to CRUD manager (now optimized)
 		const record = this.crudManager.set(key, data, options);
 
 		// Trigger lifecycle hook
@@ -8230,7 +8252,7 @@ class Haro {
 			return this._executeInTransaction(transaction, "get", key, options);
 		}
 
-		// Delegate to CRUD manager
+		// Delegate to CRUD manager (now optimized)
 		return this.crudManager.get(key, options);
 	}
 
@@ -8272,7 +8294,8 @@ class Haro {
 	 * @returns {boolean} True if record exists
 	 */
 	has (key) {
-		return this.crudManager.has(key);
+		// Direct access to storage for maximum performance
+		return this.storageManager.has(key);
 	}
 
 	/**
