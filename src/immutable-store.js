@@ -6,55 +6,54 @@ export class ImmutableStore {
 	 * @param {Map} [data] - Initial data
 	 */
 	constructor (data = new Map()) {
-		this._data = new Map(data);
-		this._frozenViews = new WeakMap();
+		this._data = new Map();
+		// Freeze all initial data
+		for (const [key, value] of data) {
+			this._data.set(key, this._deepFreeze(value));
+		}
 		Object.freeze(this);
 	}
 
 	/**
-	 * Get a deeply frozen view of the data
+	 * Get a frozen record
 	 * @param {string} key - Record key
 	 * @returns {Object|null} Frozen record or null
 	 */
 	get (key) {
-		const record = this._data.get(key);
-		if (!record) return null;
-
-		// Check if we already have a frozen view
-		if (this._frozenViews.has(record)) {
-			return this._frozenViews.get(record);
-		}
-
-		// Create deeply frozen view
-		const frozen = this._deepFreeze(structuredClone(record));
-		this._frozenViews.set(record, frozen);
-
-		return frozen;
+		return this._data.get(key) || null;
 	}
 
 	/**
-	 * Create new store with updated record (structural sharing)
+	 * Update record in store
 	 * @param {string} key - Record key
 	 * @param {Object} record - Record data
-	 * @returns {ImmutableStore} New store instance
+	 * @returns {ImmutableStore} This store instance
 	 */
 	set (key, record) {
-		const newData = new Map(this._data);
-		newData.set(key, record);
+		// Early return if setting same value
+		if (this._data.get(key) === record) {
+			return this;
+		}
 
-		return new ImmutableStore(newData);
+		this._data.set(key, this._deepFreeze(record));
+
+		return this;
 	}
 
 	/**
-	 * Create new store without record
+	 * Remove record from store
 	 * @param {string} key - Record key to remove
-	 * @returns {ImmutableStore} New store instance
+	 * @returns {ImmutableStore} This store instance
 	 */
 	delete (key) {
-		const newData = new Map(this._data);
-		newData.delete(key);
+		// Early return if key doesn't exist
+		if (!this._data.has(key)) {
+			return this;
+		}
 
-		return new ImmutableStore(newData);
+		this._data.delete(key);
+
+		return this;
 	}
 
 	/**
@@ -79,13 +78,7 @@ export class ImmutableStore {
 	 * @returns {IterableIterator<Object>} Iterator of frozen values
 	 */
 	values () {
-		const self = this;
-
-		return (function* () {
-			for (const key of self._data.keys()) {
-				yield self.get(key);
-			}
-		}());
+		return this._data.values();
 	}
 
 	/**
@@ -98,29 +91,52 @@ export class ImmutableStore {
 
 	/**
 	 * Get all entries
-	 * @returns {Array<[string, Object]>} Array of [key, value] pairs
+	 * @returns {IterableIterator<[string, Object]>} Iterator of [key, value] pairs
 	 */
 	entries () {
-		return Array.from(this._data.entries());
+		return this._data.entries();
 	}
 
 	/**
-	 * Deep freeze an object
+	 * Deep freeze an object (iterative implementation)
 	 * @param {*} obj - Object to freeze
 	 * @returns {*} Frozen object
 	 * @private
 	 */
 	_deepFreeze (obj) {
-		if (obj === null || typeof obj !== "object") {
+		if (obj === null || typeof obj !== "object" || Object.isFrozen(obj)) {
 			return obj;
 		}
 
-		if (Array.isArray(obj)) {
-			obj.forEach(item => this._deepFreeze(item));
-		} else {
-			Object.values(obj).forEach(value => this._deepFreeze(value));
+		const stack = [obj];
+		const visited = new WeakSet();
+
+		while (stack.length > 0) {
+			const current = stack.pop();
+
+			if (visited.has(current) || Object.isFrozen(current)) {
+				continue;
+			}
+
+			visited.add(current);
+
+			if (Array.isArray(current)) {
+				for (const item of current) {
+					if (item !== null && typeof item === "object" && !Object.isFrozen(item)) {
+						stack.push(item);
+					}
+				}
+			} else {
+				for (const value of Object.values(current)) {
+					if (value !== null && typeof value === "object" && !Object.isFrozen(value)) {
+						stack.push(value);
+					}
+				}
+			}
+
+			Object.freeze(current);
 		}
 
-		return Object.freeze(obj);
+		return obj;
 	}
 }
