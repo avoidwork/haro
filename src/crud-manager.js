@@ -38,7 +38,6 @@ export class CRUDManager {
 			key = data[this.config.key] ?? uuid();
 		}
 
-		// OPTIMIZATION: Only create new object when key needs to be added
 		let recordData;
 		if (data[this.config.key] === key) {
 			recordData = data;
@@ -52,7 +51,6 @@ export class CRUDManager {
 			this.config.schema.validate(recordData);
 		}
 
-		// OPTIMIZATION: Single storage lookup instead of has() + get()
 		const existingRecord = this.storageManager.get(key);
 		let finalData = recordData;
 		let metadata = {};
