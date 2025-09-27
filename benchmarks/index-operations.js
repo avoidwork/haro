@@ -391,7 +391,7 @@ function printResults (results) {
 function runIndexOperationsBenchmarks () {
 	console.log("📊 Running Index Operations Benchmarks...\n");
 
-	const dataSizes = [100, 500, 1000];
+	const dataSizes = [1000, 10000, 50000];
 	const allResults = [];
 
 	console.log("Testing single index operations...");

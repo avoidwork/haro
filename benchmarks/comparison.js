@@ -546,7 +546,7 @@ function printMemoryResults (results) {
 function runComparisonBenchmarks () {
 	console.log("⚡ Running Haro vs Native Structures Comparison...\n");
 
-	const dataSizes = [100, 500, 1000];
+	const dataSizes = [1000, 10000, 50000];
 
 	console.log("Testing storage operations...");
 	const storageResults = benchmarkStorageComparison(dataSizes);

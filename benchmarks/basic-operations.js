@@ -220,7 +220,7 @@ function printResults (results) {
 function runBasicOperationsBenchmarks () {
 	console.log("🚀 Running Basic Operations Benchmarks...\n");
 
-	const dataSizes = [100, 1000, 10000, 50000];
+	const dataSizes = [1000, 10000, 50000];
 	const allResults = [];
 
 	console.log("Testing SET operations...");

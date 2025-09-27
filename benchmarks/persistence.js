@@ -455,7 +455,7 @@ function printResults (results) {
 function runPersistenceBenchmarks () {
 	console.log("Starting Persistence Benchmarks...\n");
 
-	const dataSizes = [100, 1000, 5000];
+	const dataSizes = [1000, 10000, 50000];
 	let allResults = [];
 
 	console.log("Testing dump operations...");

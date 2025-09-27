@@ -312,7 +312,7 @@ function printResults (results) {
 function runUtilityOperationsBenchmarks () {
 	console.log("Starting Utility Operations Benchmarks...\n");
 
-	const dataSizes = [100, 1000, 5000];
+	const dataSizes = [1000, 10000, 50000];
 	const uuidIterations = [1000, 10000, 50000];
 	let allResults = [];
 

@@ -388,7 +388,7 @@ function printResults (results) {
 function runPaginationBenchmarks () {
 	console.log("Starting Pagination Benchmarks...\n");
 
-	const dataSizes = [100, 500, 1000];
+	const dataSizes = [1000, 10000, 50000];
 	let allResults = [];
 
 	console.log("Testing basic limit operations...");
