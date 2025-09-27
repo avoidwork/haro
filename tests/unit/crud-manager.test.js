@@ -404,7 +404,7 @@ describe("CRUDManager", () => {
 		/**
 		 * Test generic error wrapping
 		 */
-		it("should wrap non-HaroError in ValidationError", () => {
+		it("should let non-HaroError bubble up", () => {
 			// Mock storageManager.set to throw generic error
 			const originalSet = mockStorageManager.set;
 			mockStorageManager.set = () => {
@@ -417,8 +417,8 @@ describe("CRUDManager", () => {
 			assert.throws(() => {
 				crudManager.set(key, data);
 			}, (error) => {
-				return error instanceof ValidationError && 
-				       error.message.includes("Failed to set record: Generic error");
+				return error instanceof Error && 
+				       error.message === "Generic error";
 			});
 
 			// Restore original method

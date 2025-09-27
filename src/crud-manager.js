@@ -1,5 +1,5 @@
 import { randomUUID as uuid } from "crypto";
-import { ValidationError, RecordNotFoundError, HaroError } from "./errors.js";
+import { RecordNotFoundError } from "./errors.js";
 import { RecordFactory } from "./record.js";
 
 /**
@@ -26,68 +26,59 @@ export class CRUDManager {
 	 * @param {Object} [data={}] - Record data
 	 * @param {Object} [options={}] - Operation options
 	 * @returns {Record} Created/updated record
-	 * @throws {ValidationError} If data validation fails
 	 */
 	set (key, data = {}, options = {}) {
-		try {
-			const {
-				override = false,
-				validate = true
-			} = options;
+		const {
+			override = false,
+			validate = true
+		} = options;
 
-			// Generate key if not provided
-			if (key === null) {
-				key = data[this.config.key] ?? uuid();
-			}
-
-			// OPTIMIZATION: Only create new object when key needs to be added
-			let recordData;
-			if (data[this.config.key] === key) {
-				recordData = data;
-			} else {
-				// Create new object only when necessary, but don't mutate original
-				recordData = { ...data, [this.config.key]: key };
-			}
-
-			// Validate against schema if configured
-			if (validate && this.config.schema) {
-				this.config.schema.validate(recordData);
-			}
-
-			// OPTIMIZATION: Single storage lookup instead of has() + get()
-			const existingRecord = this.storageManager.get(key);
-			let finalData = recordData;
-
-			// Handle merging vs override
-			if (existingRecord && !override) {
-				finalData = this._mergeRecords(existingRecord, recordData);
-			}
-
-			// Store version if versioning enabled
-			if (this.versionManager && existingRecord) {
-				this.versionManager.addVersion(key, existingRecord);
-			}
-
-			// Update indexes
-			if (existingRecord) {
-				this.indexManager.removeRecord(key, existingRecord);
-			}
-			this.indexManager.addRecord(key, finalData);
-
-			// Store record
-			this.storageManager.set(key, finalData);
-
-			// OPTIMIZATION: Create record wrapper without expensive metadata by default
-			const record = RecordFactory.create(key, finalData, {}, false);
-
-			return record;
-
-		} catch (error) {
-			if (error instanceof HaroError) {
-				throw error;
-			}
-			throw new ValidationError(`Failed to set record: ${error.message}`, "record", data);
+		// Generate key if not provided
+		if (key === null) {
+			key = data[this.config.key] ?? uuid();
 		}
+
+		// OPTIMIZATION: Only create new object when key needs to be added
+		let recordData;
+		if (data[this.config.key] === key) {
+			recordData = data;
+		} else {
+			// Create new object only when necessary, but don't mutate original
+			recordData = { ...data, [this.config.key]: key };
+		}
+
+		// Validate against schema if configured
+		if (validate && this.config.schema) {
+			this.config.schema.validate(recordData);
+		}
+
+		// OPTIMIZATION: Single storage lookup instead of has() + get()
+		const existingRecord = this.storageManager.get(key);
+		let finalData = recordData;
+
+		// Handle merging vs override
+		if (existingRecord && !override) {
+			finalData = this._mergeRecords(existingRecord, recordData);
+		}
+
+		// Store version if versioning enabled
+		if (this.versionManager && existingRecord) {
+			this.versionManager.addVersion(key, existingRecord);
+		}
+
+		// Update indexes
+		if (existingRecord) {
+			this.indexManager.removeRecord(key, existingRecord);
+		}
+		this.indexManager.addRecord(key, finalData);
+
+		// Store record
+		this.storageManager.set(key, finalData);
+
+		// OPTIMIZATION: Create record wrapper without expensive metadata by default
+		const record = RecordFactory.create(key, finalData, {}, false);
+
+		return record;
 	}
 
 	/**
