@@ -40,16 +40,22 @@ export class CRUDManager {
 				key = data[this.config.key] ?? uuid();
 			}
 
-			// Ensure key is in data
-			const recordData = { ...data, [this.config.key]: key };
+			// OPTIMIZATION: Only create new object when key needs to be added
+			let recordData;
+			if (data[this.config.key] === key) {
+				recordData = data;
+			} else {
+				// Create new object only when necessary, but don't mutate original
+				recordData = { ...data, [this.config.key]: key };
+			}
 
 			// Validate against schema if configured
 			if (validate && this.config.schema) {
 				this.config.schema.validate(recordData);
 			}
 
-			// Get existing record for merging and versioning
-			const existingRecord = this.storageManager.has(key) ? this.storageManager.get(key) : null;
+			// OPTIMIZATION: Single storage lookup instead of has() + get()
+			const existingRecord = this.storageManager.get(key);
 			let finalData = recordData;
 
 			// Handle merging vs override
@@ -71,8 +77,8 @@ export class CRUDManager {
 			// Store record
 			this.storageManager.set(key, finalData);
 
-			// Create record wrapper
-			const record = RecordFactory.create(key, finalData);
+			// OPTIMIZATION: Create record wrapper without expensive metadata by default
+			const record = RecordFactory.create(key, finalData, {}, false);
 
 			return record;
 

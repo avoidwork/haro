@@ -157,14 +157,16 @@ export class Haro {
 			return this._executeInTransaction(transaction, "set", key, data, options);
 		}
 
-		// Trigger lifecycle hook
-		this.lifecycleManager.beforeSet(key, data, options);
+		// OPTIMIZATION: Only trigger lifecycle hooks if they're actually registered
+		if (this.lifecycleManager.hasActiveHook("beforeSet")) {
+			this.lifecycleManager.beforeSet(key, data, options);
+		}
 
 		// Delegate to CRUD manager (now optimized)
 		const record = this.crudManager.set(key, data, options);
 
-		// Trigger lifecycle hook
-		if (!batch) {
+		// OPTIMIZATION: Only trigger lifecycle hooks if they're actually registered
+		if (!batch && this.lifecycleManager.hasActiveHook("onset")) {
 			this.lifecycleManager.onset(record, options);
 		}
 

@@ -683,29 +683,20 @@ class Record {
 	 * @param {string} key - Record key
 	 * @param {Object} data - Record data
 	 * @param {Object} [metadata={}] - Additional metadata
+	 * @param {boolean} [freeze=false] - Whether to freeze the record instance
 	 */
-	constructor (key, data, metadata = {}) {
+	constructor (key, data, metadata = {}, freeze = false) {
 		this._key = key;
 		this._data = data;
+		this._metadata = metadata;
+		this._frozen = freeze;
 
-		// Optimized: only create full metadata if additional metadata is provided
-		if (Object.keys(metadata).length > 0) {
-			this._metadata = {
-				createdAt: new Date().toISOString(),
-				updatedAt: new Date().toISOString(),
-				version: 1,
-				...metadata
-			};
-		} else {
-			// Minimal metadata for performance
-			this._metadata = {
-				version: 1
-			};
+		// OPTIMIZATION: Only freeze if explicitly requested
+		if (freeze) {
+			Object.freeze(this._data);
+			Object.freeze(this._metadata);
+			Object.freeze(this);
 		}
-
-		// Optimized: only freeze if not in performance-critical path
-		// Note: We'll add a flag later if needed, but for now keep freezing for safety
-		Object.freeze(this);
 	}
 
 	/**
@@ -718,10 +709,11 @@ class Record {
 
 	/**
 	 * Get the record data
-	 * @returns {Object} Record data (frozen copy)
+	 * @returns {Object} Record data
 	 */
 	get data () {
-		return Object.freeze({ ...this._data });
+		// OPTIMIZATION: Return direct reference for performance
+		return this._data;
 	}
 
 	/**
@@ -729,7 +721,8 @@ class Record {
 	 * @returns {Object} Metadata object
 	 */
 	get metadata () {
-		return Object.freeze({ ...this._metadata });
+		// OPTIMIZATION: Return direct reference for performance
+		return this._metadata;
 	}
 
 	/**
@@ -773,7 +766,10 @@ class Record {
 			version: this._metadata.version + 1
 		};
 
-		return new Record(this._key, newData, newMetadata);
+		// Detect if original was frozen to maintain same freeze state
+		const shouldFreeze = Object.isFrozen(this);
+
+		return new Record(this._key, newData, newMetadata, shouldFreeze);
 	}
 
 	/**
@@ -817,7 +813,24 @@ class Record {
 	 * @returns {Record} Cloned record
 	 */
 	clone () {
-		return new Record(this._key, structuredClone(this._data), structuredClone(this._metadata));
+		const clonedData = structuredClone(this._data);
+		const clonedMetadata = structuredClone(this._metadata);
+
+		// Detect if original was frozen to maintain same freeze state
+		const shouldFreeze = Object.isFrozen(this);
+
+		const cloned = Object.create(Record.prototype);
+		cloned._key = this._key;
+		cloned._data = clonedData;
+		cloned._metadata = clonedMetadata;
+
+		if (shouldFreeze) {
+			Object.freeze(cloned._data);
+			Object.freeze(cloned._metadata);
+			Object.freeze(cloned);
+		}
+
+		return cloned;
 	}
 
 	/**
@@ -884,14 +897,15 @@ class Record {
 class RecordCollection {
 	/**
 	 * @param {Record[]} [records=[]] - Initial records
+	 * @param {boolean} [freeze=true] - Whether to freeze the collection instance
 	 */
-	constructor (records = []) {
+	constructor (records = [], freeze = true) {
 		// Optimized: avoid unnecessary array copying for performance
 		// Collections are expected to be short-lived in most cases
 		this._records = records;
 
-		// Only freeze in development for debugging, skip in production for performance
-		{
+		// Freeze the collection if requested
+		if (freeze) {
 			Object.freeze(this);
 		}
 	}
@@ -935,7 +949,9 @@ class RecordCollection {
 	 * @returns {RecordCollection} New collection with filtered records
 	 */
 	filter (predicate) {
-		return new RecordCollection(this._records.filter(predicate));
+		const shouldFreeze = Object.isFrozen(this);
+
+		return new RecordCollection(this._records.filter(predicate), shouldFreeze);
 	}
 
 	/**
@@ -980,7 +996,9 @@ class RecordCollection {
 	 * @returns {RecordCollection} New sorted collection
 	 */
 	sort (comparator) {
-		return new RecordCollection([...this._records].sort(comparator));
+		const shouldFreeze = Object.isFrozen(this);
+
+		return new RecordCollection([...this._records].sort(comparator), shouldFreeze);
 	}
 
 	/**
@@ -990,7 +1008,9 @@ class RecordCollection {
 	 * @returns {RecordCollection} New collection with sliced records
 	 */
 	slice (start = 0, end) {
-		return new RecordCollection(this._records.slice(start, end));
+		const shouldFreeze = Object.isFrozen(this);
+
+		return new RecordCollection(this._records.slice(start, end), shouldFreeze);
 	}
 
 	/**
@@ -1021,11 +1041,19 @@ class RecordCollection {
 	}
 
 	/**
-	 * Get records as key-value pairs
-	 * @returns {Array<[string, Object]>} Array of [key, data] pairs
+	 * Get an iterable of [index, record] pairs for the records array
+	 * @returns {IterableIterator<[number, Record]>} Iterator of [index, record] pairs
 	 */
-	toPairs () {
-		return this._records.map(record => [record.key, record.data]);
+	entries () {
+		return this._records.entries();
+	}
+
+	/**
+	 * Get an iterable of records in the collection
+	 * @returns {IterableIterator<Record>} Iterator of records
+	 */
+	values () {
+		return this._records.values();
 	}
 
 	/**
@@ -1048,8 +1076,9 @@ class RecordCollection {
 		}
 
 		// Convert arrays to RecordCollections
+		const shouldFreeze = Object.isFrozen(this);
 		for (const [key, records] of groups) {
-			groups.set(key, new RecordCollection(records));
+			groups.set(key, new RecordCollection(records, shouldFreeze));
 		}
 
 		return groups;
@@ -1070,7 +1099,9 @@ class RecordCollection {
 			}
 		}
 
-		return new RecordCollection(unique);
+		const shouldFreeze = Object.isFrozen(this);
+
+		return new RecordCollection(unique, shouldFreeze);
 	}
 
 	/**
@@ -1110,10 +1141,11 @@ const RecordFactory = {
 	 * @param {string} key - Record key
 	 * @param {Object} data - Record data
 	 * @param {Object} [metadata={}] - Additional metadata
+	 * @param {boolean} [freeze=false] - Whether to freeze the record instance
 	 * @returns {Record} New record instance
 	 */
-	create (key, data, metadata = {}) {
-		return new Record(key, data, metadata);
+	create (key, data, metadata = {}, freeze = false) {
+		return new Record(key, data, metadata, freeze);
 	},
 
 
@@ -1122,24 +1154,26 @@ const RecordFactory = {
 	 * @param {Object} data - Data object containing key field
 	 * @param {string} [keyField='id'] - Name of the key field
 	 * @param {Object} [metadata={}] - Additional metadata
+	 * @param {boolean} [freeze=false] - Whether to freeze the record instance
 	 * @returns {Record} New record instance
 	 */
-	fromObject (data, keyField = "id", metadata = {}) {
+	fromObject (data, keyField = "id", metadata = {}, freeze = false) {
 		const key = data[keyField];
 		if (!key) {
 			throw new Error(`Key field '${keyField}' not found in data`);
 		}
 
-		return new Record(key, data, metadata);
+		return new Record(key, data, metadata, freeze);
 	},
 
 	/**
 	 * Create a collection from an array of records or data objects
 	 * @param {Array<Record|Object>} items - Items to create collection from
 	 * @param {string} [keyField='id'] - Key field name for objects
+	 * @param {boolean} [freeze=true] - Whether to freeze the collection instance
 	 * @returns {RecordCollection} New record collection
 	 */
-	createCollection (items, keyField = "id") {
+	createCollection (items, keyField = "id", freeze = true) {
 		const records = items.map(item => {
 			if (item instanceof Record) {
 				return item;
@@ -1148,15 +1182,16 @@ const RecordFactory = {
 			return this.fromObject(item, keyField);
 		});
 
-		return new RecordCollection(records);
+		return new RecordCollection(records, freeze);
 	},
 
 	/**
 	 * Create an empty collection
+	 * @param {boolean} [freeze=true] - Whether to freeze the collection instance
 	 * @returns {RecordCollection} Empty record collection
 	 */
-	emptyCollection () {
-		return new RecordCollection();
+	emptyCollection (freeze = true) {
+		return new RecordCollection([], freeze);
 	}
 };/**
  * Types of indexes supported
@@ -1837,6 +1872,100 @@ class IndexManager {
 	clear () {
 		for (const storage of this._indexes.values()) {
 			storage.clear();
+		}
+	}
+
+	/**
+	 * Export complete IndexManager state for persistence
+	 * @returns {Object} Complete state object with _definitions, _indexes, _stats
+	 */
+	exportState () {
+		// Serialize definitions
+		const definitions = {};
+		for (const [name, definition] of this._definitions) {
+			definitions[name] = {
+				name: definition.name,
+				fields: definition.fields,
+				type: definition.type,
+				unique: definition.unique,
+				delimiter: definition.delimiter,
+				createdAt: definition.createdAt,
+				stats: definition.stats,
+				// Note: filter and transform functions cannot be serialized
+				filter: null,
+				transform: null
+			};
+		}
+
+		// Serialize index storage data
+		const indexes = {};
+		for (const [name, storage] of this._indexes) {
+			const storageData = {};
+			for (const indexKey of storage.keys()) {
+				const recordKeys = storage.get(indexKey);
+				storageData[indexKey] = Array.from(recordKeys);
+			}
+			indexes[name] = storageData;
+		}
+
+		return {
+			_definitions: definitions,
+			_indexes: indexes,
+			_stats: { ...this._stats }
+		};
+	}
+
+	/**
+	 * Import complete IndexManager state from persistence
+	 * @param {Object} state - State object with _definitions, _indexes, _stats
+	 * @returns {boolean} Success status
+	 */
+	importState (state) {
+		try {
+			// Clear current state
+			this._definitions.clear();
+			this._indexes.clear();
+
+			// Restore definitions
+			for (const [name, defData] of Object.entries(state._definitions)) {
+				const definition = new IndexDefinition(defData.name, defData.fields, {
+					type: defData.type,
+					unique: defData.unique,
+					delimiter: defData.delimiter
+				});
+
+				// Restore timestamps and stats
+				definition.createdAt = new Date(defData.createdAt);
+				definition.stats = { ...defData.stats };
+				if (definition.stats.lastUpdated) {
+					definition.stats.lastUpdated = new Date(definition.stats.lastUpdated);
+				}
+
+				this._definitions.set(name, definition);
+			}
+
+			// Restore index storage data - direct Map construction for maximum performance
+			for (const [name, storageData] of Object.entries(state._indexes)) {
+				const storage = new IndexStorage();
+
+				// Direct Map/Set construction instead of individual add() calls
+				for (const [indexKey, recordKeysArray] of Object.entries(storageData)) {
+					storage._storage.set(indexKey, new Set(recordKeysArray));
+					storage._refCounts.set(indexKey, recordKeysArray.length);
+				}
+
+				this._indexes.set(name, storage);
+			}
+
+			// Restore stats
+			this._stats = {
+				...state._stats,
+				lastOptimized: new Date(state._stats.lastOptimized)
+			};
+
+			return true;
+		} catch {
+			return false;
 		}
 	}
 
@@ -6365,55 +6494,54 @@ class ImmutableStore {
 	 * @param {Map} [data] - Initial data
 	 */
 	constructor (data = new Map()) {
-		this._data = new Map(data);
-		this._frozenViews = new WeakMap();
+		this._data = new Map();
+		// Freeze all initial data
+		for (const [key, value] of data) {
+			this._data.set(key, this._deepFreeze(value));
+		}
 		Object.freeze(this);
 	}
 
 	/**
-	 * Get a deeply frozen view of the data
+	 * Get a frozen record
 	 * @param {string} key - Record key
 	 * @returns {Object|null} Frozen record or null
 	 */
 	get (key) {
-		const record = this._data.get(key);
-		if (!record) return null;
-
-		// Check if we already have a frozen view
-		if (this._frozenViews.has(record)) {
-			return this._frozenViews.get(record);
-		}
-
-		// Create deeply frozen view
-		const frozen = this._deepFreeze(structuredClone(record));
-		this._frozenViews.set(record, frozen);
-
-		return frozen;
+		return this._data.get(key) || null;
 	}
 
 	/**
-	 * Create new store with updated record (structural sharing)
+	 * Update record in store
 	 * @param {string} key - Record key
 	 * @param {Object} record - Record data
-	 * @returns {ImmutableStore} New store instance
+	 * @returns {ImmutableStore} This store instance
 	 */
 	set (key, record) {
-		const newData = new Map(this._data);
-		newData.set(key, record);
+		// Early return if setting same value
+		if (this._data.get(key) === record) {
+			return this;
+		}
 
-		return new ImmutableStore(newData);
+		this._data.set(key, this._deepFreeze(record));
+
+		return this;
 	}
 
 	/**
-	 * Create new store without record
+	 * Remove record from store
 	 * @param {string} key - Record key to remove
-	 * @returns {ImmutableStore} New store instance
+	 * @returns {ImmutableStore} This store instance
 	 */
 	delete (key) {
-		const newData = new Map(this._data);
-		newData.delete(key);
+		// Early return if key doesn't exist
+		if (!this._data.has(key)) {
+			return this;
+		}
 
-		return new ImmutableStore(newData);
+		this._data.delete(key);
+
+		return this;
 	}
 
 	/**
@@ -6438,13 +6566,7 @@ class ImmutableStore {
 	 * @returns {IterableIterator<Object>} Iterator of frozen values
 	 */
 	values () {
-		const self = this;
-
-		return (function* () {
-			for (const key of self._data.keys()) {
-				yield self.get(key);
-			}
-		}());
+		return this._data.values();
 	}
 
 	/**
@@ -6457,30 +6579,51 @@ class ImmutableStore {
 
 	/**
 	 * Get all entries
-	 * @returns {Array<[string, Object]>} Array of [key, value] pairs
+	 * @returns {IterableIterator<[string, Object]>} Iterator of [key, value] pairs
 	 */
 	entries () {
-		return Array.from(this._data.entries());
+		return this._data.entries();
 	}
 
 	/**
-	 * Deep freeze an object
+	 * Deep freeze an object (iterative implementation)
 	 * @param {*} obj - Object to freeze
 	 * @returns {*} Frozen object
 	 * @private
 	 */
 	_deepFreeze (obj) {
-		if (obj === null || typeof obj !== "object") {
+		if (obj === null || typeof obj !== "object" || Object.isFrozen(obj)) {
 			return obj;
 		}
 
-		if (Array.isArray(obj)) {
-			obj.forEach(item => this._deepFreeze(item));
-		} else {
-			Object.values(obj).forEach(value => this._deepFreeze(value));
+		const stack = [obj];
+		const visited = new WeakSet();
+
+		while (stack.length > 0) {
+			const current = stack.pop();
+
+			if (!visited.has(current) && !Object.isFrozen(current)) {
+				visited.add(current);
+
+				if (Array.isArray(current)) {
+					for (const item of current) {
+						if (item !== null && typeof item === "object" && !Object.isFrozen(item)) {
+							stack.push(item);
+						}
+					}
+				} else {
+					for (const value of Object.values(current)) {
+						if (value !== null && typeof value === "object" && !Object.isFrozen(value)) {
+							stack.push(value);
+						}
+					}
+				}
+
+				Object.freeze(current);
+			}
 		}
 
-		return Object.freeze(obj);
+		return obj;
 	}
 }/**
  * Streaming support for large datasets
@@ -6701,10 +6844,10 @@ class StorageManager {
 
 	/**
 	 * Get all storage entries
-	 * @returns {IterableIterator<[string, Object]>} Iterable of [key, value] pairs
+	 * @returns {Array<[string, Object]>} Array of [key, value] pairs
 	 */
 	entries () {
-		return this._store.entries();
+		return Array.from(this._store.entries());
 	}
 
 	/**
@@ -6805,16 +6948,22 @@ class CRUDManager {
 				key = data[this.config.key] ?? randomUUID();
 			}
 
-			// Ensure key is in data
-			const recordData = { ...data, [this.config.key]: key };
+			// OPTIMIZATION: Only create new object when key needs to be added
+			let recordData;
+			if (data[this.config.key] === key) {
+				recordData = data;
+			} else {
+				// Create new object only when necessary, but don't mutate original
+				recordData = { ...data, [this.config.key]: key };
+			}
 
 			// Validate against schema if configured
 			if (validate && this.config.schema) {
 				this.config.schema.validate(recordData);
 			}
 
-			// Get existing record for merging and versioning
-			const existingRecord = this.storageManager.has(key) ? this.storageManager.get(key) : null;
+			// OPTIMIZATION: Single storage lookup instead of has() + get()
+			const existingRecord = this.storageManager.get(key);
 			let finalData = recordData;
 
 			// Handle merging vs override
@@ -6836,8 +6985,8 @@ class CRUDManager {
 			// Store record
 			this.storageManager.set(key, finalData);
 
-			// Create record wrapper
-			const record = RecordFactory.create(key, finalData);
+			// OPTIMIZATION: Create record wrapper without expensive metadata by default
+			const record = RecordFactory.create(key, finalData, {}, false);
 
 			return record;
 
@@ -7943,17 +8092,8 @@ class LifecycleManager {
 	 * @param {Object} [hooks={}] - Custom lifecycle hooks
 	 */
 	constructor (hooks = {}) {
-		// Default no-op hooks
-		this.hooks = {
-			beforeSet: () => {},
-			onset: () => {},
-			beforeDelete: () => {},
-			ondelete: () => {},
-			beforeClear: () => {},
-			onclear: () => {},
-			onbatch: () => {},
-			...hooks
-		};
+		// Only store actually registered hooks, no default no-ops
+		this.hooks = { ...hooks };
 	}
 
 	/**
@@ -7973,7 +8113,16 @@ class LifecycleManager {
 	 * @param {string} event - Event name
 	 */
 	unregisterHook (event) {
-		this.hooks[event] = () => {};
+		delete this.hooks[event];
+	}
+
+	/**
+	 * Check if a hook is registered
+	 * @param {string} event - Event name
+	 * @returns {boolean} True if hook exists
+	 */
+	hasActiveHook (event) {
+		return event in this.hooks;
 	}
 
 	/**
@@ -7983,7 +8132,7 @@ class LifecycleManager {
 	 * @returns {*} Hook result
 	 */
 	executeHook (event, ...args) {
-		if (this.hooks[event]) {
+		if (this.hasActiveHook(event)) {
 			return this.hooks[event](...args);
 		}
 
@@ -8205,14 +8354,16 @@ class Haro {
 			return this._executeInTransaction(transaction, "set", key, data, options);
 		}
 
-		// Trigger lifecycle hook
-		this.lifecycleManager.beforeSet(key, data, options);
+		// OPTIMIZATION: Only trigger lifecycle hooks if they're actually registered
+		if (this.lifecycleManager.hasActiveHook("beforeSet")) {
+			this.lifecycleManager.beforeSet(key, data, options);
+		}
 
 		// Delegate to CRUD manager (now optimized)
 		const record = this.crudManager.set(key, data, options);
 
-		// Trigger lifecycle hook
-		if (!batch) {
+		// OPTIMIZATION: Only trigger lifecycle hooks if they're actually registered
+		if (!batch && this.lifecycleManager.hasActiveHook("onset")) {
 			this.lifecycleManager.onset(record, options);
 		}
 
@@ -8275,8 +8426,7 @@ class Haro {
 	 * @returns {boolean} True if record exists
 	 */
 	has (key) {
-		// Direct access to storage for maximum performance
-		return this.storageManager.has(key);
+		return this.crudManager.has(key);
 	}
 
 	/**
@@ -8681,25 +8831,12 @@ class Haro {
 	/**
 	 * Export store data or indexes for persistence
 	 * @param {string} [type='records'] - Type of data to export: 'records' or 'indexes'
-	 * @returns {Array} Array of [key, value] pairs or serialized index structure
+	 * @returns {Array|Object} Array of [key, value] pairs or complete index state
 	 */
 	dump (type = "records") {
 		if (type === "indexes") {
-			// Export index definitions and statistics
-			const indexData = {};
-			const indexNames = this.indexManager.listIndexes();
-
-			for (const name of indexNames) {
-				const definition = this.indexManager.getIndexDefinition(name);
-				indexData[name] = {
-					fields: definition.fields,
-					type: definition.type,
-					delimiter: definition.delimiter,
-					unique: definition.unique
-				};
-			}
-
-			return indexData;
+			// Export complete IndexManager state (definitions, data, and stats)
+			return this.indexManager.exportState();
 		}
 
 		// Default to records
@@ -8708,26 +8845,18 @@ class Haro {
 
 	/**
 	 * Import and restore data from a dump
-	 * @param {Array} data - Data to import (from dump)
+	 * @param {Array|Object} data - Data to import (from dump)
 	 * @param {string} [type='records'] - Type of data: 'records' or 'indexes'
 	 * @returns {boolean} True if operation succeeded
 	 */
 	override (data, type = "records") {
 		try {
 			if (type === "indexes") {
-				// Recreate indexes from definitions
-				this.indexManager.clear();
-
-				for (const [name, definition] of Object.entries(data)) {
-					this.indexManager.createIndex(name, definition.fields, {
-						type: definition.type,
-						delimiter: definition.delimiter,
-						unique: definition.unique
-					});
+				// Import complete IndexManager state (no reindexing needed)
+				const success = this.indexManager.importState(data);
+				if (!success) {
+					return false;
 				}
-
-				// Rebuild indexes with current data
-				this.reindex();
 			} else {
 				// Clear existing data and indexes
 				this.clear();

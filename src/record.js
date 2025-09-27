@@ -6,21 +6,15 @@ export class Record {
 	 * @param {string} key - Record key
 	 * @param {Object} data - Record data
 	 * @param {Object} [metadata={}] - Additional metadata
-	 * @param {boolean} [freeze=true] - Whether to freeze the record instance
+	 * @param {boolean} [freeze=false] - Whether to freeze the record instance
 	 */
-	constructor (key, data, metadata = {}, freeze = true) {
+	constructor (key, data, metadata = {}, freeze = false) {
 		this._key = key;
 		this._data = data;
+		this._metadata = metadata;
+		this._frozen = freeze;
 
-		// Always create full metadata with timestamps
-		this._metadata = {
-			createdAt: new Date().toISOString(),
-			updatedAt: new Date().toISOString(),
-			version: 1,
-			...metadata
-		};
-
-		// Freeze properties and instance if requested (for immutable stores)
+		// OPTIMIZATION: Only freeze if explicitly requested
 		if (freeze) {
 			Object.freeze(this._data);
 			Object.freeze(this._metadata);
@@ -38,20 +32,20 @@ export class Record {
 
 	/**
 	 * Get the record data
-	 * @returns {Object} Record data (frozen copy)
+	 * @returns {Object} Record data
 	 */
 	get data () {
-		// Return a frozen shallow copy for safety while preserving performance
-		return Object.freeze({ ...this._data });
+		// OPTIMIZATION: Return direct reference for performance
+		return this._data;
 	}
 
 	/**
 	 * Get record metadata
-	 * @returns {Object} Metadata object (frozen copy)
+	 * @returns {Object} Metadata object
 	 */
 	get metadata () {
-		// Return a frozen shallow copy for safety while preserving performance
-		return Object.freeze({ ...this._metadata });
+		// OPTIMIZATION: Return direct reference for performance
+		return this._metadata;
 	}
 
 	/**
@@ -470,10 +464,10 @@ export const RecordFactory = {
 	 * @param {string} key - Record key
 	 * @param {Object} data - Record data
 	 * @param {Object} [metadata={}] - Additional metadata
-	 * @param {boolean} [freeze=true] - Whether to freeze the record instance
+	 * @param {boolean} [freeze=false] - Whether to freeze the record instance
 	 * @returns {Record} New record instance
 	 */
-	create (key, data, metadata = {}, freeze = true) {
+	create (key, data, metadata = {}, freeze = false) {
 		return new Record(key, data, metadata, freeze);
 	},
 
@@ -483,10 +477,10 @@ export const RecordFactory = {
 	 * @param {Object} data - Data object containing key field
 	 * @param {string} [keyField='id'] - Name of the key field
 	 * @param {Object} [metadata={}] - Additional metadata
-	 * @param {boolean} [freeze=true] - Whether to freeze the record instance
+	 * @param {boolean} [freeze=false] - Whether to freeze the record instance
 	 * @returns {Record} New record instance
 	 */
-	fromObject (data, keyField = "id", metadata = {}, freeze = true) {
+	fromObject (data, keyField = "id", metadata = {}, freeze = false) {
 		const key = data[keyField];
 		if (!key) {
 			throw new Error(`Key field '${keyField}' not found in data`);

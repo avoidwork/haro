@@ -8,17 +8,8 @@ export class LifecycleManager {
 	 * @param {Object} [hooks={}] - Custom lifecycle hooks
 	 */
 	constructor (hooks = {}) {
-		// Default no-op hooks
-		this.hooks = {
-			beforeSet: () => {},
-			onset: () => {},
-			beforeDelete: () => {},
-			ondelete: () => {},
-			beforeClear: () => {},
-			onclear: () => {},
-			onbatch: () => {},
-			...hooks
-		};
+		// Only store actually registered hooks, no default no-ops
+		this.hooks = { ...hooks };
 	}
 
 	/**
@@ -38,7 +29,16 @@ export class LifecycleManager {
 	 * @param {string} event - Event name
 	 */
 	unregisterHook (event) {
-		this.hooks[event] = () => {};
+		delete this.hooks[event];
+	}
+
+	/**
+	 * Check if a hook is registered
+	 * @param {string} event - Event name
+	 * @returns {boolean} True if hook exists
+	 */
+	hasActiveHook (event) {
+		return event in this.hooks;
 	}
 
 	/**
@@ -48,7 +48,7 @@ export class LifecycleManager {
 	 * @returns {*} Hook result
 	 */
 	executeHook (event, ...args) {
-		if (this.hooks[event]) {
+		if (this.hasActiveHook(event)) {
 			return this.hooks[event](...args);
 		}
 
