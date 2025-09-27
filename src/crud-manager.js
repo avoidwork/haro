@@ -26,9 +26,10 @@ export class CRUDManager {
 	 * Set or update a record with comprehensive validation and error handling
 	 * @param {string|null} key - Record key or null for auto-generation
 	 * @param {Object} [data={}] - Record data
+	 * @param {Boolean} override - Overrides the record instead of merging
 	 * @returns {Record} Created/updated record
 	 */
-	set (key, data = {}) {
+	set (key, data = {}, override = false) {
 		// Generate key if not provided
 		if (key === null) {
 			key = data[this.config.key] ?? uuid();
@@ -114,7 +115,6 @@ export class CRUDManager {
 	/**
 	 * Delete a record with proper cleanup
 	 * @param {string} key - Record key
-	 * @param {Object} [options={}] - Delete options
 	 * @returns {boolean} True if deleted successfully
 	 * @throws {RecordNotFoundError} If record not found
 	 */

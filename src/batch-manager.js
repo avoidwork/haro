@@ -1,4 +1,4 @@
-import { QueryError, TransactionError } from "./errors.js";
+import { TransactionError } from "./errors.js";
 
 /**
  * Manages batch operations with transaction support
@@ -17,68 +17,49 @@ export class BatchManager {
 	}
 
 	/**
-	 * Batch operations with transaction support
+	 * Batch operations with automatic transaction support
 	 * @param {Array} operations - Array of operations or records
 	 * @param {string} [type='set'] - Operation type
-	 * @param {Object} [options={}] - Batch options
 	 * @returns {Promise<Array>|Array} Array of results (Promise when using transactions)
 	 */
-	batch (operations, type = "set", options = {}) {
-		const {
-			transaction = null,
-			atomic = false
-		} = options;
-
-		try {
-			// Use transaction for atomic operations
-			if (atomic || transaction) {
-				return this._executeBatchInTransaction(operations, type, transaction);
-			}
-
-			// Execute operations individually
-			const results = [];
-			for (const operation of operations) {
-				try {
-					let result;
-					if (type === "set") {
-						result = this.crudManager.set(null, operation, { batch: true });
-					} else if (type === "del") {
-						this.crudManager.delete(operation, { batch: true });
-						result = true;
-					}
-					results.push(result);
-				} catch (error) {
-					results.push(error);
-				}
-			}
-
-			// Trigger batch lifecycle hook
-			this.lifecycleManager.onbatch(results, type);
-
-			return results;
-
-		} catch (error) {
-			throw new QueryError(`Batch operation failed: ${error.message}`, operations, "batch");
+	batch (operations, type = "set") {
+		// Use transactions automatically if transaction manager is available
+		if (this.transactionManager) {
+			return this._executeBatchInTransaction(operations, type);
 		}
+
+		// Execute operations individually
+		const results = [];
+		for (const operation of operations) {
+			let result;
+			if (type === "set") {
+				result = this.crudManager.set(null, operation, true);
+			} else if (type === "del") {
+				this.crudManager.delete(operation);
+				result = true;
+			}
+			results.push(result);
+		}
+
+		// Trigger batch lifecycle hook
+		this.lifecycleManager.onbatch(results, type);
+
+		return results;
 	}
 
 	/**
 	 * Execute batch in transaction
 	 * @param {Array} operations - Operations to execute
 	 * @param {string} type - Operation type
-	 * @param {Transaction} [transaction] - Existing transaction
 	 * @returns {Promise<Array>} Operation results
 	 * @private
 	 */
-	async _executeBatchInTransaction (operations, type, transaction) {
+	async _executeBatchInTransaction (operations, type) {
 		if (!this.transactionManager) {
-			throw new TransactionError("Transaction manager not available for atomic batch operations");
+			throw new TransactionError("Transaction manager not available for batch operations");
 		}
 
-		const ownTransaction = !transaction;
-		if (ownTransaction) {
-			transaction = this.transactionManager.begin();
-		}
+		const transaction = this.transactionManager.begin();
 
 		try {
 			const results = [];
@@ -92,15 +73,11 @@ export class BatchManager {
 				}
 			}
 
-			if (ownTransaction) {
-				await this.transactionManager.commit(transaction.id);
-			}
+			await this.transactionManager.commit(transaction.id);
 
 			return results;
 		} catch (error) {
-			if (ownTransaction) {
-				this.transactionManager.abort(transaction.id, error.message);
-			}
+			this.transactionManager.abort(transaction.id, error.message);
 			throw error;
 		}
 	}
