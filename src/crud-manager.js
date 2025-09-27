@@ -44,7 +44,7 @@ export class CRUDManager {
 			recordData = data;
 		} else {
 			// Create new object only when necessary, but don't mutate original
-			recordData = { ...data, [this.config.key]: key };
+			recordData = Object.assign({}, data, { [this.config.key]: key });
 		}
 
 		// Validate against schema if configured
@@ -116,7 +116,7 @@ export class CRUDManager {
 		if (includeVersions && this.versionManager) {
 			const history = this.versionManager.getHistory(key);
 			if (history) {
-				metadata = Object.assign(metadata, { versions: history.versions });
+				metadata.versions = history.versions;
 			}
 		}
 
