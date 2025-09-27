@@ -82,7 +82,8 @@ export class Haro {
 			storageManager: this.storageManager,
 			indexManager: this.indexManager,
 			versionManager: this.versionManager,
-			config: this.config
+			config: this.config,
+			freeze: this.config.immutable
 		});
 
 		this.queryManager = new QueryManager({

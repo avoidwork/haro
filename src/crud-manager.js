@@ -12,12 +12,14 @@ export class CRUDManager {
 	 * @param {IndexManager} dependencies.indexManager - Index manager
 	 * @param {VersionManager} [dependencies.versionManager] - Version manager
 	 * @param {Object} dependencies.config - Configuration
+	 * @param {boolean} [dependencies.freeze=false] - Whether to freeze Records
 	 */
-	constructor ({ storageManager, indexManager, versionManager = null, config }) {
+	constructor ({ storageManager, indexManager, versionManager = null, config, freeze = false }) {
 		this.storageManager = storageManager;
 		this.indexManager = indexManager;
 		this.versionManager = versionManager;
 		this.config = config;
+		this.freeze = freeze;
 	}
 
 	/**
@@ -68,7 +70,7 @@ export class CRUDManager {
 		}
 
 		// Create the Record instance that will be stored
-		const record = RecordFactory.create(key, finalData, metadata, false);
+		const record = RecordFactory.create(key, finalData, metadata, this.freeze);
 
 		// Store version if versioning enabled
 		if (this.versionManager && existingData) {
@@ -112,7 +114,7 @@ export class CRUDManager {
 		if (history) {
 			const metadata = Object.assign({}, record.metadata, { versions: history.versions });
 
-			return RecordFactory.create(key, record.data, metadata);
+			return RecordFactory.create(key, record.data, metadata, this.freeze);
 		}
 
 		return record;
