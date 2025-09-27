@@ -1246,6 +1246,28 @@ class IndexDefinition {
 	}
 
 	/**
+	 * Get field value from record (supports nested fields)
+	 * @param {Object} record - Record object
+	 * @param {string} field - Field path (e.g., "profile.professional.department")
+	 * @returns {*} Field value
+	 * @private
+	 */
+	_getFieldValue (record, field) {
+		const parts = field.split(".");
+		let value = record;
+
+		for (const part of parts) {
+			if (value && typeof value === "object") {
+				value = value[part];
+			} else {
+				return undefined;
+			}
+		}
+
+		return value;
+	}
+
+	/**
 	 * Extract raw keys from record
 	 * @param {Object} record - Record data
 	 * @returns {string[]} Array of raw keys
@@ -1257,7 +1279,7 @@ class IndexDefinition {
 		}
 
 		const field = this.fields[0];
-		const value = record[field];
+		const value = this._getFieldValue(record, field);
 
 		if (value === undefined || value === null) {
 			return [];
@@ -1281,7 +1303,7 @@ class IndexDefinition {
 		let keys = [""];
 
 		for (const field of this.fields.sort()) {
-			const value = record[field];
+			const value = this._getFieldValue(record, field);
 			if (value === undefined || value === null) {
 				return []; // Skip records with missing composite fields
 			}
@@ -1707,7 +1729,7 @@ class IndexManager {
 
 	/**
 	 * Rebuild all indexes from scratch
-	 * @param {Map<string, Object>} records - All records to reindex
+	 * @param {Iterable<[string, Object]>} records - All records to reindex (entries format)
 	 */
 	rebuild (records) {
 		// Clear all indexes
@@ -1726,7 +1748,7 @@ class IndexManager {
 	/**
 	 * Rebuild indexes for a specific field
 	 * @param {string} field - Field to reindex
-	 * @param {Map<string, Object>} records - All records to reindex
+	 * @param {Iterable<[string, Object]>} records - All records to reindex (entries format)
 	 */
 	rebuildField (field, records) {
 		const indexNames = this.listIndexes();
@@ -6705,6 +6727,27 @@ class StorageManager {
 	}
 
 	/**
+	 * Override storage with bulk data (maximum performance)
+	 * @param {Array<[string, Object]>} data - Array of [key, value] pairs
+	 * @returns {boolean} Success status
+	 */
+	override (data) {
+		try {
+			if (this.config.immutable) {
+				// Create new ImmutableStore from data
+				this._store = new ImmutableStore(new Map(data));
+			} else {
+				// Direct Map construction from 2D array
+				this._store = new Map(data);
+			}
+
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
+	/**
 	 * Get underlying store (for compatibility)
 	 * @returns {Map|ImmutableStore} The underlying store
 	 */
@@ -8621,12 +8664,15 @@ class Haro {
 	 * @returns {Haro} Store instance for chaining
 	 */
 	reindex (field) {
+		// Get all records in entries format: Iterable<[key, data]>
+		const recordEntries = this.entries();
+
 		if (field) {
 			// Rebuild indexes for specific field
-			this.indexManager.rebuildField(field, this.entries());
+			this.indexManager.rebuildField(field, recordEntries);
 		} else {
 			// Rebuild all indexes
-			this.indexManager.rebuild(this.entries());
+			this.indexManager.rebuild(recordEntries);
 		}
 
 		return this;
@@ -8657,7 +8703,7 @@ class Haro {
 		}
 
 		// Default to records
-		return this.entries();
+		return Array.from(this.entries());
 	}
 
 	/**
@@ -8683,13 +8729,18 @@ class Haro {
 				// Rebuild indexes with current data
 				this.reindex();
 			} else {
-				// Clear existing data
+				// Clear existing data and indexes
 				this.clear();
 
-				// Import records
-				for (const [key, value] of data) {
-					this.set(key, value, true); // Use batch mode
-				}
+				// Direct bulk storage override for maximum performance
+				// Data should already be in correct 2D array format: [[key, value], ...]
+				this.storageManager.override(data);
+
+				// Note: Indexes are not rebuilt - they should be loaded separately via override(indexData, "indexes")
+				// This allows for maximum performance during bulk data restoration
+
+				// Trigger lifecycle hooks for bulk operation
+				this.lifecycleManager.onbatch(data, "override");
 			}
 
 			return true;

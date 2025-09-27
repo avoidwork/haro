@@ -118,6 +118,27 @@ export class StorageManager {
 	}
 
 	/**
+	 * Override storage with bulk data (maximum performance)
+	 * @param {Array<[string, Object]>} data - Array of [key, value] pairs
+	 * @returns {boolean} Success status
+	 */
+	override (data) {
+		try {
+			if (this.config.immutable) {
+				// Create new ImmutableStore from data
+				this._store = new ImmutableStore(new Map(data));
+			} else {
+				// Direct Map construction from 2D array
+				this._store = new Map(data);
+			}
+
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
+	/**
 	 * Get underlying store (for compatibility)
 	 * @returns {Map|ImmutableStore} The underlying store
 	 */

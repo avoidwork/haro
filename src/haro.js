@@ -681,13 +681,18 @@ export class Haro {
 				// Rebuild indexes with current data
 				this.reindex();
 			} else {
-				// Clear existing data
+				// Clear existing data and indexes
 				this.clear();
 
-				// Import records
-				for (const [key, value] of data) {
-					this.set(key, value, true); // Use batch mode
-				}
+				// Direct bulk storage override for maximum performance
+				// Data should already be in correct 2D array format: [[key, value], ...]
+				this.storageManager.override(data);
+
+				// Note: Indexes are not rebuilt - they should be loaded separately via override(indexData, "indexes")
+				// This allows for maximum performance during bulk data restoration
+
+				// Trigger lifecycle hooks for bulk operation
+				this.lifecycleManager.onbatch(data, "override");
 			}
 
 			return true;
