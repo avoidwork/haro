@@ -6,29 +6,26 @@ export class Record {
 	 * @param {string} key - Record key
 	 * @param {Object} data - Record data
 	 * @param {Object} [metadata={}] - Additional metadata
+	 * @param {boolean} [freeze=true] - Whether to freeze the record instance
 	 */
-	constructor (key, data, metadata = {}) {
+	constructor (key, data, metadata = {}, freeze = true) {
 		this._key = key;
 		this._data = data;
 
-		// Optimized: only create full metadata if additional metadata is provided
-		if (Object.keys(metadata).length > 0) {
-			this._metadata = {
-				createdAt: new Date().toISOString(),
-				updatedAt: new Date().toISOString(),
-				version: 1,
-				...metadata
-			};
-		} else {
-			// Minimal metadata for performance
-			this._metadata = {
-				version: 1
-			};
-		}
+		// Always create full metadata with timestamps
+		this._metadata = {
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+			version: 1,
+			...metadata
+		};
 
-		// Optimized: only freeze if not in performance-critical path
-		// Note: We'll add a flag later if needed, but for now keep freezing for safety
-		Object.freeze(this);
+		// Freeze properties and instance if requested (for immutable stores)
+		if (freeze) {
+			Object.freeze(this._data);
+			Object.freeze(this._metadata);
+			Object.freeze(this);
+		}
 	}
 
 	/**
@@ -44,14 +41,16 @@ export class Record {
 	 * @returns {Object} Record data (frozen copy)
 	 */
 	get data () {
+		// Return a frozen shallow copy for safety while preserving performance
 		return Object.freeze({ ...this._data });
 	}
 
 	/**
 	 * Get record metadata
-	 * @returns {Object} Metadata object
+	 * @returns {Object} Metadata object (frozen copy)
 	 */
 	get metadata () {
+		// Return a frozen shallow copy for safety while preserving performance
 		return Object.freeze({ ...this._metadata });
 	}
 
@@ -96,7 +95,10 @@ export class Record {
 			version: this._metadata.version + 1
 		};
 
-		return new Record(this._key, newData, newMetadata);
+		// Detect if original was frozen to maintain same freeze state
+		const shouldFreeze = Object.isFrozen(this);
+
+		return new Record(this._key, newData, newMetadata, shouldFreeze);
 	}
 
 	/**
@@ -140,7 +142,24 @@ export class Record {
 	 * @returns {Record} Cloned record
 	 */
 	clone () {
-		return new Record(this._key, structuredClone(this._data), structuredClone(this._metadata));
+		const clonedData = structuredClone(this._data);
+		const clonedMetadata = structuredClone(this._metadata);
+
+		// Detect if original was frozen to maintain same freeze state
+		const shouldFreeze = Object.isFrozen(this);
+
+		const cloned = Object.create(Record.prototype);
+		cloned._key = this._key;
+		cloned._data = clonedData;
+		cloned._metadata = clonedMetadata;
+
+		if (shouldFreeze) {
+			Object.freeze(cloned._data);
+			Object.freeze(cloned._metadata);
+			Object.freeze(cloned);
+		}
+
+		return cloned;
 	}
 
 	/**
@@ -207,14 +226,15 @@ export class Record {
 export class RecordCollection {
 	/**
 	 * @param {Record[]} [records=[]] - Initial records
+	 * @param {boolean} [freeze=true] - Whether to freeze the collection instance
 	 */
-	constructor (records = []) {
+	constructor (records = [], freeze = true) {
 		// Optimized: avoid unnecessary array copying for performance
 		// Collections are expected to be short-lived in most cases
 		this._records = records;
 
-		// Only freeze in development for debugging, skip in production for performance
-		if (process.env.NODE_ENV !== "production") {
+		// Freeze the collection if requested
+		if (freeze) {
 			Object.freeze(this);
 		}
 	}
@@ -258,7 +278,9 @@ export class RecordCollection {
 	 * @returns {RecordCollection} New collection with filtered records
 	 */
 	filter (predicate) {
-		return new RecordCollection(this._records.filter(predicate));
+		const shouldFreeze = Object.isFrozen(this);
+
+		return new RecordCollection(this._records.filter(predicate), shouldFreeze);
 	}
 
 	/**
@@ -303,7 +325,9 @@ export class RecordCollection {
 	 * @returns {RecordCollection} New sorted collection
 	 */
 	sort (comparator) {
-		return new RecordCollection([...this._records].sort(comparator));
+		const shouldFreeze = Object.isFrozen(this);
+
+		return new RecordCollection([...this._records].sort(comparator), shouldFreeze);
 	}
 
 	/**
@@ -313,7 +337,9 @@ export class RecordCollection {
 	 * @returns {RecordCollection} New collection with sliced records
 	 */
 	slice (start = 0, end) {
-		return new RecordCollection(this._records.slice(start, end));
+		const shouldFreeze = Object.isFrozen(this);
+
+		return new RecordCollection(this._records.slice(start, end), shouldFreeze);
 	}
 
 	/**
@@ -344,11 +370,19 @@ export class RecordCollection {
 	}
 
 	/**
-	 * Get records as key-value pairs
-	 * @returns {Array<[string, Object]>} Array of [key, data] pairs
+	 * Get an iterable of [index, record] pairs for the records array
+	 * @returns {IterableIterator<[number, Record]>} Iterator of [index, record] pairs
 	 */
-	toPairs () {
-		return this._records.map(record => [record.key, record.data]);
+	entries () {
+		return this._records.entries();
+	}
+
+	/**
+	 * Get an iterable of records in the collection
+	 * @returns {IterableIterator<Record>} Iterator of records
+	 */
+	values () {
+		return this._records.values();
 	}
 
 	/**
@@ -371,8 +405,9 @@ export class RecordCollection {
 		}
 
 		// Convert arrays to RecordCollections
+		const shouldFreeze = Object.isFrozen(this);
 		for (const [key, records] of groups) {
-			groups.set(key, new RecordCollection(records));
+			groups.set(key, new RecordCollection(records, shouldFreeze));
 		}
 
 		return groups;
@@ -393,7 +428,9 @@ export class RecordCollection {
 			}
 		}
 
-		return new RecordCollection(unique);
+		const shouldFreeze = Object.isFrozen(this);
+
+		return new RecordCollection(unique, shouldFreeze);
 	}
 
 	/**
@@ -433,10 +470,11 @@ export const RecordFactory = {
 	 * @param {string} key - Record key
 	 * @param {Object} data - Record data
 	 * @param {Object} [metadata={}] - Additional metadata
+	 * @param {boolean} [freeze=true] - Whether to freeze the record instance
 	 * @returns {Record} New record instance
 	 */
-	create (key, data, metadata = {}) {
-		return new Record(key, data, metadata);
+	create (key, data, metadata = {}, freeze = true) {
+		return new Record(key, data, metadata, freeze);
 	},
 
 
@@ -445,24 +483,26 @@ export const RecordFactory = {
 	 * @param {Object} data - Data object containing key field
 	 * @param {string} [keyField='id'] - Name of the key field
 	 * @param {Object} [metadata={}] - Additional metadata
+	 * @param {boolean} [freeze=true] - Whether to freeze the record instance
 	 * @returns {Record} New record instance
 	 */
-	fromObject (data, keyField = "id", metadata = {}) {
+	fromObject (data, keyField = "id", metadata = {}, freeze = true) {
 		const key = data[keyField];
 		if (!key) {
 			throw new Error(`Key field '${keyField}' not found in data`);
 		}
 
-		return new Record(key, data, metadata);
+		return new Record(key, data, metadata, freeze);
 	},
 
 	/**
 	 * Create a collection from an array of records or data objects
 	 * @param {Array<Record|Object>} items - Items to create collection from
 	 * @param {string} [keyField='id'] - Key field name for objects
+	 * @param {boolean} [freeze=true] - Whether to freeze the collection instance
 	 * @returns {RecordCollection} New record collection
 	 */
-	createCollection (items, keyField = "id") {
+	createCollection (items, keyField = "id", freeze = true) {
 		const records = items.map(item => {
 			if (item instanceof Record) {
 				return item;
@@ -471,14 +511,15 @@ export const RecordFactory = {
 			return this.fromObject(item, keyField);
 		});
 
-		return new RecordCollection(records);
+		return new RecordCollection(records, freeze);
 	},
 
 	/**
 	 * Create an empty collection
+	 * @param {boolean} [freeze=true] - Whether to freeze the collection instance
 	 * @returns {RecordCollection} Empty record collection
 	 */
-	emptyCollection () {
-		return new RecordCollection();
+	emptyCollection (freeze = true) {
+		return new RecordCollection([], freeze);
 	}
 };

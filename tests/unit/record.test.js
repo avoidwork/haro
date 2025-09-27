@@ -794,17 +794,37 @@ describe("RecordCollection", () => {
 		});
 
 		/**
-		 * Test toPairs() method
+		 * Test entries() method
 		 */
-		it("should convert to key-value pairs", () => {
-			const collection = new RecordCollection(createTestRecords());
-			const pairs = collection.toPairs();
+		it("should return iterable of [index, record] pairs", () => {
+			const testRecords = createTestRecords();
+			const collection = new RecordCollection(testRecords);
+			const entries = collection.entries();
+			const entriesArray = Array.from(entries);
 
-			assert.ok(Array.isArray(pairs));
-			assert.strictEqual(pairs.length, 3);
-			assert.deepStrictEqual(pairs[0], ["user1", { name: "John", age: 30, role: "admin" }]);
-			assert.deepStrictEqual(pairs[1], ["user2", { name: "Jane", age: 25, role: "user" }]);
+			assert.ok(typeof entries[Symbol.iterator] === 'function');
+			assert.strictEqual(entriesArray.length, 3);
+			assert.deepStrictEqual(entriesArray[0], [0, testRecords[0]]);
+			assert.deepStrictEqual(entriesArray[1], [1, testRecords[1]]);
+			assert.deepStrictEqual(entriesArray[2], [2, testRecords[2]]);
 		});
+
+		/**
+		 * Test values() method
+		 */
+		it("should return iterable of records", () => {
+			const testRecords = createTestRecords();
+			const collection = new RecordCollection(testRecords);
+			const values = collection.values();
+			const valuesArray = Array.from(values);
+
+			assert.ok(typeof values[Symbol.iterator] === 'function');
+			assert.strictEqual(valuesArray.length, 3);
+			assert.strictEqual(valuesArray[0], testRecords[0]);
+			assert.strictEqual(valuesArray[1], testRecords[1]);
+			assert.strictEqual(valuesArray[2], testRecords[2]);
+		});
+
 	});
 
 	describe("Utility Methods", () => {

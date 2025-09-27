@@ -23,7 +23,7 @@
     "build:analyze": "ANALYZE=true npm run build",
     "changelog": "auto-changelog -p",
     "lint": "eslint --fix *.js benchmarks/*.js src/*.js",
-    "mocha": "c8 --reporter=text mocha 'tests/unit/**/*.test.js' | grep -A 100 '^-----' > coverage.txt",
+    "mocha": "c8 --reporter=text mocha 'tests/**/*.test.js'",
     "rollup": "rollup --config",
     "test": "npm run lint && npm run mocha",
     "prepare": "husky"

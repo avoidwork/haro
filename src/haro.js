@@ -227,8 +227,7 @@ export class Haro {
 	 * @returns {boolean} True if record exists
 	 */
 	has (key) {
-		// Direct access to storage for maximum performance
-		return this.storageManager.has(key);
+		return this.crudManager.has(key);
 	}
 
 	/**

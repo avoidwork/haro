@@ -92,10 +92,14 @@ export class StorageManager {
 
 	/**
 	 * Get all storage entries
-	 * @returns {IterableIterator<[string, Object]>} Iterable of [key, value] pairs
+	 * @returns {Array<[string, Object]>} Array of [key, value] pairs
 	 */
 	entries () {
-		return this._store.entries();
+		if (this.config.immutable && this._store.entries) {
+			return this._store.entries();
+		}
+
+		return Array.from(this._store.entries());
 	}
 
 	/**
