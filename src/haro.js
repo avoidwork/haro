@@ -188,7 +188,7 @@ export class Haro {
 		}
 
 		// Delegate to CRUD manager (now optimized)
-		return this.crudManager.get(key, options);
+		return this.crudManager.get(key);
 	}
 
 	/**

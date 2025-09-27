@@ -1,6 +1,6 @@
 import { randomUUID as uuid } from "crypto";
 import { RecordNotFoundError } from "./errors.js";
-import { RecordFactory } from "./record.js";
+import { Record } from "./record.js";
 
 /**
  * Manages CRUD operations with validation and error handling
@@ -26,15 +26,9 @@ export class CRUDManager {
 	 * Set or update a record with comprehensive validation and error handling
 	 * @param {string|null} key - Record key or null for auto-generation
 	 * @param {Object} [data={}] - Record data
-	 * @param {Object} [options={}] - Operation options
 	 * @returns {Record} Created/updated record
 	 */
-	set (key, data = {}, options = {}) {
-		const {
-			override = false,
-			validate = true
-		} = options;
-
+	set (key, data = {}) {
 		// Generate key if not provided
 		if (key === null) {
 			key = data[this.config.key] ?? uuid();
@@ -49,7 +43,7 @@ export class CRUDManager {
 		}
 
 		// Validate against schema if configured
-		if (validate && this.config.schema) {
+		if (this.config.schema) {
 			this.config.schema.validate(recordData);
 		}
 
@@ -70,7 +64,7 @@ export class CRUDManager {
 		}
 
 		// Create the Record instance that will be stored
-		const record = RecordFactory.create(key, finalData, metadata, this.freeze);
+		const record = new Record(key, finalData, metadata, this.freeze);
 
 		// Store version if versioning enabled
 		if (this.versionManager && existingData) {
@@ -92,20 +86,17 @@ export class CRUDManager {
 	/**
 	 * Get a record by key with consistent return format
 	 * @param {string} key - Record key
-	 * @param {Object} [options={}] - Get options
 	 * @returns {Record|null} Record instance or null if not found
 	 */
-	get (key, options = {}) {
-		const { includeVersions = false } = options;
-
+	get (key) {
 		const record = this.storageManager.get(key);
 
 		if (!record) {
 			return null;
 		}
 
-		// If no version info needed, return the stored Record directly
-		if (!includeVersions || !this.versionManager) {
+		// If no version manager, return the stored Record directly
+		if (!this.versionManager) {
 			return record;
 		}
 
@@ -114,7 +105,7 @@ export class CRUDManager {
 		if (history) {
 			const metadata = Object.assign({}, record.metadata, { versions: history.versions });
 
-			return RecordFactory.create(key, record.data, metadata, this.freeze);
+			return new Record(key, record.data, metadata, this.freeze);
 		}
 
 		return record;

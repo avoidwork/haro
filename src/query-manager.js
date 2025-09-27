@@ -1,5 +1,5 @@
 import { QueryError } from "./errors.js";
-import { RecordCollection, RecordFactory } from "./record.js";
+import { Record, RecordCollection } from "./record.js";
 
 /**
  * Manages complex querying operations and criteria matching
@@ -67,9 +67,9 @@ export class QueryManager {
 			const paginatedRecords = matchingRecords.slice(start, end);
 
 			// Create Records from cached data (no additional storage access needed)
-			const records = paginatedRecords.map(({ key, data }) => {
-				return RecordFactory.create(key, data);
-			});
+		const records = paginatedRecords.map(({ key, data }) => {
+			return new Record(key, data);
+		});
 
 			if (plan) {
 				plan.completeExecution(records.length);
@@ -145,7 +145,7 @@ export class QueryManager {
 			// For backwards compatibility, pass plain objects to predicates
 			if (predicate(recordData)) {
 				if (count >= offset) {
-					records.push(RecordFactory.create(key, recordData));
+					records.push(new Record(key, recordData));
 					if (limit && records.length >= limit) {
 						break;
 					}
@@ -376,7 +376,7 @@ export class QueryManager {
 		for (const [key, recordData] of this.storageManager.entries()) {
 			if (this._searchInRecord(recordData, value)) {
 				if (count >= offset) {
-					records.push(RecordFactory.create(key, recordData));
+					records.push(new Record(key, recordData));
 					if (limit && records.length >= limit) {
 						break;
 					}
@@ -399,7 +399,7 @@ export class QueryManager {
 		for (const key of keys) {
 			const recordData = this.storageManager.get(key);
 			if (recordData) {
-				results.push(RecordFactory.create(key, recordData));
+				results.push(new Record(key, recordData));
 			}
 		}
 
