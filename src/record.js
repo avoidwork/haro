@@ -12,9 +12,7 @@ export class Record {
 		this._key = key;
 		this._data = data;
 		this._metadata = metadata;
-		this._frozen = freeze;
 
-		// OPTIMIZATION: Only freeze if explicitly requested
 		if (freeze) {
 			Object.freeze(this._data);
 			Object.freeze(this._metadata);
@@ -35,7 +33,6 @@ export class Record {
 	 * @returns {Object} Record data
 	 */
 	get data () {
-		// OPTIMIZATION: Return direct reference for performance
 		return this._data;
 	}
 
@@ -44,7 +41,6 @@ export class Record {
 	 * @returns {Object} Metadata object
 	 */
 	get metadata () {
-		// OPTIMIZATION: Return direct reference for performance
 		return this._metadata;
 	}
 
@@ -223,8 +219,6 @@ export class RecordCollection {
 	 * @param {boolean} [freeze=true] - Whether to freeze the collection instance
 	 */
 	constructor (records = [], freeze = true) {
-		// Optimized: avoid unnecessary array copying for performance
-		// Collections are expected to be short-lived in most cases
 		this._records = records;
 
 		// Freeze the collection if requested
