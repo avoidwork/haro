@@ -240,7 +240,7 @@ export class Haro {
 
 	/**
 	 * Get all record values (backwards compatibility)
-	 * @returns {Array<Object>} Array of record values
+	 * @returns {IterableIterator<Object>} Iterable of record values
 	 */
 	values () {
 		return this.storageManager.values();
@@ -248,7 +248,7 @@ export class Haro {
 
 	/**
 	 * Get all record entries as [key, value] pairs (backwards compatibility)
-	 * @returns {Array<[string, Object]>} Array of [key, value] pairs
+	 * @returns {IterableIterator<[string, Object]>} Iterable of [key, value] pairs
 	 */
 	entries () {
 		return this.storageManager.entries();
@@ -259,231 +259,64 @@ export class Haro {
 	 * @returns {Array<Object>} Array of all records
 	 */
 	toArray () {
-		return this.values();
+		return Array.from(this.values());
 	}
 
 	/**
 	 * Filter records using a predicate (backwards compatibility)
 	 * @param {Function} predicate - Filter predicate
-	 * @returns {Array<Object>} Filtered records
+	 * @param {Object} [options={}] - Filter options
+	 * @returns {RecordCollection} Filtered records
 	 */
-	filter (predicate) {
-		return this.values().filter(predicate);
+	filter (predicate, options = {}) {
+		// Delegate to QueryManager
+		return this.queryManager.filter(predicate, options);
 	}
 
 	/**
 	 * Search records (backwards compatibility)
 	 * @param {*} value - Search value
 	 * @param {string|Array<string>} [fields] - Fields to search
+	 * @param {Object} [options={}] - Search options
 	 * @returns {RecordCollection} Matching records
 	 */
-	search (value, fields) {
-		// Function-based search (full scan)
-		if (typeof value === "function") {
-			return this.filter(value);
-		}
-
-		// If no fields specified, search all available indexes
-		if (!fields) {
-			const availableIndexes = this.indexManager.listIndexes();
-			if (availableIndexes.length === 0) {
-				// No indexes, full scan
-				return this._fullScanSearch(value);
-			}
-			fields = availableIndexes;
-		}
-
-		const fieldArray = Array.isArray(fields) ? fields : [fields];
-		const matchingKeys = new Set();
-
-		// Try to use indexes for each field
-		for (const field of fieldArray) {
-			if (this.indexManager.hasIndex(field)) {
-				// Use index-based search
-				const indexKeys = this._searchIndex(field, value);
-				indexKeys.forEach(key => matchingKeys.add(key));
-			} else {
-				// Fallback to field-based search for non-indexed fields
-				const records = this.values();
-				records.forEach(record => {
-					const fieldValue = this._getFieldValue(record, field);
-					if (this._matchesValue(fieldValue, value)) {
-						matchingKeys.add(record[this.config.key]);
-					}
-				});
-			}
-		}
-
-		// Use shared method to convert keys to RecordCollection
-		return this._keysToRecordCollection(matchingKeys);
+	search (value, fields, options = {}) {
+		// Delegate to QueryManager
+		return this.queryManager.search(value, fields, options);
 	}
 
-	/**
-	 * Search within a specific index
-	 * @param {string} indexName - Index name
-	 * @param {*} value - Search value
-	 * @returns {Set<string>} Set of matching record keys
-	 * @private
-	 */
-	_searchIndex (indexName, value) {
-		const matchingKeys = new Set();
-
-		try {
-			// For exact matches, use IndexManager's findByIndex method
-			if (typeof value === "string" && !value.includes("*") && !value.includes("?")) {
-				const exactKeys = this.indexManager.findByIndex(indexName, value);
-				exactKeys.forEach(key => matchingKeys.add(key));
-			} else {
-				// For partial matches, search through all index keys
-				const indexStorage = this.indexManager._indexes.get(indexName);
-				if (indexStorage) {
-					// Use correct property name: _storage instead of _data
-					for (const [indexKey, recordKeys] of indexStorage._storage.entries()) {
-						if (this._matchesValue(indexKey, value)) {
-							recordKeys.forEach(key => matchingKeys.add(key));
-						}
-					}
-				}
-			}
-		} catch {
-			// Fallback to empty set on error
-		}
-
-		return matchingKeys;
-	}
-
-	/**
-	 * Perform full scan search when no indexes available
-	 * @param {*} value - Search value
-	 * @returns {RecordCollection} Matching records
-	 * @private
-	 */
-	_fullScanSearch (value) {
-		const records = this.values();
-		const matchingRecords = records.filter(record => {
-			return this._searchInRecord(record, value);
-		});
-
-		// Extract keys and use shared conversion method
-		const matchingKeys = matchingRecords.map(record => record[this.config.key]);
-
-		return this._keysToRecordCollection(matchingKeys);
-	}
-
-	/**
-	 * Convert a set of keys to a RecordCollection efficiently
-	 * @param {Set<string>|Array<string>} keys - Record keys
-	 * @returns {RecordCollection} Collection of Record objects
-	 * @private
-	 */
-	_keysToRecordCollection (keys) {
-		const results = [];
-		for (const key of keys) {
-			const recordData = this.storageManager.get(key);
-			if (recordData) {
-				results.push(RecordFactory.create(key, recordData));
-			}
-		}
-
-		return new RecordCollection(results);
-	}
-
-	/**
-	 * Search within a record for a value
-	 * @param {Object} record - Record to search
-	 * @param {*} value - Value to search for
-	 * @returns {boolean} True if found
-	 * @private
-	 */
-	_searchInRecord (record, value) {
-		for (const fieldValue of Object.values(record)) {
-			if (this._matchesValue(fieldValue, value)) {
-				return true;
-			}
-
-			// Search in nested objects and arrays
-			if (typeof fieldValue === "object" && fieldValue !== null) {
-				if (Array.isArray(fieldValue)) {
-					if (fieldValue.some(item => this._matchesValue(item, value))) {
-						return true;
-					}
-				} else if (this._searchInRecord(fieldValue, value)) {
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * Get field value from record (supports nested fields)
-	 * @param {Object} record - Record object
-	 * @param {string} field - Field path (e.g., "user.name")
-	 * @returns {*} Field value
-	 * @private
-	 */
-	_getFieldValue (record, field) {
-		const parts = field.split(".");
-		let value = record;
-
-		for (const part of parts) {
-			if (value && typeof value === "object") {
-				value = value[part];
-			} else {
-				return undefined;
-			}
-		}
-
-		return value;
-	}
-
-	/**
-	 * Check if a value matches the search criteria
-	 * @param {*} fieldValue - Field value to test
-	 * @param {*} searchValue - Search value
-	 * @returns {boolean} True if matches
-	 * @private
-	 */
-	_matchesValue (fieldValue, searchValue) {
-		if (searchValue instanceof RegExp) {
-			return searchValue.test(String(fieldValue));
-		}
-
-		if (typeof searchValue === "string") {
-			return String(fieldValue).toLowerCase().includes(searchValue.toLowerCase());
-		}
-
-		return fieldValue === searchValue;
-	}
 
 	/**
 	 * Map over records (backwards compatibility)
 	 * @param {Function} mapper - Mapping function
+	 * @param {Object} [options={}] - Map options
 	 * @returns {Array} Mapped results
 	 */
-	map (mapper) {
-		return this.values().map(mapper);
+	map (mapper, options = {}) {
+		// Delegate to QueryManager
+		return this.queryManager.map(mapper, options);
 	}
 
 	/**
 	 * Reduce records (backwards compatibility)
 	 * @param {Function} reducer - Reducer function
 	 * @param {*} [initialValue] - Initial value
+	 * @param {Object} [options={}] - Reduce options
 	 * @returns {*} Reduced result
 	 */
-	reduce (reducer, initialValue) {
-		const values = this.values();
-
-		return arguments.length > 1 ? values.reduce(reducer, initialValue) : values.reduce(reducer);
+	reduce (reducer, initialValue, options = {}) {
+		// Delegate to QueryManager
+		return this.queryManager.reduce(reducer, initialValue, options);
 	}
 
 	/**
 	 * Iterate over records (backwards compatibility)
 	 * @param {Function} callback - Callback function
+	 * @param {Object} [options={}] - Options
 	 */
-	forEach (callback) {
-		this.values().forEach(callback);
+	forEach (callback, options = {}) {
+		// Delegate to QueryManager
+		this.queryManager.forEach(callback, options);
 	}
 
 	/**
@@ -492,7 +325,7 @@ export class Haro {
 	 * @returns {Array<Object>} Sorted records
 	 */
 	sort (compareFn) {
-		return this.values().sort(compareFn);
+		return this.toArray().sort(compareFn);
 	}
 
 	/**

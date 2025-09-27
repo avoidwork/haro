@@ -84,26 +84,18 @@ export class StorageManager {
 
 	/**
 	 * Get all storage values
-	 * @returns {Array<Object>} Array of values
+	 * @returns {IterableIterator<Object>} Iterable of values
 	 */
 	values () {
-		if (this.config.immutable) {
-			return this._store.values();
-		}
-
-		return Array.from(this._store.values());
+		return this._store.values();
 	}
 
 	/**
 	 * Get all storage entries
-	 * @returns {Array<[string, Object]>} Array of [key, value] pairs
+	 * @returns {IterableIterator<[string, Object]>} Iterable of [key, value] pairs
 	 */
 	entries () {
-		if (this.config.immutable) {
-			return this._store.entries();
-		}
-
-		return Array.from(this._store.entries());
+		return this._store.entries();
 	}
 
 	/**
