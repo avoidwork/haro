@@ -88,6 +88,28 @@ export class IndexDefinition {
 	}
 
 	/**
+	 * Get field value from record (supports nested fields)
+	 * @param {Object} record - Record object
+	 * @param {string} field - Field path (e.g., "profile.professional.department")
+	 * @returns {*} Field value
+	 * @private
+	 */
+	_getFieldValue (record, field) {
+		const parts = field.split(".");
+		let value = record;
+
+		for (const part of parts) {
+			if (value && typeof value === "object") {
+				value = value[part];
+			} else {
+				return undefined;
+			}
+		}
+
+		return value;
+	}
+
+	/**
 	 * Extract raw keys from record
 	 * @param {Object} record - Record data
 	 * @returns {string[]} Array of raw keys
@@ -99,7 +121,7 @@ export class IndexDefinition {
 		}
 
 		const field = this.fields[0];
-		const value = record[field];
+		const value = this._getFieldValue(record, field);
 
 		if (value === undefined || value === null) {
 			return [];
@@ -123,7 +145,7 @@ export class IndexDefinition {
 		let keys = [""];
 
 		for (const field of this.fields.sort()) {
-			const value = record[field];
+			const value = this._getFieldValue(record, field);
 			if (value === undefined || value === null) {
 				return []; // Skip records with missing composite fields
 			}
