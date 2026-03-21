@@ -78,6 +78,19 @@ describe("Indexing", () => {
 			assert.strictEqual(results.length, 0);
 		});
 
+		it("should find records using partial key of composite index", () => {
+			const results = indexedStore.find({name: "John"});
+			assert.strictEqual(results.length, 1);
+			assert.strictEqual(results[0][1].name, "John");
+		});
+
+		it("should find records using partial key of composite index with multiple matches", () => {
+			const results = indexedStore.find({department: "IT"});
+			assert.strictEqual(results.length, 2);
+			assert.strictEqual(results[0][1].department, "IT");
+			assert.strictEqual(results[1][1].department, "IT");
+		});
+
 		it("should return frozen results in immutable mode", () => {
 			const immutableStore = new Haro({
 				index: ["name"],

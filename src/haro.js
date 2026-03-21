@@ -63,9 +63,10 @@ export class Haro {
 		this.key = key;
 		this.versions = new Map();
 		this.versioning = versioning;
+		this._registry = [];
 		Object.defineProperty(this, STRING_REGISTRY, {
 			enumerable: true,
-			get: () => Array.from(this.data.keys())
+			get: () => this._registry
 		});
 		Object.defineProperty(this, STRING_SIZE, {
 			enumerable: true,
@@ -88,7 +89,8 @@ export class Haro {
 	 * ], 'set');
 	 */
 	batch (args, type = STRING_SET) {
-		const fn = type === STRING_DEL ? i => this.delete(i, true) : i => this.set(null, i, true, true);
+		const skipHooks = true;
+		const fn = type === STRING_DEL ? i => this.delete(i, true, skipHooks) : i => this.set(null, i, true, true, skipHooks);
 
 		return this.onbatch(this.beforeBatch(args, type).map(fn), type);
 	}
@@ -152,6 +154,7 @@ export class Haro {
 		this.data.clear();
 		this.indexes.clear();
 		this.versions.clear();
+		this._registry = [];
 		this.reindex().onclear();
 
 		return this;
@@ -184,15 +187,23 @@ export class Haro {
 	 * store.delete('user123');
 	 * // Throws error if 'user123' doesn't exist
 	 */
-	delete (key = STRING_EMPTY, batch = false) {
+	delete (key = STRING_EMPTY, batch = false, skipHooks = false) {
 		if (!this.data.has(key)) {
 			throw new Error(STRING_RECORD_NOT_FOUND);
 		}
 		const og = this.get(key, true);
-		this.beforeDelete(key, batch);
+		if (!skipHooks) {
+			this.beforeDelete(key, batch);
+		}
 		this.deleteIndex(key, og);
 		this.data.delete(key);
-		this.ondelete(key, batch);
+		const idx = this._registry.indexOf(key);
+		if (idx !== -1) {
+			this._registry.splice(idx, 1);
+		}
+		if (!skipHooks) {
+			this.ondelete(key, batch);
+		}
 		if (this.versioning) {
 			this.versions.delete(key);
 		}
@@ -291,7 +302,8 @@ export class Haro {
 	 * const admins = store.find({role: 'admin'});
 	 */
 	find (where = {}, raw = false) {
-		const key = Object.keys(where).sort(this.sortKeys).join(this.delimiter);
+		const whereKeys = Object.keys(where).sort(this.sortKeys);
+		const key = whereKeys.join(this.delimiter);
 		const index = this.indexes.get(key) ?? new Map();
 		let result = [];
 		if (index.size > 0) {
@@ -303,6 +315,37 @@ export class Haro {
 
 				return a;
 			}, new Set())).map(i => this.get(i, raw));
+		}
+		if (result.length === 0 && whereKeys.length > 0) {
+			for (const idxKey of this.index) {
+				if (idxKey.includes(this.delimiter)) {
+					const idxFields = idxKey.split(this.delimiter).sort(this.sortKeys);
+					if (idxFields.length > whereKeys.length && idxFields.slice(0, whereKeys.length).join(this.delimiter) === key) {
+						const idx = this.indexes.get(idxKey);
+						if (idx) {
+							const searchFields = idxFields.slice(0, whereKeys.length);
+							const searchData = {};
+							whereKeys.forEach((k, i) => {
+								searchData[searchFields[i]] = where[k];
+							});
+							const searchKeys = this.indexKeys(idxKey, this.delimiter, searchData);
+							const found = new Set(result.map(r => r[0]));
+							searchKeys.forEach(v => {
+								if (idx.has(v)) {
+									idx.get(v).forEach(k => {
+										if (!found.has(k)) {
+											const record = this.get(k, raw);
+											if (record) {
+												result.push(record);
+											}
+										}
+									});
+								}
+							});
+						}
+					}
+				}
+			}
 		}
 		if (!raw && this.immutable) {
 			result = Object.freeze(result);
@@ -609,6 +652,7 @@ export class Haro {
 		} else if (type === STRING_RECORDS) {
 			this.indexes.clear();
 			this.data = new Map(data);
+			this._registry = data.map(i => i[0]);
 		} else {
 			throw new Error(STRING_INVALID_TYPE);
 		}
@@ -710,21 +754,25 @@ export class Haro {
 	 * @param {Object} [data={}] - Record data to set
 	 * @param {boolean} [batch=false] - Whether this is part of a batch operation
 	 * @param {boolean} [override=false] - Whether to override existing data instead of merging
+	 * @param {boolean} [skipHooks=false] - Whether to skip lifecycle hooks
 	 * @returns {Object} The stored record (frozen if immutable mode)
 	 * @example
 	 * const user = store.set(null, {name: 'John', age: 30}); // Auto-generate key
 	 * const updated = store.set('user123', {age: 31}); // Update existing record
 	 */
-	set (key = null, data = {}, batch = false, override = false) {
+	set (key = null, data = {}, batch = false, override = false, skipHooks = false) {
 		if (key === null) {
 			key = data[this.key] ?? this.uuid();
 		}
 		let x = {...data, [this.key]: key};
-		this.beforeSet(key, x, batch, override);
+		if (!skipHooks) {
+			this.beforeSet(key, x, batch, override);
+		}
 		if (!this.data.has(key)) {
 			if (this.versioning) {
 				this.versions.set(key, new Set());
 			}
+			this._registry.push(key);
 		} else {
 			const og = this.get(key, true);
 			this.deleteIndex(key, og);
@@ -738,7 +786,9 @@ export class Haro {
 		this.data.set(key, x);
 		this.setIndex(key, x, null);
 		const result = this.get(key);
-		this.onset(result, batch);
+		if (!skipHooks) {
+			this.onset(result, batch);
+		}
 
 		return result;
 	}
