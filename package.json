@@ -20,10 +20,9 @@
     "benchmark": "node benchmarks/index.js",
     "build": "npm run lint && npm run rollup",
     "changelog": "auto-changelog -p",
-    "lint": "eslint --fix *.js benchmarks/*.js src/*.js tests/**/*.js",
-    "mocha": "c8 mocha tests/**/*.js",
+    "lint": "oxlint --fix *.js benchmarks/*.js src/*.js tests/**/*.js",
     "rollup": "rollup --config",
-    "test": "npm run lint && npm run mocha",
+    "test": "npm run lint && node --test tests/**/*.js",
     "prepare": "husky"
   },
   "repository": {
@@ -49,14 +48,11 @@
     "node": ">=17.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.31.0",
     "@rollup/plugin-terser": "^1.0.0",
     "auto-changelog": "^2.5.0",
-    "c8": "^11.0.0",
-    "eslint": "^10.0.0",
-    "globals": "^17.0.0",
     "husky": "^9.1.7",
-    "mocha": "^11.7.1",
+    "oxfmt": "^0.41.0",
+    "oxlint": "^1.56.0",
     "rollup": "^4.45.0"
   }
 }

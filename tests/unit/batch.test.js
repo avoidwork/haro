@@ -1,5 +1,5 @@
 import assert from "node:assert";
-import {describe, it} from "mocha";
+import {describe, it} from "node:test";
 import {Haro} from "../../src/haro.js";
 
 describe("Batch Operations", () => {

@@ -1,5 +1,5 @@
 import assert from "node:assert";
-import {describe, it, beforeEach} from "mocha";
+import {describe, it, beforeEach} from "node:test";
 import {Haro} from "../../src/haro.js";
 
 describe("Properties", () => {

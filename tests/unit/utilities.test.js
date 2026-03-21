@@ -1,5 +1,5 @@
 import assert from "node:assert";
-import {describe, it, beforeEach} from "mocha";
+import {describe, it, beforeEach} from "node:test";
 import {Haro} from "../../src/haro.js";
 
 describe("Utility Methods", () => {
@@ -365,10 +365,10 @@ describe("Utility Methods", () => {
 		});
 
 		it("should handle special string characters", () => {
-			const result = store.sortKeys("café", "cafe");
+			const result = store.sortKeys("caf\u00e9", "cafe");
 			assert.strictEqual(typeof result, "number", "should return a number");
 
-			const result2 = store.sortKeys("ñ", "n");
+			const result2 = store.sortKeys("\u00f1", "n");
 			assert.strictEqual(typeof result2, "number", "should handle accented characters");
 		});
 	});

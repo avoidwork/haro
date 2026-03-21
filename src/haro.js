@@ -72,7 +72,7 @@ export class Haro {
 			get: () => this.data.size
 		});
 
-		return this.reindex();
+		this.reindex();
 	}
 
 	/**
