@@ -477,7 +477,7 @@ function benchmarkAdvancedFeatures (dataSizes) {
 			const found = store.filter(record => record.category === "A" && record.status === "active");
 
 			// Search simulation
-			const searched = store.filter(record => (/^A/).test(record.category));
+			const searched = store.filter(record => record.category.startsWith('A'));
 
 			// Where simulation
 			const where = store.filter(record => ["A", "B"].includes(record.category));
