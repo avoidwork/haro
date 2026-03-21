@@ -167,7 +167,11 @@ export class Haro {
 	 * cloned.tags.push('new'); // original.tags is unchanged
 	 */
 	clone (arg) {
-		return structuredClone(arg);
+		try {
+			return structuredClone(arg);
+		} catch {
+			return JSON.parse(JSON.stringify(arg));
+		}
 	}
 
 	/**
@@ -522,16 +526,17 @@ export class Haro {
 	 */
 	merge (a, b, override = false) {
 		if (Array.isArray(a) && Array.isArray(b)) {
-			a = override ? b : a.concat(b);
+			return override ? b : a.concat(b);
 		} else if (typeof a === STRING_OBJECT && a !== null && typeof b === STRING_OBJECT && b !== null) {
+			const result = this.clone(a);
 			this.each(Object.keys(b), i => {
-				a[i] = this.merge(a[i], b[i], override);
+				result[i] = this.merge(result[i], b[i], override);
 			});
-		} else {
-			a = b;
+
+			return result;
 		}
 
-		return a;
+		return b;
 	}
 
 	/**
@@ -664,8 +669,8 @@ export class Haro {
 	search (value, index, raw = false) {
 		const result = new Set(); // Use Set for unique keys
 		const fn = typeof value === STRING_FUNCTION;
-		const rgex = value && typeof value.test === STRING_FUNCTION;
-		if (!value) return this.immutable ? this.freeze() : [];
+		const rgex = value != null && typeof value.test === STRING_FUNCTION;
+		if (value == null) return this.immutable ? this.freeze() : [];
 		const indices = index ? Array.isArray(index) ? index : [index] : this.index;
 		for (const i of indices) {
 			const idx = this.indexes.get(i);
@@ -932,7 +937,6 @@ export class Haro {
 	 */
 	where (predicate = {}, op = STRING_DOUBLE_PIPE) {
 		const keys = this.index.filter(i => i in predicate);
-		if (keys.length === 0) return [];
 
 		// Try to use indexes for better performance
 		const indexedKeys = keys.filter(k => this.indexes.has(k));
