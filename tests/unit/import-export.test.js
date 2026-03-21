@@ -7,8 +7,8 @@ describe("Data Import/Export", () => {
 
 	beforeEach(() => {
 		store = new Haro();
-		store.set("user1", {id: "user1", name: "John"});
-		store.set("user2", {id: "user2", name: "Jane"});
+		store.set({id: "user1", name: "John"});
+		store.set({id: "user2", name: "Jane"});
 	});
 
 	describe("dump()", () => {
@@ -26,7 +26,7 @@ describe("Data Import/Export", () => {
 
 		it("should dump indexes", () => {
 			const indexedStore = new Haro({index: ["name"]});
-			indexedStore.set("user1", {id: "user1", name: "John"});
+			indexedStore.set({id: "user1", name: "John"});
 			const data = indexedStore.dump("indexes");
 
 			assert.strictEqual(Array.isArray(data), true);

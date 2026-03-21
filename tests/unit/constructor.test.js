@@ -6,7 +6,7 @@ describe("Constructor", () => {
 	it("should create a new instance with default configuration", () => {
 		const instance = new Haro();
 		assert.strictEqual(instance.delimiter, "|");
-		assert.strictEqual(instance.immutable, false);
+		assert.strictEqual(instance.immutable, undefined);
 		assert.deepStrictEqual(instance.index, []);
 		assert.strictEqual(instance.key, "id");
 		assert.strictEqual(instance.versioning, false);
@@ -17,7 +17,6 @@ describe("Constructor", () => {
 	it("should create instance with custom configuration", () => {
 		const config = {
 			delimiter: "::",
-			immutable: true,
 			index: ["name", "email"],
 			key: "userId",
 			versioning: true
@@ -25,7 +24,6 @@ describe("Constructor", () => {
 		const instance = new Haro(config);
 
 		assert.strictEqual(instance.delimiter, "::");
-		assert.strictEqual(instance.immutable, true);
 		assert.deepStrictEqual(instance.index, ["name", "email"]);
 		assert.strictEqual(instance.key, "userId");
 		assert.strictEqual(instance.versioning, true);

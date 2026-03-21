@@ -5,15 +5,7 @@ import {Haro} from "../../src/haro.js";
 describe("Batch Operations", () => {
 	describe("batch()", () => {
 		it("should batch set multiple records", () => {
-			// Create a store with beforeBatch that returns the arguments
-			const batchStore = new class extends Haro {
-				beforeBatch (args) {
-					return args;
-				}
-				onbatch (result) {
-					return result;
-				}
-			}();
+			const batchStore = new Haro();
 
 			const data = [
 				{id: "user1", name: "John", age: 30},
@@ -28,18 +20,10 @@ describe("Batch Operations", () => {
 		});
 
 		it("should batch delete multiple records", () => {
-			// Create a store with beforeBatch that returns the arguments
-			const batchStore = new class extends Haro {
-				beforeBatch (args) {
-					return args;
-				}
-				onbatch (result) {
-					return result;
-				}
-			}();
+			const batchStore = new Haro();
 
-			batchStore.set("user1", {id: "user1", name: "John"});
-			batchStore.set("user2", {id: "user2", name: "Jane"});
+			batchStore.set({id: "user1", name: "John"});
+			batchStore.set({id: "user2", name: "Jane"});
 
 			const results = batchStore.batch(["user1", "user2"], "del");
 
@@ -48,15 +32,7 @@ describe("Batch Operations", () => {
 		});
 
 		it("should default to set operation", () => {
-			// Create a store with beforeBatch that returns the arguments
-			const batchStore = new class extends Haro {
-				beforeBatch (args) {
-					return args;
-				}
-				onbatch (result) {
-					return result;
-				}
-			}();
+			const batchStore = new Haro();
 
 			const data = [{id: "user1", name: "John"}];
 			const results = batchStore.batch(data);

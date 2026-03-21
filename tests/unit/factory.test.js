@@ -21,21 +21,7 @@ describe("haro factory function", () => {
 			{id: "user2", name: "Jane"}
 		];
 
-		// Create a config with a custom beforeBatch that returns the arguments
-		const config = {
-			beforeBatch: function (args) {
-				return args;
-			}
-		};
-
-		// Create the store and manually override the beforeBatch method
-		const store = haro(null, config);
-		store.beforeBatch = function (args) {
-			return args;
-		};
-
-		// Now batch the data
-		store.batch(data);
+		const store = haro(data);
 
 		assert.strictEqual(store.size, 2);
 		assert.strictEqual(store.has("user1"), true);
@@ -51,14 +37,7 @@ describe("haro factory function", () => {
 		const data = [{id: "user1", name: "John", age: 30}];
 		const config = {index: ["name", "age"]};
 
-		// Create the store and manually override the beforeBatch method
-		const store = haro(null, config);
-		store.beforeBatch = function (args) {
-			return args;
-		};
-
-		// Now batch the data
-		store.batch(data);
+		const store = haro(data, config);
 
 		assert.strictEqual(store.size, 1);
 		assert.deepStrictEqual(store.index, ["name", "age"]);
@@ -69,14 +48,12 @@ describe("haro factory function", () => {
 
 	describe("with array data", () => {
 		it("should populate store when data is an array", () => {
-			// Test the specific code path where data is an array
 			const initialData = [
 				{id: "1", name: "Alice", age: 30},
 				{id: "2", name: "Bob", age: 25},
 				{id: "3", name: "Charlie", age: 35}
 			];
 
-			// This triggers the array data handling in the haro factory function
 			const store = haro(initialData, {
 				index: ["name"],
 				key: "id"
@@ -87,11 +64,9 @@ describe("haro factory function", () => {
 			assert.ok(store.has("2"), "Should contain second record");
 			assert.ok(store.has("3"), "Should contain third record");
 
-			// Verify indexing worked
 			const aliceResults = store.find({name: "Alice"});
 			assert.equal(aliceResults.length, 1);
-			// Results are [key, record] pairs
-			assert.equal(aliceResults[0][1].age, 30);
+			assert.equal(aliceResults[0].age, 30);
 		});
 
 		it("should work with empty array data", () => {

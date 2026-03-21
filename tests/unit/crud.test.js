@@ -12,58 +12,42 @@ describe("Basic CRUD Operations", () => {
 	describe("set()", () => {
 		it("should set a record with auto-generated key", () => {
 			const data = {name: "John", age: 30};
-			const result = store.set(null, data);
+			const result = store.set(data);
 
-			assert.strictEqual(typeof result[0], "string");
-			assert.strictEqual(result[1].name, "John");
-			assert.strictEqual(result[1].age, 30);
+			assert.strictEqual(typeof result.id, "string");
+			assert.strictEqual(result.name, "John");
+			assert.strictEqual(result.age, 30);
 			assert.strictEqual(store.size, 1);
 		});
 
 		it("should set a record with specific key", () => {
 			const data = {id: "user123", name: "John", age: 30};
-			const result = store.set("user123", data);
+			const result = store.set(data);
 
-			assert.strictEqual(result[0], "user123");
-			assert.strictEqual(result[1].name, "John");
-			assert.strictEqual(result[1].age, 30);
-		});
-
-		it("should use record key field when key is null", () => {
-			const data = {id: "user456", name: "Jane", age: 25};
-			const result = store.set(null, data);
-
-			assert.strictEqual(result[0], "user456");
-			assert.strictEqual(result[1].name, "Jane");
+			assert.strictEqual(result.id, "user123");
+			assert.strictEqual(result.name, "John");
+			assert.strictEqual(result.age, 30);
 		});
 
 		it("should merge with existing record by default", () => {
-			store.set("user1", {id: "user1", name: "John", age: 30});
-			const result = store.set("user1", {age: 31, city: "NYC"});
+			store.set({id: "user1", name: "John", age: 30});
+			const result = store.set({id: "user1", age: 31, city: "NYC"});
 
-			assert.strictEqual(result[1].name, "John");
-			assert.strictEqual(result[1].age, 31);
-			assert.strictEqual(result[1].city, "NYC");
-		});
-
-		it("should override existing record when override is true", () => {
-			store.set("user1", {id: "user1", name: "John", age: 30});
-			const result = store.set("user1", {id: "user1", age: 31}, false, true);
-
-			assert.strictEqual(result[1].name, undefined);
-			assert.strictEqual(result[1].age, 31);
+			assert.strictEqual(result.name, "John");
+			assert.strictEqual(result.age, 31);
+			assert.strictEqual(result.city, "NYC");
 		});
 	});
 
 	describe("get()", () => {
 		beforeEach(() => {
-			store.set("user1", {id: "user1", name: "John", age: 30});
+			store.set({id: "user1", name: "John", age: 30});
 		});
 
 		it("should retrieve existing record", () => {
 			const result = store.get("user1");
-			assert.strictEqual(result[0], "user1");
-			assert.strictEqual(result[1].name, "John");
+			assert.strictEqual(result.id, "user1");
+			assert.strictEqual(result.name, "John");
 		});
 
 		it("should return null for non-existent record", () => {
@@ -71,25 +55,15 @@ describe("Basic CRUD Operations", () => {
 			assert.strictEqual(result, null);
 		});
 
-		it("should return raw data when raw=true", () => {
-			const result = store.get("user1", true);
-			assert.strictEqual(result.name, "John");
-			assert.strictEqual(result.age, 30);
-		});
-
-		it("should return frozen data in immutable mode", () => {
-			const immutableStore = new Haro({immutable: true});
-			immutableStore.set("user1", {id: "user1", name: "John"});
-			const result = immutableStore.get("user1");
-
+		it("should return frozen data", () => {
+			const result = store.get("user1");
 			assert.strictEqual(Object.isFrozen(result), true);
-			assert.strictEqual(Object.isFrozen(result[1]), true);
 		});
 	});
 
 	describe("has()", () => {
 		beforeEach(() => {
-			store.set("user1", {id: "user1", name: "John"});
+			store.set({id: "user1", name: "John"});
 		});
 
 		it("should return true for existing record", () => {
@@ -103,8 +77,8 @@ describe("Basic CRUD Operations", () => {
 
 	describe("delete()", () => {
 		beforeEach(() => {
-			store.set("user1", {id: "user1", name: "John"});
-			store.set("user2", {id: "user2", name: "Jane"});
+			store.set({id: "user1", name: "John"});
+			store.set({id: "user2", name: "Jane"});
 		});
 
 		it("should delete existing record", () => {
@@ -121,7 +95,7 @@ describe("Basic CRUD Operations", () => {
 
 		it("should remove record from indexes", () => {
 			const indexedStore = new Haro({index: ["name"]});
-			indexedStore.set("user1", {id: "user1", name: "John"});
+			indexedStore.set({id: "user1", name: "John"});
 			indexedStore.delete("user1");
 
 			const results = indexedStore.find({name: "John"});
@@ -131,8 +105,8 @@ describe("Basic CRUD Operations", () => {
 
 	describe("clear()", () => {
 		beforeEach(() => {
-			store.set("user1", {id: "user1", name: "John"});
-			store.set("user2", {id: "user2", name: "Jane"});
+			store.set({id: "user1", name: "John"});
+			store.set({id: "user2", name: "Jane"});
 		});
 
 		it("should remove all records", () => {
@@ -143,7 +117,7 @@ describe("Basic CRUD Operations", () => {
 
 		it("should clear all indexes", () => {
 			const indexedStore = new Haro({index: ["name"]});
-			indexedStore.set("user1", {id: "user1", name: "John"});
+			indexedStore.set({id: "user1", name: "John"});
 			indexedStore.clear();
 
 			const results = indexedStore.find({name: "John"});
@@ -152,8 +126,8 @@ describe("Basic CRUD Operations", () => {
 
 		it("should clear versions when versioning is enabled", () => {
 			const versionedStore = new Haro({versioning: true});
-			versionedStore.set("user1", {id: "user1", name: "John"});
-			versionedStore.set("user1", {id: "user1", name: "John Updated"});
+			versionedStore.set({id: "user1", name: "John"});
+			versionedStore.set({id: "user1", name: "John Updated"});
 			versionedStore.clear();
 
 			assert.strictEqual(versionedStore.versions.size, 0);
