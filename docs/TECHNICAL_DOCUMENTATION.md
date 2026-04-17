@@ -267,7 +267,7 @@ $$ \text{where}(\{\text{tags}: ['a', 'b']\}, '||') = \bigcup_{t \in \{'a','b'\}}
 
 **Where operation with AND logic (intersection of indexes):**
 
-$$ \text{where}(\{\text{status}: \text{'active'}, \text{role}: \text{'admin'}\}, '\&\&') = \bigcap_{f \in \{\text{status},\text{role}\}} \text{Index}(f = v_f) $$
+$$ \text{where}(\{s: v_s, r: v_r\}, '\&\&') = \bigcap_{f \in \{s,r\}} \text{Index}(f = v_f) $$
 
 > Example: Records with status='active' ∩ Records with role='admin' (must have BOTH)
 
