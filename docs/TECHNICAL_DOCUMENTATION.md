@@ -267,9 +267,9 @@ Example: Records with tag 'a' $\cup$ Records with tag 'b'
 
 **Where operation with AND logic (intersection of indexes):**
 
-$$\text{where}(\{\text{tags}: ['a', 'b']\}, '&&') = \bigcap_{t \in \{'a','b'\}} \text{Index}(\text{tag} = t)$$
+$$\text{where}(\{\text{status}: 'active', \text{role}: 'admin'\}, '&&') = \bigcap_{f \in \{\text{status},\text{role}\}} \text{Index}(f = \text{value}_f)$$
 
-Example: Records with tag 'a' $\cap$ Records with tag 'b' (must have BOTH tags)
+Example: Records with status='active' $\cap$ Records with role='admin' (must have BOTH)
 
 ### Immutability Model
 
