@@ -263,13 +263,15 @@ $$\text{find}(\{a: 1, b: 2\}) = \bigcap_{k \in \{a,b\}} \text{Index}(k = \text{v
 
 $$\text{where}(\{\text{tags}: ['a', 'b']\}, '||') = \bigcup_{t \in \{'a','b'\}} \text{Index}(\text{tag} = t)$$
 
-Example: Records with tag 'a' $\cup$ Records with tag 'b'
+> Example: Records with tag 'a' ∪ Records with tag 'b'
 
 **Where operation with AND logic (intersection of indexes):**
 
-$$\text{where}(\{\text{status}: 'active', \text{role}: 'admin'\}, '&&') = \bigcap_{f \in \{\text{status},\text{role}\}} \text{Index}(f = \text{value}_f)$$
+```latex
+\text{where}(\{\text{status}: \text{'active'}, \text{role}: \text{'admin'}\}, '\&\&') = \bigcap_{f \in \{\text{status},\text{role}\}} \text{Index}(f = \text{value}_f)
+```
 
-Example: Records with status='active' $\cap$ Records with role='admin' (must have BOTH)
+> Example: Records with status='active' `∩` Records with role='admin' (must have BOTH)
 
 ### Immutability Model
 
