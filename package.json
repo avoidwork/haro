@@ -14,16 +14,17 @@
   "files": [
     "dist/haro.cjs",
     "dist/haro.js",
-    "types"
+    "types/haro.d.ts"
   ],
   "scripts": {
     "benchmark": "node benchmarks/index.js",
     "build": "npm run lint && npm run rollup",
     "changelog": "auto-changelog -p",
-    "lint": "eslint --fix *.js benchmarks/*.js src/*.js tests/**/*.js",
-    "mocha": "c8 mocha tests/**/*.js",
+    "fix": "oxlint --fix *.js benchmarks src tests/unit && oxfmt *.js benchmarks src tests/unit --write",
+    "lint": "oxlint *.js benchmarks src tests/unit && oxfmt *.js benchmarks/*.js src/*.js tests/unit/*.js --check",
+    "coverage": "node --test --experimental-test-coverage --test-coverage-exclude=dist/** --test-coverage-exclude=tests/** --test-reporter=spec tests/**/*.test.js 2>&1 | grep -A 1000 \"start of coverage report\" > coverage.txt",
     "rollup": "rollup --config",
-    "test": "npm run lint && npm run mocha",
+    "test": "npm run lint && node --test tests/**/*.js",
     "prepare": "husky"
   },
   "repository": {
