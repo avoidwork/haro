@@ -257,17 +257,17 @@ Haro's `find()` and `where()` methods use set operations for query optimization:
 
 **Find operation (AND logic across fields):**
 
-$$ \text{find}(\{a: 1, b: 2\}) = \bigcap_{k \in \{a,b\}} \text{Index}(k = v_k) $$
+`find({a: 1, b: 2}) = ⋂ Index(k = v_k) for all k in {a,b}`
 
 **Where operation with OR logic (union of indexes):**
 
-$$ \text{where}(\{\text{tags}: ['a', 'b']\}, '||') = \bigcup_{t \in \{'a','b'\}} \text{Index}(\text{tag} = t) $$
+`where({tags: ['a', 'b']}, '||') = ⋃ Index(tag = t) for all t in {'a','b'}`
 
 > Example: Records with tag 'a' ∪ Records with tag 'b'
 
 **Where operation with AND logic (intersection of indexes):**
 
-$$ \text{where}(\{s: v_s, r: v_r\}, '\&\&') = \bigcap_{f \in \{s,r\}} \text{Index}(f = v_f) $$
+`where({s: v_s, r: v_r}, '&&') = ⋂ Index(f = v_f) for all f in {s,r}`
 
 > Example: Records with status='active' ∩ Records with role='admin' (must have BOTH)
 
