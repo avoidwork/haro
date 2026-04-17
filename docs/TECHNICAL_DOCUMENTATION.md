@@ -259,13 +259,17 @@ Haro's `find()` and `where()` methods use set operations for query optimization:
 
 $$\text{find}(\{a: 1, b: 2\}) = \bigcap_{k \in \{a,b\}} \text{Index}(k = \text{value}_k)$$
 
-**Where operation with OR logic:**
+**Where operation with OR logic (union of indexes):**
 
 $$\text{where}(\{\text{tags}: ['a', 'b']\}, '||') = \bigcup_{t \in \{'a','b'\}} \text{Index}(\text{tag} = t)$$
 
-**Where operation with AND logic:**
+Example: Records with tag 'a' $\cup$ Records with tag 'b'
+
+**Where operation with AND logic (intersection of indexes):**
 
 $$\text{where}(\{\text{tags}: ['a', 'b']\}, '&&') = \bigcap_{t \in \{'a','b'\}} \text{Index}(\text{tag} = t)$$
+
+Example: Records with tag 'a' $\cap$ Records with tag 'b' (must have BOTH tags)
 
 ### Immutability Model
 
