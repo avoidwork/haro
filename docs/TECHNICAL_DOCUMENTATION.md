@@ -10,6 +10,7 @@ Haro is a modern, immutable DataStore designed for high-performance data operati
 - [Core Components](#core-components)
 - [Data Flow](#data-flow)
 - [Indexing System](#indexing-system)
+- [Mathematical Foundation](#mathematical-foundation)
 - [Operations](#operations)
 - [Configuration](#configuration)
 - [Performance Characteristics](#performance-characteristics)
@@ -197,6 +198,80 @@ stateDiagram-v2
     IndexReady --> Reindex: reindex()
     Reindex --> RebuildComplete: Full rebuild
     RebuildComplete --> IndexReady
+```
+
+## Mathematical Foundation
+
+Haro's operations are grounded in computer science fundamentals, providing predictable performance characteristics through well-established data structures and algorithms.
+
+### Data Structures
+
+| Structure | Purpose | Complexity | Operations |
+|-----------|---------|------------|------------|
+| `Map` (data) | Primary storage | O(1) get/set | get, set, delete, has |
+| `Map` (indexes) | Query optimization | O(1) lookup | find, where, search |
+| `Set` (index values) | Unique value tracking | O(1) add/has | Index maintenance |
+| `Set` (versions) | Version history | O(1) add | Version tracking |
+
+### Algorithmic Complexity
+
+#### Basic Operations
+
+```
+GET:    O(1)           - Direct hash map lookup
+SET:    O(1) + O(i)    - Hash map insert + index updates
+DELETE: O(1) + O(i)    - Hash map delete + index cleanup
+HAS:    O(1)           - Hash map key existence check
+```
+
+#### Query Operations
+
+```
+FIND:   O(1) to O(n)   - Index lookup or intersection
+SEARCH: O(n × m)       - Iterate indexes, match values
+WHERE:  O(1) to O(n)   - Indexed or full scan
+FILTER: O(n)           - Predicate evaluation per record
+```
+
+#### Composite Index Formula
+
+For composite index with fields `F = [f₁, f₂, ..., fₙ]`:
+
+```
+Index Keys = Cartesian Product of field values
+IK = V(f₁) × V(f₂) × ... × V(fₙ)
+
+Where:
+- V(f) = Set of values for field f
+- |IK| = Π|V(fᵢ)| for i = 1 to n
+```
+
+Example:
+```javascript
+// For data: {name: ['John', 'Jane'], dept: ['IT', 'HR']}
+// Composite index 'name|dept' generates:
+// ['John|IT', 'John|HR', 'Jane|IT', 'Jane|HR']
+// Total keys = 2 × 2 = 4
+```
+
+### Set Theory Operations
+
+Haro's `find()` and `where()` methods use set operations:
+
+```
+find({a: 1, b: 2}) = ⋂(Index(a=1), Index(b=2))
+
+where({tags: ['a', 'b']}, '||') = ⋃(Index(tag=a), Index(tag=b))
+where({tags: ['a', 'b']}, '&&') = ⋂(Index(tag=a), Index(tag=b))
+```
+
+### Immutability Model
+
+Objects are frozen using `Object.freeze()`:
+
+```
+freeze(obj) = obj where ∀prop: prop is non-writable
+deepFreeze(obj) = freeze(obj) where ∀prop ∈ obj: deepFreeze(prop)
 ```
 
 ## Operations
