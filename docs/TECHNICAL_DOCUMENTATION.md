@@ -208,71 +208,86 @@ Haro's operations are grounded in computer science fundamentals, providing predi
 
 | Structure | Purpose | Complexity | Operations |
 |-----------|---------|------------|------------|
-| `Map` (data) | Primary storage | O(1) get/set | get, set, delete, has |
-| `Map` (indexes) | Query optimization | O(1) lookup | find, where, search |
-| `Set` (index values) | Unique value tracking | O(1) add/has | Index maintenance |
-| `Set` (versions) | Version history | O(1) add | Version tracking |
+| `Map` (data) | Primary storage | $O(1)$ get/set | get, set, delete, has |
+| `Map` (indexes) | Query optimization | $O(1)$ lookup | find, where, search |
+| `Set` (index values) | Unique value tracking | $O(1)$ add/has | Index maintenance |
+| `Set` (versions) | Version history | $O(1)$ add | Version tracking |
 
 ### Algorithmic Complexity
 
 #### Basic Operations
 
-```
-GET:    O(1)           - Direct hash map lookup
-SET:    O(1) + O(i)    - Hash map insert + index updates
-DELETE: O(1) + O(i)    - Hash map delete + index cleanup
-HAS:    O(1)           - Hash map key existence check
-```
+| Operation | Complexity | Description |
+|-----------|------------|-------------|
+| GET | $O(1)$ | Direct hash map lookup |
+| SET | $O(1) + O(i)$ | Hash map insert + index updates |
+| DELETE | $O(1) + O(i)$ | Hash map delete + index cleanup |
+| HAS | $O(1)$ | Hash map key existence check |
 
 #### Query Operations
 
-```
-FIND:   O(1) to O(n)   - Index lookup or intersection
-SEARCH: O(n × m)       - Iterate indexes, match values
-WHERE:  O(1) to O(n)   - Indexed or full scan
-FILTER: O(n)           - Predicate evaluation per record
-```
+| Operation | Complexity | Description |
+|-----------|------------|-------------|
+| FIND | $O(1)$ to $O(n)$ | Index lookup or intersection |
+| SEARCH | $O(n \times m)$ | Iterate indexes, match values |
+| WHERE | $O(1)$ to $O(n)$ | Indexed or full scan |
+| FILTER | $O(n)$ | Predicate evaluation per record |
 
 #### Composite Index Formula
 
-For composite index with fields `F = [f₁, f₂, ..., fₙ]`:
+For a composite index with fields $F = [f_1, f_2, \dots, f_n]$, the index keys are computed as the Cartesian product of field values:
 
-```
-Index Keys = Cartesian Product of field values
-IK = V(f₁) × V(f₂) × ... × V(fₙ)
+$$IK = V(f_1) \times V(f_2) \times \dots \times V(f_n)$$
 
 Where:
-- V(f) = Set of values for field f
-- |IK| = Π|V(fᵢ)| for i = 1 to n
-```
+- $V(f)$ = Set of values for field $f$
+- $|IK| = \prod_{i=1}^{n}|V(f_i)|$ (total number of index keys)
 
-Example:
-```javascript
-// For data: {name: ['John', 'Jane'], dept: ['IT', 'HR']}
-// Composite index 'name|dept' generates:
-// ['John|IT', 'John|HR', 'Jane|IT', 'Jane|HR']
-// Total keys = 2 × 2 = 4
-```
+**Example:**
+
+For data `{name: ['John', 'Jane'], dept: ['IT', 'HR']}` with composite index `name|dept`:
+
+$$|IK| = |V(\text{name})| \times |V(\text{dept})| = 2 \times 2 = 4$$
+
+Generated keys: `['John|IT', 'John|HR', 'Jane|IT', 'Jane|HR']`
 
 ### Set Theory Operations
 
-Haro's `find()` and `where()` methods use set operations:
+Haro's `find()` and `where()` methods use set operations for query optimization:
 
-```
-find({a: 1, b: 2}) = ⋂(Index(a=1), Index(b=2))
+**Find operation (AND logic across fields):**
 
-where({tags: ['a', 'b']}, '||') = ⋃(Index(tag=a), Index(tag=b))
-where({tags: ['a', 'b']}, '&&') = ⋂(Index(tag=a), Index(tag=b))
-```
+$$\text{find}(\{a: 1, b: 2\}) = \bigcap_{k \in \{a,b\}} \text{Index}(k = \text{value}_k)$$
+
+**Where operation with OR logic:**
+
+$$\text{where}(\{\text{tags}: ['a', 'b']\}, '||') = \bigcup_{t \in \{'a','b'\}} \text{Index}(\text{tag} = t)$$
+
+**Where operation with AND logic:**
+
+$$\text{where}(\{\text{tags}: ['a', 'b']\}, '&&') = \bigcap_{t \in \{'a','b'\}} \text{Index}(\text{tag} = t)$$
 
 ### Immutability Model
 
-Objects are frozen using `Object.freeze()`:
+Objects are frozen using `Object.freeze()`. Formally:
 
-```
-freeze(obj) = obj where ∀prop: prop is non-writable
-deepFreeze(obj) = freeze(obj) where ∀prop ∈ obj: deepFreeze(prop)
-```
+$$\text{freeze}(\text{obj}) = \text{obj} \text{ where } \forall \text{prop} \in \text{obj}: \text{prop is non-writable}$$
+
+$$\text{deepFreeze}(\text{obj}) = \text{freeze}(\text{obj}) \text{ where } \forall \text{prop} \in \text{obj}: \text{deepFreeze}(\text{prop})$$
+
+### Merge Operation
+
+The merge operation combines two values with the following recursive definition:
+
+$$
+\text{merge}(a, b) = 
+\begin{cases}
+  b & \text{if } a, b \in \text{Array} \land \text{override} \\
+  a \concat b & \text{if } a, b \in \text{Array} \land \lnot\text{override} \\
+  \{k: \text{merge}(a[k], b[k]) \mid k \in \text{keys}(b)\} & \text{if } a, b \in \text{Object} \\
+  b & \text{otherwise}
+\end{cases}
+$$
 
 ## Operations
 
