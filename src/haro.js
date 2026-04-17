@@ -44,6 +44,7 @@ export class Haro {
 	 * @param {string[]} [config.index=[]] - Array of field names to create indexes for
 	 * @param {string} [config.key=STRING_ID] - Primary key field name used for record identification
 	 * @param {boolean} [config.versioning=false] - Enable versioning to track record changes
+	 * @param {boolean} [config.warnOnFullScan=true] - Enable warnings for full table scan queries
 	 * @constructor
 	 * @example
 	 * const store = new Haro({
@@ -53,7 +54,7 @@ export class Haro {
 	 *   immutable: true
 	 * });
 	 */
-	constructor ({delimiter = STRING_PIPE, id = this.uuid(), immutable = false, index = [], key = STRING_ID, versioning = false} = {}) {
+	constructor ({delimiter = STRING_PIPE, id = this.uuid(), immutable = false, index = [], key = STRING_ID, versioning = false, warnOnFullScan = true} = {}) {
 		this.data = new Map();
 		this.delimiter = delimiter;
 		this.id = id;
@@ -63,6 +64,7 @@ export class Haro {
 		this.key = key;
 		this.versions = new Map();
 		this.versioning = versioning;
+		this.warnOnFullScan = warnOnFullScan;
 		Object.defineProperty(this, STRING_REGISTRY, {
 			enumerable: true,
 			get: () => Array.from(this.data.keys())
@@ -72,7 +74,7 @@ export class Haro {
 			get: () => this.data.size
 		});
 
-		return this.reindex();
+		this.initialized = true;
 	}
 
 	/**
@@ -167,7 +169,27 @@ export class Haro {
 	 * cloned.tags.push('new'); // original.tags is unchanged
 	 */
 	clone (arg) {
-		return structuredClone(arg);
+		if (typeof structuredClone === STRING_FUNCTION) {
+			return structuredClone(arg);
+		}
+
+		return JSON.parse(JSON.stringify(arg));
+	}
+
+	/**
+	 * Initializes the store by building indexes for existing data
+	 * @returns {Haro} This instance for method chaining
+	 * @example
+	 * const store = new Haro({ index: ['name'] });
+	 * store.initialize(); // Build indexes
+	 */
+	initialize () {
+		if (!this.initialized) {
+			this.reindex();
+			this.initialized = true;
+		}
+
+		return this;
 	}
 
 	/**
@@ -181,6 +203,9 @@ export class Haro {
 	 * // Throws error if 'user123' doesn't exist
 	 */
 	delete (key = STRING_EMPTY, batch = false) {
+		if (typeof key !== STRING_STRING && typeof key !== STRING_NUMBER) {
+			throw new Error("delete: key must be a string or number");
+		}
 		if (!this.data.has(key)) {
 			throw new Error(STRING_RECORD_NOT_FOUND);
 		}
@@ -287,24 +312,28 @@ export class Haro {
 	 * const admins = store.find({role: 'admin'});
 	 */
 	find (where = {}, raw = false) {
-		const key = Object.keys(where).sort(this.sortKeys).join(this.delimiter);
-		const index = this.indexes.get(key) ?? new Map();
-		let result = [];
-		if (index.size > 0) {
-			const keys = this.indexKeys(key, this.delimiter, where);
-			result = Array.from(keys.reduce((a, v) => {
-				if (index.has(v)) {
-					index.get(v).forEach(k => a.add(k));
-				}
-
-				return a;
-			}, new Set())).map(i => this.get(i, raw));
+		if (typeof where !== STRING_OBJECT || where === null) {
+			throw new Error("find: where must be an object");
 		}
-		if (!raw && this.immutable) {
-			result = Object.freeze(result);
+		const whereKeys = Object.keys(where).sort(this.sortKeys);
+		const key = whereKeys.join(this.delimiter);
+		const result = new Set();
+
+		for (const [indexName, index] of this.indexes) {
+			if (indexName.startsWith(key + this.delimiter) || indexName === key) {
+				const keys = this.indexKeys(indexName, this.delimiter, where);
+				keys.forEach(v => {
+					if (index.has(v)) {
+						index.get(v).forEach(k => result.add(k));
+					}
+				});
+			}
 		}
 
-		return result;
+		let records = Array.from(result).map(i => this.get(i, raw));
+		records = this._freezeResult(records, raw);
+
+		return records;
 	}
 
 	/**
@@ -330,10 +359,7 @@ export class Haro {
 		}, []);
 		if (!raw) {
 			result = result.map(i => this.list(i));
-
-			if (this.immutable) {
-				result = Object.freeze(result);
-			}
+			result = this._freezeResult(result);
 		}
 
 		return result;
@@ -382,12 +408,13 @@ export class Haro {
 	 * const rawUser = store.get('user123', true);
 	 */
 	get (key, raw = false) {
+		if (typeof key !== STRING_STRING && typeof key !== STRING_NUMBER) {
+			throw new Error("get: key must be a string or number");
+		}
 		let result = this.data.get(key) ?? null;
 		if (result !== null && !raw) {
 			result = this.list(result);
-			if (this.immutable) {
-				result = Object.freeze(result);
-			}
+			result = this._freezeResult(result);
 		}
 
 		return result;
@@ -419,24 +446,20 @@ export class Haro {
 	 */
 	indexKeys (arg = STRING_EMPTY, delimiter = STRING_PIPE, data = {}) {
 		const fields = arg.split(delimiter).sort(this.sortKeys);
-		const fieldsLen = fields.length;
-		let result = [""];
-		for (let i = 0; i < fieldsLen; i++) {
-			const field = fields[i];
+
+		return fields.reduce((result, field, i) => {
 			const values = Array.isArray(data[field]) ? data[field] : [data[field]];
 			const newResult = [];
-			const resultLen = result.length;
-			const valuesLen = values.length;
-			for (let j = 0; j < resultLen; j++) {
-				for (let k = 0; k < valuesLen; k++) {
-					const newKey = i === 0 ? values[k] : `${result[j]}${delimiter}${values[k]}`;
+
+			for (const existing of result) {
+				for (const value of values) {
+					const newKey = i === 0 ? value : `${existing}${delimiter}${value}`;
 					newResult.push(newKey);
 				}
 			}
-			result = newResult;
-		}
 
-		return result;
+			return newResult;
+		}, [""]);
 	}
 
 	/**
@@ -462,10 +485,14 @@ export class Haro {
 	 * const page2 = store.limit(10, 10);  // Next 10 records
 	 */
 	limit (offset = INT_0, max = INT_0, raw = false) {
-		let result = this.registry.slice(offset, offset + max).map(i => this.get(i, raw));
-		if (!raw && this.immutable) {
-			result = Object.freeze(result);
+		if (typeof offset !== STRING_NUMBER) {
+			throw new Error("limit: offset must be a number");
 		}
+		if (typeof max !== STRING_NUMBER) {
+			throw new Error("limit: max must be a number");
+		}
+		let result = this.registry.slice(offset, offset + max).map(i => this.get(i, raw));
+		result = this._freezeResult(result, raw);
 
 		return result;
 	}
@@ -502,9 +529,7 @@ export class Haro {
 		this.forEach((value, key) => result.push(fn(value, key)));
 		if (!raw) {
 			result = result.map(i => this.list(i));
-			if (this.immutable) {
-				result = Object.freeze(result);
-			}
+			result = this._freezeResult(result);
 		}
 
 		return result;
@@ -525,6 +550,9 @@ export class Haro {
 			a = override ? b : a.concat(b);
 		} else if (typeof a === STRING_OBJECT && a !== null && typeof b === STRING_OBJECT && b !== null) {
 			this.each(Object.keys(b), i => {
+				if (i === "__proto__" || i === "constructor" || i === "prototype") {
+					return;
+				}
 				a[i] = this.merge(a[i], b[i], override);
 			});
 		} else {
@@ -640,7 +668,7 @@ export class Haro {
 	 * store.reindex(['name', 'email']); // Rebuild name and email indexes
 	 */
 	reindex (index) {
-		const indices = index ? [index] : this.index;
+		const indices = index ? Array.isArray(index) ? index : [index] : this.index;
 		if (index && this.index.includes(index) === false) {
 			this.index.push(index);
 		}
@@ -662,10 +690,12 @@ export class Haro {
 	 * const regexResults = store.search(/^admin/, 'role'); // Regex search
 	 */
 	search (value, index, raw = false) {
-		const result = new Set(); // Use Set for unique keys
+		if (value === null || value === undefined) {
+			throw new Error("search: value cannot be null or undefined");
+		}
+		const result = new Set();
 		const fn = typeof value === STRING_FUNCTION;
 		const rgex = value && typeof value.test === STRING_FUNCTION;
-		if (!value) return this.immutable ? this.freeze() : [];
 		const indices = index ? Array.isArray(index) ? index : [index] : this.index;
 		for (const i of indices) {
 			const idx = this.indexes.get(i);
@@ -692,9 +722,7 @@ export class Haro {
 			}
 		}
 		let records = Array.from(result).map(key => this.get(key, raw));
-		if (!raw && this.immutable) {
-			records = Object.freeze(records);
-		}
+		records = this._freezeResult(records, raw);
 
 		return records;
 	}
@@ -711,11 +739,21 @@ export class Haro {
 	 * const updated = store.set('user123', {age: 31}); // Update existing record
 	 */
 	set (key = null, data = {}, batch = false, override = false) {
+		if (key !== null && typeof key !== STRING_STRING && typeof key !== STRING_NUMBER) {
+			throw new Error("set: key must be a string or number");
+		}
+		if (typeof data !== STRING_OBJECT || data === null) {
+			throw new Error("set: data must be an object");
+		}
 		if (key === null) {
 			key = data[this.key] ?? this.uuid();
 		}
 		let x = {...data, [this.key]: key};
 		this.beforeSet(key, x, batch, override);
+		if (!this.initialized) {
+			this.reindex();
+			this.initialized = true;
+		}
 		if (!this.data.has(key)) {
 			if (this.versioning) {
 				this.versions.set(key, new Set());
@@ -778,6 +816,9 @@ export class Haro {
 	 * const names = store.sort((a, b) => a.name.localeCompare(b.name)); // Sort by name
 	 */
 	sort (fn, frozen = false) {
+		if (typeof fn !== STRING_FUNCTION) {
+			throw new Error("sort: fn must be a function");
+		}
 		const dataSize = this.data.size;
 		let result = this.limit(INT_0, dataSize, true).sort(fn);
 		if (frozen) {
@@ -828,19 +869,16 @@ export class Haro {
 		if (index === STRING_EMPTY) {
 			throw new Error(STRING_INVALID_FIELD);
 		}
-		let result = [];
 		const keys = [];
 		if (this.indexes.has(index) === false) {
 			this.reindex(index);
 		}
 		const lindex = this.indexes.get(index);
 		lindex.forEach((idx, key) => keys.push(key));
-		this.each(keys.sort(this.sortKeys), i => lindex.get(i).forEach(key => result.push(this.get(key, raw))));
-		if (this.immutable) {
-			result = Object.freeze(result);
-		}
+		keys.sort(this.sortKeys);
+		const result = keys.flatMap(i => Array.from(lindex.get(i)).map(key => this.get(key, raw)));
 
-		return result;
+		return this._freezeResult(result);
 	}
 
 	/**
@@ -880,6 +918,35 @@ export class Haro {
 	 */
 	values () {
 		return this.data.values();
+	}
+
+	/**
+	 * Internal helper for validating method arguments
+	 * @param {*} value - Value to validate
+	 * @param {string} expectedType - Expected type name
+	 * @param {string} methodName - Name of method being called
+	 * @param {string} paramName - Name of parameter
+	 * @throws {Error} Throws error if validation fails
+	 */
+	_validateType (value, expectedType, methodName, paramName) {
+		const actualType = typeof value;
+		if (actualType !== expectedType) {
+			throw new Error(`${methodName}: ${paramName} must be ${expectedType}, got ${actualType}`);
+		}
+	}
+
+	/**
+	 * Internal helper to freeze result if immutable mode is enabled
+	 * @param {Array|Object} result - Result to freeze
+	 * @param {boolean} raw - Whether to skip freezing
+	 * @returns {Array|Object} Frozen or original result
+	 */
+	_freezeResult (result, raw = false) {
+		if (!raw && this.immutable) {
+			result = Object.freeze(result);
+		}
+
+		return result;
 	}
 
 	/**
@@ -931,6 +998,12 @@ export class Haro {
 	 * const emails = store.where({email: /^admin@/});
 	 */
 	where (predicate = {}, op = STRING_DOUBLE_PIPE) {
+		if (typeof predicate !== STRING_OBJECT || predicate === null) {
+			throw new Error("where: predicate must be an object");
+		}
+		if (typeof op !== STRING_STRING) {
+			throw new Error("where: op must be a string");
+		}
 		const keys = this.index.filter(i => i in predicate);
 		if (keys.length === 0) return [];
 
@@ -974,10 +1047,13 @@ export class Haro {
 				}
 			}
 
-			return this.immutable ? this.freeze(...results) : results;
+			return this._freezeResult(results);
 		}
 
-		// Fallback to full scan if no indexes available
+		if (this.warnOnFullScan) {
+			console.warn("where(): performing full table scan - consider adding an index");
+		}
+
 		return this.filter(a => this.matchesPredicate(a, predicate, op));
 	}
 }

@@ -39,9 +39,10 @@ describe("Searching and Filtering", () => {
 			assert.strictEqual(results.length, 2); // John and Bob
 		});
 
-		it("should return empty array for null/undefined value", () => {
-			const results = store.search(null);
-			assert.strictEqual(results.length, 0);
+		it("should throw error for null/undefined value", () => {
+			assert.throws(() => {
+				store.search(null);
+			}, /search: value cannot be null or undefined/);
 		});
 
 		it("should return frozen results in immutable mode with raw=false", () => {
