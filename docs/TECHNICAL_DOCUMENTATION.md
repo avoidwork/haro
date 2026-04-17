@@ -74,7 +74,7 @@ graph TB
 
 ### Configuration
 - **Purpose**: Store instance settings and behavior
-- **Options**: Immutable mode, versioning, custom delimiters, key fields
+- **Options**: Immutable mode, versioning, custom delimiters, key fields, warnOnFullScan
 
 ## Data Flow
 
@@ -205,13 +205,14 @@ stateDiagram-v2
 
 | Operation | Time Complexity | Space Complexity | Notes |
 |-----------|----------------|------------------|--------|
-| **Create** | O(1) + O(i) | O(1) | i = number of indexes |
-| **Read** | O(1) | O(1) | Direct key access |
-| **Update** | O(1) + O(i) | O(1) | Index maintenance |
+| **Create (set)** | O(1) + O(i) | O(1) | i = number of indexes |
+| **Read (get)** | O(1) | O(1) | Direct key access |
+| **Update (set)** | O(1) + O(i) | O(1) | Index maintenance |
 | **Delete** | O(1) + O(i) | O(1) | Cleanup indexes |
-| **Find** | O(1) | O(r) | r = result set size |
+| **Find** | O(1) to O(n) | O(r) | r = result set size |
 | **Search** | O(n) | O(r) | Full scan fallback |
 | **Batch** | O(n) + O(ni) | O(n) | n = batch size |
+| **Clear** | O(n) | O(1) | Remove all records |
 
 ### Batch Operations
 
@@ -263,8 +264,11 @@ const store = new Haro({
   // Composite key delimiter
   delimiter: '|',
   
-  // Instance identifier
-  id: 'user-store-1'
+  // Instance identifier (auto-generated if not provided)
+  id: 'user-store-1',
+  
+  // Enable warnings for full table scan queries
+  warnOnFullScan: true
 });
 ```
 
@@ -741,11 +745,13 @@ new Haro(config)
 
 **Parameters:**
 - `config` (Object): Configuration options
-  - `key` (string): Primary key field name
-  - `index` (string[]): Fields to index
-  - `immutable` (boolean): Enable immutable mode
-  - `versioning` (boolean): Enable version tracking
-  - `delimiter` (string): Composite key delimiter
+  - `key` (string): Primary key field name (default: 'id')
+  - `index` (string[]): Fields to index (default: [])
+  - `immutable` (boolean): Enable immutable mode (default: false)
+  - `versioning` (boolean): Enable version tracking (default: false)
+  - `delimiter` (string): Composite key delimiter (default: '|')
+  - `id` (string): Unique instance identifier (auto-generated if not provided)
+  - `warnOnFullScan` (boolean): Enable warnings for full table scans (default: true)
 
 ### Core Methods
 
@@ -761,13 +767,25 @@ new Haro(config)
 
 ### Query Methods
 
+| Method | Description | Use Case | Time Complexity |
+|--------|-------------|----------|----------------|
+| `filter(predicate)` | Filter with function | Complex logic | O(n) |
+| `where(criteria, op)` | Advanced filtering with AND/OR | Multi-condition queries | O(1) to O(n) |
+| `sortBy(field)` | Sort by indexed field | Ordered results | O(n log n) |
+| `limit(offset, max)` | Pagination | Large datasets | O(max) |
+| `map(transform)` | Transform records | Data projection | O(n) |
+| `reduce(fn, acc)` | Reduce to single value | Aggregations | O(n) |
+| `search(value, index)` | Search across indexes | Full-text search | O(n) |
+
+### Utility Methods
+
 | Method | Description | Use Case |
 |--------|-------------|----------|
-| `filter(predicate)` | Filter with function | Complex logic |
-| `where(criteria, op)` | Advanced filtering | Multi-condition queries |
-| `sortBy(field)` | Sort by indexed field | Ordered results |
-| `limit(offset, max)` | Pagination | Large datasets |
-| `map(transform)` | Transform records | Data projection |
+| `clone(arg)` | Deep clone object | Data isolation |
+| `freeze(...args)` | Freeze objects/arrays | Immutability |
+| `merge(a, b)` | Merge two values | Data combination |
+| `each(arr, fn)` | Iterate array | Custom iteration |
+| `list(arg)` | Convert to [key, value] | Data transformation |
 
 ## Best Practices
 
@@ -800,6 +818,21 @@ store.batch(records, 'set');
 
 // ❌ Bad - Individual operations for bulk data
 largeDataset.forEach(record => store.set(null, record));
+```
+
+### Lifecycle Hooks
+
+```javascript
+// ✅ Good - Use lifecycle hooks for custom logic
+class AuditStore extends Haro {
+  beforeSet(key, data, batch, override) {
+    console.log('Setting record:', key);
+  }
+  
+  onset(record, batch) {
+    auditLog.push({ action: 'set', record, timestamp: Date.now() });
+  }
+}
 ```
 
 ### Query Optimization
