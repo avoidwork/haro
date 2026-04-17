@@ -257,11 +257,15 @@ Haro's `find()` and `where()` methods use set operations for query optimization:
 
 **Find operation (AND logic across fields):**
 
-`find({a: 1, b: 2}) = ⋂ Index(k = v_k) for all k in {a,b}`
+```math
+\text{find}(\{a: v_a, b: v_b\}) = \bigcap_{k \in \{a,b\}} \text{Index}(k = v_k)
+```
 
 **Where operation with OR logic (union of indexes):**
 
-`where({tags: ['a', 'b']}, '||') = ⋃ Index(tag = t) for all t in {'a','b'}`
+```math
+\text{where}(\{t: [v_{t1}, v_{t2}]\}, '||') = \bigcup_{t \in \{v_{t1},v_{t2}\}} \text{Index}(t = v_t)
+```
 
 > Example: Records with tag 'a' ∪ Records with tag 'b'
 
