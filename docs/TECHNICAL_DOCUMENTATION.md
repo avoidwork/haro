@@ -267,7 +267,9 @@ Haro's `find()` and `where()` methods use set operations for query optimization:
 
 **Where operation with AND logic (intersection of indexes):**
 
-`where({s: v_s, r: v_r}, '&&') = ⋂ Index(f = v_f) for all f in {s,r}`
+```math
+\text{where}(\{s: v_s, r: v_r\}, '\&\&') = \bigcap_{f \in \{s,r\}} \text{Index}(f = v_f)
+```
 
 > Example: Records with status='active' ∩ Records with role='admin' (must have BOTH)
 
