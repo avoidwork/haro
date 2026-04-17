@@ -6,7 +6,7 @@ import { haro } from "../dist/haro.js";
  * @param {number} size - Number of records to generate
  * @returns {Array} Array of test records
  */
-function generateTestData (size) {
+function generateTestData(size) {
 	const data = [];
 	for (let i = 0; i < size; i++) {
 		data.push({
@@ -20,8 +20,8 @@ function generateTestData (size) {
 			metadata: {
 				created: new Date(),
 				score: Math.random() * 100,
-				level: Math.floor(Math.random() * 10)
-			}
+				level: Math.floor(Math.random() * 10),
+			},
 		});
 	}
 
@@ -35,7 +35,7 @@ function generateTestData (size) {
  * @param {number} iterations - Number of iterations to run
  * @returns {Object} Benchmark results
  */
-function benchmark (name, fn, iterations = 1000) {
+function benchmark(name, fn, iterations = 1000) {
 	const start = performance.now();
 	for (let i = 0; i < iterations; i++) {
 		fn();
@@ -49,7 +49,7 @@ function benchmark (name, fn, iterations = 1000) {
 		iterations,
 		totalTime: total,
 		avgTime,
-		opsPerSecond: Math.floor(1000 / avgTime)
+		opsPerSecond: Math.floor(1000 / avgTime),
 	};
 }
 
@@ -58,10 +58,10 @@ function benchmark (name, fn, iterations = 1000) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkSetOperations (dataSizes) {
+function benchmarkSetOperations(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generateTestData(size);
 		const store = haro();
 
@@ -74,9 +74,13 @@ function benchmarkSetOperations (dataSizes) {
 
 		// Batch set operations
 		const batchStore = haro();
-		const batchResult = benchmark(`BATCH SET (${size} records)`, () => {
-			batchStore.batch(testData, "set");
-		}, 1);
+		const batchResult = benchmark(
+			`BATCH SET (${size} records)`,
+			() => {
+				batchStore.batch(testData, "set");
+			},
+			1,
+		);
 		results.push(batchResult);
 	});
 
@@ -88,10 +92,10 @@ function benchmarkSetOperations (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkGetOperations (dataSizes) {
+function benchmarkGetOperations(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generateTestData(size);
 		const store = haro(testData);
 
@@ -118,33 +122,42 @@ function benchmarkGetOperations (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkDeleteOperations (dataSizes) {
+function benchmarkDeleteOperations(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generateTestData(size);
 
 		// Individual delete operations
 		const deleteStore = haro(testData);
-		const deleteResult = benchmark(`DELETE (${size} records)`, () => {
-			const keys = Array.from(deleteStore.keys());
-			if (keys.length > 0) {
-				const randomKey = keys[Math.floor(Math.random() * keys.length)];
-				try {
-					deleteStore.del(randomKey);
-				} catch (e) { // eslint-disable-line no-unused-vars
-					// Record might already be deleted
+		const deleteResult = benchmark(
+			`DELETE (${size} records)`,
+			() => {
+				const keys = Array.from(deleteStore.keys());
+				if (keys.length > 0) {
+					const randomKey = keys[Math.floor(Math.random() * keys.length)];
+					try {
+						deleteStore.del(randomKey);
+					} catch (e) {
+						// eslint-disable-line no-unused-vars
+						// Record might already be deleted
+					}
 				}
-			}
-		}, Math.min(100, size));
+			},
+			Math.min(100, size),
+		);
 		results.push(deleteResult);
 
 		// Clear operations
 		const clearStore = haro(testData);
-		const clearResult = benchmark(`CLEAR (${size} records)`, () => {
-			clearStore.clear();
-			clearStore.batch(testData, "set");
-		}, 10);
+		const clearResult = benchmark(
+			`CLEAR (${size} records)`,
+			() => {
+				clearStore.clear();
+				clearStore.batch(testData, "set");
+			},
+			10,
+		);
 		results.push(clearResult);
 	});
 
@@ -156,35 +169,51 @@ function benchmarkDeleteOperations (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkUtilityOperations (dataSizes) {
+function benchmarkUtilityOperations(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generateTestData(size);
 		const store = haro(testData);
 
 		// ToArray operations
-		const toArrayResult = benchmark(`toArray (${size} records)`, () => {
-			store.toArray();
-		}, 100);
+		const toArrayResult = benchmark(
+			`toArray (${size} records)`,
+			() => {
+				store.toArray();
+			},
+			100,
+		);
 		results.push(toArrayResult);
 
 		// Keys operations
-		const keysResult = benchmark(`keys (${size} records)`, () => {
-			Array.from(store.keys());
-		}, 100);
+		const keysResult = benchmark(
+			`keys (${size} records)`,
+			() => {
+				Array.from(store.keys());
+			},
+			100,
+		);
 		results.push(keysResult);
 
 		// Values operations
-		const valuesResult = benchmark(`values (${size} records)`, () => {
-			Array.from(store.values());
-		}, 100);
+		const valuesResult = benchmark(
+			`values (${size} records)`,
+			() => {
+				Array.from(store.values());
+			},
+			100,
+		);
 		results.push(valuesResult);
 
 		// Entries operations
-		const entriesResult = benchmark(`entries (${size} records)`, () => {
-			Array.from(store.entries());
-		}, 100);
+		const entriesResult = benchmark(
+			`entries (${size} records)`,
+			() => {
+				Array.from(store.entries());
+			},
+			100,
+		);
 		results.push(entriesResult);
 	});
 
@@ -195,13 +224,19 @@ function benchmarkUtilityOperations (dataSizes) {
  * Prints benchmark results in a formatted table
  * @param {Array} results - Array of benchmark results
  */
-function printResults (results) {
+function printResults(results) {
 	console.log("\n=== BASIC OPERATIONS BENCHMARK RESULTS ===\n");
 
-	console.log("Operation".padEnd(30) + "Iterations".padEnd(12) + "Total Time (ms)".padEnd(18) + "Avg Time (ms)".padEnd(16) + "Ops/Second");
+	console.log(
+		"Operation".padEnd(30) +
+			"Iterations".padEnd(12) +
+			"Total Time (ms)".padEnd(18) +
+			"Avg Time (ms)".padEnd(16) +
+			"Ops/Second",
+	);
 	console.log("-".repeat(88));
 
-	results.forEach(result => {
+	results.forEach((result) => {
 		const name = result.name.padEnd(30);
 		const iterations = result.iterations.toString().padEnd(12);
 		const totalTime = result.totalTime.toFixed(2).padEnd(18);
@@ -217,7 +252,7 @@ function printResults (results) {
 /**
  * Main function to run all basic operations benchmarks
  */
-function runBasicOperationsBenchmarks () {
+function runBasicOperationsBenchmarks() {
 	console.log("🚀 Running Basic Operations Benchmarks...\n");
 
 	const dataSizes = [100, 1000, 10000, 50000];

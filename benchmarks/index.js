@@ -13,7 +13,7 @@ import { runImmutableComparisonBenchmarks } from "./immutable-comparison.js";
  * @param {number} ms - Duration in milliseconds
  * @returns {string} Formatted duration string
  */
-function formatDuration (ms) {
+function formatDuration(ms) {
 	if (ms < 1000) {
 		return `${ms.toFixed(0)}ms`;
 	} else if (ms < 60000) {
@@ -28,8 +28,18 @@ function formatDuration (ms) {
  * @param {Object} results - All benchmark results
  * @returns {Object} Summary report
  */
-function generateSummaryReport (results) {
-	const { basicOps, searchFilter, indexOps, memory, comparison, utilities, pagination, persistence, immutableComparison } = results;
+function generateSummaryReport(results) {
+	const {
+		basicOps,
+		searchFilter,
+		indexOps,
+		memory,
+		comparison,
+		utilities,
+		pagination,
+		persistence,
+		immutableComparison,
+	} = results;
 
 	const summary = {
 		totalTests: 0,
@@ -39,9 +49,9 @@ function generateSummaryReport (results) {
 			fastest: { name: "", opsPerSecond: 0 },
 			slowest: { name: "", opsPerSecond: Infinity },
 			mostMemoryEfficient: { name: "", memoryUsed: Infinity },
-			leastMemoryEfficient: { name: "", memoryUsed: 0 }
+			leastMemoryEfficient: { name: "", memoryUsed: 0 },
 		},
-		recommendations: []
+		recommendations: [],
 	};
 
 	// Process basic operations
@@ -49,11 +59,11 @@ function generateSummaryReport (results) {
 		summary.categories.basicOperations = {
 			testCount: basicOps.length,
 			totalTime: basicOps.reduce((sum, test) => sum + test.totalTime, 0),
-			avgOpsPerSecond: basicOps.reduce((sum, test) => sum + test.opsPerSecond, 0) / basicOps.length
+			avgOpsPerSecond: basicOps.reduce((sum, test) => sum + test.opsPerSecond, 0) / basicOps.length,
 		};
 
 		// Find fastest and slowest operations
-		basicOps.forEach(test => {
+		basicOps.forEach((test) => {
 			if (test.opsPerSecond > summary.performance.fastest.opsPerSecond) {
 				summary.performance.fastest = { name: test.name, opsPerSecond: test.opsPerSecond };
 			}
@@ -68,7 +78,8 @@ function generateSummaryReport (results) {
 		summary.categories.searchFilter = {
 			testCount: searchFilter.length,
 			totalTime: searchFilter.reduce((sum, test) => sum + test.totalTime, 0),
-			avgOpsPerSecond: searchFilter.reduce((sum, test) => sum + test.opsPerSecond, 0) / searchFilter.length
+			avgOpsPerSecond:
+				searchFilter.reduce((sum, test) => sum + test.opsPerSecond, 0) / searchFilter.length,
 		};
 	}
 
@@ -77,7 +88,7 @@ function generateSummaryReport (results) {
 		summary.categories.indexOperations = {
 			testCount: indexOps.length,
 			totalTime: indexOps.reduce((sum, test) => sum + test.totalTime, 0),
-			avgOpsPerSecond: indexOps.reduce((sum, test) => sum + test.opsPerSecond, 0) / indexOps.length
+			avgOpsPerSecond: indexOps.reduce((sum, test) => sum + test.opsPerSecond, 0) / indexOps.length,
 		};
 	}
 
@@ -86,21 +97,23 @@ function generateSummaryReport (results) {
 		summary.categories.memoryUsage = {
 			testCount: memory.results.length,
 			totalTime: memory.results.reduce((sum, test) => sum + test.executionTime, 0),
-			avgHeapDelta: memory.results.reduce((sum, test) => sum + test.memoryDelta.heapUsed, 0) / memory.results.length
+			avgHeapDelta:
+				memory.results.reduce((sum, test) => sum + test.memoryDelta.heapUsed, 0) /
+				memory.results.length,
 		};
 
 		// Find memory efficiency
-		memory.results.forEach(test => {
+		memory.results.forEach((test) => {
 			if (test.memoryDelta.heapUsed < summary.performance.mostMemoryEfficient.memoryUsed) {
 				summary.performance.mostMemoryEfficient = {
 					name: test.description,
-					memoryUsed: test.memoryDelta.heapUsed
+					memoryUsed: test.memoryDelta.heapUsed,
 				};
 			}
 			if (test.memoryDelta.heapUsed > summary.performance.leastMemoryEfficient.memoryUsed) {
 				summary.performance.leastMemoryEfficient = {
 					name: test.description,
-					memoryUsed: test.memoryDelta.heapUsed
+					memoryUsed: test.memoryDelta.heapUsed,
 				};
 			}
 		});
@@ -111,7 +124,9 @@ function generateSummaryReport (results) {
 		summary.categories.comparison = {
 			testCount: comparison.allResults.length,
 			totalTime: comparison.allResults.reduce((sum, test) => sum + test.totalTime, 0),
-			avgOpsPerSecond: comparison.allResults.reduce((sum, test) => sum + test.opsPerSecond, 0) / comparison.allResults.length
+			avgOpsPerSecond:
+				comparison.allResults.reduce((sum, test) => sum + test.opsPerSecond, 0) /
+				comparison.allResults.length,
 		};
 	}
 
@@ -120,7 +135,8 @@ function generateSummaryReport (results) {
 		summary.categories.utilityOperations = {
 			testCount: utilities.length,
 			totalTime: utilities.reduce((sum, test) => sum + test.totalTime, 0),
-			avgOpsPerSecond: utilities.reduce((sum, test) => sum + test.opsPerSecond, 0) / utilities.length
+			avgOpsPerSecond:
+				utilities.reduce((sum, test) => sum + test.opsPerSecond, 0) / utilities.length,
 		};
 	}
 
@@ -129,7 +145,8 @@ function generateSummaryReport (results) {
 		summary.categories.pagination = {
 			testCount: pagination.length,
 			totalTime: pagination.reduce((sum, test) => sum + test.totalTime, 0),
-			avgOpsPerSecond: pagination.reduce((sum, test) => sum + test.opsPerSecond, 0) / pagination.length
+			avgOpsPerSecond:
+				pagination.reduce((sum, test) => sum + test.opsPerSecond, 0) / pagination.length,
 		};
 	}
 
@@ -138,7 +155,11 @@ function generateSummaryReport (results) {
 		summary.categories.persistence = {
 			testCount: persistence.length,
 			totalTime: persistence.reduce((sum, test) => sum + test.totalTime, 0),
-			avgOpsPerSecond: persistence.filter(test => test.opsPerSecond > 0).reduce((sum, test) => sum + test.opsPerSecond, 0) / persistence.filter(test => test.opsPerSecond > 0).length || 0
+			avgOpsPerSecond:
+				persistence
+					.filter((test) => test.opsPerSecond > 0)
+					.reduce((sum, test) => sum + test.opsPerSecond, 0) /
+					persistence.filter((test) => test.opsPerSecond > 0).length || 0,
 		};
 	}
 
@@ -147,16 +168,29 @@ function generateSummaryReport (results) {
 		summary.categories.immutableComparison = {
 			testCount: immutableComparison.length,
 			totalTime: immutableComparison.reduce((sum, test) => sum + test.totalTime, 0),
-			avgOpsPerSecond: immutableComparison.filter(test => test.opsPerSecond > 0).reduce((sum, test) => sum + test.opsPerSecond, 0) / immutableComparison.filter(test => test.opsPerSecond > 0).length || 0
+			avgOpsPerSecond:
+				immutableComparison
+					.filter((test) => test.opsPerSecond > 0)
+					.reduce((sum, test) => sum + test.opsPerSecond, 0) /
+					immutableComparison.filter((test) => test.opsPerSecond > 0).length || 0,
 		};
 	}
 
 	// Calculate totals
-	summary.totalTests = Object.values(summary.categories).reduce((sum, cat) => sum + cat.testCount, 0);
-	summary.totalTime = Object.values(summary.categories).reduce((sum, cat) => sum + cat.totalTime, 0);
+	summary.totalTests = Object.values(summary.categories).reduce(
+		(sum, cat) => sum + cat.testCount,
+		0,
+	);
+	summary.totalTime = Object.values(summary.categories).reduce(
+		(sum, cat) => sum + cat.totalTime,
+		0,
+	);
 
 	// Generate recommendations
-	if (summary.categories.basicOperations && summary.categories.basicOperations.avgOpsPerSecond > 10000) {
+	if (
+		summary.categories.basicOperations &&
+		summary.categories.basicOperations.avgOpsPerSecond > 10000
+	) {
 		summary.recommendations.push("✅ Basic operations performance is excellent for most use cases");
 	}
 
@@ -164,7 +198,9 @@ function generateSummaryReport (results) {
 		const indexAvg = summary.categories.indexOperations.avgOpsPerSecond;
 		const searchAvg = summary.categories.searchFilter.avgOpsPerSecond;
 		if (indexAvg > searchAvg * 2) {
-			summary.recommendations.push("💡 Consider using indexed queries (find) instead of filters for better performance");
+			summary.recommendations.push(
+				"💡 Consider using indexed queries (find) instead of filters for better performance",
+			);
 		}
 	}
 
@@ -175,23 +211,34 @@ function generateSummaryReport (results) {
 	}
 
 	if (summary.categories.comparison) {
-		summary.recommendations.push("📊 Review comparison results to understand trade-offs vs native structures");
+		summary.recommendations.push(
+			"📊 Review comparison results to understand trade-offs vs native structures",
+		);
 	}
 
-	if (summary.categories.utilityOperations && summary.categories.utilityOperations.avgOpsPerSecond > 1000) {
+	if (
+		summary.categories.utilityOperations &&
+		summary.categories.utilityOperations.avgOpsPerSecond > 1000
+	) {
 		summary.recommendations.push("✅ Utility operations (clone, merge, freeze) perform well");
 	}
 
 	if (summary.categories.pagination && summary.categories.pagination.avgOpsPerSecond > 100) {
-		summary.recommendations.push("✅ Pagination performance is suitable for typical UI requirements");
+		summary.recommendations.push(
+			"✅ Pagination performance is suitable for typical UI requirements",
+		);
 	}
 
 	if (summary.categories.persistence) {
-		summary.recommendations.push("💾 Persistence operations available for data serialization needs");
+		summary.recommendations.push(
+			"💾 Persistence operations available for data serialization needs",
+		);
 	}
 
 	if (summary.categories.immutableComparison) {
-		summary.recommendations.push("🔒 Review immutable vs mutable comparison for data safety vs performance trade-offs");
+		summary.recommendations.push(
+			"🔒 Review immutable vs mutable comparison for data safety vs performance trade-offs",
+		);
 	}
 
 	return summary;
@@ -201,7 +248,7 @@ function generateSummaryReport (results) {
  * Prints the summary report
  * @param {Object} summary - Summary report object
  */
-function printSummaryReport (summary) {
+function printSummaryReport(summary) {
 	console.log("\n" + "=".repeat(80));
 	console.log("🎯 HARO BENCHMARK SUMMARY REPORT");
 	console.log("=".repeat(80));
@@ -239,7 +286,7 @@ function printSummaryReport (summary) {
 
 	if (summary.recommendations.length > 0) {
 		console.log("\n💡 RECOMMENDATIONS:");
-		summary.recommendations.forEach(rec => {
+		summary.recommendations.forEach((rec) => {
 			console.log(`   ${rec}`);
 		});
 	}
@@ -254,7 +301,7 @@ function printSummaryReport (summary) {
  * @param {Object} options - Benchmark options
  * @returns {Object} All benchmark results
  */
-async function runAllBenchmarks (options = {}) {
+async function runAllBenchmarks(options = {}) {
 	const {
 		includeBasic = true,
 		includeSearch = true,
@@ -265,7 +312,7 @@ async function runAllBenchmarks (options = {}) {
 		includePagination = true,
 		includePersistence = true,
 		includeImmutableComparison = true,
-		verbose = true
+		verbose = true,
 	} = options;
 
 	const results = {};
@@ -276,7 +323,9 @@ async function runAllBenchmarks (options = {}) {
 	console.log(`   Node.js Version: ${process.version}`);
 	console.log(`   Platform: ${process.platform}`);
 	console.log(`   Architecture: ${process.arch}`);
-	console.log(`   Memory: ${Math.round(process.memoryUsage().heapTotal / 1024 / 1024)} MB available\n`);
+	console.log(
+		`   Memory: ${Math.round(process.memoryUsage().heapTotal / 1024 / 1024)} MB available\n`,
+	);
 
 	try {
 		// Run basic operations benchmarks
@@ -354,7 +403,6 @@ async function runAllBenchmarks (options = {}) {
 		}
 
 		return { results, summary };
-
 	} catch (error) {
 		console.error("❌ Benchmark suite failed:", error);
 		throw error;
@@ -365,7 +413,7 @@ async function runAllBenchmarks (options = {}) {
  * CLI argument parser
  * @returns {Object} Parsed CLI options
  */
-function parseCliArguments () {
+function parseCliArguments() {
 	const args = process.argv.slice(2);
 	const options = {
 		includeBasic: true,
@@ -377,20 +425,22 @@ function parseCliArguments () {
 		includePagination: true,
 		includePersistence: true,
 		includeImmutableComparison: true,
-		verbose: true
+		verbose: true,
 	};
 
 	// Helper function to disable all categories except the specified one
-	const runOnlyCategory = category => {
-		Object.keys(options).forEach(key => {
+	const runOnlyCategory = (category) => {
+		Object.keys(options).forEach((key) => {
 			if (key.startsWith("include") && key !== category) {
 				options[key] = false;
 			}
 		});
 	};
 
-	args.forEach(arg => {
-		switch (arg) { // eslint-disable-line default-case
+	args.forEach((arg) => {
+		switch (
+			arg // eslint-disable-line default-case
+		) {
 			case "--basic-only":
 				runOnlyCategory("includeBasic");
 				break;
@@ -529,7 +579,7 @@ Examples:
 // Run benchmarks if this file is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
 	const options = parseCliArguments();
-	runAllBenchmarks(options).catch(error => {
+	runAllBenchmarks(options).catch((error) => {
 		console.error("Fatal error:", error);
 		process.exit(1);
 	});

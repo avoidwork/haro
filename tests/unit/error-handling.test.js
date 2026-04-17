@@ -1,6 +1,6 @@
 import assert from "node:assert";
-import {describe, it, beforeEach} from "mocha";
-import {Haro} from "../../src/haro.js";
+import { describe, it, beforeEach } from "mocha";
+import { Haro } from "../../src/haro.js";
 
 describe("Error Handling", () => {
 	let store;

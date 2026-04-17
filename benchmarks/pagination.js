@@ -6,7 +6,7 @@ import { haro } from "../dist/haro.js";
  * @param {number} size - Number of records to generate
  * @returns {Array} Array of test records optimized for pagination testing
  */
-function generatePaginationTestData (size) {
+function generatePaginationTestData(size) {
 	const data = [];
 	const categories = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
 	const statuses = ["active", "inactive", "pending", "archived"];
@@ -25,8 +25,8 @@ function generatePaginationTestData (size) {
 			metadata: {
 				level: Math.floor(i / 100),
 				region: `Region ${i % 5}`,
-				department: `Dept ${i % 15}`
-			}
+				department: `Dept ${i % 15}`,
+			},
 		});
 	}
 
@@ -40,7 +40,7 @@ function generatePaginationTestData (size) {
  * @param {number} iterations - Number of iterations to run
  * @returns {Object} Benchmark results
  */
-function benchmark (name, fn, iterations = 100) {
+function benchmark(name, fn, iterations = 100) {
 	const start = performance.now();
 	for (let i = 0; i < iterations; i++) {
 		fn();
@@ -54,7 +54,7 @@ function benchmark (name, fn, iterations = 100) {
 		iterations,
 		totalTime: total,
 		avgTime,
-		opsPerSecond: Math.floor(1000 / avgTime)
+		opsPerSecond: Math.floor(1000 / avgTime),
 	};
 }
 
@@ -63,10 +63,10 @@ function benchmark (name, fn, iterations = 100) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkBasicLimitOperations (dataSizes) {
+function benchmarkBasicLimitOperations(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generatePaginationTestData(size);
 		const store = haro(testData);
 
@@ -89,9 +89,12 @@ function benchmarkBasicLimitOperations (dataSizes) {
 		results.push(largePageResult);
 
 		// Very large page sizes
-		const veryLargePageResult = benchmark(`LIMIT very large page (1000 items from ${size} records)`, () => {
-			store.limit(0, Math.min(1000, size));
-		});
+		const veryLargePageResult = benchmark(
+			`LIMIT very large page (1000 items from ${size} records)`,
+			() => {
+				store.limit(0, Math.min(1000, size));
+			},
+		);
 		results.push(veryLargePageResult);
 	});
 
@@ -103,10 +106,10 @@ function benchmarkBasicLimitOperations (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkOffsetPagination (dataSizes) {
+function benchmarkOffsetPagination(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generatePaginationTestData(size);
 		const store = haro(testData);
 		const pageSize = 20;
@@ -119,29 +122,41 @@ function benchmarkOffsetPagination (dataSizes) {
 
 		// Middle page
 		const middleOffset = Math.floor(size / 2);
-		const middlePageResult = benchmark(`LIMIT middle page (offset ${middleOffset}, ${pageSize} items)`, () => {
-			store.limit(middleOffset, pageSize);
-		});
+		const middlePageResult = benchmark(
+			`LIMIT middle page (offset ${middleOffset}, ${pageSize} items)`,
+			() => {
+				store.limit(middleOffset, pageSize);
+			},
+		);
 		results.push(middlePageResult);
 
 		// Near end page
 		const nearEndOffset = Math.max(0, size - pageSize * 2);
-		const nearEndPageResult = benchmark(`LIMIT near end page (offset ${nearEndOffset}, ${pageSize} items)`, () => {
-			store.limit(nearEndOffset, pageSize);
-		});
+		const nearEndPageResult = benchmark(
+			`LIMIT near end page (offset ${nearEndOffset}, ${pageSize} items)`,
+			() => {
+				store.limit(nearEndOffset, pageSize);
+			},
+		);
 		results.push(nearEndPageResult);
 
 		// Last page (potentially partial)
 		const lastOffset = Math.max(0, size - pageSize);
-		const lastPageResult = benchmark(`LIMIT last page (offset ${lastOffset}, ${pageSize} items)`, () => {
-			store.limit(lastOffset, pageSize);
-		});
+		const lastPageResult = benchmark(
+			`LIMIT last page (offset ${lastOffset}, ${pageSize} items)`,
+			() => {
+				store.limit(lastOffset, pageSize);
+			},
+		);
 		results.push(lastPageResult);
 
 		// Beyond data bounds (should return empty)
-		const beyondBoundsResult = benchmark(`LIMIT beyond bounds (offset ${size + 100}, ${pageSize} items)`, () => {
-			store.limit(size + 100, pageSize);
-		});
+		const beyondBoundsResult = benchmark(
+			`LIMIT beyond bounds (offset ${size + 100}, ${pageSize} items)`,
+			() => {
+				store.limit(size + 100, pageSize);
+			},
+		);
 		results.push(beyondBoundsResult);
 	});
 
@@ -153,19 +168,22 @@ function benchmarkOffsetPagination (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkPageSizeOptimization (dataSizes) {
+function benchmarkPageSizeOptimization(dataSizes) {
 	const results = [];
 	const pageSizes = [1, 5, 10, 20, 50, 100, 200, 500, 1000];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generatePaginationTestData(size);
 		const store = haro(testData);
 
-		pageSizes.forEach(pageSize => {
+		pageSizes.forEach((pageSize) => {
 			if (pageSize <= size) {
-				const pageSizeResult = benchmark(`LIMIT page size ${pageSize} (${size} total records)`, () => {
-					store.limit(0, pageSize);
-				});
+				const pageSizeResult = benchmark(
+					`LIMIT page size ${pageSize} (${size} total records)`,
+					() => {
+						store.limit(0, pageSize);
+					},
+				);
 				results.push(pageSizeResult);
 			}
 		});
@@ -179,17 +197,20 @@ function benchmarkPageSizeOptimization (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkPaginationModes (dataSizes) {
+function benchmarkPaginationModes(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generatePaginationTestData(size);
 
 		// Test with immutable store
 		const immutableStore = haro(testData, { immutable: true });
-		const immutableResult = benchmark(`LIMIT immutable mode (50 items from ${size} records)`, () => {
-			immutableStore.limit(0, 50);
-		});
+		const immutableResult = benchmark(
+			`LIMIT immutable mode (50 items from ${size} records)`,
+			() => {
+				immutableStore.limit(0, 50);
+			},
+		);
 		results.push(immutableResult);
 
 		// Test with mutable store
@@ -206,9 +227,12 @@ function benchmarkPaginationModes (dataSizes) {
 		results.push(rawResult);
 
 		// Test with processed data
-		const processedResult = benchmark(`LIMIT processed data (50 items from ${size} records)`, () => {
-			mutableStore.limit(0, 50, false);
-		});
+		const processedResult = benchmark(
+			`LIMIT processed data (50 items from ${size} records)`,
+			() => {
+				mutableStore.limit(0, 50, false);
+			},
+		);
 		results.push(processedResult);
 	});
 
@@ -220,10 +244,10 @@ function benchmarkPaginationModes (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkSequentialPagination (dataSizes) {
+function benchmarkSequentialPagination(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generatePaginationTestData(size);
 		const store = haro(testData);
 		const pageSize = 25;
@@ -231,22 +255,30 @@ function benchmarkSequentialPagination (dataSizes) {
 
 		// Simulate browsing through first 10 pages
 		const pagesToTest = Math.min(10, totalPages);
-		const sequentialResult = benchmark(`LIMIT sequential pagination (${pagesToTest} pages, ${pageSize} items each)`, () => {
-			for (let page = 0; page < pagesToTest; page++) {
-				const offset = page * pageSize;
-				store.limit(offset, pageSize);
-			}
-		}, 1);
+		const sequentialResult = benchmark(
+			`LIMIT sequential pagination (${pagesToTest} pages, ${pageSize} items each)`,
+			() => {
+				for (let page = 0; page < pagesToTest; page++) {
+					const offset = page * pageSize;
+					store.limit(offset, pageSize);
+				}
+			},
+			1,
+		);
 		results.push(sequentialResult);
 
 		// Simulate random page access pattern
-		const randomPagesResult = benchmark(`LIMIT random page access (10 random pages, ${pageSize} items each)`, () => {
-			for (let i = 0; i < 10; i++) {
-				const randomPage = Math.floor(Math.random() * totalPages);
-				const offset = randomPage * pageSize;
-				store.limit(offset, pageSize);
-			}
-		}, 1);
+		const randomPagesResult = benchmark(
+			`LIMIT random page access (10 random pages, ${pageSize} items each)`,
+			() => {
+				for (let i = 0; i < 10; i++) {
+					const randomPage = Math.floor(Math.random() * totalPages);
+					const offset = randomPage * pageSize;
+					store.limit(offset, pageSize);
+				}
+			},
+			1,
+		);
 		results.push(randomPagesResult);
 	});
 
@@ -258,18 +290,18 @@ function benchmarkSequentialPagination (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkPaginationWithOperations (dataSizes) {
+function benchmarkPaginationWithOperations(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generatePaginationTestData(size);
 		const store = haro(testData, {
-			index: ["category", "status", "priority"]
+			index: ["category", "status", "priority"],
 		});
 
 		// Pagination after filtering
 		const paginateAfterFilterResult = benchmark(`LIMIT after filter (${size} records)`, () => {
-			const filtered = store.filter(record => record.priority > 3);
+			const filtered = store.filter((record) => record.priority > 3);
 			// Simulate pagination on filtered results by taking first 20
 
 			return filtered.slice(0, 20);
@@ -286,12 +318,15 @@ function benchmarkPaginationWithOperations (dataSizes) {
 		results.push(paginateAfterFindResult);
 
 		// Combined operations: find + sort + paginate simulation
-		const combinedOperationsResult = benchmark(`Combined find + sort + limit (${size} records)`, () => {
-			const found = store.find({ status: "active" });
-			const sorted = found.sort((a, b) => b.score - a.score);
+		const combinedOperationsResult = benchmark(
+			`Combined find + sort + limit (${size} records)`,
+			() => {
+				const found = store.find({ status: "active" });
+				const sorted = found.sort((a, b) => b.score - a.score);
 
-			return sorted.slice(0, 20); // Simulate limit
-		});
+				return sorted.slice(0, 20); // Simulate limit
+			},
+		);
 		results.push(combinedOperationsResult);
 	});
 
@@ -303,10 +338,10 @@ function benchmarkPaginationWithOperations (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkPaginationMemory (dataSizes) {
+function benchmarkPaginationMemory(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generatePaginationTestData(size);
 		const store = haro(testData);
 
@@ -348,7 +383,7 @@ function benchmarkPaginationMemory (dataSizes) {
 			memoryAllData: (memAfterAll - memBefore) / 1024 / 1024, // MB
 			memoryChunked: (memAfterChunks - memAfterAll) / 1024 / 1024, // MB
 			iterations: 1,
-			opsPerSecond: Math.floor(1000 / (allDataEnd - allDataStart + (chunksEnd - chunksStart)))
+			opsPerSecond: Math.floor(1000 / (allDataEnd - allDataStart + (chunksEnd - chunksStart))),
 		});
 	});
 
@@ -359,23 +394,34 @@ function benchmarkPaginationMemory (dataSizes) {
  * Prints formatted benchmark results
  * @param {Array} results - Array of benchmark results
  */
-function printResults (results) {
+function printResults(results) {
 	console.log("\n" + "=".repeat(80));
 	console.log("PAGINATION BENCHMARK RESULTS");
 	console.log("=".repeat(80));
 
-	results.forEach(result => {
-		const opsIndicator = result.opsPerSecond > 1000 ? "✅" :
-			result.opsPerSecond > 100 ? "🟡" :
-				result.opsPerSecond > 10 ? "🟠" : "🔴";
+	results.forEach((result) => {
+		const opsIndicator =
+			result.opsPerSecond > 1000
+				? "✅"
+				: result.opsPerSecond > 100
+					? "🟡"
+					: result.opsPerSecond > 10
+						? "🟠"
+						: "🔴";
 
 		console.log(`${opsIndicator} ${result.name}`);
-		console.log(`   ${result.opsPerSecond.toLocaleString()} ops/sec | ${result.totalTime.toFixed(2)}ms total | ${result.avgTime?.toFixed(4) || "N/A"}ms avg`);
+		console.log(
+			`   ${result.opsPerSecond.toLocaleString()} ops/sec | ${result.totalTime.toFixed(2)}ms total | ${result.avgTime?.toFixed(4) || "N/A"}ms avg`,
+		);
 
 		// Special formatting for memory results
 		if (result.memoryAllData !== undefined) {
-			console.log(`   All data: ${result.allDataTime.toFixed(2)}ms, ${result.memoryAllData.toFixed(2)}MB`);
-			console.log(`   Chunked: ${result.chunkedTime.toFixed(2)}ms, ${result.memoryChunked.toFixed(2)}MB`);
+			console.log(
+				`   All data: ${result.allDataTime.toFixed(2)}ms, ${result.memoryAllData.toFixed(2)}MB`,
+			);
+			console.log(
+				`   Chunked: ${result.chunkedTime.toFixed(2)}ms, ${result.memoryChunked.toFixed(2)}MB`,
+			);
 		}
 		console.log("");
 	});
@@ -385,7 +431,7 @@ function printResults (results) {
  * Runs all pagination benchmarks
  * @returns {Array} Array of all benchmark results
  */
-function runPaginationBenchmarks () {
+function runPaginationBenchmarks() {
 	console.log("Starting Pagination Benchmarks...\n");
 
 	const dataSizes = [1000, 10000, 50000];

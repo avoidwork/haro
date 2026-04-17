@@ -1,6 +1,6 @@
 import assert from "node:assert";
-import {describe, it, beforeEach} from "mocha";
-import {Haro} from "../../src/haro.js";
+import { describe, it, beforeEach } from "mocha";
+import { Haro } from "../../src/haro.js";
 
 describe("Utility Methods", () => {
 	let store;
@@ -11,7 +11,7 @@ describe("Utility Methods", () => {
 
 	describe("clone()", () => {
 		it("should create deep clone of object", () => {
-			const original = {name: "John", tags: ["admin", "user"]};
+			const original = { name: "John", tags: ["admin", "user"] };
 			const cloned = store.clone(original);
 
 			cloned.tags.push("new");
@@ -47,8 +47,8 @@ describe("Utility Methods", () => {
 
 	describe("forEach()", () => {
 		beforeEach(() => {
-			store.set("user1", {id: "user1", name: "John"});
-			store.set("user2", {id: "user2", name: "Jane"});
+			store.set("user1", { id: "user1", name: "John" });
+			store.set("user2", { id: "user2", name: "Jane" });
 		});
 
 		it("should iterate over all records", () => {
@@ -65,12 +65,12 @@ describe("Utility Methods", () => {
 
 	describe("map()", () => {
 		beforeEach(() => {
-			store.set("user1", {id: "user1", name: "John", age: 30});
-			store.set("user2", {id: "user2", name: "Jane", age: 25});
+			store.set("user1", { id: "user1", name: "John", age: 30 });
+			store.set("user2", { id: "user2", name: "Jane", age: 25 });
 		});
 
 		it("should transform all records", () => {
-			const results = store.map(record => record.name);
+			const results = store.map((record) => record.name);
 			assert.strictEqual(results.length, 2);
 			assert.strictEqual(results[0][1], "John");
 			assert.strictEqual(results[1][1], "Jane");
@@ -85,8 +85,8 @@ describe("Utility Methods", () => {
 
 	describe("reduce()", () => {
 		beforeEach(() => {
-			store.set("user1", {id: "user1", age: 30});
-			store.set("user2", {id: "user2", age: 25});
+			store.set("user1", { id: "user1", age: 30 });
+			store.set("user2", { id: "user2", age: 25 });
 		});
 
 		it("should reduce all records to single value", () => {
@@ -106,11 +106,11 @@ describe("Utility Methods", () => {
 
 	describe("merge()", () => {
 		it("should merge objects", () => {
-			const a = {x: 1, y: 2};
-			const b = {y: 3, z: 4};
+			const a = { x: 1, y: 2 };
+			const b = { y: 3, z: 4 };
 			const result = store.merge(a, b);
 
-			assert.deepStrictEqual(result, {x: 1, y: 3, z: 4});
+			assert.deepStrictEqual(result, { x: 1, y: 3, z: 4 });
 		});
 
 		it("should concatenate arrays", () => {
@@ -151,8 +151,8 @@ describe("Utility Methods", () => {
 
 	describe("freeze()", () => {
 		it("should freeze multiple arguments", () => {
-			const obj1 = {a: 1};
-			const obj2 = {b: 2};
+			const obj1 = { a: 1 };
+			const obj2 = { b: 2 };
 			const result = store.freeze(obj1, obj2);
 
 			assert.strictEqual(Object.isFrozen(result), true);
@@ -163,15 +163,15 @@ describe("Utility Methods", () => {
 
 	describe("list()", () => {
 		it("should convert record to [key, value] format", () => {
-			const record = {id: "user1", name: "John"};
+			const record = { id: "user1", name: "John" };
 			const result = store.list(record);
 
 			assert.deepStrictEqual(result, ["user1", record]);
 		});
 
 		it("should freeze result in immutable mode", () => {
-			const immutableStore = new Haro({immutable: true});
-			const record = {id: "user1", name: "John"};
+			const immutableStore = new Haro({ immutable: true });
+			const record = { id: "user1", name: "John" };
 			const result = immutableStore.list(record);
 
 			assert.strictEqual(Object.isFrozen(result), true);
@@ -181,7 +181,7 @@ describe("Utility Methods", () => {
 	describe("limit()", () => {
 		beforeEach(() => {
 			for (let i = 0; i < 10; i++) {
-				store.set(`user${i}`, {id: `user${i}`, name: `User${i}`});
+				store.set(`user${i}`, { id: `user${i}`, name: `User${i}` });
 			}
 		});
 
@@ -204,9 +204,9 @@ describe("Utility Methods", () => {
 
 	describe("sort()", () => {
 		beforeEach(() => {
-			store.set("user1", {id: "user1", name: "Charlie", age: 30});
-			store.set("user2", {id: "user2", name: "Alice", age: 25});
-			store.set("user3", {id: "user3", name: "Bob", age: 35});
+			store.set("user1", { id: "user1", name: "Charlie", age: 30 });
+			store.set("user2", { id: "user2", name: "Alice", age: 25 });
+			store.set("user3", { id: "user3", name: "Bob", age: 35 });
 		});
 
 		it("should sort records with comparator function", () => {
@@ -224,8 +224,8 @@ describe("Utility Methods", () => {
 
 	describe("toArray()", () => {
 		beforeEach(() => {
-			store.set("user1", {id: "user1", name: "John"});
-			store.set("user2", {id: "user2", name: "Jane"});
+			store.set("user1", { id: "user1", name: "John" });
+			store.set("user2", { id: "user2", name: "Jane" });
 		});
 
 		it("should convert store to array", () => {
@@ -236,8 +236,8 @@ describe("Utility Methods", () => {
 		});
 
 		it("should return frozen array in immutable mode", () => {
-			const immutableStore = new Haro({immutable: true});
-			immutableStore.set("user1", {id: "user1", name: "John"});
+			const immutableStore = new Haro({ immutable: true });
+			immutableStore.set("user1", { id: "user1", name: "John" });
 			const results = immutableStore.toArray();
 
 			assert.strictEqual(Object.isFrozen(results), true);
@@ -247,8 +247,8 @@ describe("Utility Methods", () => {
 
 	describe("entries(), keys(), values()", () => {
 		beforeEach(() => {
-			store.set("user1", {id: "user1", name: "John"});
-			store.set("user2", {id: "user2", name: "Jane"});
+			store.set("user1", { id: "user1", name: "John" });
+			store.set("user2", { id: "user2", name: "Jane" });
 		});
 
 		it("should return entries iterator", () => {
@@ -307,7 +307,11 @@ describe("Utility Methods", () => {
 		it("should handle floating point numbers", () => {
 			const result = store.sortKeys(3.14, 2.71);
 			assert.strictEqual(result > 0, true, "3.14 should come after 2.71");
-			assert.strictEqual(Math.abs(result - 0.43) < 0.01, true, "result should be approximately 0.43");
+			assert.strictEqual(
+				Math.abs(result - 0.43) < 0.01,
+				true,
+				"result should be approximately 0.43",
+			);
 
 			const result2 = store.sortKeys(1.5, 1.5);
 			assert.strictEqual(result2, 0, "identical floats should return 0");
@@ -341,8 +345,8 @@ describe("Utility Methods", () => {
 		});
 
 		it("should handle objects by converting to string", () => {
-			const obj1 = {name: "test"};
-			const obj2 = {value: 123};
+			const obj1 = { name: "test" };
+			const obj2 = { value: 123 };
 			const result = store.sortKeys(obj1, obj2);
 
 			// Objects get converted to "[object Object]" so they should be equal

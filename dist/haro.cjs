@@ -1,7 +1,7 @@
 /**
  * haro
  *
- * @copyright 2025 Jason Mulligan <jason.mulligan@avoidwork.com>
+ * @copyright 2026 Jason Mulligan <jason.mulligan@avoidwork.com>
  * @license BSD-3-Clause
  * @version 16.0.0
  */
@@ -63,6 +63,7 @@ class Haro {
 	 * @param {string[]} [config.index=[]] - Array of field names to create indexes for
 	 * @param {string} [config.key=STRING_ID] - Primary key field name used for record identification
 	 * @param {boolean} [config.versioning=false] - Enable versioning to track record changes
+	 * @param {boolean} [config.warnOnFullScan=true] - Enable warnings for full table scan queries
 	 * @constructor
 	 * @example
 	 * const store = new Haro({
@@ -72,7 +73,15 @@ class Haro {
 	 *   immutable: true
 	 * });
 	 */
-	constructor ({delimiter = STRING_PIPE, id = this.uuid(), immutable = false, index = [], key = STRING_ID, versioning = false} = {}) {
+	constructor({
+		delimiter = STRING_PIPE,
+		id = this.uuid(),
+		immutable = false,
+		index = [],
+		key = STRING_ID,
+		versioning = false,
+		warnOnFullScan = true,
+	} = {}) {
 		this.data = new Map();
 		this.delimiter = delimiter;
 		this.id = id;
@@ -82,16 +91,17 @@ class Haro {
 		this.key = key;
 		this.versions = new Map();
 		this.versioning = versioning;
+		this.warnOnFullScan = warnOnFullScan;
 		Object.defineProperty(this, STRING_REGISTRY, {
 			enumerable: true,
-			get: () => Array.from(this.data.keys())
+			get: () => Array.from(this.data.keys()),
 		});
 		Object.defineProperty(this, STRING_SIZE, {
 			enumerable: true,
-			get: () => this.data.size
+			get: () => this.data.size,
 		});
 
-		return this.reindex();
+		this.initialized = true;
 	}
 
 	/**
@@ -106,8 +116,9 @@ class Haro {
 	 *   {id: 2, name: 'Jane'}
 	 * ], 'set');
 	 */
-	batch (args, type = STRING_SET) {
-		const fn = type === STRING_DEL ? i => this.delete(i, true) : i => this.set(null, i, true, true);
+	batch(args, type = STRING_SET) {
+		const fn =
+			type === STRING_DEL ? (i) => this.delete(i, true) : (i) => this.set(null, i, true, true);
 
 		return this.onbatch(this.beforeBatch(args, type).map(fn), type);
 	}
@@ -118,7 +129,8 @@ class Haro {
 	 * @param {string} [type=STRING_EMPTY] - Type of batch operation ('set' or 'del')
 	 * @returns {Array<Object>} The arguments array (possibly modified) to be processed
 	 */
-	beforeBatch (arg, type = STRING_EMPTY) { // eslint-disable-line no-unused-vars
+	beforeBatch(arg, type = STRING_EMPTY) {
+		// eslint-disable-line no-unused-vars
 		// Hook for custom logic before batch; override in subclass if needed
 		return arg;
 	}
@@ -133,7 +145,7 @@ class Haro {
 	 *   }
 	 * }
 	 */
-	beforeClear () {
+	beforeClear() {
 		// Hook for custom logic before clear; override in subclass if needed
 	}
 
@@ -143,7 +155,8 @@ class Haro {
 	 * @param {boolean} [batch=false] - Whether this is part of a batch operation
 	 * @returns {void} Override this method in subclasses to implement custom logic
 	 */
-	beforeDelete (key = STRING_EMPTY, batch = false) { // eslint-disable-line no-unused-vars
+	beforeDelete(key = STRING_EMPTY, batch = false) {
+		// eslint-disable-line no-unused-vars
 		// Hook for custom logic before delete; override in subclass if needed
 	}
 
@@ -155,7 +168,8 @@ class Haro {
 	 * @param {boolean} [override=false] - Whether to override existing data
 	 * @returns {void} Override this method in subclasses to implement custom logic
 	 */
-	beforeSet (key = STRING_EMPTY, data = {}, batch = false, override = false) { // eslint-disable-line no-unused-vars
+	beforeSet(key = STRING_EMPTY, data = {}, batch = false, override = false) {
+		// eslint-disable-line no-unused-vars
 		// Hook for custom logic before set; override in subclass if needed
 	}
 
@@ -166,7 +180,7 @@ class Haro {
 	 * store.clear();
 	 * console.log(store.size); // 0
 	 */
-	clear () {
+	clear() {
 		this.beforeClear();
 		this.data.clear();
 		this.indexes.clear();
@@ -185,8 +199,28 @@ class Haro {
 	 * const cloned = store.clone(original);
 	 * cloned.tags.push('new'); // original.tags is unchanged
 	 */
-	clone (arg) {
-		return structuredClone(arg);
+	clone(arg) {
+		if (typeof structuredClone === STRING_FUNCTION) {
+			return structuredClone(arg);
+		}
+
+		return JSON.parse(JSON.stringify(arg));
+	}
+
+	/**
+	 * Initializes the store by building indexes for existing data
+	 * @returns {Haro} This instance for method chaining
+	 * @example
+	 * const store = new Haro({ index: ['name'] });
+	 * store.initialize(); // Build indexes
+	 */
+	initialize() {
+		if (!this.initialized) {
+			this.reindex();
+			this.initialized = true;
+		}
+
+		return this;
 	}
 
 	/**
@@ -199,7 +233,10 @@ class Haro {
 	 * store.delete('user123');
 	 * // Throws error if 'user123' doesn't exist
 	 */
-	delete (key = STRING_EMPTY, batch = false) {
+	delete(key = STRING_EMPTY, batch = false) {
+		if (typeof key !== STRING_STRING && typeof key !== STRING_NUMBER) {
+			throw new Error("delete: key must be a string or number");
+		}
 		if (!this.data.has(key)) {
 			throw new Error(STRING_RECORD_NOT_FOUND);
 		}
@@ -219,14 +256,16 @@ class Haro {
 	 * @param {Object} data - Data of record being deleted
 	 * @returns {Haro} This instance for method chaining
 	 */
-	deleteIndex (key, data) {
-		this.index.forEach(i => {
+	deleteIndex(key, data) {
+		this.index.forEach((i) => {
 			const idx = this.indexes.get(i);
 			if (!idx) return;
-			const values = i.includes(this.delimiter) ?
-				this.indexKeys(i, this.delimiter, data) :
-				Array.isArray(data[i]) ? data[i] : [data[i]];
-			this.each(values, value => {
+			const values = i.includes(this.delimiter)
+				? this.indexKeys(i, this.delimiter, data)
+				: Array.isArray(data[i])
+					? data[i]
+					: [data[i]];
+			this.each(values, (value) => {
 				if (idx.has(value)) {
 					const o = idx.get(value);
 					o.delete(key);
@@ -248,13 +287,13 @@ class Haro {
 	 * const records = store.dump('records');
 	 * const indexes = store.dump('indexes');
 	 */
-	dump (type = STRING_RECORDS) {
+	dump(type = STRING_RECORDS) {
 		let result;
 		if (type === STRING_RECORDS) {
 			result = Array.from(this.entries());
 		} else {
-			result = Array.from(this.indexes).map(i => {
-				i[1] = Array.from(i[1]).map(ii => {
+			result = Array.from(this.indexes).map((i) => {
+				i[1] = Array.from(i[1]).map((ii) => {
 					ii[1] = Array.from(ii[1]);
 
 					return ii;
@@ -275,7 +314,7 @@ class Haro {
 	 * @example
 	 * store.each([1, 2, 3], (item, index) => console.log(item, index));
 	 */
-	each (arr = [], fn) {
+	each(arr = [], fn) {
 		const len = arr.length;
 		for (let i = 0; i < len; i++) {
 			fn(arr[i], i);
@@ -292,7 +331,7 @@ class Haro {
 	 *   console.log(key, value);
 	 * }
 	 */
-	entries () {
+	entries() {
 		return this.data.entries();
 	}
 
@@ -305,25 +344,29 @@ class Haro {
 	 * const users = store.find({department: 'engineering', active: true});
 	 * const admins = store.find({role: 'admin'});
 	 */
-	find (where = {}, raw = false) {
-		const key = Object.keys(where).sort(this.sortKeys).join(this.delimiter);
-		const index = this.indexes.get(key) ?? new Map();
-		let result = [];
-		if (index.size > 0) {
-			const keys = this.indexKeys(key, this.delimiter, where);
-			result = Array.from(keys.reduce((a, v) => {
-				if (index.has(v)) {
-					index.get(v).forEach(k => a.add(k));
-				}
-
-				return a;
-			}, new Set())).map(i => this.get(i, raw));
+	find(where = {}, raw = false) {
+		if (typeof where !== STRING_OBJECT || where === null) {
+			throw new Error("find: where must be an object");
 		}
-		if (!raw && this.immutable) {
-			result = Object.freeze(result);
+		const whereKeys = Object.keys(where).sort(this.sortKeys);
+		const key = whereKeys.join(this.delimiter);
+		const result = new Set();
+
+		for (const [indexName, index] of this.indexes) {
+			if (indexName.startsWith(key + this.delimiter) || indexName === key) {
+				const keys = this.indexKeys(indexName, this.delimiter, where);
+				keys.forEach((v) => {
+					if (index.has(v)) {
+						index.get(v).forEach((k) => result.add(k));
+					}
+				});
+			}
 		}
 
-		return result;
+		let records = Array.from(result).map((i) => this.get(i, raw));
+		records = this._freezeResult(records, raw);
+
+		return records;
 	}
 
 	/**
@@ -336,7 +379,7 @@ class Haro {
 	 * const adults = store.filter(record => record.age >= 18);
 	 * const recent = store.filter(record => record.created > Date.now() - 86400000);
 	 */
-	filter (fn, raw = false) {
+	filter(fn, raw = false) {
 		if (typeof fn !== STRING_FUNCTION) {
 			throw new Error(STRING_INVALID_FUNCTION);
 		}
@@ -348,11 +391,8 @@ class Haro {
 			return a;
 		}, []);
 		if (!raw) {
-			result = result.map(i => this.list(i));
-
-			if (this.immutable) {
-				result = Object.freeze(result);
-			}
+			result = result.map((i) => this.list(i));
+			result = this._freezeResult(result);
 		}
 
 		return result;
@@ -368,7 +408,7 @@ class Haro {
 	 *   console.log(`${key}: ${record.name}`);
 	 * });
 	 */
-	forEach (fn, ctx = this) {
+	forEach(fn, ctx = this) {
 		this.data.forEach((value, key) => {
 			if (this.immutable) {
 				value = this.clone(value);
@@ -387,8 +427,8 @@ class Haro {
 	 * const frozen = store.freeze(obj1, obj2, obj3);
 	 * // Returns Object.freeze([Object.freeze(obj1), Object.freeze(obj2), Object.freeze(obj3)])
 	 */
-	freeze (...args) {
-		return Object.freeze(args.map(i => Object.freeze(i)));
+	freeze(...args) {
+		return Object.freeze(args.map((i) => Object.freeze(i)));
 	}
 
 	/**
@@ -400,13 +440,14 @@ class Haro {
 	 * const user = store.get('user123');
 	 * const rawUser = store.get('user123', true);
 	 */
-	get (key, raw = false) {
+	get(key, raw = false) {
+		if (typeof key !== STRING_STRING && typeof key !== STRING_NUMBER) {
+			throw new Error("get: key must be a string or number");
+		}
 		let result = this.data.get(key) ?? null;
 		if (result !== null && !raw) {
 			result = this.list(result);
-			if (this.immutable) {
-				result = Object.freeze(result);
-			}
+			result = this._freezeResult(result);
 		}
 
 		return result;
@@ -421,7 +462,7 @@ class Haro {
 	 *   console.log('User exists');
 	 * }
 	 */
-	has (key) {
+	has(key) {
 		return this.data.has(key);
 	}
 
@@ -436,26 +477,25 @@ class Haro {
 	 * const keys = store.indexKeys('name|department', '|', data);
 	 * // Returns ['John|IT']
 	 */
-	indexKeys (arg = STRING_EMPTY, delimiter = STRING_PIPE, data = {}) {
+	indexKeys(arg = STRING_EMPTY, delimiter = STRING_PIPE, data = {}) {
 		const fields = arg.split(delimiter).sort(this.sortKeys);
-		const fieldsLen = fields.length;
-		let result = [""];
-		for (let i = 0; i < fieldsLen; i++) {
-			const field = fields[i];
-			const values = Array.isArray(data[field]) ? data[field] : [data[field]];
-			const newResult = [];
-			const resultLen = result.length;
-			const valuesLen = values.length;
-			for (let j = 0; j < resultLen; j++) {
-				for (let k = 0; k < valuesLen; k++) {
-					const newKey = i === 0 ? values[k] : `${result[j]}${delimiter}${values[k]}`;
-					newResult.push(newKey);
-				}
-			}
-			result = newResult;
-		}
 
-		return result;
+		return fields.reduce(
+			(result, field, i) => {
+				const values = Array.isArray(data[field]) ? data[field] : [data[field]];
+				const newResult = [];
+
+				for (const existing of result) {
+					for (const value of values) {
+						const newKey = i === 0 ? value : `${existing}${delimiter}${value}`;
+						newResult.push(newKey);
+					}
+				}
+
+				return newResult;
+			},
+			[""],
+		);
 	}
 
 	/**
@@ -466,7 +506,7 @@ class Haro {
 	 *   console.log(key);
 	 * }
 	 */
-	keys () {
+	keys() {
 		return this.data.keys();
 	}
 
@@ -480,11 +520,15 @@ class Haro {
 	 * const page1 = store.limit(0, 10);   // First 10 records
 	 * const page2 = store.limit(10, 10);  // Next 10 records
 	 */
-	limit (offset = INT_0, max = INT_0, raw = false) {
-		let result = this.registry.slice(offset, offset + max).map(i => this.get(i, raw));
-		if (!raw && this.immutable) {
-			result = Object.freeze(result);
+	limit(offset = INT_0, max = INT_0, raw = false) {
+		if (typeof offset !== STRING_NUMBER) {
+			throw new Error("limit: offset must be a number");
 		}
+		if (typeof max !== STRING_NUMBER) {
+			throw new Error("limit: max must be a number");
+		}
+		let result = this.registry.slice(offset, offset + max).map((i) => this.get(i, raw));
+		result = this._freezeResult(result, raw);
 
 		return result;
 	}
@@ -497,7 +541,7 @@ class Haro {
 	 * const record = {id: 'user123', name: 'John', age: 30};
 	 * const pair = store.list(record); // ['user123', {id: 'user123', name: 'John', age: 30}]
 	 */
-	list (arg) {
+	list(arg) {
 		const result = [arg[this.key], arg];
 
 		return this.immutable ? this.freeze(...result) : result;
@@ -513,17 +557,15 @@ class Haro {
 	 * const names = store.map(record => record.name);
 	 * const summaries = store.map(record => ({id: record.id, name: record.name}));
 	 */
-	map (fn, raw = false) {
+	map(fn, raw = false) {
 		if (typeof fn !== STRING_FUNCTION) {
 			throw new Error(STRING_INVALID_FUNCTION);
 		}
 		let result = [];
 		this.forEach((value, key) => result.push(fn(value, key)));
 		if (!raw) {
-			result = result.map(i => this.list(i));
-			if (this.immutable) {
-				result = Object.freeze(result);
-			}
+			result = result.map((i) => this.list(i));
+			result = this._freezeResult(result);
 		}
 
 		return result;
@@ -539,11 +581,19 @@ class Haro {
 	 * const merged = store.merge({a: 1}, {b: 2}); // {a: 1, b: 2}
 	 * const arrays = store.merge([1, 2], [3, 4]); // [1, 2, 3, 4]
 	 */
-	merge (a, b, override = false) {
+	merge(a, b, override = false) {
 		if (Array.isArray(a) && Array.isArray(b)) {
 			a = override ? b : a.concat(b);
-		} else if (typeof a === STRING_OBJECT && a !== null && typeof b === STRING_OBJECT && b !== null) {
-			this.each(Object.keys(b), i => {
+		} else if (
+			typeof a === STRING_OBJECT &&
+			a !== null &&
+			typeof b === STRING_OBJECT &&
+			b !== null
+		) {
+			this.each(Object.keys(b), (i) => {
+				if (i === "__proto__" || i === "constructor" || i === "prototype") {
+					return;
+				}
 				a[i] = this.merge(a[i], b[i], override);
 			});
 		} else {
@@ -559,7 +609,8 @@ class Haro {
 	 * @param {string} [type=STRING_EMPTY] - Type of batch operation that was performed
 	 * @returns {Array<Object>} Modified result (override this method to implement custom logic)
 	 */
-	onbatch (arg, type = STRING_EMPTY) { // eslint-disable-line no-unused-vars
+	onbatch(arg, type = STRING_EMPTY) {
+		// eslint-disable-line no-unused-vars
 		return arg;
 	}
 
@@ -573,7 +624,7 @@ class Haro {
 	 *   }
 	 * }
 	 */
-	onclear () {
+	onclear() {
 		// Hook for custom logic after clear; override in subclass if needed
 	}
 
@@ -583,7 +634,8 @@ class Haro {
 	 * @param {boolean} [batch=false] - Whether this was part of a batch operation
 	 * @returns {void} Override this method in subclasses to implement custom logic
 	 */
-	ondelete (key = STRING_EMPTY, batch = false) { // eslint-disable-line no-unused-vars
+	ondelete(key = STRING_EMPTY, batch = false) {
+		// eslint-disable-line no-unused-vars
 		// Hook for custom logic after delete; override in subclass if needed
 	}
 
@@ -592,7 +644,8 @@ class Haro {
 	 * @param {string} [type=STRING_EMPTY] - Type of override operation that was performed
 	 * @returns {void} Override this method in subclasses to implement custom logic
 	 */
-	onoverride (type = STRING_EMPTY) { // eslint-disable-line no-unused-vars
+	onoverride(type = STRING_EMPTY) {
+		// eslint-disable-line no-unused-vars
 		// Hook for custom logic after override; override in subclass if needed
 	}
 
@@ -602,7 +655,8 @@ class Haro {
 	 * @param {boolean} [batch=false] - Whether this was part of a batch operation
 	 * @returns {void} Override this method in subclasses to implement custom logic
 	 */
-	onset (arg = {}, batch = false) { // eslint-disable-line no-unused-vars
+	onset(arg = {}, batch = false) {
+		// eslint-disable-line no-unused-vars
 		// Hook for custom logic after set; override in subclass if needed
 	}
 
@@ -616,10 +670,12 @@ class Haro {
 	 * const records = [['key1', {name: 'John'}], ['key2', {name: 'Jane'}]];
 	 * store.override(records, 'records');
 	 */
-	override (data, type = STRING_RECORDS) {
+	override(data, type = STRING_RECORDS) {
 		const result = true;
 		if (type === STRING_INDEXES) {
-			this.indexes = new Map(data.map(i => [i[0], new Map(i[1].map(ii => [ii[0], new Set(ii[1])]))]));
+			this.indexes = new Map(
+				data.map((i) => [i[0], new Map(i[1].map((ii) => [ii[0], new Set(ii[1])]))]),
+			);
 		} else if (type === STRING_RECORDS) {
 			this.indexes.clear();
 			this.data = new Map(data);
@@ -640,7 +696,7 @@ class Haro {
 	 * const totalAge = store.reduce((sum, record) => sum + record.age, 0);
 	 * const names = store.reduce((acc, record) => acc.concat(record.name), []);
 	 */
-	reduce (fn, accumulator = []) {
+	reduce(fn, accumulator = []) {
 		let a = accumulator;
 		this.forEach((v, k) => {
 			a = fn(a, v, k, this);
@@ -658,13 +714,13 @@ class Haro {
 	 * store.reindex('name'); // Rebuild only name index
 	 * store.reindex(['name', 'email']); // Rebuild name and email indexes
 	 */
-	reindex (index) {
-		const indices = index ? [index] : this.index;
+	reindex(index) {
+		const indices = index ? (Array.isArray(index) ? index : [index]) : this.index;
 		if (index && this.index.includes(index) === false) {
 			this.index.push(index);
 		}
-		this.each(indices, i => this.indexes.set(i, new Map()));
-		this.forEach((data, key) => this.each(indices, i => this.setIndex(key, data, i)));
+		this.each(indices, (i) => this.indexes.set(i, new Map()));
+		this.forEach((data, key) => this.each(indices, (i) => this.setIndex(key, data, i)));
 
 		return this;
 	}
@@ -680,12 +736,14 @@ class Haro {
 	 * const nameResults = store.search('john', 'name'); // Search only name index
 	 * const regexResults = store.search(/^admin/, 'role'); // Regex search
 	 */
-	search (value, index, raw = false) {
-		const result = new Set(); // Use Set for unique keys
+	search(value, index, raw = false) {
+		if (value === null || value === undefined) {
+			throw new Error("search: value cannot be null or undefined");
+		}
+		const result = new Set();
 		const fn = typeof value === STRING_FUNCTION;
 		const rgex = value && typeof value.test === STRING_FUNCTION;
-		if (!value) return this.immutable ? this.freeze() : [];
-		const indices = index ? Array.isArray(index) ? index : [index] : this.index;
+		const indices = index ? (Array.isArray(index) ? index : [index]) : this.index;
 		for (const i of indices) {
 			const idx = this.indexes.get(i);
 			if (idx) {
@@ -710,10 +768,8 @@ class Haro {
 				}
 			}
 		}
-		let records = Array.from(result).map(key => this.get(key, raw));
-		if (!raw && this.immutable) {
-			records = Object.freeze(records);
-		}
+		let records = Array.from(result).map((key) => this.get(key, raw));
+		records = this._freezeResult(records, raw);
 
 		return records;
 	}
@@ -729,12 +785,22 @@ class Haro {
 	 * const user = store.set(null, {name: 'John', age: 30}); // Auto-generate key
 	 * const updated = store.set('user123', {age: 31}); // Update existing record
 	 */
-	set (key = null, data = {}, batch = false, override = false) {
+	set(key = null, data = {}, batch = false, override = false) {
+		if (key !== null && typeof key !== STRING_STRING && typeof key !== STRING_NUMBER) {
+			throw new Error("set: key must be a string or number");
+		}
+		if (typeof data !== STRING_OBJECT || data === null) {
+			throw new Error("set: data must be an object");
+		}
 		if (key === null) {
 			key = data[this.key] ?? this.uuid();
 		}
-		let x = {...data, [this.key]: key};
+		let x = { ...data, [this.key]: key };
 		this.beforeSet(key, x, batch, override);
+		if (!this.initialized) {
+			this.reindex();
+			this.initialized = true;
+		}
 		if (!this.data.has(key)) {
 			if (this.versioning) {
 				this.versions.set(key, new Set());
@@ -764,14 +830,14 @@ class Haro {
 	 * @param {string|null} indice - Specific index to update, or null for all
 	 * @returns {Haro} This instance for method chaining
 	 */
-	setIndex (key, data, indice) {
-		this.each(indice === null ? this.index : [indice], i => {
+	setIndex(key, data, indice) {
+		this.each(indice === null ? this.index : [indice], (i) => {
 			let idx = this.indexes.get(i);
 			if (!idx) {
 				idx = new Map();
 				this.indexes.set(i, idx);
 			}
-			const fn = c => {
+			const fn = (c) => {
 				if (!idx.has(c)) {
 					idx.set(c, new Set());
 				}
@@ -796,7 +862,10 @@ class Haro {
 	 * const sorted = store.sort((a, b) => a.age - b.age); // Sort by age
 	 * const names = store.sort((a, b) => a.name.localeCompare(b.name)); // Sort by name
 	 */
-	sort (fn, frozen = false) {
+	sort(fn, frozen = false) {
+		if (typeof fn !== STRING_FUNCTION) {
+			throw new Error("sort: fn must be a function");
+		}
 		const dataSize = this.data.size;
 		let result = this.limit(INT_0, dataSize, true).sort(fn);
 		if (frozen) {
@@ -818,7 +887,7 @@ class Haro {
 	 * const mixed = [10, '5', 'abc', 3];
 	 * mixed.sort(store.sortKeys); // Type-aware sort: numbers first, then strings
 	 */
-	sortKeys (a, b) {
+	sortKeys(a, b) {
 		// Handle string comparison
 		if (typeof a === STRING_STRING && typeof b === STRING_STRING) {
 			return a.localeCompare(b);
@@ -843,23 +912,20 @@ class Haro {
 	 * const byAge = store.sortBy('age');
 	 * const byName = store.sortBy('name');
 	 */
-	sortBy (index = STRING_EMPTY, raw = false) {
+	sortBy(index = STRING_EMPTY, raw = false) {
 		if (index === STRING_EMPTY) {
 			throw new Error(STRING_INVALID_FIELD);
 		}
-		let result = [];
 		const keys = [];
 		if (this.indexes.has(index) === false) {
 			this.reindex(index);
 		}
 		const lindex = this.indexes.get(index);
 		lindex.forEach((idx, key) => keys.push(key));
-		this.each(keys.sort(this.sortKeys), i => lindex.get(i).forEach(key => result.push(this.get(key, raw))));
-		if (this.immutable) {
-			result = Object.freeze(result);
-		}
+		keys.sort(this.sortKeys);
+		const result = keys.flatMap((i) => Array.from(lindex.get(i)).map((key) => this.get(key, raw)));
 
-		return result;
+		return this._freezeResult(result);
 	}
 
 	/**
@@ -869,10 +935,10 @@ class Haro {
 	 * const allRecords = store.toArray();
 	 * console.log(`Store contains ${allRecords.length} records`);
 	 */
-	toArray () {
+	toArray() {
 		const result = Array.from(this.data.values());
 		if (this.immutable) {
-			this.each(result, i => Object.freeze(i));
+			this.each(result, (i) => Object.freeze(i));
 			Object.freeze(result);
 		}
 
@@ -885,7 +951,7 @@ class Haro {
 	 * @example
 	 * const id = store.uuid(); // "f47ac10b-58cc-4372-a567-0e02b2c3d479"
 	 */
-	uuid () {
+	uuid() {
 		return crypto.randomUUID();
 	}
 
@@ -897,8 +963,37 @@ class Haro {
 	 *   console.log(record.name);
 	 * }
 	 */
-	values () {
+	values() {
 		return this.data.values();
+	}
+
+	/**
+	 * Internal helper for validating method arguments
+	 * @param {*} value - Value to validate
+	 * @param {string} expectedType - Expected type name
+	 * @param {string} methodName - Name of method being called
+	 * @param {string} paramName - Name of parameter
+	 * @throws {Error} Throws error if validation fails
+	 */
+	_validateType(value, expectedType, methodName, paramName) {
+		const actualType = typeof value;
+		if (actualType !== expectedType) {
+			throw new Error(`${methodName}: ${paramName} must be ${expectedType}, got ${actualType}`);
+		}
+	}
+
+	/**
+	 * Internal helper to freeze result if immutable mode is enabled
+	 * @param {Array|Object} result - Result to freeze
+	 * @param {boolean} raw - Whether to skip freezing
+	 * @returns {Array|Object} Frozen or original result
+	 */
+	_freezeResult(result, raw = false) {
+		if (!raw && this.immutable) {
+			result = Object.freeze(result);
+		}
+
+		return result;
 	}
 
 	/**
@@ -908,21 +1003,27 @@ class Haro {
 	 * @param {string} op - Operator for array matching ('||' for OR, '&&' for AND)
 	 * @returns {boolean} True if record matches predicate criteria
 	 */
-	matchesPredicate (record, predicate, op) {
+	matchesPredicate(record, predicate, op) {
 		const keys = Object.keys(predicate);
 
-		return keys.every(key => {
+		return keys.every((key) => {
 			const pred = predicate[key];
 			const val = record[key];
 			if (Array.isArray(pred)) {
 				if (Array.isArray(val)) {
-					return op === STRING_DOUBLE_AND ? pred.every(p => val.includes(p)) : pred.some(p => val.includes(p));
+					return op === STRING_DOUBLE_AND
+						? pred.every((p) => val.includes(p))
+						: pred.some((p) => val.includes(p));
 				} else {
-					return op === STRING_DOUBLE_AND ? pred.every(p => val === p) : pred.some(p => val === p);
+					return op === STRING_DOUBLE_AND
+						? pred.every((p) => val === p)
+						: pred.some((p) => val === p);
 				}
 			} else if (pred instanceof RegExp) {
 				if (Array.isArray(val)) {
-					return op === STRING_DOUBLE_AND ? val.every(v => pred.test(v)) : val.some(v => pred.test(v));
+					return op === STRING_DOUBLE_AND
+						? val.every((v) => pred.test(v))
+						: val.some((v) => pred.test(v));
 				} else {
 					return pred.test(val);
 				}
@@ -949,12 +1050,18 @@ class Haro {
 	 * // Regex matching
 	 * const emails = store.where({email: /^admin@/});
 	 */
-	where (predicate = {}, op = STRING_DOUBLE_PIPE) {
-		const keys = this.index.filter(i => i in predicate);
+	where(predicate = {}, op = STRING_DOUBLE_PIPE) {
+		if (typeof predicate !== STRING_OBJECT || predicate === null) {
+			throw new Error("where: predicate must be an object");
+		}
+		if (typeof op !== STRING_STRING) {
+			throw new Error("where: op must be a string");
+		}
+		const keys = this.index.filter((i) => i in predicate);
 		if (keys.length === 0) return [];
 
 		// Try to use indexes for better performance
-		const indexedKeys = keys.filter(k => this.indexes.has(k));
+		const indexedKeys = keys.filter((k) => this.indexes.has(k));
 		if (indexedKeys.length > 0) {
 			// Use index-based filtering for better performance
 			let candidateKeys = new Set();
@@ -981,7 +1088,7 @@ class Haro {
 					first = false;
 				} else {
 					// AND operation across different fields
-					candidateKeys = new Set([...candidateKeys].filter(k => matchingKeys.has(k)));
+					candidateKeys = new Set([...candidateKeys].filter((k) => matchingKeys.has(k)));
 				}
 			}
 			// Filter candidates with full predicate logic
@@ -993,11 +1100,14 @@ class Haro {
 				}
 			}
 
-			return this.immutable ? this.freeze(...results) : results;
+			return this._freezeResult(results);
 		}
 
-		// Fallback to full scan if no indexes available
-		return this.filter(a => this.matchesPredicate(a, predicate, op));
+		if (this.warnOnFullScan) {
+			console.warn("where(): performing full table scan - consider adding an index");
+		}
+
+		return this.filter((a) => this.matchesPredicate(a, predicate, op));
 	}
 }
 
@@ -1015,7 +1125,7 @@ class Haro {
  *   versioning: true
  * });
  */
-function haro (data = null, config = {}) {
+function haro(data = null, config = {}) {
 	const obj = new Haro(config);
 
 	if (Array.isArray(data)) {

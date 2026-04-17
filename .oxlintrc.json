@@ -1,8 +1,8 @@
 {
 	"$schema": "./node_modules/oxlint/configuration_schema.json",
-	"ignorePatterns": ["!**/src/**", "!**/tests/**"],
+	"ignorePatterns": ["!**/src/**", "benchmarks/**"],
 	"rules": {
-		"no-console": "error",
-		"no-unused-vars": "error"
+		"no-console": ["error", {"allow": ["warn", "error"]}],
+		"no-unused-vars": ["error", {"argsIgnorePattern": "^(arg|batch|data|key|override|type)$"}]
 	}
 }

@@ -6,7 +6,7 @@ import { haro } from "../dist/haro.js";
  * @param {number} size - Number of records to generate
  * @returns {Array} Array of test records optimized for persistence testing
  */
-function generatePersistenceTestData (size) {
+function generatePersistenceTestData(size) {
 	const data = [];
 	const departments = ["Engineering", "Marketing", "Sales", "HR", "Finance", "Operations"];
 	const locations = ["NYC", "SF", "LA", "Chicago", "Boston", "Austin"];
@@ -18,13 +18,17 @@ function generatePersistenceTestData (size) {
 			email: `employee${i}@company.com`,
 			department: departments[i % departments.length],
 			location: locations[i % locations.length],
-			startDate: new Date(2020 + i % 4, i % 12, i % 28 + 1),
-			salary: 50000 + i % 100000,
+			startDate: new Date(2020 + (i % 4), i % 12, (i % 28) + 1),
+			salary: 50000 + (i % 100000),
 			active: Math.random() > 0.1,
-			skills: Array.from({ length: Math.floor(Math.random() * 5) + 1 },
-				(_, j) => `skill${(i + j) % 20}`),
-			projects: Array.from({ length: Math.floor(i % 10) + 1 },
-				(_, j) => ({ id: `proj${i}-${j}`, name: `Project ${i}-${j}` })),
+			skills: Array.from(
+				{ length: Math.floor(Math.random() * 5) + 1 },
+				(_, j) => `skill${(i + j) % 20}`,
+			),
+			projects: Array.from({ length: Math.floor(i % 10) + 1 }, (_, j) => ({
+				id: `proj${i}-${j}`,
+				name: `Project ${i}-${j}`,
+			})),
 			metadata: {
 				created: new Date(),
 				updated: new Date(),
@@ -33,9 +37,9 @@ function generatePersistenceTestData (size) {
 				preferences: {
 					theme: i % 2 === 0 ? "dark" : "light",
 					language: i % 3 === 0 ? "en" : i % 3 === 1 ? "es" : "fr",
-					timezone: `UTC${i % 24 - 12}`
-				}
-			}
+					timezone: `UTC${(i % 24) - 12}`,
+				},
+			},
 		});
 	}
 
@@ -49,7 +53,7 @@ function generatePersistenceTestData (size) {
  * @param {number} iterations - Number of iterations to run
  * @returns {Object} Benchmark results
  */
-function benchmark (name, fn, iterations = 10) {
+function benchmark(name, fn, iterations = 10) {
 	const start = performance.now();
 	for (let i = 0; i < iterations; i++) {
 		fn();
@@ -63,7 +67,7 @@ function benchmark (name, fn, iterations = 10) {
 		iterations,
 		totalTime: total,
 		avgTime,
-		opsPerSecond: Math.floor(1000 / avgTime)
+		opsPerSecond: Math.floor(1000 / avgTime),
 	};
 }
 
@@ -72,13 +76,20 @@ function benchmark (name, fn, iterations = 10) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkDumpOperations (dataSizes) {
+function benchmarkDumpOperations(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generatePersistenceTestData(size);
 		const store = haro(testData, {
-			index: ["department", "location", "active", "skills", "department|location", "active|department"]
+			index: [
+				"department",
+				"location",
+				"active",
+				"skills",
+				"department|location",
+				"active|department",
+			],
 		});
 
 		// Dump records
@@ -106,7 +117,7 @@ function benchmarkDumpOperations (dataSizes) {
 			recordsSize: recordsDump.length,
 			indexesSize: indexesDump.length,
 			recordsDataSize: JSON.stringify(recordsDump).length,
-			indexesDataSize: JSON.stringify(indexesDump).length
+			indexesDataSize: JSON.stringify(indexesDump).length,
 		});
 	});
 
@@ -118,13 +129,13 @@ function benchmarkDumpOperations (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkOverrideOperations (dataSizes) {
+function benchmarkOverrideOperations(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generatePersistenceTestData(size);
 		const sourceStore = haro(testData, {
-			index: ["department", "location", "active", "skills"]
+			index: ["department", "location", "active", "skills"],
 		});
 
 		// Get dump data for override testing
@@ -173,7 +184,7 @@ function benchmarkOverrideOperations (dataSizes) {
 			originalSize: sourceStore.size,
 			restoredSize: targetStore.size,
 			integrityMatch: sourceStore.size === targetStore.size,
-			sampleRecordMatch: JSON.stringify(sourceStore.get(0)) === JSON.stringify(targetStore.get(0))
+			sampleRecordMatch: JSON.stringify(sourceStore.get(0)) === JSON.stringify(targetStore.get(0)),
 		};
 		results.push(integrityResult);
 	});
@@ -186,14 +197,14 @@ function benchmarkOverrideOperations (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkRoundTripPersistence (dataSizes) {
+function benchmarkRoundTripPersistence(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generatePersistenceTestData(size);
 		const sourceStore = haro(testData, {
 			index: ["department", "location", "active", "skills", "department|location"],
-			versioning: true
+			versioning: true,
 		});
 
 		// Perform some operations to create versions
@@ -228,18 +239,21 @@ function benchmarkRoundTripPersistence (dataSizes) {
 		results.push(roundTripCompleteResult);
 
 		// Test with different store configurations
-		const roundTripConfigResult = benchmark(`Round-trip with config restore (${size} records)`, () => {
-			const recordsDump = sourceStore.dump("records");
-			const targetStore = haro(null, {
-				index: ["department", "location", "active"],
-				versioning: true,
-				immutable: true
-			});
-			targetStore.override(recordsDump, "records");
-			targetStore.reindex(); // Rebuild indexes with new config
+		const roundTripConfigResult = benchmark(
+			`Round-trip with config restore (${size} records)`,
+			() => {
+				const recordsDump = sourceStore.dump("records");
+				const targetStore = haro(null, {
+					index: ["department", "location", "active"],
+					versioning: true,
+					immutable: true,
+				});
+				targetStore.override(recordsDump, "records");
+				targetStore.reindex(); // Rebuild indexes with new config
 
-			return targetStore;
-		});
+				return targetStore;
+			},
+		);
 		results.push(roundTripConfigResult);
 	});
 
@@ -251,10 +265,10 @@ function benchmarkRoundTripPersistence (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkPersistenceMemory (dataSizes) {
+function benchmarkPersistenceMemory(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generatePersistenceTestData(size);
 
 		if (global.gc) {
@@ -264,7 +278,7 @@ function benchmarkPersistenceMemory (dataSizes) {
 
 		// Create store and measure memory
 		const store = haro(testData, {
-			index: ["department", "location", "active", "skills"]
+			index: ["department", "location", "active", "skills"],
 		});
 
 		if (global.gc) {
@@ -309,7 +323,7 @@ function benchmarkPersistenceMemory (dataSizes) {
 			dumpMemoryImpact: (memAfterDump - memAfterCreate) / 1024 / 1024, // MB
 			overrideMemoryImpact: (memAfterOverride - memAfterDump) / 1024 / 1024, // MB
 			finalMemory: (memAfterCleanup - memBefore) / 1024 / 1024, // MB
-			opsPerSecond: Math.floor(1000 / (dumpEnd - dumpStart + (overrideEnd - overrideStart)))
+			opsPerSecond: Math.floor(1000 / (dumpEnd - dumpStart + (overrideEnd - overrideStart))),
 		});
 	});
 
@@ -321,10 +335,10 @@ function benchmarkPersistenceMemory (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkComplexObjectPersistence (dataSizes) {
+function benchmarkComplexObjectPersistence(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		// Generate more complex test data
 		const complexData = [];
 		for (let i = 0; i < size; i++) {
@@ -334,38 +348,38 @@ function benchmarkComplexObjectPersistence (dataSizes) {
 					personal: {
 						name: `User ${i}`,
 						email: `user${i}@test.com`,
-						birth: new Date(1990 + i % 30, i % 12, i % 28 + 1)
+						birth: new Date(1990 + (i % 30), i % 12, (i % 28) + 1),
 					},
 					professional: {
 						title: `Title ${i % 20}`,
 						department: `Dept ${i % 10}`,
-						experience: Array.from({ length: i % 5 + 1 }, (_, j) => ({
+						experience: Array.from({ length: (i % 5) + 1 }, (_, j) => ({
 							company: `Company ${j}`,
 							role: `Role ${j}`,
-							duration: `${j + 1} years`
-						}))
-					}
+							duration: `${j + 1} years`,
+						})),
+					},
 				},
-				activities: Array.from({ length: i % 50 + 1 }, (_, j) => ({
+				activities: Array.from({ length: (i % 50) + 1 }, (_, j) => ({
 					id: `activity_${i}_${j}`,
 					type: `type_${j % 10}`,
 					timestamp: new Date(Date.now() - j * 86400000),
 					data: {
 						action: `action_${j}`,
-						details: { value: Math.random() * 1000, category: `cat_${j % 5}` }
-					}
+						details: { value: Math.random() * 1000, category: `cat_${j % 5}` },
+					},
 				})),
 				settings: {
 					preferences: Object.fromEntries(
-						Array.from({ length: 20 }, (_, j) => [`pref_${j}`, Math.random() > 0.5])
+						Array.from({ length: 20 }, (_, j) => [`pref_${j}`, Math.random() > 0.5]),
 					),
-					permissions: Array.from({ length: 10 }, (_, j) => `perm_${j}`)
-				}
+					permissions: Array.from({ length: 10 }, (_, j) => `perm_${j}`),
+				},
 			});
 		}
 
 		const store = haro(complexData, {
-			index: ["profile.professional.department", "settings.permissions"]
+			index: ["profile.professional.department", "settings.permissions"],
 		});
 
 		// Dump complex objects
@@ -393,7 +407,7 @@ function benchmarkComplexObjectPersistence (dataSizes) {
 			opsPerSecond: 0,
 			averageObjectSize: JSON.stringify(complexData[0]).length,
 			totalDataSize: JSON.stringify(dump).length,
-			compressionRatio: JSON.stringify(dump).length / JSON.stringify(complexData).length
+			compressionRatio: JSON.stringify(dump).length / JSON.stringify(complexData).length,
 		};
 		results.push(dataComplexityResult);
 	});
@@ -405,42 +419,63 @@ function benchmarkComplexObjectPersistence (dataSizes) {
  * Prints formatted benchmark results
  * @param {Array} results - Array of benchmark results
  */
-function printResults (results) {
+function printResults(results) {
 	console.log("\n" + "=".repeat(80));
 	console.log("PERSISTENCE BENCHMARK RESULTS");
 	console.log("=".repeat(80));
 
-	results.forEach(result => {
-		const opsIndicator = result.opsPerSecond > 100 ? "✅" :
-			result.opsPerSecond > 10 ? "🟡" :
-				result.opsPerSecond > 1 ? "🟠" : "🔴";
+	results.forEach((result) => {
+		const opsIndicator =
+			result.opsPerSecond > 100
+				? "✅"
+				: result.opsPerSecond > 10
+					? "🟡"
+					: result.opsPerSecond > 1
+						? "🟠"
+						: "🔴";
 
 		if (result.opsPerSecond > 0) {
 			console.log(`${opsIndicator} ${result.name}`);
-			console.log(`   ${result.opsPerSecond.toLocaleString()} ops/sec | ${result.totalTime.toFixed(2)}ms total | ${result.avgTime?.toFixed(4) || "N/A"}ms avg`);
+			console.log(
+				`   ${result.opsPerSecond.toLocaleString()} ops/sec | ${result.totalTime.toFixed(2)}ms total | ${result.avgTime?.toFixed(4) || "N/A"}ms avg`,
+			);
 		} else {
 			console.log(`📊 ${result.name}`);
 		}
 
 		// Special formatting for different result types
 		if (result.recordsSize !== undefined) {
-			console.log(`   Records: ${result.recordsSize} items, ${(result.recordsDataSize / 1024).toFixed(2)}KB`);
-			console.log(`   Indexes: ${result.indexesSize} items, ${(result.indexesDataSize / 1024).toFixed(2)}KB`);
+			console.log(
+				`   Records: ${result.recordsSize} items, ${(result.recordsDataSize / 1024).toFixed(2)}KB`,
+			);
+			console.log(
+				`   Indexes: ${result.indexesSize} items, ${(result.indexesDataSize / 1024).toFixed(2)}KB`,
+			);
 		}
 
 		if (result.integrityMatch !== undefined) {
 			console.log(`   Original: ${result.originalSize} | Restored: ${result.restoredSize}`);
-			console.log(`   Integrity: ${result.integrityMatch ? "✅" : "❌"} | Sample match: ${result.sampleRecordMatch ? "✅" : "❌"}`);
+			console.log(
+				`   Integrity: ${result.integrityMatch ? "✅" : "❌"} | Sample match: ${result.sampleRecordMatch ? "✅" : "❌"}`,
+			);
 		}
 
 		if (result.originalMemory !== undefined) {
-			console.log(`   Dump: ${result.dumpTime.toFixed(2)}ms | Override: ${result.overrideTime.toFixed(2)}ms`);
-			console.log(`   Memory - Original: ${result.originalMemory.toFixed(2)}MB | Final: ${result.finalMemory.toFixed(2)}MB`);
-			console.log(`   Memory Impact - Dump: ${result.dumpMemoryImpact.toFixed(2)}MB | Override: ${result.overrideMemoryImpact.toFixed(2)}MB`);
+			console.log(
+				`   Dump: ${result.dumpTime.toFixed(2)}ms | Override: ${result.overrideTime.toFixed(2)}ms`,
+			);
+			console.log(
+				`   Memory - Original: ${result.originalMemory.toFixed(2)}MB | Final: ${result.finalMemory.toFixed(2)}MB`,
+			);
+			console.log(
+				`   Memory Impact - Dump: ${result.dumpMemoryImpact.toFixed(2)}MB | Override: ${result.overrideMemoryImpact.toFixed(2)}MB`,
+			);
 		}
 
 		if (result.averageObjectSize !== undefined) {
-			console.log(`   Avg object: ${result.averageObjectSize} bytes | Total: ${(result.totalDataSize / 1024).toFixed(2)}KB`);
+			console.log(
+				`   Avg object: ${result.averageObjectSize} bytes | Total: ${(result.totalDataSize / 1024).toFixed(2)}KB`,
+			);
 			console.log(`   Compression ratio: ${(result.compressionRatio * 100).toFixed(1)}%`);
 		}
 
@@ -452,7 +487,7 @@ function printResults (results) {
  * Runs all persistence benchmarks
  * @returns {Array} Array of all benchmark results
  */
-function runPersistenceBenchmarks () {
+function runPersistenceBenchmarks() {
 	console.log("Starting Persistence Benchmarks...\n");
 
 	const dataSizes = [100, 1000, 5000];

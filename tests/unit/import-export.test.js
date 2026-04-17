@@ -1,14 +1,14 @@
 import assert from "node:assert";
-import {describe, it, beforeEach} from "mocha";
-import {Haro} from "../../src/haro.js";
+import { describe, it, beforeEach } from "mocha";
+import { Haro } from "../../src/haro.js";
 
 describe("Data Import/Export", () => {
 	let store;
 
 	beforeEach(() => {
 		store = new Haro();
-		store.set("user1", {id: "user1", name: "John"});
-		store.set("user2", {id: "user2", name: "Jane"});
+		store.set("user1", { id: "user1", name: "John" });
+		store.set("user2", { id: "user2", name: "Jane" });
 	});
 
 	describe("dump()", () => {
@@ -25,8 +25,8 @@ describe("Data Import/Export", () => {
 		});
 
 		it("should dump indexes", () => {
-			const indexedStore = new Haro({index: ["name"]});
-			indexedStore.set("user1", {id: "user1", name: "John"});
+			const indexedStore = new Haro({ index: ["name"] });
+			indexedStore.set("user1", { id: "user1", name: "John" });
 			const data = indexedStore.dump("indexes");
 
 			assert.strictEqual(Array.isArray(data), true);
@@ -38,8 +38,8 @@ describe("Data Import/Export", () => {
 	describe("override()", () => {
 		it("should override records", () => {
 			const newData = [
-				["user3", {id: "user3", name: "Bob"}],
-				["user4", {id: "user4", name: "Alice"}]
+				["user3", { id: "user3", name: "Bob" }],
+				["user4", { id: "user4", name: "Alice" }],
 			];
 			const result = store.override(newData, "records");
 
@@ -50,9 +50,15 @@ describe("Data Import/Export", () => {
 		});
 
 		it("should override indexes", () => {
-			const indexedStore = new Haro({index: ["name"]});
+			const indexedStore = new Haro({ index: ["name"] });
 			const indexData = [
-				["name", [["John", ["user1"]], ["Jane", ["user2"]]]]
+				[
+					"name",
+					[
+						["John", ["user1"]],
+						["Jane", ["user2"]],
+					],
+				],
 			];
 			const result = indexedStore.override(indexData, "indexes");
 

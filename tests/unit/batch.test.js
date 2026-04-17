@@ -1,23 +1,23 @@
 import assert from "node:assert";
-import {describe, it} from "mocha";
-import {Haro} from "../../src/haro.js";
+import { describe, it } from "mocha";
+import { Haro } from "../../src/haro.js";
 
 describe("Batch Operations", () => {
 	describe("batch()", () => {
 		it("should batch set multiple records", () => {
 			// Create a store with beforeBatch that returns the arguments
-			const batchStore = new class extends Haro {
-				beforeBatch (args) {
+			const batchStore = new (class extends Haro {
+				beforeBatch(args) {
 					return args;
 				}
-				onbatch (result) {
+				onbatch(result) {
 					return result;
 				}
-			}();
+			})();
 
 			const data = [
-				{id: "user1", name: "John", age: 30},
-				{id: "user2", name: "Jane", age: 25}
+				{ id: "user1", name: "John", age: 30 },
+				{ id: "user2", name: "Jane", age: 25 },
 			];
 			const results = batchStore.batch(data, "set");
 
@@ -29,17 +29,17 @@ describe("Batch Operations", () => {
 
 		it("should batch delete multiple records", () => {
 			// Create a store with beforeBatch that returns the arguments
-			const batchStore = new class extends Haro {
-				beforeBatch (args) {
+			const batchStore = new (class extends Haro {
+				beforeBatch(args) {
 					return args;
 				}
-				onbatch (result) {
+				onbatch(result) {
 					return result;
 				}
-			}();
+			})();
 
-			batchStore.set("user1", {id: "user1", name: "John"});
-			batchStore.set("user2", {id: "user2", name: "Jane"});
+			batchStore.set("user1", { id: "user1", name: "John" });
+			batchStore.set("user2", { id: "user2", name: "Jane" });
 
 			const results = batchStore.batch(["user1", "user2"], "del");
 
@@ -49,16 +49,16 @@ describe("Batch Operations", () => {
 
 		it("should default to set operation", () => {
 			// Create a store with beforeBatch that returns the arguments
-			const batchStore = new class extends Haro {
-				beforeBatch (args) {
+			const batchStore = new (class extends Haro {
+				beforeBatch(args) {
 					return args;
 				}
-				onbatch (result) {
+				onbatch(result) {
 					return result;
 				}
-			}();
+			})();
 
-			const data = [{id: "user1", name: "John"}];
+			const data = [{ id: "user1", name: "John" }];
 			const results = batchStore.batch(data);
 
 			assert.strictEqual(results.length, 1);
