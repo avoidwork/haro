@@ -8,6 +8,7 @@ export interface HaroConfig {
   index?: string[];
   key?: string;
   versioning?: boolean;
+  warnOnFullScan?: boolean;
 }
 
 /**
@@ -25,6 +26,8 @@ export class Haro {
   key: string;
   versions: Map<string, Set<any>>;
   versioning: boolean;
+  warnOnFullScan: boolean;
+  initialized: boolean;
   readonly registry: string[];
   readonly size: number;
 
@@ -99,6 +102,12 @@ export class Haro {
    * @returns This instance for method chaining
    */
   deleteIndex(key: string, data: any): Haro;
+
+  /**
+   * Initializes the store by building indexes for existing data
+   * @returns This instance for method chaining
+   */
+  initialize(): Haro;
 
   /**
    * Exports complete store data or indexes for persistence or debugging
