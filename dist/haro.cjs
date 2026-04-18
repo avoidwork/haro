@@ -340,7 +340,10 @@ class Haro {
 		}
 
 		const records = Array.from(result, (i) => this.get(i));
-		return this.#freezeResult(records);
+		if (this.immutable) {
+			return Object.freeze(records);
+		}
+		return records;
 	}
 
 	/**
@@ -362,7 +365,10 @@ class Haro {
 				result.push(value);
 			}
 		});
-		return this.#freezeResult(result);
+		if (this.immutable) {
+			return Object.freeze(result);
+		}
+		return result;
 	}
 
 	/**
@@ -411,7 +417,7 @@ class Haro {
 			return null;
 		}
 		if (this.immutable) {
-			return this.#freezeResult(result);
+			return Object.freeze(result);
 		}
 		return result;
 	}
@@ -458,7 +464,9 @@ class Haro {
 			throw new Error("limit: max must be a number");
 		}
 		let result = this.registry.slice(offset, offset + max).map((i) => this.get(i));
-		result = this.#freezeResult(result);
+		if (this.immutable) {
+			result = Object.freeze(result);
+		}
 
 		return result;
 	}
@@ -478,7 +486,9 @@ class Haro {
 		}
 		let result = [];
 		this.forEach((value, key) => result.push(fn(value, key)));
-		result = this.#freezeResult(result);
+		if (this.immutable) {
+			result = Object.freeze(result);
+		}
 
 		return result;
 	}
@@ -616,7 +626,10 @@ class Haro {
 			}
 		}
 		const records = Array.from(result, (key) => this.get(key));
-		return this.#freezeResult(records);
+		if (this.immutable) {
+			return Object.freeze(records);
+		}
+		return records;
 	}
 
 	/**
@@ -765,7 +778,10 @@ class Haro {
 			return mapped;
 		});
 
-		return this.#freezeResult(result);
+		if (this.immutable) {
+			return Object.freeze(result);
+		}
+		return result;
 	}
 
 	/**
@@ -808,19 +824,6 @@ class Haro {
 	 */
 	values() {
 		return this.data.values();
-	}
-
-	/**
-	 * Internal helper to freeze result if immutable mode is enabled
-	 * @param {Array|Object} result - Result to freeze
-	 * @returns {Array|Object} Frozen or original result
-	 */
-	#freezeResult(result) {
-		if (this.immutable) {
-			result = Object.freeze(result);
-		}
-
-		return result;
 	}
 
 	/**
@@ -952,7 +955,10 @@ class Haro {
 				}
 			}
 
-			return this.#freezeResult(results);
+			if (this.immutable) {
+				return Object.freeze(results);
+			}
+			return results;
 		}
 
 		if (this.warnOnFullScan) {
