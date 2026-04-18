@@ -212,7 +212,8 @@ class Haro {
 				: Array.isArray(data[i])
 					? data[i]
 					: [data[i]];
-			this.#each(values, (value) => {
+			for (let j = 0; j < values.length; j++) {
+				const value = values[j];
 				if (idx.has(value)) {
 					const o = idx.get(value);
 					o.delete(key);
@@ -220,22 +221,10 @@ class Haro {
 						idx.delete(value);
 					}
 				}
-			});
+			}
 		});
 
 		return this;
-	}
-
-	/**
-	 * Internal helper method for iterating over arrays
-	 * @param {Array} arr - Array to iterate
-	 * @param {Function} fn - Function to call for each element
-	 * @returns {void}
-	 */
-	#each(arr, fn) {
-		for (let i = 0; i < arr.length; i++) {
-			fn(arr[i], i);
-		}
 	}
 
 	/**
@@ -500,12 +489,14 @@ class Haro {
 			typeof b === STRING_OBJECT &&
 			b !== null
 		) {
-			this.#each(Object.keys(b), (i) => {
-				if (i === "__proto__" || i === "constructor" || i === "prototype") {
-					return;
+			const keys = Object.keys(b);
+			for (let i = 0; i < keys.length; i++) {
+				const key = keys[i];
+				if (key === "__proto__" || key === "constructor" || key === "prototype") {
+					continue;
 				}
-				a[i] = this.merge(a[i], b[i], override);
-			});
+				a[key] = this.merge(a[key], b[key], override);
+			}
 		} else {
 			a = b;
 		}
@@ -553,8 +544,14 @@ class Haro {
 		if (index && this.index.includes(index) === false) {
 			this.index.push(index);
 		}
-		this.#each(indices, (i) => this.indexes.set(i, new Map()));
-		this.forEach((data, key) => this.#each(indices, (i) => this.#setIndex(key, data, i)));
+		for (let i = 0; i < indices.length; i++) {
+			this.indexes.set(indices[i], new Map());
+		}
+		this.forEach((data, key) => {
+			for (let i = 0; i < indices.length; i++) {
+				this.#setIndex(key, data, indices[i]);
+			}
+		});
 
 		return this;
 	}
@@ -764,7 +761,9 @@ class Haro {
 	toArray() {
 		const result = Array.from(this.data.values());
 		if (this.immutable) {
-			this.#each(result, (i) => Object.freeze(i));
+			for (let i = 0; i < result.length; i++) {
+				Object.freeze(result[i]);
+			}
 			Object.freeze(result);
 		}
 
