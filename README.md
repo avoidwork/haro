@@ -20,10 +20,6 @@ A fast, flexible immutable DataStore for collections of records with indexing, v
 - [Configuration Options](#configuration-options)
 - [TypeScript Support](#typescript-support)
 - [Real-World Examples](#real-world-examples)
-  - [Instant Setup - Zero Boilerplate](#instant-setup---zero-boilerplate)
-  - [Indexing and Queries](#indexing-and-queries)
-  - [Versioning](#versioning)
-  - [Immutable Mode](#immutable-mode)
 - [Comparison with Alternatives](#comparison-with-alternatives)
 - [API Reference](#api-reference)
 - [Troubleshooting](#troubleshooting)
@@ -66,10 +62,6 @@ A fast, flexible immutable DataStore for collections of records with indexing, v
 - **Type safety**: Full TypeScript support catches errors at compile time
 - **Version history**: Roll back to previous states when needed
 - **Validation**: Built-in checks prevent invalid data
-
-## Requirements
-
-- Node.js >= 17.0.0
 
 ## Installation
 
