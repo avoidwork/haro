@@ -143,4 +143,88 @@ describe("Batch Operations", () => {
 			assert.strictEqual(batchingDuringOperation, false);
 		});
 	});
+
+	describe("Nested batch operations", () => {
+		it("should throw error when setMany is called during batch", () => {
+			const store = new Haro({ key: "id" });
+			const nestedRecords = {
+				length: 1,
+				0: { id: "nested", name: "Nested" },
+			};
+			Object.defineProperty(nestedRecords, "map", {
+				value: function (fn, ctx) {
+					fn.call(ctx, this[0], 0, this);
+					store.setMany([{ id: "nested", name: "Nested" }]);
+					return [this[0]];
+				},
+				writable: true,
+				configurable: true,
+			});
+
+			assert.throws(() => {
+				store.setMany(nestedRecords);
+			}, /setMany: cannot call setMany within a batch operation/);
+		});
+
+		it("should throw error when deleteMany is called during batch", () => {
+			const store = new Haro({ key: "id" });
+			store.set("1", { id: "1", name: "Test" });
+			const nestedRecords = {
+				length: 1,
+				0: { id: "nested", name: "Nested" },
+			};
+			Object.defineProperty(nestedRecords, "map", {
+				value: function () {
+					store.deleteMany(["1"]);
+					return [this[0]];
+				},
+				writable: true,
+				configurable: true,
+			});
+
+			assert.throws(() => {
+				store.setMany(nestedRecords);
+			}, /deleteMany: cannot call deleteMany within a batch operation/);
+		});
+
+		it("should reset #inBatch to false after setMany throws error", () => {
+			const store = new Haro({ key: "id" });
+			store.set("1", { id: "1", name: "Test" });
+
+			try {
+				store.setMany([{ id: "2", name: "Test2" }]);
+			} catch {
+				// Expected error
+			}
+
+			assert.strictEqual(store.isBatching, false);
+		});
+
+		it("should reset #inBatch to false after deleteMany throws error", () => {
+			const store = new Haro({ key: "id" });
+			store.set("1", { id: "1", name: "Test" });
+
+			try {
+				store.deleteMany(["1"]);
+			} catch {
+				// Expected error
+			}
+
+			assert.strictEqual(store.isBatching, false);
+		});
+
+		it("should allow operations after error is thrown", () => {
+			const store = new Haro({ key: "id" });
+			store.set("1", { id: "1", name: "Test" });
+
+			try {
+				store.deleteMany(["1"]);
+			} catch {
+				// Expected error
+			}
+
+			store.set("2", { id: "2", name: "Test2" });
+			assert.strictEqual(store.has("2"), true);
+		});
+	});
 });
