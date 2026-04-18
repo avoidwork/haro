@@ -33,39 +33,28 @@ const STRING_RECORD_NOT_FOUND = "Record not found";
 
 // Integer constants
 const INT_0 = 0;/**
- * Haro is a modern immutable DataStore for collections of records with indexing,
- * versioning, and batch operations support. It provides a Map-like interface
- * with advanced querying capabilities through indexes.
+ * Haro is an immutable DataStore with indexing, versioning, and batch operations.
+ * Provides a Map-like interface with advanced querying capabilities.
  * @class
  * @example
- * const store = new Haro({
- *   index: ['name', 'age'],
- *   key: 'id',
- *   versioning: true
- * });
- *
- * store.set(null, {name: 'John', age: 30});
+ * const store = new Haro({ index: ['name'], key: 'id', versioning: true });
+ * store.set(null, {name: 'John'});
  * const results = store.find({name: 'John'});
  */
 class Haro {
 	/**
-	 * Creates a new Haro instance with specified configuration
-	 * @param {Object} [config={}] - Configuration object for the store
-	 * @param {string} [config.delimiter=STRING_PIPE] - Delimiter for composite indexes (default: '|')
-	 * @param {string} [config.id] - Unique identifier for this instance (auto-generated if not provided)
-	 * @param {boolean} [config.immutable=false] - Return frozen/immutable objects for data safety
-	 * @param {string[]} [config.index=[]] - Array of field names to create indexes for
-	 * @param {string} [config.key=STRING_ID] - Primary key field name used for record identification
-	 * @param {boolean} [config.versioning=false] - Enable versioning to track record changes
-	 * @param {boolean} [config.warnOnFullScan=true] - Enable warnings for full table scan queries
+	 * Creates a new Haro instance.
+	 * @param {Object} [config={}] - Configuration object
+	 * @param {string} [config.delimiter=STRING_PIPE] - Delimiter for composite indexes
+	 * @param {string} [config.id] - Unique instance identifier (auto-generated)
+	 * @param {boolean} [config.immutable=false] - Return frozen objects
+	 * @param {string[]} [config.index=[]] - Fields to index
+	 * @param {string} [config.key=STRING_ID] - Primary key field name
+	 * @param {boolean} [config.versioning=false] - Enable versioning
+	 * @param {boolean} [config.warnOnFullScan=true] - Warn on full table scans
 	 * @constructor
 	 * @example
-	 * const store = new Haro({
-	 *   index: ['name', 'email', 'name|department'],
-	 *   key: 'userId',
-	 *   versioning: true,
-	 *   immutable: true
-	 * });
+	 * const store = new Haro({ index: ['name', 'email'], key: 'userId', versioning: true });
 	 */
 	constructor({
 		delimiter = STRING_PIPE,
@@ -98,42 +87,35 @@ class Haro {
 	}
 
 	/**
-	 * Inserts or updates multiple records in a single operation
-	 * @param {Array<Object>} records - Array of records to insert or update
-	 * @returns {Array<Object>} Array of stored records
+	 * Inserts or updates multiple records.
+	 * @param {Array<Object>} records - Records to insert or update
+	 * @returns {Array<Object>} Stored records
 	 * @example
-	 * const results = store.setMany([
-	 *   {id: 1, name: 'John'},
-	 *   {id: 2, name: 'Jane'}
-	 * ]);
+	 * store.setMany([{id: 1, name: 'John'}, {id: 2, name: 'Jane'}]);
 	 */
 	setMany(records) {
 		return records.map((i) => this.set(null, i, true, true));
 	}
 
 	/**
-	 * Deletes multiple records in a single operation
-	 * @param {Array<string|number>} keys - Array of keys to delete
-	 * @returns {Array<void>} Array of undefined values
+	 * Deletes multiple records.
+	 * @param {Array<string|number>} keys - Keys to delete
+	 * @returns {Array<void>}
 	 * @example
-	 * store.deleteMany(['key1', 'key2', 'key3']);
+	 * store.deleteMany(['key1', 'key2']);
 	 */
 	deleteMany(keys) {
 		return keys.map((i) => this.delete(i, true));
 	}
 
 	/**
-	 * Performs batch operations on multiple records for efficient bulk processing
+	 * Performs batch operations on multiple records.
 	 * @deprecated Use setMany() or deleteMany() instead
-	 * @param {Array<Object>} args - Array of records to process
-	 * @param {string} [type=STRING_SET] - Type of operation: 'set' for upsert, 'del' for delete
-	 * @returns {Array<Object>} Array of results from the batch operation
-	 * @throws {Error} Throws error if individual operations fail during batch processing
+	 * @param {Array<Object>} args - Records to process
+	 * @param {string} [type=STRING_SET] - Operation type: 'set' or 'del'
+	 * @returns {Array<Object>} Results
 	 * @example
-	 * const results = store.batch([
-	 *   {id: 1, name: 'John'},
-	 *   {id: 2, name: 'Jane'}
-	 * ], 'set');
+	 * store.batch([{id: 1, name: 'John'}], 'set');
 	 */
 	batch(args, type = STRING_SET) {
 		const fn =
@@ -143,11 +125,10 @@ class Haro {
 	}
 
 	/**
-	 * Removes all records, indexes, and versions from the store
-	 * @returns {Haro} This instance for method chaining
+	 * Removes all records, indexes, and versions.
+	 * @returns {Haro} This instance
 	 * @example
 	 * store.clear();
-	 * console.log(store.size); // 0
 	 */
 	clear() {
 		this.data.clear();
@@ -159,13 +140,11 @@ class Haro {
 	}
 
 	/**
-	 * Creates a deep clone of the given value, handling objects, arrays, and primitives
-	 * @param {*} arg - Value to clone (any type)
-	 * @returns {*} Deep clone of the argument
+	 * Creates a deep clone of a value.
+	 * @param {*} arg - Value to clone
+	 * @returns {*} Deep clone
 	 * @example
-	 * const original = {name: 'John', tags: ['user', 'admin']};
-	 * const cloned = store.clone(original);
-	 * cloned.tags.push('new'); // original.tags is unchanged
+	 * const cloned = store.clone({name: 'John', tags: ['user']});
 	 */
 	clone(arg) {
 		if (typeof structuredClone === STRING_FUNCTION) {
@@ -176,14 +155,12 @@ class Haro {
 	}
 
 	/**
-	 * Deletes a record from the store and removes it from all indexes
-	 * @param {string} [key=STRING_EMPTY] - Key of record to delete
-	 * @param {boolean} [batch=false] - Whether this is part of a batch operation
-	 * @returns {void}
-	 * @throws {Error} Throws error if record with the specified key is not found
+	 * Deletes a record and removes it from all indexes.
+	 * @param {string} [key=STRING_EMPTY] - Key to delete
+	 * @param {boolean} [batch=false] - Batch operation flag
+	 * @throws {Error} If key not found
 	 * @example
 	 * store.delete('user123');
-	 * // Throws error if 'user123' doesn't exist
 	 */
 	delete(key = STRING_EMPTY, batch = false) {
 		if (typeof key !== STRING_STRING && typeof key !== STRING_NUMBER) {
@@ -201,10 +178,10 @@ class Haro {
 	}
 
 	/**
-	 * Internal method to remove entries from indexes for a deleted record
-	 * @param {string} key - Key of record being deleted
-	 * @param {Object} data - Data of record being deleted
-	 * @returns {Haro} This instance for method chaining
+	 * Removes a record from all indexes.
+	 * @param {string} key - Record key
+	 * @param {Object} data - Record data
+	 * @returns {Haro} This instance
 	 */
 	#deleteIndex(key, data) {
 		this.index.forEach((i) => {
@@ -232,12 +209,11 @@ class Haro {
 	}
 
 	/**
-	 * Exports complete store data or indexes for persistence or debugging
-	 * @param {string} [type=STRING_RECORDS] - Type of data to export: 'records' or 'indexes'
-	 * @returns {Array<Array>} Array of [key, value] pairs for records, or serialized index structure
+	 * Exports store data or indexes.
+	 * @param {string} [type=STRING_RECORDS] - Export type: 'records' or 'indexes'
+	 * @returns {Array<Array>} Exported data
 	 * @example
 	 * const records = store.dump('records');
-	 * const indexes = store.dump('indexes');
 	 */
 	dump(type = STRING_RECORDS) {
 		let result;
@@ -259,11 +235,11 @@ class Haro {
 	}
 
 	/**
-	 * Internal method to generate index keys for composite indexes
-	 * @param {string} arg - Composite index field names joined by delimiter
-	 * @param {string} delimiter - Delimiter used in composite index
-	 * @param {Object} data - Data object to extract field values from
-	 * @returns {string[]} Array of generated index keys
+	 * Generates index keys for composite indexes.
+	 * @param {string} arg - Composite index field names
+	 * @param {string} delimiter - Field delimiter
+	 * @param {Object} data - Data object
+	 * @returns {string[]} Index keys
 	 */
 	#getIndexKeys(arg, delimiter, data) {
 		const fields = arg.split(delimiter).sort(this.#sortKeys);
@@ -290,24 +266,21 @@ class Haro {
 	}
 
 	/**
-	 * Returns an iterator of [key, value] pairs for each record in the store
-	 * @returns {Iterator<Array<string|Object>>} Iterator of [key, value] pairs
+	 * Returns an iterator of [key, value] pairs.
+	 * @returns {Iterator<Array<string|Object>>} Key-value pairs
 	 * @example
-	 * for (const [key, value] of store.entries()) {
-	 *   console.log(key, value);
-	 * }
+	 * for (const [key, value] of store.entries()) { }
 	 */
 	entries() {
 		return this.data.entries();
 	}
 
 	/**
-	 * Finds records matching the specified criteria using indexes for optimal performance
-	 * @param {Object} [where={}] - Object with field-value pairs to match against
-	 * @returns {Array<Object>} Array of matching records (frozen if immutable mode)
+	 * Finds records matching criteria using indexes.
+	 * @param {Object} [where={}] - Field-value pairs to match
+	 * @returns {Array<Object>} Matching records
 	 * @example
-	 * const users = store.find({department: 'engineering', active: true});
-	 * const admins = store.find({role: 'admin'});
+	 * store.find({department: 'engineering', active: true});
 	 */
 	find(where = {}) {
 		if (typeof where !== STRING_OBJECT || where === null) {
@@ -341,13 +314,12 @@ class Haro {
 	}
 
 	/**
-	 * Filters records using a predicate function, similar to Array.filter
-	 * @param {Function} fn - Predicate function to test each record (record, key, store)
-	 * @returns {Array<Object>} Array of records that pass the predicate test
-	 * @throws {Error} Throws error if fn is not a function
+	 * Filters records using a predicate function.
+	 * @param {Function} fn - Predicate function (record, key, store)
+	 * @returns {Array<Object>} Filtered records
+	 * @throws {Error} If fn is not a function
 	 * @example
-	 * const adults = store.filter(record => record.age >= 18);
-	 * const recent = store.filter(record => record.created > Date.now() - 86400000);
+	 * store.filter(record => record.age >= 18);
 	 */
 	filter(fn) {
 		if (typeof fn !== STRING_FUNCTION) {
@@ -366,14 +338,12 @@ class Haro {
 	}
 
 	/**
-	 * Executes a function for each record in the store, similar to Array.forEach
-	 * @param {Function} fn - Function to execute for each record (value, key)
-	 * @param {*} [ctx] - Context object to use as 'this' when executing the function
-	 * @returns {Haro} This instance for method chaining
+	 * Executes a function for each record.
+	 * @param {Function} fn - Function (value, key)
+	 * @param {*} [ctx] - Context for fn
+	 * @returns {Haro} This instance
 	 * @example
-	 * store.forEach((record, key) => {
-	 *   console.log(`${key}: ${record.name}`);
-	 * });
+	 * store.forEach((record, key) => console.log(key, record));
 	 */
 	forEach(fn, ctx = this) {
 		this.data.forEach((value, key) => {
@@ -387,23 +357,22 @@ class Haro {
 	}
 
 	/**
-	 * Creates a frozen array from the given arguments for immutable data handling
-	 * @param {...*} args - Arguments to freeze into an array
-	 * @returns {Array<*>} Frozen array containing frozen arguments
+	 * Creates a frozen array from arguments.
+	 * @param {...*} args - Arguments to freeze
+	 * @returns {Array<*>} Frozen array
 	 * @example
-	 * const frozen = store.freeze(obj1, obj2, obj3);
-	 * // Returns Object.freeze([Object.freeze(obj1), Object.freeze(obj2), Object.freeze(obj3)])
+	 * store.freeze(obj1, obj2);
 	 */
 	freeze(...args) {
 		return Object.freeze(args.map((i) => Object.freeze(i)));
 	}
 
 	/**
-	 * Retrieves a record by its key
-	 * @param {string} key - Key of record to retrieve
-	 * @returns {Object|null} The record if found, null if not found
+	 * Retrieves a record by key.
+	 * @param {string} key - Record key
+	 * @returns {Object|null} Record or null
 	 * @example
-	 * const user = store.get('user123');
+	 * store.get('user123');
 	 */
 	get(key) {
 		const result = this.data.get(key);
@@ -417,38 +386,33 @@ class Haro {
 	}
 
 	/**
-	 * Checks if a record with the specified key exists in the store
-	 * @param {string} key - Key to check for existence
-	 * @returns {boolean} True if record exists, false otherwise
+	 * Checks if a record exists.
+	 * @param {string} key - Record key
+	 * @returns {boolean} True if exists
 	 * @example
-	 * if (store.has('user123')) {
-	 *   console.log('User exists');
-	 * }
+	 * store.has('user123');
 	 */
 	has(key) {
 		return this.data.has(key);
 	}
 
 	/**
-	 * Returns an iterator of all keys in the store
-	 * @returns {Iterator<string>} Iterator of record keys
+	 * Returns an iterator of all keys.
+	 * @returns {Iterator<string>} Keys
 	 * @example
-	 * for (const key of store.keys()) {
-	 *   console.log(key);
-	 * }
+	 * for (const key of store.keys()) { }
 	 */
 	keys() {
 		return this.data.keys();
 	}
 
 	/**
-	 * Returns a limited subset of records with offset support for pagination
-	 * @param {number} [offset=INT_0] - Number of records to skip from the beginning
-	 * @param {number} [max=INT_0] - Maximum number of records to return
-	 * @returns {Array<Object>} Array of records within the specified range
+	 * Returns a limited subset of records.
+	 * @param {number} [offset=INT_0] - Records to skip
+	 * @param {number} [max=INT_0] - Max records to return
+	 * @returns {Array<Object>} Records
 	 * @example
-	 * const page1 = store.limit(0, 10);   // First 10 records
-	 * const page2 = store.limit(10, 10);  // Next 10 records
+	 * store.limit(0, 10);
 	 */
 	limit(offset = INT_0, max = INT_0) {
 		if (typeof offset !== STRING_NUMBER) {
@@ -466,13 +430,12 @@ class Haro {
 	}
 
 	/**
-	 * Transforms all records using a mapping function, similar to Array.map
-	 * @param {Function} fn - Function to transform each record (record, key)
-	 * @returns {Array<*>} Array of transformed results
-	 * @throws {Error} Throws error if fn is not a function
+	 * Transforms records using a mapping function.
+	 * @param {Function} fn - Transform function (record, key)
+	 * @returns {Array<*>} Transformed results
+	 * @throws {Error} If fn is not a function
 	 * @example
-	 * const names = store.map(record => record.name);
-	 * const summaries = store.map(record => ({id: record.id, name: record.name}));
+	 * store.map(record => record.name);
 	 */
 	map(fn) {
 		if (typeof fn !== STRING_FUNCTION) {
@@ -488,14 +451,13 @@ class Haro {
 	}
 
 	/**
-	 * Merges two values together with support for arrays and objects
-	 * @param {*} a - First value (target)
-	 * @param {*} b - Second value (source)
-	 * @param {boolean} [override=false] - Whether to override arrays instead of concatenating
+	 * Merges two values.
+	 * @param {*} a - Target value
+	 * @param {*} b - Source value
+	 * @param {boolean} [override=false] - Override arrays
 	 * @returns {*} Merged result
 	 * @example
-	 * const merged = store.merge({a: 1}, {b: 2}); // {a: 1, b: 2}
-	 * const arrays = store.merge([1, 2], [3, 4]); // [1, 2, 3, 4]
+	 * store.merge({a: 1}, {b: 2});
 	 */
 	merge(a, b, override = false) {
 		if (Array.isArray(a) && Array.isArray(b)) {
@@ -522,14 +484,13 @@ class Haro {
 	}
 
 	/**
-	 * Replaces all store data or indexes with new data for bulk operations
-	 * @param {Array<Array>} data - Data to replace with (format depends on type)
-	 * @param {string} [type=STRING_RECORDS] - Type of data: 'records' or 'indexes'
-	 * @returns {boolean} True if operation succeeded
-	 * @throws {Error} Throws error if type is invalid
+	 * Replaces store data or indexes.
+	 * @param {Array<Array>} data - Data to replace
+	 * @param {string} [type=STRING_RECORDS] - Type: 'records' or 'indexes'
+	 * @returns {boolean} Success
+	 * @throws {Error} If type is invalid
 	 * @example
-	 * const records = [['key1', {name: 'John'}], ['key2', {name: 'Jane'}]];
-	 * store.override(records, 'records');
+	 * store.override([['key1', {name: 'John'}]], 'records');
 	 */
 	override(data, type = STRING_RECORDS) {
 		const result = true;
@@ -548,13 +509,12 @@ class Haro {
 	}
 
 	/**
-	 * Rebuilds indexes for specified fields or all fields for data consistency
-	 * @param {string|string[]} [index] - Specific index field(s) to rebuild, or all if not specified
-	 * @returns {Haro} This instance for method chaining
+	 * Rebuilds indexes.
+	 * @param {string|string[]} [index] - Field(s) to rebuild, or all
+	 * @returns {Haro} This instance
 	 * @example
-	 * store.reindex(); // Rebuild all indexes
-	 * store.reindex('name'); // Rebuild only name index
-	 * store.reindex(['name', 'email']); // Rebuild name and email indexes
+	 * store.reindex();
+	 * store.reindex('name');
 	 */
 	reindex(index) {
 		const indices = index ? (Array.isArray(index) ? index : [index]) : this.index;
@@ -575,14 +535,13 @@ class Haro {
 	}
 
 	/**
-	 * Searches for records containing a value across specified indexes
-	 * @param {*} value - Value to search for (string, function, or RegExp)
-	 * @param {string|string[]} [index] - Index(es) to search in, or all if not specified
-	 * @returns {Array<Object>} Array of matching records
+	 * Searches for records containing a value.
+	 * @param {*} value - Search value (string, function, or RegExp)
+	 * @param {string|string[]} [index] - Index(es) to search, or all
+	 * @returns {Array<Object>} Matching records
 	 * @example
-	 * const results = store.search('john'); // Search all indexes
-	 * const nameResults = store.search('john', 'name'); // Search only name index
-	 * const regexResults = store.search(/^admin/, 'role'); // Regex search
+	 * store.search('john');
+	 * store.search(/^admin/, 'role');
 	 */
 	search(value, index) {
 		if (value === null || value === undefined) {
@@ -627,15 +586,15 @@ class Haro {
 	}
 
 	/**
-	 * Sets or updates a record in the store with automatic indexing
-	 * @param {string|null} [key=null] - Key for the record, or null to use record's key field
-	 * @param {Object} [data={}] - Record data to set
-	 * @param {boolean} [batch=false] - Whether this is part of a batch operation
-	 * @param {boolean} [override=false] - Whether to override existing data instead of merging
-	 * @returns {Object} The stored record (frozen if immutable mode)
+	 * Sets or updates a record with automatic indexing.
+	 * @param {string|null} [key=null] - Record key, or null for auto-generate
+	 * @param {Object} [data={}] - Record data
+	 * @param {boolean} [batch=false] - Batch operation flag
+	 * @param {boolean} [override=false] - Override instead of merge
+	 * @returns {Object} Stored record
 	 * @example
-	 * const user = store.set(null, {name: 'John', age: 30}); // Auto-generate key
-	 * const updated = store.set('user123', {age: 31}); // Update existing record
+	 * store.set(null, {name: 'John'});
+	 * store.set('user123', {age: 31});
 	 */
 	set(key = null, data = {}, batch = false, override = false) {
 		if (key !== null && typeof key !== STRING_STRING && typeof key !== STRING_NUMBER) {
@@ -670,11 +629,11 @@ class Haro {
 	}
 
 	/**
-	 * Internal method to add entries to indexes for a record
-	 * @param {string} key - Key of record being indexed
-	 * @param {Object} data - Data of record being indexed
-	 * @param {string|null} indice - Specific index to update, or null for all
-	 * @returns {Haro} This instance for method chaining
+	 * Adds a record to indexes.
+	 * @param {string} key - Record key
+	 * @param {Object} data - Record data
+	 * @param {string|null} indice - Index to update, or null for all
+	 * @returns {Haro} This instance
 	 */
 	#setIndex(key, data, indice) {
 		const indices = indice === null ? this.index : [indice];
@@ -704,13 +663,12 @@ class Haro {
 	}
 
 	/**
-	 * Sorts all records using a comparator function
-	 * @param {Function} fn - Comparator function for sorting (a, b) => number
-	 * @param {boolean} [frozen=false] - Whether to return frozen records
-	 * @returns {Array<Object>} Sorted array of records
+	 * Sorts records using a comparator function.
+	 * @param {Function} fn - Comparator (a, b) => number
+	 * @param {boolean} [frozen=false] - Return frozen records
+	 * @returns {Array<Object>} Sorted records
 	 * @example
-	 * const sorted = store.sort((a, b) => a.age - b.age); // Sort by age
-	 * const names = store.sort((a, b) => a.name.localeCompare(b.name)); // Sort by name
+	 * store.sort((a, b) => a.age - b.age);
 	 */
 	sort(fn, frozen = false) {
 		if (typeof fn !== STRING_FUNCTION) {
@@ -726,10 +684,10 @@ class Haro {
 	}
 
 	/**
-	 * Internal comparator function for sorting keys with type-aware comparison logic
-	 * @param {*} a - First value to compare
-	 * @param {*} b - Second value to compare
-	 * @returns {number} Negative number if a < b, positive if a > b, zero if equal
+	 * Sorts keys with type-aware comparison.
+	 * @param {*} a - First value
+	 * @param {*} b - Second value
+	 * @returns {number} Comparison result
 	 */
 	#sortKeys(a, b) {
 		// Handle string comparison
@@ -746,13 +704,12 @@ class Haro {
 	}
 
 	/**
-	 * Sorts records by a specific indexed field in ascending order
-	 * @param {string} [index=STRING_EMPTY] - Index field name to sort by
-	 * @returns {Array<Object>} Array of records sorted by the specified field
-	 * @throws {Error} Throws error if index field is empty or invalid
+	 * Sorts records by an indexed field.
+	 * @param {string} [index=STRING_EMPTY] - Field to sort by
+	 * @returns {Array<Object>} Sorted records
+	 * @throws {Error} If index is empty
 	 * @example
-	 * const byAge = store.sortBy('age');
-	 * const byName = store.sortBy('name');
+	 * store.sortBy('age');
 	 */
 	sortBy(index = STRING_EMPTY) {
 		if (index === STRING_EMPTY) {
@@ -779,11 +736,10 @@ class Haro {
 	}
 
 	/**
-	 * Converts all store data to a plain array of records
-	 * @returns {Array<Object>} Array containing all records in the store
+	 * Converts store data to an array.
+	 * @returns {Array<Object>} All records
 	 * @example
-	 * const allRecords = store.toArray();
-	 * console.log(`Store contains ${allRecords.length} records`);
+	 * store.toArray();
 	 */
 	toArray() {
 		const result = Array.from(this.data.values());
@@ -799,33 +755,31 @@ class Haro {
 	}
 
 	/**
-	 * Generates a RFC4122 v4 UUID for record identification
-	 * @returns {string} UUID string in standard format
+	 * Generates a RFC4122 v4 UUID.
+	 * @returns {string} UUID
 	 * @example
-	 * const id = store.uuid(); // "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+	 * store.uuid();
 	 */
 	uuid() {
 		return randomUUID();
 	}
 
 	/**
-	 * Returns an iterator of all values in the store
-	 * @returns {Iterator<Object>} Iterator of record values
+	 * Returns an iterator of all values.
+	 * @returns {Iterator<Object>} Values
 	 * @example
-	 * for (const record of store.values()) {
-	 *   console.log(record.name);
-	 * }
+	 * for (const record of store.values()) { }
 	 */
 	values() {
 		return this.data.values();
 	}
 
 	/**
-	 * Internal helper method for predicate matching with support for arrays and regex
-	 * @param {Object} record - Record to test against predicate
-	 * @param {Object} predicate - Predicate object with field-value pairs
-	 * @param {string} op - Operator for array matching ('||' for OR, '&&' for AND)
-	 * @returns {boolean} True if record matches predicate criteria
+	 * Matches a record against a predicate.
+	 * @param {Object} record - Record to test
+	 * @param {Object} predicate - Predicate object
+	 * @param {string} op - Operator: '||' or '&&'
+	 * @returns {boolean} True if matches
 	 */
 	#matchesPredicate(record, predicate, op) {
 		const keys = Object.keys(predicate);
@@ -862,19 +816,13 @@ class Haro {
 	}
 
 	/**
-	 * Advanced filtering with predicate logic supporting AND/OR operations on arrays
-	 * @param {Object} [predicate={}] - Object with field-value pairs for filtering
-	 * @param {string} [op=STRING_DOUBLE_PIPE] - Operator for array matching ('||' for OR, '&&' for AND)
-	 * @returns {Array<Object>} Array of records matching the predicate criteria
+	 * Filters records with predicate logic supporting AND/OR on arrays.
+	 * @param {Object} [predicate={}] - Field-value pairs
+	 * @param {string} [op=STRING_DOUBLE_PIPE] - Operator: '||' (OR) or '&&' (AND)
+	 * @returns {Array<Object>} Matching records
 	 * @example
-	 * // Find records with tags containing 'admin' OR 'user'
-	 * const users = store.where({tags: ['admin', 'user']}, '||');
-	 *
-	 * // Find records with ALL specified tags
-	 * const powerUsers = store.where({tags: ['admin', 'power']}, '&&');
-	 *
-	 * // Regex matching
-	 * const emails = store.where({email: /^admin@/});
+	 * store.where({tags: ['admin', 'user']}, '||');
+	 * store.where({email: /^admin@/});
 	 */
 	where(predicate = {}, op = STRING_DOUBLE_PIPE) {
 		if (typeof predicate !== STRING_OBJECT || predicate === null) {
@@ -964,18 +912,12 @@ class Haro {
 }
 
 /**
- * Factory function to create a new Haro instance with optional initial data
- * @param {Array<Object>|null} [data=null] - Initial data to populate the store
- * @param {Object} [config={}] - Configuration object passed to Haro constructor
- * @returns {Haro} New Haro instance configured and optionally populated
+ * Factory function to create a Haro instance.
+ * @param {Array<Object>|null} [data=null] - Initial data
+ * @param {Object} [config={}] - Configuration
+ * @returns {Haro} New Haro instance
  * @example
- * const store = haro([
- *   {id: 1, name: 'John', age: 30},
- *   {id: 2, name: 'Jane', age: 25}
- * ], {
- *   index: ['name', 'age'],
- *   versioning: true
- * });
+ * const store = haro([{id: 1, name: 'John'}], {index: ['name']});
  */
 function haro(data = null, config = {}) {
 	const obj = new Haro(config);
