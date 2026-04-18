@@ -350,7 +350,7 @@ try {
 
 ## API Reference
 
-For complete API documentation, see [API.md](docs/API.md).
+For complete API documentation, see [API.md](https://github.com/avoidwork/haro/blob/master/docs/API.md).
 
 ### Core Methods
 
@@ -624,8 +624,8 @@ const store = haro(null, {
 
 ### Getting Help
 
-- Check [API.md](docs/API.md) for complete documentation
-- Review [examples](docs/API.md#examples) in API docs
+- Check [API.md](https://github.com/avoidwork/haro/blob/master/docs/API.md) for complete documentation
+- Review [examples](https://github.com/avoidwork/haro/blob/master/docs/API.md#examples) in API docs
 - Open an issue on [GitHub](https://github.com/avoidwork/haro/issues)
 
 ## Testing
@@ -641,7 +641,7 @@ npm run coverage
 npm run benchmark
 ```
 
-See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for detailed testing guidelines.
+See [CONTRIBUTING.md](https://github.com/avoidwork/haro/blob/master/.github/CONTRIBUTING.md) for detailed testing guidelines.
 
 ## Benchmarks
 
@@ -666,15 +666,15 @@ node benchmarks/index.js --comparison-only   # vs native structures
 - **SET operations**: Up to 3.2M ops/sec for typical workloads
 - **Memory efficiency**: Highly efficient for typical workloads
 
-See `benchmarks/README.md` for complete benchmark documentation.
+See [`benchmarks/README.md`](https://github.com/avoidwork/haro/blob/master/benchmarks/README.md) for complete benchmark documentation.
 
 ## Learn More
 
-- [API Reference](docs/API.md) - Complete API documentation
-- [Contributing Guide](.github/CONTRIBUTING.md) - How to contribute
-- [Benchmarks](benchmarks/README.md) - Performance analysis
-- [Changelog](CHANGELOG.md) - Version history
-- [Security](SECURITY.md) - Security policy
+- [API Reference](https://github.com/avoidwork/haro/blob/master/docs/API.md) - Complete API documentation
+- [Contributing Guide](https://github.com/avoidwork/haro/blob/master/.github/CONTRIBUTING.md) - How to contribute
+- [Benchmarks](https://github.com/avoidwork/haro/blob/master/benchmarks/README.md) - Performance analysis
+- [Changelog](https://github.com/avoidwork/haro/blob/master/CHANGELOG.md) - Version history
+- [Security](https://github.com/avoidwork/haro/blob/master/SECURITY.md) - Security policy
 - [Discussions](https://github.com/avoidwork/haro/discussions) - Community discussions
 
 ## Community
