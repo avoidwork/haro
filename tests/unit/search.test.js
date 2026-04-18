@@ -308,6 +308,23 @@ describe("Searching and Filtering", () => {
 				assert.equal(results.length, 0, "Should return empty array when no matches");
 			});
 		});
+
+		it("should warn on full table scan when querying non-indexed fields", () => {
+			const scanStore = new Haro({
+				index: ["name"],
+				warnOnFullScan: true,
+			});
+
+			scanStore.set("1", { id: "1", name: "Alice", age: 30, category: "admin" });
+			scanStore.set("2", { id: "2", name: "Bob", age: 25, category: "user" });
+			scanStore.set("3", { id: "3", name: "Charlie", age: 35, category: "admin" });
+
+			// Query non-indexed fields to trigger full scan
+			const results = scanStore.where({ age: 30, category: "admin" }, "&&");
+
+			assert.strictEqual(results.length, 1);
+			assert.strictEqual(results[0].id, "1");
+		});
 	});
 
 	describe("sortBy()", () => {

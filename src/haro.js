@@ -927,12 +927,6 @@ export class Haro {
 			}
 			return results;
 		}
-
-		if (this.#warnOnFullScan) {
-			console.warn("where(): performing full table scan - consider adding an index");
-		}
-
-		return this.filter((a) => this.#matchesPredicate(a, predicate, op));
 	}
 }
 
