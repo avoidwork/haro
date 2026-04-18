@@ -149,7 +149,6 @@ export class Haro {
 	 * store.initialize(); // Build indexes
 	 */
 	initialize() {
-		/* node:coverage ignore next 4 */
 		if (!this.initialized) {
 			this.reindex();
 			this.initialized = true;
@@ -612,7 +611,6 @@ export class Haro {
 			key = data[this.key] ?? this.uuid();
 		}
 		let x = { ...data, [this.key]: key };
-		/* node:coverage ignore next 4 */
 		if (!this.initialized) {
 			this.reindex();
 			this.initialized = true;
@@ -703,7 +701,6 @@ export class Haro {
 		if (typeof a === STRING_STRING && typeof b === STRING_STRING) {
 			return a.localeCompare(b);
 		}
-		/* node:coverage ignore next 7 */
 		// Handle numeric comparison
 		if (typeof a === STRING_NUMBER && typeof b === STRING_NUMBER) {
 			return a - b;
@@ -802,7 +799,6 @@ export class Haro {
 	#matchesPredicate(record, predicate, op) {
 		const keys = Object.keys(predicate);
 
-		/* node:coverage ignore next 24 */
 		return keys.every((key) => {
 			const pred = predicate[key];
 			const val = record[key];
@@ -816,16 +812,19 @@ export class Haro {
 					? pred.every((p) => val === p)
 					: pred.some((p) => val === p);
 			}
-			if (pred instanceof RegExp) {
-				if (Array.isArray(val)) {
-					return op === STRING_DOUBLE_AND
-						? val.every((v) => pred.test(v))
-						: val.some((v) => pred.test(v));
-				}
-				return pred.test(val);
-			}
 			if (Array.isArray(val)) {
-				return val.includes(pred);
+				return val.some((v) => {
+					if (pred instanceof RegExp) {
+						return pred.test(v);
+					}
+					if (v instanceof RegExp) {
+						return v.test(pred);
+					}
+					return v === pred;
+				});
+			}
+			if (pred instanceof RegExp) {
+				return pred.test(val);
 			}
 			return val === pred;
 		});
@@ -854,7 +853,12 @@ export class Haro {
 			throw new Error("where: op must be a string");
 		}
 		const keys = this.index.filter((i) => i in predicate);
-		if (keys.length === 0) return [];
+		if (keys.length === 0) {
+			if (this.warnOnFullScan) {
+				console.warn("where(): performing full table scan - consider adding an index");
+			}
+			return this.filter((a) => this.#matchesPredicate(a, predicate, op));
+		}
 
 		// Try to use indexes for better performance
 		const indexedKeys = keys.filter((k) => this.indexes.has(k));
@@ -874,9 +878,27 @@ export class Haro {
 							}
 						}
 					}
-				} else if (idx.has(pred)) {
-					for (const k of idx.get(pred)) {
-						matchingKeys.add(k);
+				} else if (pred instanceof RegExp) {
+					for (const [indexKey, keySet] of idx) {
+						if (pred.test(indexKey)) {
+							for (const k of keySet) {
+								matchingKeys.add(k);
+							}
+						}
+					}
+				} else {
+					for (const [indexKey, keySet] of idx) {
+						if (indexKey instanceof RegExp) {
+							if (indexKey.test(pred)) {
+								for (const k of keySet) {
+									matchingKeys.add(k);
+								}
+							}
+						} else if (indexKey === pred) {
+							for (const k of keySet) {
+								matchingKeys.add(k);
+							}
+						}
 					}
 				}
 				if (first) {

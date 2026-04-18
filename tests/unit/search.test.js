@@ -128,9 +128,62 @@ describe("Searching and Filtering", () => {
 			assert.strictEqual(results.length, 1); // Only John has both tags
 		});
 
+		it("should handle array predicate with array values using AND logic", () => {
+			const testStore = new Haro({ index: ["tags"] });
+			testStore.set("1", { id: "1", tags: ["admin", "user"] });
+			testStore.set("2", { id: "2", tags: ["admin"] });
+			const results = testStore.where({ tags: ["admin", "user"] }, "&&");
+			assert.strictEqual(results.length, 1);
+			assert.strictEqual(results[0].id, "1");
+		});
+
+		it("should handle regex with array values in where()", () => {
+			const testStore = new Haro({ index: ["email"] });
+			testStore.set("1", { id: "1", email: ["admin@test.com", "user@test.com"] });
+			testStore.set("2", { id: "2", email: ["admin@test.com"] });
+			const results = testStore.where({ email: /^admin/ });
+			assert.strictEqual(results.length, 2);
+		});
+
+		it("should handle non-regexp predicate with array values", () => {
+			const testStore = new Haro({ index: ["status"] });
+			testStore.set("1", { id: "1", status: ["active", "pending"] });
+			testStore.set("2", { id: "2", status: ["active"] });
+			const results = testStore.where({ status: "pending" });
+			assert.strictEqual(results.length, 1);
+			assert.strictEqual(results[0].id, "1");
+		});
+
+		it("should handle regexp predicate with array values using some", () => {
+			const testStore = new Haro({ index: ["tags"] });
+			testStore.set("1", { id: "1", tags: ["admin", "user"] });
+			testStore.set("2", { id: "2", tags: ["user"] });
+			const results = testStore.where({ tags: /^admin/ });
+			assert.strictEqual(results.length, 1);
+			assert.strictEqual(results[0].id, "1");
+		});
+
+		it("should handle string predicate with array values using some", () => {
+			const testStore = new Haro({ index: ["name"] });
+			testStore.set("1", { id: "1", name: ["John", "Jane"] });
+			testStore.set("2", { id: "2", name: ["Jane"] });
+			const results = testStore.where({ name: "John" });
+			assert.strictEqual(results.length, 1);
+			assert.strictEqual(results[0].id, "1");
+		});
+
+		it("should handle RegExp inside array value", () => {
+			const testStore = new Haro({ index: ["tags"] });
+			const regex = /^admin/;
+			testStore.set("1", { id: "1", tags: [regex, "user"] });
+			testStore.set("2", { id: "2", tags: ["user"] });
+			const results = testStore.where({ tags: "admin" });
+			assert.strictEqual(results.length, 1);
+		});
+
 		it("should filter with regex predicate", () => {
 			const results = store.where({ name: /^J/ });
-			assert.strictEqual(results.length, 0);
+			assert.strictEqual(results.length, 2);
 		});
 
 		it("should return empty array for non-indexed fields", () => {
@@ -247,6 +300,26 @@ describe("Searching and Filtering", () => {
 	});
 
 	describe("sortBy()", () => {
+		it("should sort by indexed field with numeric values", () => {
+			const numericStore = new Haro({ index: ["age"] });
+			numericStore.set("user1", { id: "user1", age: 30 });
+			numericStore.set("user2", { id: "user2", age: 25 });
+			numericStore.set("user3", { id: "user3", age: 35 });
+			const results = numericStore.sortBy("age");
+			assert.strictEqual(results[0].age, 25);
+			assert.strictEqual(results[1].age, 30);
+			assert.strictEqual(results[2].age, 35);
+		});
+
+		it("should sort by indexed field with mixed types", () => {
+			const mixedStore = new Haro({ index: ["value"] });
+			mixedStore.set("1", { id: "1", value: 10 });
+			mixedStore.set("2", { id: "2", value: "5" });
+			mixedStore.set("3", { id: "3", value: 3 });
+			const results = mixedStore.sortBy("value");
+			assert.strictEqual(results.length, 3);
+		});
+
 		it("should sort by indexed field", () => {
 			const results = store.sortBy("name");
 			assert.strictEqual(results[0].name, "Bob");

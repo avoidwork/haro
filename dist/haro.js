@@ -147,7 +147,7 @@ class Haro {
 			return structuredClone(arg);
 		}
 
-		return JSON.parse(JSON.stringify(arg));
+		/* node:coverage ignore */ return JSON.parse(JSON.stringify(arg));
 	}
 
 	/**
@@ -716,7 +716,6 @@ class Haro {
 		}
 
 		// Handle mixed types or other types by converting to string
-
 		return String(a).localeCompare(String(b));
 	}
 
@@ -817,24 +816,26 @@ class Haro {
 					return op === STRING_DOUBLE_AND
 						? pred.every((p) => val.includes(p))
 						: pred.some((p) => val.includes(p));
-				} else {
-					return op === STRING_DOUBLE_AND
-						? pred.every((p) => val === p)
-						: pred.some((p) => val === p);
 				}
-			} else if (pred instanceof RegExp) {
-				if (Array.isArray(val)) {
-					return op === STRING_DOUBLE_AND
-						? val.every((v) => pred.test(v))
-						: val.some((v) => pred.test(v));
-				} else {
-					return pred.test(val);
-				}
-			} else if (Array.isArray(val)) {
-				return val.includes(pred);
-			} else {
-				return val === pred;
+				return op === STRING_DOUBLE_AND
+					? pred.every((p) => val === p)
+					: pred.some((p) => val === p);
 			}
+			if (Array.isArray(val)) {
+				return val.some((v) => {
+					if (pred instanceof RegExp) {
+						return pred.test(v);
+					}
+					if (v instanceof RegExp) {
+						return v.test(pred);
+					}
+					return v === pred;
+				});
+			}
+			if (pred instanceof RegExp) {
+				return pred.test(val);
+			}
+			return val === pred;
 		});
 	}
 
@@ -861,7 +862,12 @@ class Haro {
 			throw new Error("where: op must be a string");
 		}
 		const keys = this.index.filter((i) => i in predicate);
-		if (keys.length === 0) return [];
+		if (keys.length === 0) {
+			if (this.warnOnFullScan) {
+				console.warn("where(): performing full table scan - consider adding an index");
+			}
+			return this.filter((a) => this.#matchesPredicate(a, predicate, op));
+		}
 
 		// Try to use indexes for better performance
 		const indexedKeys = keys.filter((k) => this.indexes.has(k));
@@ -881,9 +887,27 @@ class Haro {
 							}
 						}
 					}
-				} else if (idx.has(pred)) {
-					for (const k of idx.get(pred)) {
-						matchingKeys.add(k);
+				} else if (pred instanceof RegExp) {
+					for (const [indexKey, keySet] of idx) {
+						if (pred.test(indexKey)) {
+							for (const k of keySet) {
+								matchingKeys.add(k);
+							}
+						}
+					}
+				} else {
+					for (const [indexKey, keySet] of idx) {
+						if (indexKey instanceof RegExp) {
+							if (indexKey.test(pred)) {
+								for (const k of keySet) {
+									matchingKeys.add(k);
+								}
+							}
+						} else if (indexKey === pred) {
+							for (const k of keySet) {
+								matchingKeys.add(k);
+							}
+						}
 					}
 				}
 				if (first) {
