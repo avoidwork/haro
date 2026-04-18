@@ -2,7 +2,6 @@ import { randomUUID as uuid } from "crypto";
 import {
 	INT_0,
 	STRING_COMMA,
-	STRING_DEL,
 	STRING_DOUBLE_AND,
 	STRING_DOUBLE_PIPE,
 	STRING_EMPTY,
@@ -18,7 +17,6 @@ import {
 	STRING_RECORD_NOT_FOUND,
 	STRING_RECORDS,
 	STRING_REGISTRY,
-	STRING_SET,
 	STRING_SIZE,
 	STRING_STRING,
 } from "./constants.js";
@@ -33,6 +31,8 @@ import {
  * const results = store.find({name: 'John'});
  */
 export class Haro {
+	#inBatch = false;
+
 	/**
 	 * Creates a new Haro instance.
 	 * @param {Object} [config={}] - Configuration object
@@ -66,6 +66,7 @@ export class Haro {
 		this.versions = new Map();
 		this.versioning = versioning;
 		this.warnOnFullScan = warnOnFullScan;
+		this.#inBatch = false;
 		Object.defineProperty(this, STRING_REGISTRY, {
 			enumerable: true,
 			get: () => Array.from(this.data.keys()),
@@ -85,7 +86,15 @@ export class Haro {
 	 * store.setMany([{id: 1, name: 'John'}, {id: 2, name: 'Jane'}]);
 	 */
 	setMany(records) {
-		return records.map((i) => this.set(null, i, true, true));
+		if (this.#inBatch) {
+			throw new Error("setMany: cannot call setMany within a batch operation");
+			/* node:coverage ignore next */
+		}
+		this.#inBatch = true;
+		const results = records.map((i) => this.set(null, i, true));
+		this.#inBatch = false;
+		this.reindex();
+		return results;
 	}
 
 	/**
@@ -96,23 +105,24 @@ export class Haro {
 	 * store.deleteMany(['key1', 'key2']);
 	 */
 	deleteMany(keys) {
-		return keys.map((i) => this.delete(i, true));
+		if (this.#inBatch) {
+			/* node:coverage ignore next */ throw new Error(
+				"deleteMany: cannot call deleteMany within a batch operation",
+			);
+		}
+		this.#inBatch = true;
+		const results = keys.map((i) => this.delete(i));
+		this.#inBatch = false;
+		this.reindex();
+		return results;
 	}
 
 	/**
-	 * Performs batch operations on multiple records.
-	 * @deprecated Use setMany() or deleteMany() instead
-	 * @param {Array<Object>} args - Records to process
-	 * @param {string} [type=STRING_SET] - Operation type: 'set' or 'del'
-	 * @returns {Array<Object>} Results
-	 * @example
-	 * store.batch([{id: 1, name: 'John'}], 'set');
+	 * Returns true if currently in a batch operation.
+	 * @returns {boolean} Batch operation status
 	 */
-	batch(args, type = STRING_SET) {
-		const fn =
-			type === STRING_DEL ? (i) => this.delete(i, true) : (i) => this.set(null, i, true, true);
-
-		return args.map(fn);
+	get isBatching() {
+		return this.#inBatch;
 	}
 
 	/**
@@ -146,22 +156,23 @@ export class Haro {
 	/**
 	 * Deletes a record and removes it from all indexes.
 	 * @param {string} [key=STRING_EMPTY] - Key to delete
-	 * @param {boolean} [batch=false] - Batch operation flag
 	 * @throws {Error} If key not found
 	 * @example
 	 * store.delete('user123');
 	 */
-	delete(key = STRING_EMPTY, batch = false) {
+	delete(key = STRING_EMPTY) {
 		if (typeof key !== STRING_STRING && typeof key !== STRING_NUMBER) {
 			throw new Error("delete: key must be a string or number");
 		}
 		if (!this.data.has(key)) {
 			throw new Error(STRING_RECORD_NOT_FOUND);
 		}
-		const og = this.get(key, true);
-		this.#deleteIndex(key, og);
+		const og = this.data.get(key);
+		if (!this.#inBatch) {
+			this.#deleteIndex(key, og);
+		}
 		this.data.delete(key);
-		if (this.versioning) {
+		if (this.versioning && !this.#inBatch) {
 			this.versions.delete(key);
 		}
 	}
@@ -566,14 +577,13 @@ export class Haro {
 	 * Sets or updates a record with automatic indexing.
 	 * @param {string|null} [key=null] - Record key, or null for auto-generate
 	 * @param {Object} [data={}] - Record data
-	 * @param {boolean} [batch=false] - Batch operation flag
 	 * @param {boolean} [override=false] - Override instead of merge
 	 * @returns {Object} Stored record
 	 * @example
 	 * store.set(null, {name: 'John'});
 	 * store.set('user123', {age: 31});
 	 */
-	set(key = null, data = {}, batch = false, override = false) {
+	set(key = null, data = {}, override = false) {
 		if (key !== null && typeof key !== STRING_STRING && typeof key !== STRING_NUMBER) {
 			throw new Error("set: key must be a string or number");
 		}
@@ -585,21 +595,27 @@ export class Haro {
 		}
 		let x = { ...data, [this.key]: key };
 		if (!this.data.has(key)) {
-			if (this.versioning) {
+			if (this.versioning && !this.#inBatch) {
 				this.versions.set(key, new Set());
 			}
 		} else {
-			const og = this.get(key, true);
-			this.#deleteIndex(key, og);
-			if (this.versioning) {
-				this.versions.get(key).add(Object.freeze(this.#clone(og)));
+			const og = this.data.get(key);
+			if (!this.#inBatch) {
+				this.#deleteIndex(key, og);
+				if (this.versioning) {
+					this.versions.get(key).add(Object.freeze(this.#clone(og)));
+				}
 			}
-			if (!override) {
+			if (!this.#inBatch && !override) {
 				x = this.#merge(this.#clone(og), x);
 			}
 		}
 		this.data.set(key, x);
-		this.#setIndex(key, x, null);
+
+		if (!this.#inBatch) {
+			this.#setIndex(key, x, null);
+		}
+
 		const result = this.get(key);
 
 		return result;
@@ -890,7 +906,7 @@ export function haro(data = null, config = {}) {
 	const obj = new Haro(config);
 
 	if (Array.isArray(data)) {
-		obj.batch(data, STRING_SET);
+		obj.setMany(data);
 	}
 
 	return obj;

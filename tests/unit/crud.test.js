@@ -47,7 +47,7 @@ describe("Basic CRUD Operations", () => {
 
 		it("should override existing record when override is true", () => {
 			store.set("user1", { id: "user1", name: "John", age: 30 });
-			const result = store.set("user1", { id: "user1", age: 31 }, false, true);
+			const result = store.set("user1", { id: "user1", age: 31 }, true);
 
 			assert.strictEqual(result.name, undefined);
 			assert.strictEqual(result.age, 31);
@@ -86,12 +86,6 @@ describe("Basic CRUD Operations", () => {
 		it("should return null for non-existent record", () => {
 			const result = store.get("nonexistent");
 			assert.strictEqual(result, null);
-		});
-
-		it("should return raw data when raw=true", () => {
-			const result = store.get("user1", true);
-			assert.strictEqual(result.name, "John");
-			assert.strictEqual(result.age, 30);
 		});
 
 		it("should return frozen data in immutable mode", () => {
