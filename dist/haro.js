@@ -58,7 +58,7 @@ class Haro {
 	 */
 	constructor({
 		delimiter = STRING_PIPE,
-		id = this.uuid(),
+		id = randomUUID(),
 		immutable = false,
 		index = [],
 		key = STRING_ID,
@@ -143,10 +143,8 @@ class Haro {
 	 * Creates a deep clone of a value.
 	 * @param {*} arg - Value to clone
 	 * @returns {*} Deep clone
-	 * @example
-	 * const cloned = store.clone({name: 'John', tags: ['user']});
 	 */
-	clone(arg) {
+	#clone(arg) {
 		if (typeof structuredClone === STRING_FUNCTION) {
 			return structuredClone(arg);
 		}
@@ -348,23 +346,12 @@ class Haro {
 	forEach(fn, ctx = this) {
 		this.data.forEach((value, key) => {
 			if (this.immutable) {
-				value = this.clone(value);
+				value = this.#clone(value);
 			}
 			fn.call(ctx, value, key);
 		}, this);
 
 		return this;
-	}
-
-	/**
-	 * Creates a frozen array from arguments.
-	 * @param {...*} args - Arguments to freeze
-	 * @returns {Array<*>} Frozen array
-	 * @example
-	 * store.freeze(obj1, obj2);
-	 */
-	freeze(...args) {
-		return Object.freeze(args.map((i) => Object.freeze(i)));
 	}
 
 	/**
@@ -456,10 +443,8 @@ class Haro {
 	 * @param {*} b - Source value
 	 * @param {boolean} [override=false] - Override arrays
 	 * @returns {*} Merged result
-	 * @example
-	 * store.merge({a: 1}, {b: 2});
 	 */
-	merge(a, b, override = false) {
+	#merge(a, b, override = false) {
 		if (Array.isArray(a) && Array.isArray(b)) {
 			a = override ? b : a.concat(b);
 		} else if (
@@ -469,12 +454,13 @@ class Haro {
 			b !== null
 		) {
 			const keys = Object.keys(b);
-			for (let i = 0; i < keys.length; i++) {
+			const keysLen = keys.length;
+			for (let i = 0; i < keysLen; i++) {
 				const key = keys[i];
 				if (key === "__proto__" || key === "constructor" || key === "prototype") {
 					continue;
 				}
-				a[key] = this.merge(a[key], b[key], override);
+				a[key] = this.#merge(a[key], b[key], override);
 			}
 		} else {
 			a = b;
@@ -604,7 +590,7 @@ class Haro {
 			throw new Error("set: data must be an object");
 		}
 		if (key === null) {
-			key = data[this.key] ?? this.uuid();
+			key = data[this.key] ?? randomUUID();
 		}
 		let x = { ...data, [this.key]: key };
 		if (!this.data.has(key)) {
@@ -615,10 +601,10 @@ class Haro {
 			const og = this.get(key, true);
 			this.#deleteIndex(key, og);
 			if (this.versioning) {
-				this.versions.get(key).add(Object.freeze(this.clone(og)));
+				this.versions.get(key).add(Object.freeze(this.#clone(og)));
 			}
 			if (!override) {
-				x = this.merge(this.clone(og), x);
+				x = this.#merge(this.#clone(og), x);
 			}
 		}
 		this.data.set(key, x);
@@ -677,7 +663,7 @@ class Haro {
 		const dataSize = this.data.size;
 		let result = this.limit(INT_0, dataSize, true).sort(fn);
 		if (frozen) {
-			result = this.freeze(...result);
+			result = Object.freeze(result);
 		}
 
 		return result;
@@ -752,16 +738,6 @@ class Haro {
 		}
 
 		return result;
-	}
-
-	/**
-	 * Generates a RFC4122 v4 UUID.
-	 * @returns {string} UUID
-	 * @example
-	 * store.uuid();
-	 */
-	uuid() {
-		return randomUUID();
 	}
 
 	/**
