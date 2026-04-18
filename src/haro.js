@@ -89,7 +89,33 @@ export class Haro {
 	}
 
 	/**
+	 * Inserts or updates multiple records in a single operation
+	 * @param {Array<Object>} records - Array of records to insert or update
+	 * @returns {Array<Object>} Array of stored records
+	 * @example
+	 * const results = store.setMany([
+	 *   {id: 1, name: 'John'},
+	 *   {id: 2, name: 'Jane'}
+	 * ]);
+	 */
+	setMany(records) {
+		return records.map((i) => this.set(null, i, true, true));
+	}
+
+	/**
+	 * Deletes multiple records in a single operation
+	 * @param {Array<string|number>} keys - Array of keys to delete
+	 * @returns {Array<void>} Array of undefined values
+	 * @example
+	 * store.deleteMany(['key1', 'key2', 'key3']);
+	 */
+	deleteMany(keys) {
+		return keys.map((i) => this.delete(i, true));
+	}
+
+	/**
 	 * Performs batch operations on multiple records for efficient bulk processing
+	 * @deprecated Use setMany() or deleteMany() instead
 	 * @param {Array<Object>} args - Array of records to process
 	 * @param {string} [type=STRING_SET] - Type of operation: 'set' for upsert, 'del' for delete
 	 * @returns {Array<Object>} Array of results from the batch operation

@@ -264,7 +264,7 @@ The test suite is organized into focused areas:
 - **Immutable Mode** - Data freezing and immutability guarantees
 - **Versioning** - MVCC-style record versioning
 - **Lifecycle Hooks** - beforeSet, onset, ondelete, etc.
-- **Utility Methods** - clone(), merge(), limit(), map(), etc.
+- **Utility Methods** - clone(), merge(), limit(), map(), setMany(), deleteMany(), etc.
 - **Error Handling** - Validation and error scenarios
 - **Factory Function** - haro() factory with various initialization patterns
 
@@ -383,11 +383,12 @@ For optimal performance:
 
 1. **Use indexes wisely** - Index fields you'll query frequently
 2. **Choose appropriate key strategy** - Shorter keys perform better
-3. **Batch operations** - Use batch() for multiple changes
-4. **Consider immutable mode cost** - Only enable if needed for data safety
-5. **Minimize version history** - Disable versioning if not required
-6. **Use pagination** - Implement limit() for large result sets
-7. **Leverage utility methods** - Use built-in clone, merge, freeze for safety
+3. **Use setMany() for bulk inserts** - More efficient than individual set() calls
+4. **Use deleteMany() for bulk deletes** - More efficient than individual delete() calls
+5. **Consider immutable mode cost** - Only enable if needed for data safety
+6. **Minimize version history** - Disable versioning if not required
+7. **Use pagination** - Implement limit() for large result sets
+8. **Leverage utility methods** - Use built-in clone, merge, freeze for safety
 
 ### Performance Indicators
 
@@ -509,6 +510,8 @@ console.log(store.versioning); // true
 
 #### batch(args, type)
 
+**Deprecated:** Use `setMany()` or `deleteMany()` instead.
+
 Performs batch operations on multiple records for efficient bulk processing.
 
 **Parameters:**
@@ -527,7 +530,7 @@ const results = store.batch([
 store.batch(['key1', 'key2'], 'del');
 ```
 
-**See also:** set(), delete()
+**See also:** setMany(), deleteMany()
 
 #### clear()
 
@@ -838,6 +841,42 @@ const emailResults = store.search('gmail.com', 'email');
 
 **See also:** find(), where(), filter()
 
+#### setMany(records)
+
+Inserts or updates multiple records in a single operation.
+
+**Parameters:**
+- `records` `{Array}` - Array of records to insert or update
+
+**Returns:** `{Array}` Array of stored records
+
+```javascript
+const results = store.setMany([
+  { name: 'Alice', age: 30 },
+  { name: 'Bob', age: 28 }
+]);
+
+console.log(store.size); // 2
+```
+
+**See also:** deleteMany(), batch()
+
+#### deleteMany(keys)
+
+Deletes multiple records in a single operation.
+
+**Parameters:**
+- `keys` `{Array}` - Array of keys to delete
+
+**Returns:** `{Array}` Array of undefined values
+
+```javascript
+store.deleteMany(['key1', 'key2', 'key3']);
+console.log(store.size); // 0
+```
+
+**See also:** setMany(), batch()
+
 #### set(key, data, batch, override)
 
 Sets or updates a record in the store with automatic indexing.
@@ -1004,8 +1043,8 @@ const users = haro(null, {
   immutable: true
 });
 
-// Add users with batch operation
-users.batch([
+// Add users with setMany
+users.setMany([
   { 
     id: 'u1', 
     email: 'alice@company.com', 
@@ -1030,7 +1069,7 @@ users.batch([
     role: 'Manager',
     active: false
   }
-], 'set');
+]);
 
 // Find by department
 const engineers = users.find({ department: 'Engineering' });
@@ -1127,8 +1166,8 @@ class ProductCatalog extends Haro {
 
 const catalog = new ProductCatalog();
 
-// Add products
-catalog.batch([
+// Add products with setMany
+catalog.setMany([
   {
     sku: 'LAP-001',
     name: 'MacBook Pro 16"',
@@ -1147,7 +1186,7 @@ catalog.batch([
     tags: ['business', 'lightweight', 'durable'],
     description: 'Business laptop with excellent build quality'
   }
-], 'set');
+]);
 
 // Business queries
 const laptops = catalog.find({ category: 'Laptops' });
@@ -1249,14 +1288,14 @@ class ConfigStore extends Haro {
   }
 
   loadDefaults() {
-    this.batch([
+    this.setMany([
       { key: 'db.host', value: 'localhost', environment: 'dev', type: 'database' },
       { key: 'db.port', value: 5432, environment: 'dev', type: 'database' },
       { key: 'api.timeout', value: 30000, environment: 'dev', type: 'api' },
       { key: 'db.host', value: 'prod-db.example.com', environment: 'prod', type: 'database' },
       { key: 'db.port', value: 5432, environment: 'prod', type: 'database' },
       { key: 'api.timeout', value: 10000, environment: 'prod', type: 'api' }
-    ], 'set');
+    ]);
   }
 
   getConfig(key, environment = 'dev') {
