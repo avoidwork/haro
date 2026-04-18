@@ -138,9 +138,7 @@ export class Haro {
 			return structuredClone(arg);
 		}
 
-		/* node:coverage ignore next 4 */
-		// Fallback for environments without structuredClone
-		return JSON.parse(JSON.stringify(arg));
+		/* node:coverage ignore */ return JSON.parse(JSON.stringify(arg));
 	}
 
 	/**

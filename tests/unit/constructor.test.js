@@ -47,4 +47,19 @@ describe("Constructor", () => {
 		const instance = new Haro({ index: "name" });
 		assert.deepStrictEqual(instance.index, []);
 	});
+
+	it("should use JSON fallback when structuredClone is unavailable", () => {
+		const originalStructuredClone = globalThis.structuredClone;
+		globalThis.structuredClone = undefined;
+
+		try {
+			const instance = new Haro();
+			const testObj = { a: 1, b: { c: 2 } };
+			const cloned = instance.clone(testObj);
+			assert.deepStrictEqual(cloned, testObj);
+			assert.notStrictEqual(cloned, testObj);
+		} finally {
+			globalThis.structuredClone = originalStructuredClone;
+		}
+	});
 });
