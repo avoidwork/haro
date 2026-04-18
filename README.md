@@ -7,6 +7,10 @@
 
 A fast, flexible immutable DataStore for collections of records with indexing, versioning, and advanced querying capabilities. Provides a Map-like interface with powerful search and filtering features.
 
+## Requirements
+
+- Node.js >= 17.0.0
+
 ## Installation
 
 ### npm
@@ -25,6 +29,15 @@ yarn add haro
 
 ```sh
 pnpm add haro
+```
+
+## Quick Start
+
+```javascript
+import { haro } from 'haro';
+
+const store = haro([{ id: 1, name: 'Alice' }], { index: ['name'] });
+console.log(store.find({ name: 'Alice' }));
 ```
 
 ## Usage
@@ -157,6 +170,19 @@ try {
 }
 ```
 
+## TypeScript Support
+
+TypeScript definitions are included - no separate installation needed.
+
+```typescript
+import { Haro } from 'haro';
+
+const store = new Haro<{ name: string; age: number }>({
+  index: ['name'],
+  key: 'id'
+});
+```
+
 ## Interoperability
 
 ### Array Methods Compatibility
@@ -202,6 +228,18 @@ class EventedStore extends Haro {
   }
 }
 ```
+
+## Contributing
+
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on how to submit pull requests, report issues, and contribute to the project.
+
+## Security
+
+To report a security vulnerability, please see [SECURITY.md](SECURITY.md) or contact the maintainers directly.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history and changes.
 
 ## Testing
 
@@ -1304,6 +1342,43 @@ config.updateConfig('api.timeout', 45000, 'dev');
 console.log(config.versions.get('api.timeout'));
 ```
 
+## Community
+
+- Join discussions on [GitHub Discussions](https://github.com/avoidwork/haro/discussions)
+- Report issues on [GitHub Issues](https://github.com/avoidwork/haro/issues)
+- Follow updates on [Twitter](https://twitter.com/avoidwork)
+
+## FAQ
+
+### When should I use Haro over a Map or plain object?
+
+Use Haro when you need:
+- Indexed queries on multiple fields
+- Built-in versioning/audit trails
+- Immutable data guarantees
+- Advanced filtering and searching capabilities
+
+### Is Haro suitable for server-side caching?
+
+Yes! Haro is excellent for in-memory caching with features like:
+- Fast O(1) indexed lookups
+- Automatic index maintenance
+- Optional immutability for thread safety
+
+### How does versioning work?
+
+When `versioning: true` is enabled, Haro stores previous versions of records in a Set. Each time a record is updated, the old version is preserved before the new one is stored.
+
+### Can I use Haro with React or Vue?
+
+Absolutely! Haro's immutable mode works great with reactive frameworks:
+
+```javascript
+const store = haro(null, { immutable: true });
+// Use with React
+const [data, setData] = useState(store.toArray());
+```
+
 ## Performance
 
 Haro is optimized for:
@@ -1315,14 +1390,26 @@ Haro is optimized for:
 
 ### Performance Characteristics
 
-| Operation | Indexed | Non-Indexed | Notes |
-|-----------|---------|-------------|-------|
-| `find()` | O(1) | O(n) | Use indexes for best performance |
-| `get()` | O(1) | O(1) | Direct key lookup |
-| `set()` | O(1) | O(1) | Includes index updates |
-| `delete()` | O(1) | O(1) | Includes index cleanup |
-| `filter()` | O(n) | O(n) | Full scan with predicate |
-| `search()` | O(k) | O(n) | k = matching index entries |
+| Operation | Time Complexity | Space Complexity | Notes |
+|-----------|----------------|------------------|-------|
+| `get()` | O(1) | O(1) | Direct Map lookup |
+| `has()` | O(1) | O(1) | Direct Map lookup |
+| `set()` | O(i) | O(i) | i = number of indexes |
+| `delete()` | O(i) | O(1) | i = number of indexes |
+| `find()` | O(i × k) | O(r) | i = indexes, k = composite keys, r = results |
+| `where()` | O(1) to O(n) | O(r) | O(1) with index, O(n) full scan |
+| `search()` | O(n × m) | O(r) | n = index entries, m = indexes searched |
+| `filter()` | O(n) | O(r) | Full scan with predicate |
+| `sortBy()` | O(n log n) | O(n) | Sorting operation |
+| `limit()` | O(max) | O(max) | Array slicing |
+| `batch()` | O(n × i) | O(n) | n = batch size, i = indexes |
+| `clear()` | O(n) | O(1) | Remove all records |
+
+## Related Projects
+
+- [immutable](https://www.npmjs.com/package/immutable) - Immutable data collections
+- [lowdb](https://www.npmjs.com/package/lowdb) - Local JSON database
+- [lokijs](https://www.npmjs.com/package/lokijs) - In-memory database
 
 ## License
 

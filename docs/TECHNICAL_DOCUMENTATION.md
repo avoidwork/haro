@@ -227,10 +227,12 @@ Haro's operations are grounded in computer science fundamentals, providing predi
 
 | Operation | Complexity | Description |
 |-----------|------------|-------------|
-| FIND | $O(1)$ to $O(n)$ | Index lookup or intersection |
-| SEARCH | $O(n \times m)$ | Iterate indexes, match values |
-| WHERE | $O(1)$ to $O(n)$ | Indexed or full scan |
+| FIND | $O(i \times k)$ | i = number of indexes, k = composite keys generated |
+| SEARCH | $O(n \times m)$ | n = total index entries, m = indexes searched |
+| WHERE | $O(1)$ to $O(n)$ | Indexed lookup or full scan fallback |
 | FILTER | $O(n)$ | Predicate evaluation per record |
+| SORTBY | $O(n \log n)$ | Sorting by indexed field |
+| LIMIT | $O(m)$ | m = max records to return |
 
 #### Composite Index Formula
 
@@ -304,13 +306,13 @@ $$
 
 | Operation | Time Complexity | Space Complexity | Notes |
 |-----------|----------------|------------------|--------|
-| **Create (set)** | O(1) + O(i) | O(1) | i = number of indexes |
-| **Read (get)** | O(1) | O(1) | Direct key access |
-| **Update (set)** | O(1) + O(i) | O(1) | Index maintenance |
-| **Delete** | O(1) + O(i) | O(1) | Cleanup indexes |
-| **Find** | O(1) to O(n) | O(r) | r = result set size |
-| **Search** | O(n) | O(r) | Full scan fallback |
-| **Batch** | O(n) + O(ni) | O(n) | n = batch size |
+| **Create (set)** | O(i) | O(i) | i = number of indexes |
+| **Read (get)** | O(1) | O(1) | Direct Map lookup |
+| **Update (set)** | O(i) | O(i) | i = number of indexes |
+| **Delete** | O(i) | O(1) | i = number of indexes |
+| **Find** | O(i × k) | O(r) | i = indexes, k = composite keys, r = results |
+| **Search** | O(n × m) | O(r) | n = index entries, m = indexes searched |
+| **Batch** | O(n × i) | O(n) | n = batch size, i = indexes |
 | **Clear** | O(n) | O(1) | Remove all records |
 
 ### Batch Operations
