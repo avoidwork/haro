@@ -225,6 +225,7 @@ function benchmarkWhereOperations(dataSizes) {
 				"department|active",
 				"city|department",
 			],
+			warnOnFullScan: false,
 		});
 
 		// Simple where operations
@@ -386,16 +387,6 @@ function benchmarkMapReduceOperations(dataSizes) {
 			}));
 		});
 		results.push(mapResult);
-
-		// Reduce operations
-		const reduceResult = benchmark(`REDUCE aggregation (${size} records)`, () => {
-			store.reduce((acc, record) => {
-				acc[record.department] = (acc[record.department] || 0) + 1;
-
-				return acc;
-			}, {});
-		});
-		results.push(reduceResult);
 
 		// ForEach operations
 		const forEachResult = benchmark(`FOREACH iteration (${size} records)`, () => {

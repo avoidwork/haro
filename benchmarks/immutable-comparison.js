@@ -307,44 +307,6 @@ function benchmarkTransformationOperations(dataSizes) {
 		});
 		results.push(immutableMapResult);
 
-		// REDUCE operations
-		const mutableReduceResult = benchmark(`REDUCE operation MUTABLE (${size} records)`, () => {
-			return mutableStore.reduce((acc, record) => {
-				acc[record.department] = (acc[record.department] || 0) + 1;
-
-				return acc;
-			}, {});
-		});
-		results.push(mutableReduceResult);
-
-		const immutableReduceResult = benchmark(`REDUCE operation IMMUTABLE (${size} records)`, () => {
-			return immutableStore.reduce((acc, record) => {
-				acc[record.department] = (acc[record.department] || 0) + 1;
-
-				return acc;
-			}, {});
-		});
-		results.push(immutableReduceResult);
-
-		// SORT operations
-		const mutableSortResult = benchmark(
-			`SORT operation MUTABLE (${size} records)`,
-			() => {
-				return mutableStore.sort((a, b) => a.score - b.score);
-			},
-			10,
-		);
-		results.push(mutableSortResult);
-
-		const immutableSortResult = benchmark(
-			`SORT operation IMMUTABLE (${size} records)`,
-			() => {
-				return immutableStore.sort((a, b) => a.score - b.score);
-			},
-			10,
-		);
-		results.push(immutableSortResult);
-
 		// forEach operations
 		const mutableForEachResult = benchmark(`forEach operation MUTABLE (${size} records)`, () => {
 			let count = 0;

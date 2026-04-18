@@ -301,26 +301,6 @@ function benchmarkAggregationComparison(dataSizes) {
 		});
 		results.push(arrayMapResult);
 
-		// Haro reduce operation
-		const haroReduceResult = benchmark(`Haro REDUCE (${size} records)`, () => {
-			haroStore.reduce((acc, record) => {
-				acc[record.category] = (acc[record.category] || 0) + 1;
-
-				return acc;
-			}, {});
-		});
-		results.push(haroReduceResult);
-
-		// Array reduce operation
-		const arrayReduceResult = benchmark(`Array REDUCE (${size} records)`, () => {
-			arrayStore.reduce((acc, record) => {
-				acc[record.category] = (acc[record.category] || 0) + 1;
-
-				return acc;
-			}, {});
-		});
-		results.push(arrayReduceResult);
-
 		// Haro forEach operation
 		const haroForEachResult = benchmark(`Haro FOREACH (${size} records)`, () => {
 			let count = 0;
