@@ -174,6 +174,24 @@ describe("Utility Methods", () => {
 			]);
 		});
 
+		it("should use JSON fallback when structuredClone is unavailable", () => {
+			const originalStructuredClone = globalThis.structuredClone;
+			globalThis.structuredClone = undefined;
+
+			try {
+				const store = new Haro({ versioning: true });
+				const original = { a: 1, b: { c: 2 } };
+				store.set("key1", original);
+				store.set("key1", { a: 3 });
+				const versions = store.versions.get("key1");
+				const version = Array.from(versions)[0];
+				assert.strictEqual(version.a, 1);
+				assert.strictEqual(version.b.c, 2);
+			} finally {
+				globalThis.structuredClone = originalStructuredClone;
+			}
+		});
+
 		it("should handle deep nested objects", () => {
 			const versionedStore = new Haro({ versioning: true });
 			versionedStore.set("key1", { a: { b: { c: 1 } } });
@@ -216,6 +234,22 @@ describe("Utility Methods", () => {
 			const version = Array.from(versions)[0];
 			assert.deepStrictEqual(version.a, 1);
 			assert.deepStrictEqual(version.b, 2);
+		});
+
+		it("should skip prototype pollution keys during merge", () => {
+			const versionedStore = new Haro({ versioning: true });
+			versionedStore.set("key1", { a: 1 });
+			versionedStore.set("key1", {
+				__proto__: { polluted: true },
+				constructor: { polluted: true },
+				prototype: { polluted: true },
+				b: 2,
+			});
+			const record = versionedStore.get("key1");
+			assert.strictEqual(record.a, 1);
+			assert.strictEqual(record.b, 2);
+			assert.strictEqual(Object.prototype.polluted, undefined);
+			assert.strictEqual(record.hasOwnProperty("__proto__"), false);
 		});
 	});
 });

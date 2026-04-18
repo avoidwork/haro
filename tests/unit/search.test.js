@@ -191,6 +191,20 @@ describe("Searching and Filtering", () => {
 			assert.strictEqual(results.length, 0);
 		});
 
+		it("should return frozen results in immutable mode", () => {
+			const immutableStore = new Haro({
+				index: ["name"],
+				immutable: true,
+			});
+
+			immutableStore.set("user1", { id: "user1", name: "Alice" });
+			immutableStore.set("user2", { id: "user2", name: "Bob" });
+
+			const results = immutableStore.where({ name: "Alice" });
+			assert.strictEqual(Object.isFrozen(results), true);
+			assert.strictEqual(results.length, 1);
+		});
+
 		describe("indexed query optimization", () => {
 			it("should use indexed query optimization for multiple indexed fields", () => {
 				const optimizedStore = new Haro({
