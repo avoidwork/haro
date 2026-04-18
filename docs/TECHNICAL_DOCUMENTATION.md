@@ -505,7 +505,7 @@ const stateManager = {
 };
 ```
 
-## 2025 Application Examples
+## 2026 Application Examples
 
 ### Edge Computing Data Store
 

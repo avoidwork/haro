@@ -1326,5 +1326,5 @@ Haro is optimized for:
 
 ## License
 
-Copyright (c) 2025 Jason Mulligan  
+Copyright (c) 2026 Jason Mulligan  
 Licensed under the BSD-3-Clause license.
