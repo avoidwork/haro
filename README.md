@@ -10,8 +10,7 @@ A fast, flexible immutable DataStore for collections of records with indexing, v
 ## Table of Contents
 
 - [Key Features](#key-features)
-- [When to Use / When NOT to Use](#when-to-use--when-not-to-use)
-- [Requirements](#requirements)
+- [Why Choose Haro?](#why-choose-haro)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Usage](#usage)
@@ -20,8 +19,8 @@ A fast, flexible immutable DataStore for collections of records with indexing, v
   - [Class Inheritance](#class-inheritance)
 - [Configuration Options](#configuration-options)
 - [TypeScript Support](#typescript-support)
-- [Common Examples](#common-examples)
-  - [Basic CRUD Operations](#basic-crud-operations)
+- [Real-World Examples](#real-world-examples)
+  - [Instant Setup - Zero Boilerplate](#instant-setup---zero-boilerplate)
   - [Indexing and Queries](#indexing-and-queries)
   - [Versioning](#versioning)
   - [Immutable Mode](#immutable-mode)
@@ -323,7 +322,7 @@ try {
 | **Performance (1k records)** | ⚡ Fast | ⚡ Fastest | ⚡ Fast | 🐌 Slower | ⚡ Fast |
 | **Memory Overhead** | Medium | Low | Low | Medium | High |
 | **TypeScript Support** | ✅ | ✅ | ✅ | ✅ | ⚠️ Community |
-| **Bundle Size** | ~8KB | Native | Native | ~15KB | ~45KB |
+| **Bundle Size** | ~3KB gzipped | Native | Native | ~15KB | ~45KB |
 | **Learning Curve** | Low | Low | Low | Low | Medium |
 
 **Legend**: ✅ Yes | ❌ No | ⚠️ Limited/Optional
