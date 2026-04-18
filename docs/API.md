@@ -52,6 +52,22 @@ Haro is an immutable DataStore with indexing, versioning, and batch operations. 
 
 ## Haro Class
 
+### Private Fields
+
+The Haro class uses the following private fields:
+
+- `#data` (Map) - Internal storage for records
+- `#delimiter` (string) - Delimiter for composite indexes
+- `#id` (string) - Unique instance identifier
+- `#immutable` (boolean) - Immutable mode flag
+- `#index` (Array) - Array of indexed field names
+- `#indexes` (Map) - Map of index structures
+- `#key` (string) - Primary key field name
+- `#versions` (Map) - Map of version histories
+- `#versioning` (boolean) - Versioning flag
+- `#warnOnFullScan` (boolean) - Full scan warning flag
+- `#inBatch` (boolean) - Batch operation state flag
+
 ### Constructor(config)
 
 Creates a new Haro instance.

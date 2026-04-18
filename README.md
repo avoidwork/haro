@@ -388,6 +388,24 @@ See `benchmarks/README.md` for complete documentation and advanced usage.
 
 ## API Reference
 
+### Private Fields
+
+The Haro class uses private fields (denoted by `#` prefix) for internal state:
+
+- `#data` - Internal Map of records
+- `#delimiter` - Delimiter for composite indexes
+- `#id` - Unique instance identifier
+- `#immutable` - Immutable mode flag
+- `#index` - Array of indexed field names
+- `#indexes` - Map of index structures
+- `#key` - Primary key field name
+- `#versions` - Map of version histories
+- `#versioning` - Versioning flag
+- `#warnOnFullScan` - Full scan warning flag
+- `#inBatch` - Batch operation state flag
+
+These fields are encapsulated and accessed through public properties and methods.
+
 ### Properties
 
 #### data

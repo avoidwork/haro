@@ -58,6 +58,24 @@ graph TB
 
 ## Core Components
 
+### Private Fields
+
+The Haro class uses the following private fields (denoted by `#` prefix):
+
+- `#data` - Internal Map storing all records
+- `#delimiter` - Delimiter for composite indexes
+- `#id` - Unique instance identifier
+- `#immutable` - Boolean flag for immutable mode
+- `#index` - Array of indexed field names
+- `#indexes` - Map of index structures
+- `#key` - Primary key field name
+- `#versions` - Map of version histories
+- `#versioning` - Boolean flag for versioning
+- `#warnOnFullScan` - Boolean flag for full scan warnings
+- `#inBatch` - Boolean flag for batch operation state
+
+These fields are encapsulated and not directly accessible from outside the class.
+
 ### Data Store (Map)
 - **Purpose**: Primary storage for all records
 - **Structure**: `Map<string, Object>`
