@@ -175,7 +175,7 @@ export class Haro {
 			throw new Error(STRING_RECORD_NOT_FOUND);
 		}
 		const og = this.get(key, true);
-		this.deleteIndex(key, og);
+		this.#deleteIndex(key, og);
 		this.data.delete(key);
 		if (this.versioning) {
 			this.versions.delete(key);
@@ -188,16 +188,16 @@ export class Haro {
 	 * @param {Object} data - Data of record being deleted
 	 * @returns {Haro} This instance for method chaining
 	 */
-	deleteIndex(key, data) {
+	#deleteIndex(key, data) {
 		this.index.forEach((i) => {
 			const idx = this.indexes.get(i);
 			if (!idx) return;
 			const values = i.includes(this.delimiter)
-				? this.indexKeys(i, this.delimiter, data)
+				? this.#getIndexKeys(i, this.delimiter, data)
 				: Array.isArray(data[i])
 					? data[i]
 					: [data[i]];
-			this.each(values, (value) => {
+			this.#each(values, (value) => {
 				if (idx.has(value)) {
 					const o = idx.get(value);
 					o.delete(key);
@@ -209,6 +209,18 @@ export class Haro {
 		});
 
 		return this;
+	}
+
+	/**
+	 * Internal helper method for iterating over arrays
+	 * @param {Array} arr - Array to iterate
+	 * @param {Function} fn - Function to call for each element
+	 * @returns {void}
+	 */
+	#each(arr, fn) {
+		for (let i = 0; i < arr.length; i++) {
+			fn(arr[i], i);
+		}
 	}
 
 	/**
@@ -239,20 +251,31 @@ export class Haro {
 	}
 
 	/**
-	 * Utility method to iterate over an array with a callback function
-	 * @param {Array<*>} [arr=[]] - Array to iterate over
-	 * @param {Function} fn - Function to call for each element (element, index)
-	 * @returns {Array<*>} The original array for method chaining
-	 * @example
-	 * store.each([1, 2, 3], (item, index) => console.log(item, index));
+	 * Internal method to generate index keys for composite indexes
+	 * @param {string} arg - Composite index field names joined by delimiter
+	 * @param {string} delimiter - Delimiter used in composite index
+	 * @param {Object} data - Data object to extract field values from
+	 * @returns {string[]} Array of generated index keys
 	 */
-	each(arr = [], fn) {
-		const len = arr.length;
-		for (let i = 0; i < len; i++) {
-			fn(arr[i], i);
+	#getIndexKeys(arg, delimiter, data) {
+		const fields = arg.split(delimiter).sort(this.#sortKeys);
+		const result = [""];
+		for (let i = 0; i < fields.length; i++) {
+			const field = fields[i];
+			const values = Array.isArray(data[field]) ? data[field] : [data[field]];
+			const newResult = [];
+			for (let j = 0; j < result.length; j++) {
+				const existing = result[j];
+				for (let k = 0; k < values.length; k++) {
+					const value = values[k];
+					const newKey = i === 0 ? value : `${existing}${delimiter}${value}`;
+					newResult.push(newKey);
+				}
+			}
+			result.length = 0;
+			result.push(...newResult);
 		}
-
-		return arr;
+		return result;
 	}
 
 	/**
@@ -279,13 +302,13 @@ export class Haro {
 		if (typeof where !== STRING_OBJECT || where === null) {
 			throw new Error("find: where must be an object");
 		}
-		const whereKeys = Object.keys(where).sort(this.sortKeys);
+		const whereKeys = Object.keys(where).sort(this.#sortKeys);
 		const key = whereKeys.join(this.delimiter);
 		const result = new Set();
 
 		for (const [indexName, index] of this.indexes) {
 			if (indexName.startsWith(key + this.delimiter) || indexName === key) {
-				const keys = this.indexKeys(indexName, this.delimiter, where);
+				const keys = this.#getIndexKeys(indexName, this.delimiter, where);
 				for (let i = 0; i < keys.length; i++) {
 					const v = keys[i];
 					if (index.has(v)) {
@@ -315,16 +338,13 @@ export class Haro {
 		if (typeof fn !== STRING_FUNCTION) {
 			throw new Error(STRING_INVALID_FUNCTION);
 		}
-		let result = this.reduce((a, v) => {
-			if (fn(v)) {
-				a.push(v);
+		const result = [];
+		this.data.forEach((value, key) => {
+			if (fn(value, key, this)) {
+				result.push(value);
 			}
-
-			return a;
-		}, []);
-		result = this.#freezeResult(result);
-
-		return result;
+		});
+		return this.#freezeResult(result);
 	}
 
 	/**
@@ -390,38 +410,6 @@ export class Haro {
 	 */
 	has(key) {
 		return this.data.has(key);
-	}
-
-	/**
-	 * Generates index keys for composite indexes from data values
-	 * @param {string} [arg=STRING_EMPTY] - Composite index field names joined by delimiter
-	 * @param {string} [delimiter=STRING_PIPE] - Delimiter used in composite index
-	 * @param {Object} [data={}] - Data object to extract field values from
-	 * @returns {string[]} Array of generated index keys
-	 * @example
-	 * // For index 'name|department' with data {name: 'John', department: 'IT'}
-	 * const keys = store.indexKeys('name|department', '|', data);
-	 * // Returns ['John|IT']
-	 */
-	indexKeys(arg = STRING_EMPTY, delimiter = STRING_PIPE, data = {}) {
-		const fields = arg.split(delimiter).sort(this.sortKeys);
-
-		return fields.reduce(
-			(result, field, i) => {
-				const values = Array.isArray(data[field]) ? data[field] : [data[field]];
-				const newResult = [];
-
-				for (const existing of result) {
-					for (const value of values) {
-						const newKey = i === 0 ? value : `${existing}${delimiter}${value}`;
-						newResult.push(newKey);
-					}
-				}
-
-				return newResult;
-			},
-			[""],
-		);
 	}
 
 	/**
@@ -497,7 +485,7 @@ export class Haro {
 			typeof b === STRING_OBJECT &&
 			b !== null
 		) {
-			this.each(Object.keys(b), (i) => {
+			this.#each(Object.keys(b), (i) => {
 				if (i === "__proto__" || i === "constructor" || i === "prototype") {
 					return;
 				}
@@ -537,24 +525,6 @@ export class Haro {
 	}
 
 	/**
-	 * Reduces all records to a single value using a reducer function
-	 * @param {Function} fn - Reducer function (accumulator, value, key, store)
-	 * @param {*} [accumulator] - Initial accumulator value
-	 * @returns {*} Final reduced value
-	 * @example
-	 * const totalAge = store.reduce((sum, record) => sum + record.age, 0);
-	 * const names = store.reduce((acc, record) => acc.concat(record.name), []);
-	 */
-	reduce(fn, accumulator = []) {
-		let a = accumulator;
-		this.forEach((v, k) => {
-			a = fn(a, v, k, this);
-		}, this);
-
-		return a;
-	}
-
-	/**
 	 * Rebuilds indexes for specified fields or all fields for data consistency
 	 * @param {string|string[]} [index] - Specific index field(s) to rebuild, or all if not specified
 	 * @returns {Haro} This instance for method chaining
@@ -568,8 +538,8 @@ export class Haro {
 		if (index && this.index.includes(index) === false) {
 			this.index.push(index);
 		}
-		this.each(indices, (i) => this.indexes.set(i, new Map()));
-		this.forEach((data, key) => this.each(indices, (i) => this.setIndex(key, data, i)));
+		this.#each(indices, (i) => this.indexes.set(i, new Map()));
+		this.forEach((data, key) => this.#each(indices, (i) => this.#setIndex(key, data, i)));
 
 		return this;
 	}
@@ -654,7 +624,7 @@ export class Haro {
 			}
 		} else {
 			const og = this.get(key, true);
-			this.deleteIndex(key, og);
+			this.#deleteIndex(key, og);
 			if (this.versioning) {
 				this.versions.get(key).add(Object.freeze(this.clone(og)));
 			}
@@ -663,7 +633,7 @@ export class Haro {
 			}
 		}
 		this.data.set(key, x);
-		this.setIndex(key, x, null);
+		this.#setIndex(key, x, null);
 		const result = this.get(key);
 
 		return result;
@@ -676,26 +646,28 @@ export class Haro {
 	 * @param {string|null} indice - Specific index to update, or null for all
 	 * @returns {Haro} This instance for method chaining
 	 */
-	setIndex(key, data, indice) {
-		this.each(indice === null ? this.index : [indice], (i) => {
-			let idx = this.indexes.get(i);
+	#setIndex(key, data, indice) {
+		const indices = indice === null ? this.index : [indice];
+		for (let i = 0; i < indices.length; i++) {
+			const field = indices[i];
+			let idx = this.indexes.get(field);
 			if (!idx) {
 				idx = new Map();
-				this.indexes.set(i, idx);
+				this.indexes.set(field, idx);
 			}
-			const fn = (c) => {
-				if (!idx.has(c)) {
-					idx.set(c, new Set());
+			const values = field.includes(this.delimiter)
+				? this.#getIndexKeys(field, this.delimiter, data)
+				: Array.isArray(data[field])
+					? data[field]
+					: [data[field]];
+			for (let j = 0; j < values.length; j++) {
+				const value = values[j];
+				if (!idx.has(value)) {
+					idx.set(value, new Set());
 				}
-				idx.get(c).add(key);
-			};
-			if (i.includes(this.delimiter)) {
-				this.each(this.indexKeys(i, this.delimiter, data), fn);
-			} else {
-				this.each(Array.isArray(data[i]) ? data[i] : [data[i]], fn);
+				idx.get(value).add(key);
 			}
-		});
-
+		}
 		return this;
 	}
 
@@ -722,18 +694,12 @@ export class Haro {
 	}
 
 	/**
-	 * Comparator function for sorting keys with type-aware comparison logic
+	 * Internal comparator function for sorting keys with type-aware comparison logic
 	 * @param {*} a - First value to compare
 	 * @param {*} b - Second value to compare
 	 * @returns {number} Negative number if a < b, positive if a > b, zero if equal
-	 * @example
-	 * const keys = ['name', 'age', 'email'];
-	 * keys.sort(store.sortKeys); // Alphabetical sort
-	 *
-	 * const mixed = [10, '5', 'abc', 3];
-	 * mixed.sort(store.sortKeys); // Type-aware sort: numbers first, then strings
 	 */
-	sortKeys(a, b) {
+	#sortKeys(a, b) {
 		// Handle string comparison
 		if (typeof a === STRING_STRING && typeof b === STRING_STRING) {
 			return a.localeCompare(b);
@@ -767,7 +733,7 @@ export class Haro {
 		}
 		const lindex = this.indexes.get(index);
 		lindex.forEach((idx, key) => keys.push(key));
-		keys.sort(this.sortKeys);
+		keys.sort(this.#sortKeys);
 		const result = keys.flatMap((i) => Array.from(lindex.get(i)).map((key) => this.get(key)));
 
 		return this.#freezeResult(result);
@@ -783,7 +749,7 @@ export class Haro {
 	toArray() {
 		const result = Array.from(this.data.values());
 		if (this.immutable) {
-			this.each(result, (i) => Object.freeze(i));
+			this.#each(result, (i) => Object.freeze(i));
 			Object.freeze(result);
 		}
 
@@ -832,7 +798,7 @@ export class Haro {
 	 * @param {string} op - Operator for array matching ('||' for OR, '&&' for AND)
 	 * @returns {boolean} True if record matches predicate criteria
 	 */
-	matchesPredicate(record, predicate, op) {
+	#matchesPredicate(record, predicate, op) {
 		const keys = Object.keys(predicate);
 
 		return keys.every((key) => {
@@ -924,7 +890,7 @@ export class Haro {
 			const results = [];
 			for (const key of candidateKeys) {
 				const record = this.get(key);
-				if (this.matchesPredicate(record, predicate, op)) {
+				if (this.#matchesPredicate(record, predicate, op)) {
 					results.push(record);
 				}
 			}
@@ -936,7 +902,7 @@ export class Haro {
 			console.warn("where(): performing full table scan - consider adding an index");
 		}
 
-		return this.filter((a) => this.matchesPredicate(a, predicate, op));
+		return this.filter((a) => this.#matchesPredicate(a, predicate, op));
 	}
 }
 

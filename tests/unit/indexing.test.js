@@ -90,39 +90,6 @@ describe("Indexing", () => {
 		});
 	});
 
-	describe("setIndex()", () => {
-		it("should create new index when it doesn't exist", () => {
-			const store = new Haro({
-				index: ["name"],
-			});
-
-			// Add data first
-			store.set("1", { name: "Alice", age: 30 });
-
-			// Now manually call setIndex to trigger index creation for new field
-			store.setIndex("1", { category: "admin" }, "category");
-
-			// Verify the new index was created
-			assert.ok(store.indexes.has("category"), "New index should be created");
-			const categoryIndex = store.indexes.get("category");
-			assert.ok(categoryIndex.has("admin"), "Index should contain the value");
-			assert.ok(categoryIndex.get("admin").has("1"), "Index should map value to key");
-		});
-
-		it("should handle array values in index creation", () => {
-			const store = new Haro({
-				index: ["tags"],
-			});
-
-			// This will trigger the index creation path for array values
-			store.set("1", { name: "Alice", tags: ["developer", "admin"] });
-
-			const tagsIndex = store.indexes.get("tags");
-			assert.ok(tagsIndex.has("developer"), "Index should contain array element");
-			assert.ok(tagsIndex.has("admin"), "Index should contain array element");
-		});
-	});
-
 	describe("reindex()", () => {
 		it("should rebuild all indexes", () => {
 			indexedStore.set("user1", { id: "user1", name: "John", age: 30 });
@@ -140,37 +107,6 @@ describe("Indexing", () => {
 			const results = indexedStore.find({ email: "john@example.com" });
 			assert.strictEqual(results.length, 1);
 			assert.strictEqual(indexedStore.index.includes("email"), true);
-		});
-	});
-
-	describe("indexKeys()", () => {
-		it("should generate keys for composite index", () => {
-			const data = { name: "John", department: "IT" };
-			const keys = indexedStore.indexKeys("name|department", "|", data);
-			assert.deepStrictEqual(keys, ["IT|John"]);
-		});
-
-		it("should handle array values in composite index", () => {
-			const data = { name: "John", tags: ["admin", "user"] };
-			const keys = indexedStore.indexKeys("name|tags", "|", data);
-			assert.deepStrictEqual(keys, ["John|admin", "John|user"]);
-		});
-
-		it("should handle empty field values", () => {
-			const data = { name: "John", department: undefined };
-			const keys = indexedStore.indexKeys("name|department", "|", data);
-			assert.deepStrictEqual(keys, ["undefined|John"]);
-		});
-
-		it("should sort composite index fields alphabetically", () => {
-			const data = { name: "John", department: "IT" };
-
-			// Both should produce the same keys because fields are sorted alphabetically
-			const keys1 = indexedStore.indexKeys("name|department", "|", data);
-			const keys2 = indexedStore.indexKeys("department|name", "|", data);
-
-			assert.deepStrictEqual(keys1, ["IT|John"]);
-			assert.deepStrictEqual(keys2, ["IT|John"]);
 		});
 	});
 });
