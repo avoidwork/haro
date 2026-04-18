@@ -445,7 +445,8 @@ export class Haro {
 			b !== null
 		) {
 			const keys = Object.keys(b);
-			for (let i = 0; i < keys.length; i++) {
+			const keysLen = keys.length;
+			for (let i = 0; i < keysLen; i++) {
 				const key = keys[i];
 				if (key === "__proto__" || key === "constructor" || key === "prototype") {
 					continue;

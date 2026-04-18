@@ -161,4 +161,61 @@ describe("Utility Methods", () => {
 			assert.strictEqual(values[1].name, "Jane");
 		});
 	});
+
+	describe("merge() edge cases via set()", () => {
+		it("should handle nested arrays", () => {
+			const versionedStore = new Haro({ versioning: true });
+			versionedStore.set("key1", { matrix: [[1, 2]] });
+			versionedStore.set("key1", { matrix: [[3, 4]] });
+			const record = versionedStore.get("key1");
+			assert.deepStrictEqual(record.matrix, [
+				[1, 2],
+				[3, 4],
+			]);
+		});
+
+		it("should handle deep nested objects", () => {
+			const versionedStore = new Haro({ versioning: true });
+			versionedStore.set("key1", { a: { b: { c: 1 } } });
+			versionedStore.set("key1", { a: { b: { d: 2 } } });
+			const record = versionedStore.get("key1");
+			assert.deepStrictEqual(record.a.b, { c: 1, d: 2 });
+		});
+
+		it("should handle null values", () => {
+			const versionedStore = new Haro({ versioning: true });
+			versionedStore.set("key1", { a: null });
+			versionedStore.set("key1", { b: "value" });
+			const record = versionedStore.get("key1");
+			assert.strictEqual(record.a, null);
+			assert.strictEqual(record.b, "value");
+		});
+
+		it("should handle empty source object", () => {
+			const versionedStore = new Haro({ versioning: true });
+			versionedStore.set("key1", { a: 1 });
+			versionedStore.set("key1", {});
+			const record = versionedStore.get("key1");
+			assert.deepStrictEqual(record, { a: 1, id: "key1" });
+		});
+
+		it("should handle array to object type mismatch", () => {
+			const versionedStore = new Haro({ versioning: true });
+			versionedStore.set("key1", { tags: ["a"] });
+			versionedStore.set("key1", { tags: "b" });
+			const record = versionedStore.get("key1");
+			assert.strictEqual(record.tags, "b");
+		});
+
+		it("should preserve version history with merges", () => {
+			const versionedStore = new Haro({ versioning: true });
+			versionedStore.set("key1", { a: 1, b: 2 });
+			versionedStore.set("key1", { b: 3, c: 4 });
+			const versions = versionedStore.versions.get("key1");
+			assert.strictEqual(versions.size, 1);
+			const version = Array.from(versions)[0];
+			assert.deepStrictEqual(version.a, 1);
+			assert.deepStrictEqual(version.b, 2);
+		});
+	});
 });
