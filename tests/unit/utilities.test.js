@@ -9,37 +9,6 @@ describe("Utility Methods", () => {
 		store = new Haro();
 	});
 
-	describe("clone()", () => {
-		it("should create deep clone of object", () => {
-			const original = { name: "John", tags: ["admin", "user"] };
-			const cloned = store.clone(original);
-
-			cloned.tags.push("new");
-			assert.strictEqual(original.tags.length, 2);
-			assert.strictEqual(cloned.tags.length, 3);
-		});
-
-		it("should clone primitives", () => {
-			assert.strictEqual(store.clone("string"), "string");
-			assert.strictEqual(store.clone(123), 123);
-			assert.strictEqual(store.clone(true), true);
-		});
-
-		it("should handle nested objects and arrays", () => {
-			const original = {
-				name: "John",
-				address: { city: "NYC", zip: "10001" },
-				tags: ["admin", "user"],
-			};
-			const cloned = store.clone(original);
-			cloned.address.city = "LA";
-			cloned.tags.push("new");
-
-			assert.strictEqual(original.address.city, "NYC");
-			assert.strictEqual(original.tags.length, 2);
-		});
-	});
-
 	describe("forEach()", () => {
 		beforeEach(() => {
 			store.set("user1", { id: "user1", name: "John" });
@@ -75,63 +44,6 @@ describe("Utility Methods", () => {
 			assert.throws(() => {
 				store.map("not a function");
 			}, /Invalid function/);
-		});
-	});
-
-	describe("merge()", () => {
-		it("should merge objects", () => {
-			const a = { x: 1, y: 2 };
-			const b = { y: 3, z: 4 };
-			const result = store.merge(a, b);
-
-			assert.deepStrictEqual(result, { x: 1, y: 3, z: 4 });
-		});
-
-		it("should concatenate arrays", () => {
-			const a = [1, 2];
-			const b = [3, 4];
-			const result = store.merge(a, b);
-
-			assert.deepStrictEqual(result, [1, 2, 3, 4]);
-		});
-
-		it("should override arrays when override is true", () => {
-			const a = [1, 2];
-			const b = [3, 4];
-			const result = store.merge(a, b, true);
-
-			assert.deepStrictEqual(result, [3, 4]);
-		});
-
-		it("should replace primitives", () => {
-			const result = store.merge("old", "new");
-			assert.strictEqual(result, "new");
-		});
-	});
-
-	describe("uuid()", () => {
-		it("should generate valid UUID", () => {
-			const id = store.uuid();
-			const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-			assert.strictEqual(uuidRegex.test(id), true);
-		});
-
-		it("should generate unique UUIDs", () => {
-			const id1 = store.uuid();
-			const id2 = store.uuid();
-			assert.notStrictEqual(id1, id2);
-		});
-	});
-
-	describe("freeze()", () => {
-		it("should freeze multiple arguments", () => {
-			const obj1 = { a: 1 };
-			const obj2 = { b: 2 };
-			const result = store.freeze(obj1, obj2);
-
-			assert.strictEqual(Object.isFrozen(result), true);
-			assert.strictEqual(Object.isFrozen(result[0]), true);
-			assert.strictEqual(Object.isFrozen(result[1]), true);
 		});
 	});
 
@@ -247,39 +159,6 @@ describe("Utility Methods", () => {
 			assert.strictEqual(values.length, 2);
 			assert.strictEqual(values[0].name, "John");
 			assert.strictEqual(values[1].name, "Jane");
-		});
-	});
-
-	describe("merge()", () => {
-		it("should prevent prototype pollution", () => {
-			const store = new Haro();
-			const target = {};
-			const source = { __proto__: { polluted: true } };
-
-			store.merge(target, source);
-			assert.strictEqual({}.polluted, undefined);
-		});
-
-		it("should skip constructor and prototype keys", () => {
-			const store = new Haro();
-			const target = { name: "John" };
-			const source = {
-				__proto__: { polluted: true },
-				constructor: { prototype: { polluted: true } },
-			};
-
-			store.merge(target, source);
-			assert.strictEqual({}.polluted, undefined);
-			assert.strictEqual(target.polluted, undefined);
-		});
-
-		it("should handle mixed types in merge", () => {
-			const store = new Haro();
-			const target = { name: "John", age: 30 };
-			const source = { age: "thirty" };
-
-			const result = store.merge(target, source);
-			assert.strictEqual(result.age, "thirty");
 		});
 	});
 });

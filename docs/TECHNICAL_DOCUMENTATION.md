@@ -265,24 +265,6 @@ $$\text{freeze}(\text{obj}) = \text{obj} \text{ where } \forall \text{prop} \in 
 
 $$\text{deepFreeze}(\text{obj}) = \text{freeze}(\text{obj}) \text{ where } \forall \text{prop} \in \text{obj}: \text{deepFreeze}(\text{prop})$$
 
-Note: The `freeze()` method takes multiple arguments and returns a frozen array containing them.
-
-### Merge Operation
-
-The merge operation combines two values with the following recursive definition:
-
-$$
-\text{merge}(a, b, \text{override}) = 
-\begin{cases}
-  b & \text{if } a, b \in \text{Array} \land \text{override} \\
-  a \concat b & \text{if } a, b \in \text{Array} \land \lnot\text{override} \\
-  \{k: \text{merge}(a[k], b[k], \text{override}) \mid k \in \text{keys}(b)\} & \text{if } a, b \in \text{Object} \\
-  b & \text{otherwise}
-\end{cases}
-$$
-
-The merge operation recursively merges all keys from `b` into `a`, preserving keys in `a` that don't exist in `b`.
-
 ## Operations
 
 ### CRUD Operations Performance
@@ -875,11 +857,7 @@ new Haro(config)
 
 ### Utility Methods
 
-| Method | Description | Use Case |
-|--------|-------------|----------|
-| `clone(arg)` | Deep clone object | Data isolation |
-| `freeze(...args)` | Freeze array of arguments | Immutability (returns frozen array) |
-| `merge(a, b)` | Merge two values | Data combination |
+Haro uses internal utility methods for cloning and merging data. These are implementation details and not part of the public API.
 
 ## Best Practices
 
