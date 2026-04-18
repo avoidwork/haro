@@ -482,13 +482,10 @@ See [`benchmarks/README.md`](https://github.com/avoidwork/haro/blob/master/bench
 - [Benchmarks](https://github.com/avoidwork/haro/blob/master/benchmarks/README.md) - Performance analysis
 - [Changelog](https://github.com/avoidwork/haro/blob/master/CHANGELOG.md) - Version history
 - [Security](https://github.com/avoidwork/haro/blob/master/SECURITY.md) - Security policy
-- [Discussions](https://github.com/avoidwork/haro/discussions) - Community discussions
 
 ## Community
 
-- **GitHub Discussions**: [Join the conversation](https://github.com/avoidwork/haro/discussions)
 - **Report Issues**: [GitHub Issues](https://github.com/avoidwork/haro/issues)
-- **Twitter**: [@avoidwork](https://twitter.com/avoidwork)
 
 ## License
 
