@@ -5,7 +5,65 @@
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![Build Status](https://github.com/avoidwork/haro/actions/workflows/ci.yml/badge.svg)](https://github.com/avoidwork/haro/actions)
 
-A fast, flexible immutable DataStore for collections of records with indexing, versioning, and advanced querying capabilities. Provides a Map-like interface with powerful search and filtering features.
+A fast, flexible immutable DataStore for collections of records with indexing, versioning, and advanced querying capabilities.
+
+## Table of Contents
+
+- [Key Features](#key-features)
+- [When to Use / When NOT to Use](#when-to-use--when-not-to-use)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Usage](#usage)
+  - [Factory Function](#factory-function)
+  - [Class Constructor](#class-constructor)
+  - [Class Inheritance](#class-inheritance)
+- [Configuration Options](#configuration-options)
+- [TypeScript Support](#typescript-support)
+- [Common Examples](#common-examples)
+  - [Basic CRUD Operations](#basic-crud-operations)
+  - [Indexing and Queries](#indexing-and-queries)
+  - [Versioning](#versioning)
+  - [Immutable Mode](#immutable-mode)
+- [Comparison with Alternatives](#comparison-with-alternatives)
+- [API Reference](#api-reference)
+- [Troubleshooting](#troubleshooting)
+- [Testing](#testing)
+- [Benchmarks](#benchmarks)
+- [Learn More](#learn-more)
+- [Community](#community)
+- [License](#license)
+
+## Key Features
+
+- **Indexing**: Fast O(1) lookups on indexed fields with composite index support
+- **Versioning**: Track history of record changes with automatic version management
+- **Immutable Mode**: Return frozen objects for data safety in multi-consumer environments
+- **Advanced Querying**: Support for `find()`, `where()`, `search()`, and `filter()` operations
+- **Batch Operations**: Efficient bulk insert/update/delete with `setMany()` and `deleteMany()`
+- **Flexible**: Works with plain objects, supports custom keys, and extensible via inheritance
+- **TypeScript Ready**: Full TypeScript definitions included
+- **Zero Dependencies**: Pure JavaScript with no external dependencies
+
+## When to Use / When NOT to Use
+
+### ✅ When to Use Haro
+
+- **In-memory caching**: Fast indexed lookups with automatic index maintenance
+- **Configuration management**: Version tracking for audit trails
+- **Event tracking**: High-frequency writes with batch operation support
+- **Data transformation**: Immutable mode ensures data integrity
+- **Complex queries**: Need filtering, searching, and sorting capabilities
+- **Real-time dashboards**: Efficient updates and queries on changing data
+
+### ❌ When NOT to Use Haro
+
+- **Persistent storage needed**: Haro is in-memory only (use lowdb, LokiJS, or a database)
+- **Large datasets (>100k records)**: Performance degrades with very large collections
+- **Simple key-value storage**: Use native `Map` or `Object` for basic needs
+- **Server-side session storage**: Consider Redis or similar for distributed systems
+- **Complex relational queries**: Use a proper database for joins and relationships
+- **Browser storage**: Consider IndexedDB or localStorage for client-side persistence
 
 ## Requirements
 
@@ -54,7 +112,6 @@ const store = haro(data, config);
 ```javascript
 import { Haro } from 'haro';
 
-// Create a store with indexes and versioning
 const store = new Haro({
   index: ['name', 'email', 'department'],
   key: 'id',
@@ -62,7 +119,6 @@ const store = new Haro({
   immutable: true
 });
 
-// Create store with initial data
 const users = new Haro([
   { name: 'Alice', email: 'alice@company.com', department: 'Engineering' },
   { name: 'Bob', email: 'bob@company.com', department: 'Sales' }
@@ -99,9 +155,10 @@ const user = store.set(null, {
 });
 ```
 
-## Parameters
+## Configuration Options
 
 ### delimiter
+
 **String** - Delimiter for composite indexes (default: `'|'`)
 
 ```javascript
@@ -109,6 +166,7 @@ const store = haro(null, { delimiter: '::' });
 ```
 
 ### id
+
 **String** - Unique identifier for this store instance. Auto-generated if not provided.
 
 ```javascript
@@ -116,6 +174,7 @@ const store = haro(null, { id: 'user-cache' });
 ```
 
 ### immutable
+
 **Boolean** - Return frozen/immutable objects for data safety (default: `false`)
 
 ```javascript
@@ -123,7 +182,8 @@ const store = haro(null, { immutable: true });
 ```
 
 ### index
-**Array** - Fields to index for faster searches. Supports composite indexes using delimiter.
+
+**Array** - Fields to index for faster searches. Supports composite indexes.
 
 ```javascript
 const store = haro(null, {
@@ -132,6 +192,7 @@ const store = haro(null, {
 ```
 
 ### key
+
 **String** - Primary key field name (default: `'id'`)
 
 ```javascript
@@ -139,30 +200,11 @@ const store = haro(null, { key: 'userId' });
 ```
 
 ### versioning
-**Boolean** - Enable version history tracking to record changes (default: `false`)
+
+**Boolean** - Enable version history tracking (default: `false`)
 
 ```javascript
 const store = haro(null, { versioning: true });
-```
-
-### Parameter Validation
-
-The constructor validates configuration and provides helpful error messages:
-
-```javascript
-// Invalid index configuration will provide clear feedback
-try {
-  const store = new Haro({ index: 'name' }); // Should be array
-} catch (error) {
-  console.error(error.message); // Clear validation error
-}
-
-// Missing required configuration
-try {
-  const store = haro([{id: 1}], { key: 'nonexistent' });
-} catch (error) {
-  console.error('Key field validation error');
-}
 ```
 
 ## TypeScript Support
@@ -178,497 +220,168 @@ const store = new Haro<{ name: string; age: number }>({
 });
 ```
 
-## Interoperability
+## Common Examples
 
-### Array Methods Compatibility
+### Basic CRUD Operations
 
 ```javascript
 import { haro } from 'haro';
 
-const store = haro([
-  { id: 1, name: 'Alice', age: 30 },
-  { id: 2, name: 'Bob', age: 25 },
-  { id: 3, name: 'Charlie', age: 35 }
+const users = haro(null, { index: ['email'] });
+
+// Create
+const user = users.set(null, { 
+  name: 'Alice', 
+  email: 'alice@example.com' 
+});
+
+// Read
+const found = users.get(user.id);
+const exists = users.has(user.id);
+
+// Update
+users.set(user.id, { age: 30 });
+
+// Delete
+users.delete(user.id);
+
+// Batch operations
+users.setMany([
+  { id: 1, name: 'Bob', email: 'bob@example.com' },
+  { id: 2, name: 'Carol', email: 'carol@example.com' }
 ]);
 
-// Use familiar Array methods
-const adults = store.filter(record => record.age >= 30);
-const names = store.map(record => record.name);
+users.deleteMany([1, 2]);
+```
 
-store.forEach((record, key) => {
-  console.log(`${key}: ${record.name} (${record.age})`);
+### Indexing and Queries
+
+```javascript
+import { haro } from 'haro';
+
+const products = haro(null, {
+  index: ['category', 'brand', 'price', 'category|brand']
 });
+
+products.setMany([
+  { sku: '1', name: 'Laptop', category: 'Electronics', brand: 'Apple', price: 2499 },
+  { sku: '2', name: 'Phone', category: 'Electronics', brand: 'Apple', price: 999 },
+  { sku: '3', name: 'Headphones', category: 'Electronics', brand: 'Sony', price: 299 }
+]);
+
+// Find by indexed field
+const electronics = products.find({ category: 'Electronics' });
+
+// Complex queries
+const appleProducts = products.where({ 
+  category: 'Electronics', 
+  brand: 'Apple' 
+}, '&&');
+
+// Search with regex
+const searchResults = products.search(/^Laptop$/, 'name');
+
+// Filter with custom logic
+const affordable = products.filter(p => p.price < 500);
+
+// Sort and paginate
+const sorted = products.sortBy('price');
+const page1 = products.limit(0, 10);
 ```
 
-
-
-## Contributing
-
-Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on how to submit pull requests, report issues, and contribute to the project.
-
-## Security
-
-To report a security vulnerability, please see [SECURITY.md](SECURITY.md) or contact the maintainers directly.
-
-## Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for version history and changes.
-
-## Testing
-
-Haro maintains comprehensive test coverage across all features with **148 passing tests**:
-
-```
---------------|---------|----------|---------|---------|-------------------------
-File          | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s       
---------------|---------|----------|---------|---------|-------------------------
-All files     |     100 |    96.95 |     100 |     100 |                         
- constants.js |     100 |      100 |     100 |     100 |                         
- haro.js      |     100 |    96.94 |     100 |     100 | 205-208,667,678,972-976 
---------------|---------|----------|---------|---------|-------------------------
-```
-
-### Test Organization
-
-The test suite is organized into focused areas:
-
-- **Basic CRUD Operations** - Core data manipulation (set, get, delete, clear)
-- **Indexing** - Index creation, composite indexes, and reindexing
-- **Searching & Filtering** - find(), where(), search(), filter(), and sortBy() methods
-- **Immutable Mode** - Data freezing and immutability guarantees
-- **Versioning** - Record version history tracking
-- **Utility Methods** - clone(), merge(), limit(), map(), setMany(), deleteMany(), etc.
-- **Error Handling** - Validation and error scenarios
-- **Factory Function** - haro() factory with various initialization patterns
-
-### Running Tests
-
-```bash
-# Run unit tests
-npm test
-
-# Run with coverage
-npm run test:coverage
-
-# Run integration tests
-npm run test:integration
-
-# Run performance benchmarks
-npm run benchmark
-```
-
-## Benchmarks
-
-Haro includes comprehensive benchmark suites for performance analysis and comparison with other data store solutions.
-
-### Latest Performance Results
-
-**Overall Performance Summary:**
-- **Total Tests**: 572 tests across 9 categories
-- **Total Runtime**: 1.6 minutes
-- **Best Performance**: HAS operation (20,815,120 ops/second on 1,000 records)
-- **Memory Efficiency**: Highly efficient with minimal overhead for typical workloads
-
-### Benchmark Categories
-
-#### Basic Operations
-- **SET operations**: Record creation, updates, overwrites
-- **GET operations**: Single record retrieval, cache hits/misses
-- **DELETE operations**: Record removal and index cleanup
-- **BATCH operations**: Bulk insert/update/delete performance
-
-**Performance Highlights:**
-- SET operations: Up to 3.2M ops/sec for typical workloads
-- GET operations: Up to 20M ops/sec with index lookups
-- DELETE operations: Efficient cleanup with index maintenance
-- BATCH operations: Optimized for bulk data manipulation
-
-#### Search & Query Operations
-- **INDEX queries**: Using find() with indexed fields
-- **FILTER operations**: Predicate-based filtering
-- **SEARCH operations**: Text and regex searching
-- **WHERE clauses**: Complex query conditions
-
-**Performance Highlights:**
-- Indexed FIND queries: Up to 64,594 ops/sec (1,000 records)
-- FILTER operations: Up to 46,255 ops/sec
-- Complex queries: Maintains good performance with multiple conditions
-- Memory-efficient query processing
-
-#### Advanced Features
-- **VERSION tracking**: Performance impact of versioning
-- **IMMUTABLE mode**: Object freezing overhead
-- **COMPOSITE indexes**: Multi-field index performance
-- **Memory usage**: Efficient memory consumption patterns
-- **Utility operations**: clone, merge, freeze, forEach performance
-- **Pagination**: Limit-based result pagination
-- **Persistence**: Data dump/restore operations
-
-### Running Benchmarks
-
-```bash
-# Run all benchmarks
-node benchmarks/index.js
-
-# Run specific benchmark categories
-node benchmarks/index.js --basic-only        # Basic CRUD operations
-node benchmarks/index.js --search-only       # Search and query operations
-node benchmarks/index.js --index-only        # Index operations
-node benchmarks/index.js --memory-only       # Memory usage analysis
-node benchmarks/index.js --comparison-only   # vs native structures
-node benchmarks/index.js --utilities-only    # Utility operations
-node benchmarks/index.js --pagination-only   # Pagination performance
-node benchmarks/index.js --persistence-only  # Persistence operations
-node benchmarks/index.js --immutable-only    # Immutable vs mutable
-
-# Run with memory analysis
-node --expose-gc benchmarks/memory-usage.js
-```
-
-### Performance Comparison with Native Structures
-
-**Storage Operations:**
-- Haro vs Map: Comparable performance for basic operations
-- Haro vs Array: Slower for simple operations, faster for complex queries
-- Haro vs Object: Trade-off between features and raw performance
-
-**Query Operations:**
-- Haro FIND (indexed): 64,594 ops/sec vs Array filter: 189,293 ops/sec
-- Haro provides advanced query capabilities not available in native structures
-- Memory overhead justified by feature richness
-
-### Memory Efficiency
-
-**Memory Usage Comparison (50,000 records):**
-- Haro: 13.98 MB
-- Map: 3.52 MB
-- Object: 1.27 MB
-- Array: 0.38 MB
-
-**Memory Analysis:**
-- Reasonable overhead for feature set provided
-- Efficient index storage and maintenance
-- Garbage collection friendly
-
-### Performance Tips
-
-For optimal performance:
-
-1. **Use indexes wisely** - Index fields you'll query frequently
-2. **Choose appropriate key strategy** - Shorter keys perform better
-3. **Use setMany() for bulk inserts** - More efficient than individual set() calls
-4. **Use deleteMany() for bulk deletes** - More efficient than individual delete() calls
-5. **Consider immutable mode cost** - Only enable if needed for data safety
-6. **Minimize version history** - Disable versioning if not required
-7. **Use pagination** - Implement limit() for large result sets
-8. **Leverage utility methods** - Use built-in clone, merge, freeze for safety
-
-### Performance Indicators
-
-* ✅ **Indexed queries** significantly outperform filters (64k vs 46k ops/sec)
-* ✅ **Batch operations** provide excellent bulk performance
-* ✅ **Get operations** consistently outperform set operations
-* ✅ **Memory usage** remains stable under load
-* ✅ **Utility operations** perform well (clone: 1.6M ops/sec)
-
-### Immutable vs Mutable Mode
-
-**Performance Impact:**
-- Creation: Minimal difference (1.27x faster mutable)
-- Read operations: Comparable performance
-- Write operations: Slight advantage to mutable mode
-- Transformation operations: Significant performance cost in immutable mode
-
-**Recommendations:**
-- Use immutable mode for data safety in multi-consumer environments
-- Use mutable mode for high-frequency write operations
-- Consider the trade-off between safety and performance
-
-See `benchmarks/README.md` for complete documentation and advanced usage.
-
-## API Reference
-
-### Private Fields
-
-The Haro class uses private fields (denoted by `#` prefix) for internal state:
-
-- `#data` - Internal Map of records
-- `#delimiter` - Delimiter for composite indexes
-- `#id` - Unique instance identifier
-- `#immutable` - Immutable mode flag
-- `#index` - Array of indexed field names
-- `#indexes` - Map of index structures
-- `#key` - Primary key field name
-- `#versions` - Map of version histories
-- `#versioning` - Versioning flag
-- `#warnOnFullScan` - Full scan warning flag
-- `#inBatch` - Batch operation state flag
-
-These fields are encapsulated and accessed through public properties and methods.
-
-### Properties
-
-#### data
-`{Map}` - Internal Map of records, indexed by key
+### Versioning
 
 ```javascript
-const store = haro();
-console.log(store.data.size); // 0
+import { haro } from 'haro';
+
+const config = haro(null, { versioning: true });
+
+config.set('api.timeout', { value: 30000 });
+config.set('api.timeout', { value: 45000 });
+config.set('api.timeout', { value: 60000 });
+
+// Access version history
+const history = config.versions.get('api.timeout');
+console.log(history); // [previous versions]
 ```
 
-#### delimiter
-`{String}` - The delimiter used for composite indexes
+### Immutable Mode
 
 ```javascript
-const store = haro(null, { delimiter: '|' });
-console.log(store.delimiter); // '|'
-```
+import { haro } from 'haro';
 
-#### id
-`{String}` - Unique identifier for this store instance
-
-```javascript
-const store = haro(null, { id: 'my-store' });
-console.log(store.id); // 'my-store'
-```
-
-#### immutable
-`{Boolean}` - Whether the store returns immutable objects
-
-```javascript
 const store = haro(null, { immutable: true });
-console.log(store.immutable); // true
-```
 
-#### index
-`{Array}` - Array of indexed field names
+const user = store.set(null, { name: 'Alice', age: 30 });
 
-```javascript
-const store = haro(null, { index: ['name', 'email'] });
-console.log(store.index); // ['name', 'email']
-```
-
-#### indexes
-`{Map}` - Map of indexes containing Sets of record keys
-
-```javascript
-const store = haro();
-console.log(store.indexes); // Map(0) {}
-```
-
-#### key
-`{String}` - The primary key field name
-
-```javascript
-const store = haro(null, { key: 'userId' });
-console.log(store.key); // 'userId'
-```
-
-#### registry
-`{Array}` - Array of all record keys (read-only property)
-
-```javascript
-const store = haro();
-store.set('key1', { name: 'Alice' });
-console.log(store.registry); // ['key1']
-```
-
-#### size
-`{Number}` - Number of records in the store (read-only property)
-
-```javascript
-const store = haro();
-console.log(store.size); // 0
-```
-
-#### versions
-`{Map}` - Map of version history (when versioning is enabled)
-
-```javascript
-const store = haro(null, { versioning: true });
-console.log(store.versions); // Map(0) {}
-```
-
-#### versioning
-`{Boolean}` - Whether versioning is enabled
-
-```javascript
-const store = haro(null, { versioning: true });
-console.log(store.versioning); // true
-```
-
-### Methods
-
-
-#### clear()
-
-Removes all records, indexes, and versions from the store.
-
-**Returns:** `{Haro}` Store instance for chaining
-
-```javascript
-store.clear();
-console.log(store.size); // 0
-```
-
-**See also:** deleteMany()
-
-#### clone(arg)
-
-Creates a deep clone of the given value, handling objects, arrays, and primitives.
-
-**Parameters:**
-- `arg` `{*}` - Value to clone (any type)
-
-**Returns:** `{*}` Deep clone of the argument
-
-```javascript
-const original = { name: 'John', tags: ['user', 'admin'] };
-const cloned = store.clone(original);
-cloned.tags.push('new'); // original.tags is unchanged
-```
-
-#### delete(key, batch)
-
-Deletes a record from the store and removes it from all indexes.
-
-**Parameters:**
-- `key` `{String}` - Key of record to delete
-- `batch` `{Boolean}` - Whether this is part of a batch operation (default: `false`)
-
-**Returns:** `{undefined}`
-
-**Throws:** `{Error}` If record with the specified key is not found
-
-```javascript
-store.delete('user123');
-```
-
-**See also:** has(), clear(), setMany(), deleteMany()
-
-#### dump(type)
-
-Exports complete store data or indexes for persistence or debugging.
-
-**Parameters:**
-- `type` `{String}` - Type of data to export: `'records'` or `'indexes'` (default: `'records'`)
-
-**Returns:** `{Array}` Array of [key, value] pairs or serialized index structure
-
-```javascript
-const records = store.dump('records');
-const indexes = store.dump('indexes');
-// Use for persistence or backup
-fs.writeFileSync('backup.json', JSON.stringify(records));
-```
-
-**See also:** override()
-
-
-
-Returns an iterator of [key, value] pairs for each record in the store.
-
-**Returns:** `{Iterator}` Iterator of [key, value] pairs
-
-```javascript
-for (const [key, value] of store.entries()) {
-  console.log(`${key}:`, value);
+// Attempting to modify will throw
+try {
+  user.age = 31; // TypeError: Cannot assign to read only property
+} catch (error) {
+  console.error(error.message);
 }
 ```
 
-**See also:** keys(), values()
+## Comparison with Alternatives
 
-#### filter(fn)
+| Feature | Haro | Map | Object | lowdb | LokiJS |
+|---------|------|-----|--------|-------|--------|
+| **Indexing** | ✅ Multi-field | ❌ | ❌ | ⚠️ Limited | ✅ |
+| **Versioning** | ✅ Built-in | ❌ | ❌ | ❌ | ⚠️ Plugins |
+| **Immutable Mode** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Advanced Queries** | ✅ find/where/search | ❌ | ❌ | ⚠️ Basic | ✅ |
+| **Batch Operations** | ✅ setMany/deleteMany | ❌ | ❌ | ⚠️ Manual | ✅ |
+| **Persistence** | ❌ In-memory | ❌ | ❌ | ✅ JSON/Local | ✅ |
+| **Performance (1k records)** | ⚡ Fast | ⚡ Fastest | ⚡ Fast | 🐌 Slower | ⚡ Fast |
+| **Memory Overhead** | Medium | Low | Low | Medium | High |
+| **TypeScript Support** | ✅ | ✅ | ✅ | ✅ | ⚠️ Community |
+| **Bundle Size** | ~8KB | Native | Native | ~15KB | ~45KB |
+| **Learning Curve** | Low | Low | Low | Low | Medium |
 
-Filters records using a predicate function, similar to Array.filter.
+**Legend**: ✅ Yes | ❌ No | ⚠️ Limited/Optional
 
-**Parameters:**
-- `fn` `{Function}` - Predicate function to test each record (record, key, store)
+### When to Choose Each
 
-**Returns:** `{Array}` Array of records that pass the predicate test
+- **Map**: Simple key-value storage, maximum performance
+- **Object**: Basic data structures, JSON serialization
+- **lowdb**: Persistent JSON file storage, simple queries
+- **LokiJS**: Complex queries, large datasets, in-memory database needs
+- **Haro**: Indexed queries, versioning, immutable data, moderate datasets
 
-**Throws:** `{Error}` If fn is not a function
+## API Reference
 
-```javascript
-const adults = store.filter(record => record.age >= 18);
-const recentUsers = store.filter(record => 
-  record.created > Date.now() - 86400000
-);
-```
+For complete API documentation, see [API.md](docs/API.md).
 
-**See also:** find(), where(), map()
+### Core Methods
 
-#### find(where)
+#### set(key, data, batch, override)
 
-Finds records matching the specified criteria using indexes for optimal performance.
-
-**Parameters:**
-- `where` `{Object}` - Object with field-value pairs to match
-
-**Returns:** `{Array}` Array of matching records
-
-```javascript
-const engineers = store.find({ department: 'Engineering' });
-const activeUsers = store.find({ status: 'active', role: 'user' });
-```
-
-**See also:** where(), search(), filter()
-
-#### forEach(fn, ctx)
-
-Executes a function for each record in the store, similar to Array.forEach.
-
-**Parameters:**
-- `fn` `{Function}` - Function to execute for each record
-- `ctx` `{*}` - Context object to use as 'this' (default: store instance)
-
-**Returns:** `{Haro}` Store instance for chaining
+Sets or updates a record with automatic indexing.
 
 ```javascript
-store.forEach((record, key) => {
-  console.log(`${key}: ${record.name}`);
-});
-```
-
-**See also:** map()
-
-#### freeze(...args)
-
-Creates a frozen array from the given arguments for immutable data handling.
-
-**Parameters:**
-- `...args` `{*}` - Arguments to freeze into an array
-
-**Returns:** `{Array}` Frozen array containing frozen arguments
-
-```javascript
-const frozen = store.freeze(obj1, obj2, obj3);
-// Returns Object.freeze([Object.freeze(obj1), ...])
+const user = store.set(null, { name: 'John', age: 30 });
+const updated = store.set('user123', { age: 31 });
 ```
 
 #### get(key)
 
-Retrieves a record by its key.
-
-**Parameters:**
-- `key` `{String}` - Key of record to retrieve
-
-**Returns:** `{Object|null}` The record if found, null if not found
+Retrieves a record by key.
 
 ```javascript
 const user = store.get('user123');
 ```
 
-**See also:** has(), set()
+#### delete(key, batch)
+
+Deletes a record and removes it from all indexes.
+
+```javascript
+store.delete('user123');
+```
 
 #### has(key)
 
-Checks if a record with the specified key exists in the store.
-
-**Parameters:**
-- `key` `{String}` - Key to check for existence
-
-**Returns:** `{Boolean}` True if record exists, false otherwise
+Checks if a record exists.
 
 ```javascript
 if (store.has('user123')) {
@@ -676,680 +389,299 @@ if (store.has('user123')) {
 }
 ```
 
-**See also:** get(), delete()
+#### clear()
 
-#### keys()
-
-Returns an iterator of all keys in the store.
-
-**Returns:** `{Iterator}` Iterator of record keys
+Removes all records, indexes, and versions.
 
 ```javascript
-for (const key of store.keys()) {
-  console.log('Key:', key);
-}
+store.clear();
 ```
 
-**See also:** values(), entries()
+### Query Methods
 
-#### limit(offset, max)
+#### find(where)
 
-Returns a limited subset of records with offset support for pagination.
-
-**Parameters:**
-- `offset` `{Number}` - Number of records to skip (default: `0`)
-- `max` `{Number}` - Maximum number of records to return (default: `0`)
-
-**Returns:** `{Array}` Array of records within the specified range
+Finds records matching criteria using indexes.
 
 ```javascript
-const page1 = store.limit(0, 10);   // First 10 records
-const page2 = store.limit(10, 10);  // Next 10 records
-const page3 = store.limit(20, 10);  // Records 21-30
+const engineers = store.find({ department: 'Engineering' });
 ```
 
-**See also:** toArray(), sort()
+#### where(predicate, op)
 
-#### map(fn)
-
-Transforms all records using a mapping function, similar to Array.map.
-
-**Parameters:**
-- `fn` `{Function}` - Function to transform each record (record, key)
-
-**Returns:** `{Array}` Array of transformed results
-
-**Throws:** `{Error}` If fn is not a function
+Advanced filtering with AND/OR logic.
 
 ```javascript
-const names = store.map(record => record.name);
-const summaries = store.map(record => ({
-  id: record.id,
-  name: record.name,
-  email: record.email
-}));
-```
-
-**See also:** filter(), forEach()
-
-#### merge(a, b, override)
-
-Merges two values together with support for arrays and objects.
-
-**Parameters:**
-- `a` `{*}` - First value (target)
-- `b` `{*}` - Second value (source)
-- `override` `{Boolean}` - Whether to override arrays instead of concatenating (default: `false`)
-
-**Returns:** `{*}` Merged result
-
-```javascript
-const merged = store.merge({a: 1}, {b: 2}); // {a: 1, b: 2}
-const arrays = store.merge([1, 2], [3, 4]); // [1, 2, 3, 4]
-const overridden = store.merge([1, 2], [3, 4], true); // [3, 4]
-```
-
-#### override(data, type)
-
-Replaces all store data or indexes with new data for bulk operations.
-
-**Parameters:**
-- `data` `{Array}` - Data to replace with
-- `type` `{String}` - Type of data: `'records'` or `'indexes'` (default: `'records'`)
-
-**Returns:** `{Boolean}` True if operation succeeded
-
-**Throws:** `{Error}` If type is invalid
-
-```javascript
-const backup = store.dump('records');
-// Later restore from backup
-store.override(backup, 'records');
-```
-
-**See also:** dump(), clear()
-
-
-
-#### reindex(index)
-
-Rebuilds indexes for specified fields or all fields for data consistency.
-
-**Parameters:**
-- `index` `{String|Array}` - Specific index field(s) to rebuild (optional)
-
-**Returns:** `{Haro}` Store instance for chaining
-
-```javascript
-store.reindex(); // Rebuild all indexes
-store.reindex('name'); // Rebuild only name index
-store.reindex(['name', 'email']); // Rebuild specific indexes
+const activeUsers = store.where({ 
+  department: 'Engineering', 
+  active: true 
+}, '&&');
 ```
 
 #### search(value, index)
 
-Searches for records containing a value across specified indexes.
-
-**Parameters:**
-- `value` `{Function|RegExp|*}` - Value to search for
-- `index` `{String|Array}` - Index(es) to search in (optional)
-
-**Returns:** `{Array}` Array of matching records
+Searches for records containing a value.
 
 ```javascript
-// Function search
-const results = store.search(key => key.includes('admin'));
-
-// Regex search on specific index
-const nameResults = store.search(/^john/i, 'name');
-
-// Value search across all indexes
-const emailResults = store.search('gmail.com', 'email');
+const results = store.search(/^john/i, 'name');
 ```
 
-**See also:** find(), where(), filter()
+#### filter(fn)
+
+Filters records using a predicate function.
+
+```javascript
+const adults = store.filter(record => record.age >= 18);
+```
+
+#### sortBy(index)
+
+Sorts records by an indexed field.
+
+```javascript
+const byAge = store.sortBy('age');
+```
+
+#### limit(offset, max)
+
+Returns a limited subset for pagination.
+
+```javascript
+const page1 = store.limit(0, 10);
+const page2 = store.limit(10, 10);
+```
+
+### Batch Operations
 
 #### setMany(records)
 
-Inserts or updates multiple records in a single operation.
-
-**Parameters:**
-- `records` `{Array}` - Array of records to insert or update
-
-**Returns:** `{Array}` Array of stored records
+Inserts or updates multiple records.
 
 ```javascript
 const results = store.setMany([
   { name: 'Alice', age: 30 },
   { name: 'Bob', age: 28 }
 ]);
-
-console.log(store.size); // 2
 ```
-
-**See also:** deleteMany(), batch()
 
 #### deleteMany(keys)
 
-Deletes multiple records in a single operation.
-
-**Parameters:**
-- `keys` `{Array}` - Array of keys to delete
-
-**Returns:** `{Array}` Array of undefined values
+Deletes multiple records.
 
 ```javascript
 store.deleteMany(['key1', 'key2', 'key3']);
-console.log(store.size); // 0
 ```
 
-**See also:** setMany(), batch()
+### Utility Methods
 
-#### set(key, data, batch, override)
+#### clone(arg)
 
-Sets or updates a record in the store with automatic indexing.
-
-**Parameters:**
-- `key` `{String|null}` - Key for the record, or null to use record's key field
-- `data` `{Object}` - Record data to set (default: `{}`)
-- `batch` `{Boolean}` - Whether this is part of a batch operation (default: `false`)
-- `override` `{Boolean}` - Whether to override existing data instead of merging (default: `false`)
-
-**Returns:** `{Object}` The stored record
+Creates a deep clone of a value.
 
 ```javascript
-// Auto-generate key
-const user = store.set(null, { name: 'John', age: 30 });
-
-// Update existing record (merges by default)
-const updated = store.set('user123', { age: 31 });
-
-// Replace existing record completely
-const replaced = store.set('user123', { name: 'Jane' }, false, true);
+const cloned = store.clone({ name: 'John', tags: ['user'] });
 ```
 
-**See also:** get(), batch(), merge()
+#### merge(a, b, override)
 
-#### sort(fn, frozen)
-
-Sorts all records using a comparator function.
-
-**Parameters:**
-- `fn` `{Function}` - Comparator function for sorting (a, b) => number
-- `frozen` `{Boolean}` - Whether to return frozen records (default: `false`)
-
-**Returns:** `{Array}` Sorted array of records
+Merges two values.
 
 ```javascript
-const byAge = store.sort((a, b) => a.age - b.age);
-const byName = store.sort((a, b) => a.name.localeCompare(b.name));
-const frozen = store.sort((a, b) => a.created - b.created, true);
+const merged = store.merge({a: 1}, {b: 2});
 ```
-
-**See also:** sortBy(), limit()
-
-#### sortBy(index)
-
-Sorts records by a specific indexed field in ascending order.
-
-**Parameters:**
-- `index` `{String}` - Index field name to sort by
-
-**Returns:** `{Array}` Array of records sorted by the specified field
-
-**Throws:** `{Error}` If index field is empty or invalid
-
-```javascript
-const byAge = store.sortBy('age');
-const byName = store.sortBy('name');
-```
-
-**See also:** sort(), find()
 
 #### toArray()
 
-Converts all store data to a plain array of records.
-
-**Returns:** `{Array}` Array containing all records in the store
+Converts all store data to an array.
 
 ```javascript
 const allRecords = store.toArray();
-console.log(`Store contains ${allRecords.length} records`);
 ```
 
-**See also:** limit(), sort()
+#### dump(type)
 
-#### uuid()
-
-Generates a RFC4122 v4 UUID for record identification.
-
-**Returns:** `{String}` UUID string in standard format
+Exports store data for persistence.
 
 ```javascript
-const id = store.uuid(); // "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+const backup = store.dump('records');
 ```
 
-#### values()
+#### override(data, type)
 
-Returns an iterator of all values in the store.
-
-**Returns:** `{Iterator}` Iterator of record values
+Replaces store data from backup.
 
 ```javascript
-for (const record of store.values()) {
-  console.log(record.name);
-}
+store.override(backup, 'records');
 ```
 
-**See also:** keys(), entries()
+### Properties
 
-#### where(predicate, op)
+#### size
 
-Advanced filtering with predicate logic supporting AND/OR operations on arrays.
-
-**Parameters:**
-- `predicate` `{Object}` - Object with field-value pairs for filtering
-- `op` `{String}` - Operator for array matching: `'||'` for OR, `'&&'` for AND (default: `'||'`)
-
-**Returns:** `{Array}` Array of records matching the predicate criteria
+Number of records in the store.
 
 ```javascript
-// Find records with tags containing 'admin' OR 'user'
-const users = store.where({ tags: ['admin', 'user'] }, '||');
-
-// Find records with ALL specified tags
-const powerUsers = store.where({ tags: ['admin', 'power'] }, '&&');
-
-// Regex matching
-const companyEmails = store.where({ email: /^[^@]+@company\.com$/ });
-
-// Array field matching
-const multiDeptUsers = store.where({ departments: ['IT', 'HR'] });
+console.log(store.size);
 ```
 
-**See also:** find(), filter(), search()
+#### registry
 
-
-## Examples
-
-### User Management System
+Array of all record keys.
 
 ```javascript
-import { haro } from 'haro';
+console.log(store.registry);
+```
 
-const users = haro(null, {
-  index: ['email', 'department', 'role', 'department|role'],
-  key: 'id',
-  versioning: true,
-  immutable: true
+## Troubleshooting
+
+### Common Issues
+
+#### "Cannot read property 'length' of undefined"
+
+**Cause**: Passing invalid data to `find()` or `where()`.
+
+**Solution**: Ensure query objects have valid field names that exist in your index.
+
+```javascript
+// ❌ Wrong
+store.find(undefined);
+
+// ✅ Correct
+store.find({ name: 'Alice' });
+```
+
+#### Performance degradation with large datasets
+
+**Cause**: Too many indexes or complex queries on large collections.
+
+**Solution**: 
+- Limit indexes to frequently queried fields
+- Use `limit()` for pagination
+- Consider batch operations for bulk updates
+
+```javascript
+// Optimize indexes
+const store = haro(null, { 
+  index: ['name', 'email'] // Only essential fields
 });
 
-// Add users with setMany
-users.setMany([
-  { 
-    id: 'u1', 
-    email: 'alice@company.com', 
-    name: 'Alice Johnson',
-    department: 'Engineering',
-    role: 'Senior Developer',
-    active: true
-  },
-  { 
-    id: 'u2', 
-    email: 'bob@company.com', 
-    name: 'Bob Smith',
-    department: 'Engineering', 
-    role: 'Team Lead',
-    active: true
-  },
-  { 
-    id: 'u3', 
-    email: 'carol@company.com', 
-    name: 'Carol Davis',
-    department: 'Marketing',
-    role: 'Manager',
-    active: false
-  }
-]);
-
-// Find by department
-const engineers = users.find({ department: 'Engineering' });
-
-// Complex queries with where()
-const activeEngineers = users.where({ 
-  department: 'Engineering', 
-  active: true 
-}, '&&');
-
-// Search across multiple fields
-const managers = users.search(/manager|lead/i, ['role']);
-
-// Pagination for large datasets
-const page1 = users.limit(0, 10);
-const page2 = users.limit(10, 10);
-
-// Update user with version tracking
-const updated = users.set('u1', { role: 'Principal Developer' });
-console.log(users.versions.get('u1')); // Previous versions
+// Use pagination
+const results = store.limit(0, 100);
 ```
 
-### E-commerce Product Catalog
+#### Version history growing unbounded
+
+**Cause**: Versioning enabled with frequent updates.
+
+**Solution**: Clear version history periodically or disable versioning if not needed.
 
 ```javascript
-import { Haro } from 'haro';
+// Clear specific version history
+store.versions.delete('key123');
 
-class ProductCatalog extends Haro {
-  constructor() {
-    super({
-      index: ['category', 'brand', 'price', 'tags', 'category|brand'],
-      key: 'sku',
-      versioning: true
-    });
-  }
+// Clear all versions
+store.versions.clear();
 
-  beforeSet(key, data, batch, override) {
-    // Validate required fields
-    if (!data.name || !data.price || !data.category) {
-      throw new Error('Missing required product fields');
-    }
-    
-    // Normalize price
-    if (typeof data.price === 'string') {
-      data.price = parseFloat(data.price);
-    }
-    
-    // Auto-generate SKU if not provided
-    if (!data.sku && !key) {
-      data.sku = this.generateSKU(data);
-    }
-  }
-
-  onset(record, batch) {
-    console.log(`Product ${record.name} (${record.sku}) updated`);
-  }
-
-  generateSKU(product) {
-    const prefix = product.category.substring(0, 3).toUpperCase();
-    const suffix = Date.now().toString().slice(-6);
-    return `${prefix}-${suffix}`;
-  }
-
-  // Custom business methods
-  findByPriceRange(min, max) {
-    return this.filter(product => 
-      product.price >= min && product.price <= max
-    );
-  }
-
-  searchProducts(query) {
-    // Search across multiple fields
-    const lowerQuery = query.toLowerCase();
-    return this.filter(product =>
-      product.name.toLowerCase().includes(lowerQuery) ||
-      product.description.toLowerCase().includes(lowerQuery) ||
-      product.tags.some(tag => tag.toLowerCase().includes(lowerQuery))
-    );
-  }
-
-  getRecommendations(sku, limit = 5) {
-    const product = this.get(sku);
-    if (!product) return [];
-
-    // Find similar products by category and brand
-    return this.find({ 
-      category: product.category,
-      brand: product.brand 
-    })
-    .filter(p => p.sku !== sku)
-    .slice(0, limit);
-  }
-}
-
-const catalog = new ProductCatalog();
-
-// Add products with setMany
-catalog.setMany([
-  {
-    sku: 'LAP-001',
-    name: 'MacBook Pro 16"',
-    category: 'Laptops',
-    brand: 'Apple',
-    price: 2499.99,
-    tags: ['professional', 'high-performance', 'creative'],
-    description: 'Powerful laptop for professionals'
-  },
-  {
-    sku: 'LAP-002', 
-    name: 'ThinkPad X1 Carbon',
-    category: 'Laptops',
-    brand: 'Lenovo',
-    price: 1899.99,
-    tags: ['business', 'lightweight', 'durable'],
-    description: 'Business laptop with excellent build quality'
-  }
-]);
-
-// Business queries
-const laptops = catalog.find({ category: 'Laptops' });
-const affordable = catalog.findByPriceRange(1000, 2000);
-const searchResults = catalog.searchProducts('professional');
-const recommendations = catalog.getRecommendations('LAP-001');
+// Disable versioning if not needed
+const store = haro(null, { versioning: false });
 ```
 
-### Real-time Analytics Dashboard
+#### Immutable mode causing errors
+
+**Cause**: Attempting to modify frozen objects.
+
+**Solution**: Use `set()` to update records instead of direct mutation.
 
 ```javascript
-import { haro } from 'haro';
+// ❌ Wrong
+const user = store.get('user123');
+user.age = 31;
 
-// Event tracking store
-const events = haro(null, {
-  index: ['type', 'userId', 'timestamp', 'type|userId'],
-  key: 'id',
-  immutable: false // Allow mutations for performance
+// ✅ Correct
+store.set('user123', { age: 31 });
+```
+
+#### Index not being used for query
+
+**Cause**: Querying non-indexed fields.
+
+**Solution**: Add the field to the index configuration.
+
+```javascript
+const store = haro(null, { 
+  index: ['name', 'email', 'department'] 
 });
-
-// Session tracking store  
-const sessions = haro(null, {
-  index: ['userId', 'status', 'lastActivity'],
-  key: 'sessionId',
-  versioning: true
-});
-
-// Analytics functions
-function trackEvent(type, userId, data = {}) {
-  return events.set(null, {
-    id: events.uuid(),
-    type,
-    userId,
-    timestamp: Date.now(),
-    data,
-    ...data
-  });
-}
-
-function getActiveUsers(minutes = 5) {
-  const threshold = Date.now() - (minutes * 60 * 1000);
-  return sessions.filter(session => 
-    session.status === 'active' && 
-    session.lastActivity > threshold
-  );
-}
-
-function getUserActivity(userId, hours = 24) {
-  const since = Date.now() - (hours * 60 * 60 * 1000);
-  return events.find({ userId })
-    .filter(event => event.timestamp > since)
-    .sort((a, b) => b.timestamp - a.timestamp);
-}
-
-function getEventStats(timeframe = 'hour') {
-  const now = Date.now();
-  const intervals = {
-    hour: 60 * 60 * 1000,
-    day: 24 * 60 * 60 * 1000,
-    week: 7 * 24 * 60 * 60 * 1000
-  };
-  
-  const since = now - intervals[timeframe];
-  const recentEvents = events.filter(event => event.timestamp > since);
-  
-  const stats = {};
-  recentEvents.forEach(event => {
-    stats[event.type] = (stats[event.type] || 0) + 1;
-  });
-  
-  return stats;
-}
-
-// Usage
-trackEvent('page_view', 'user123', { page: '/dashboard' });
-trackEvent('click', 'user123', { element: 'nav-menu' });
-trackEvent('search', 'user456', { query: 'analytics' });
-
-console.log('Active users:', getActiveUsers().length);
-console.log('User activity:', getUserActivity('user123'));
-console.log('Event stats:', getEventStats('hour'));
 ```
 
-### Configuration Management
+### Error Messages
 
-```javascript
-import { Haro } from 'haro';
+| Error | Cause | Solution |
+|-------|-------|----------|
+| "Key field validation error" | Missing key field in data | Ensure key field exists in records |
+| "Index must be an array" | Invalid index configuration | Pass array to `index` option |
+| "Function required" | Invalid function parameter | Pass a function to `filter()` or `map()` |
+| "Invalid index name" | Sorting by non-indexed field | Add field to index or use `sort()` |
 
-class ConfigStore extends Haro {
-  constructor() {
-    super({
-      index: ['environment', 'service', 'type', 'environment|service'],
-      key: 'key',
-      versioning: true,
-      immutable: true
-    });
-    
-    this.loadDefaults();
-  }
+### Getting Help
 
-  loadDefaults() {
-    this.setMany([
-      { key: 'db.host', value: 'localhost', environment: 'dev', type: 'database' },
-      { key: 'db.port', value: 5432, environment: 'dev', type: 'database' },
-      { key: 'api.timeout', value: 30000, environment: 'dev', type: 'api' },
-      { key: 'db.host', value: 'prod-db.example.com', environment: 'prod', type: 'database' },
-      { key: 'db.port', value: 5432, environment: 'prod', type: 'database' },
-      { key: 'api.timeout', value: 10000, environment: 'prod', type: 'api' }
-    ]);
-  }
+- Check [API.md](docs/API.md) for complete documentation
+- Review [examples](docs/API.md#examples) in API docs
+- Open an issue on [GitHub](https://github.com/avoidwork/haro/issues)
 
-  getConfig(key, environment = 'dev') {
-    const configs = this.find({ key, environment });
-    return configs.length > 0 ? configs[0].value : null;
-  }
+## Testing
 
-  getEnvironmentConfig(environment) {
-    const items = this.find({ environment });
-    const config = {};
-    items.forEach(item => {
-      config[item.key] = item.value;
-    });
-    return config;
-  }
+```bash
+# Run unit tests
+npm test
 
-  updateConfig(key, value, environment = 'dev') {
-    const existing = this.find({ key, environment })[0];
-    if (existing) {
-      return this.set(key, { ...existing, value });
-    } else {
-      return this.set(key, { key, value, environment, type: 'custom' });
-    }
-  }
+# Run with coverage
+npm run coverage
 
-  getDatabaseConfig(environment = 'dev') {
-    return this.find({ environment, type: 'database' });
-  }
-}
-
-const config = new ConfigStore();
-
-// Get specific config
-console.log(config.getConfig('db.host', 'prod')); // 'prod-db.example.com'
-
-// Get all configs for environment
-const devConfig = config.getEnvironmentConfig('dev');
-
-// Update configuration
-config.updateConfig('api.timeout', 45000, 'dev');
-
-// Get configuration history
-console.log(config.versions.get('api.timeout'));
+# Run performance benchmarks
+npm run benchmark
 ```
+
+See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for detailed testing guidelines.
+
+## Benchmarks
+
+Haro includes comprehensive benchmark suites for performance analysis.
+
+### Running Benchmarks
+
+```bash
+# Run all benchmarks
+node benchmarks/index.js
+
+# Run specific categories
+node benchmarks/index.js --basic-only        # CRUD operations
+node benchmarks/index.js --search-only       # Query operations
+node benchmarks/index.js --comparison-only   # vs native structures
+```
+
+### Performance Highlights
+
+- **GET operations**: Up to 20M ops/sec with index lookups
+- **Indexed FIND queries**: Up to 64,594 ops/sec (1,000 records)
+- **SET operations**: Up to 3.2M ops/sec for typical workloads
+- **Memory efficiency**: Highly efficient for typical workloads
+
+See `benchmarks/README.md` for complete benchmark documentation.
+
+## Learn More
+
+- [API Reference](docs/API.md) - Complete API documentation
+- [Contributing Guide](.github/CONTRIBUTING.md) - How to contribute
+- [Benchmarks](benchmarks/README.md) - Performance analysis
+- [Changelog](CHANGELOG.md) - Version history
+- [Security](SECURITY.md) - Security policy
+- [Discussions](https://github.com/avoidwork/haro/discussions) - Community discussions
 
 ## Community
 
-- Join discussions on [GitHub Discussions](https://github.com/avoidwork/haro/discussions)
-- Report issues on [GitHub Issues](https://github.com/avoidwork/haro/issues)
-- Follow updates on [Twitter](https://twitter.com/avoidwork)
-
-## FAQ
-
-### When should I use Haro over a Map or plain object?
-
-Use Haro when you need:
-- Indexed queries on multiple fields
-- Built-in versioning/audit trails
-- Immutable data guarantees
-- Advanced filtering and searching capabilities
-
-### Is Haro suitable for server-side caching?
-
-Yes! Haro is excellent for in-memory caching with features like:
-- Fast O(1) indexed lookups
-- Automatic index maintenance
-- Optional immutability for thread safety
-
-### How does versioning work?
-
-When `versioning: true` is enabled, Haro stores previous versions of records in a Set. Each time a record is updated, the old version is preserved before the new one is stored.
-
-### Can I use Haro with React or Vue?
-
-Absolutely! Haro's immutable mode works great with reactive frameworks:
-
-```javascript
-const store = haro(null, { immutable: true });
-// Use with React
-const [data, setData] = useState(store.toArray());
-```
-
-## Performance
-
-Haro is optimized for:
-- **Fast indexing**: O(1) lookups on indexed fields
-- **Efficient searches**: Regex and function-based filtering with index acceleration  
-- **Memory efficiency**: Minimal overhead with optional immutability
-- **Batch operations**: Optimized bulk inserts and updates
-- **Version tracking**: Efficient version history when enabled
-
-### Performance Characteristics
-
-| Operation | Time Complexity | Space Complexity | Notes |
-|-----------|----------------|------------------|-------|
-| `get()` | O(1) | O(1) | Direct Map lookup |
-| `has()` | O(1) | O(1) | Direct Map lookup |
-| `set()` | O(i) | O(i) | i = number of indexes |
-| `delete()` | O(i) | O(1) | i = number of indexes |
-| `find()` | O(i × k) | O(r) | i = indexes, k = composite keys, r = results |
-| `where()` | O(1) to O(n) | O(r) | O(1) with index, O(n) full scan |
-| `search()` | O(n × m) | O(r) | n = index entries, m = indexes searched |
-| `filter()` | O(n) | O(r) | Full scan with predicate |
-| `sortBy()` | O(n log n) | O(n) | Sorting operation |
-| `limit()` | O(max) | O(max) | Array slicing |
-| `batch()` | O(n × i) | O(n) | n = batch size, i = indexes |
-| `clear()` | O(n) | O(1) | Remove all records |
-
-## Related Projects
-
-- [immutable](https://www.npmjs.com/package/immutable) - Immutable data collections
-- [lowdb](https://www.npmjs.com/package/lowdb) - Local JSON database
-- [lokijs](https://www.npmjs.com/package/lokijs) - In-memory database
+- **GitHub Discussions**: [Join the conversation](https://github.com/avoidwork/haro/discussions)
+- **Report Issues**: [GitHub Issues](https://github.com/avoidwork/haro/issues)
+- **Twitter**: [@avoidwork](https://twitter.com/avoidwork)
 
 ## License
 
