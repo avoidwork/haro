@@ -52,6 +52,24 @@ describe("Basic CRUD Operations", () => {
 			assert.strictEqual(result.name, undefined);
 			assert.strictEqual(result.age, 31);
 		});
+
+		it("should throw error when key is not string or number", () => {
+			assert.throws(() => {
+				store.set({ key: "user1" }, { name: "John" });
+			}, /set: key must be a string or number/);
+		});
+
+		it("should throw error when data is not an object", () => {
+			assert.throws(() => {
+				store.set("user1", "invalid");
+			}, /set: data must be an object/);
+		});
+
+		it("should throw error when data is null", () => {
+			assert.throws(() => {
+				store.set("user1", null);
+			}, /set: data must be an object/);
+		});
 	});
 
 	describe("get()", () => {
@@ -83,6 +101,12 @@ describe("Basic CRUD Operations", () => {
 
 			assert.strictEqual(Object.isFrozen(result), true);
 			assert.strictEqual(Object.isFrozen(result[1]), true);
+		});
+
+		it("should throw error when key is not string or number", () => {
+			assert.throws(() => {
+				store.get({ key: "user1" });
+			}, /get: key must be a string or number/);
 		});
 	});
 
@@ -116,6 +140,12 @@ describe("Basic CRUD Operations", () => {
 			assert.throws(() => {
 				store.delete("nonexistent");
 			}, /Record not found/);
+		});
+
+		it("should throw error when key is not string or number", () => {
+			assert.throws(() => {
+				store.delete({ key: "user1" });
+			}, /delete: key must be a string or number/);
 		});
 
 		it("should remove record from indexes", () => {

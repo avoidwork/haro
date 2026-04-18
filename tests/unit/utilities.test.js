@@ -24,6 +24,20 @@ describe("Utility Methods", () => {
 			assert.strictEqual(store.clone(123), 123);
 			assert.strictEqual(store.clone(true), true);
 		});
+
+		it("should handle nested objects and arrays", () => {
+			const original = {
+				name: "John",
+				address: { city: "NYC", zip: "10001" },
+				tags: ["admin", "user"],
+			};
+			const cloned = store.clone(original);
+			cloned.address.city = "LA";
+			cloned.tags.push("new");
+
+			assert.strictEqual(original.address.city, "NYC");
+			assert.strictEqual(original.tags.length, 2);
+		});
 	});
 
 	describe("forEach()", () => {
@@ -152,6 +166,12 @@ describe("Utility Methods", () => {
 			store.set("user3", { id: "user3", name: "Bob", age: 35 });
 		});
 
+		it("should throw error when fn is not a function", () => {
+			assert.throws(() => {
+				store.sort("not a function");
+			}, /sort: fn must be a function/);
+		});
+
 		it("should sort records with comparator function", () => {
 			const results = store.sort((a, b) => a.name.localeCompare(b.name));
 			assert.strictEqual(results[0].name, "Alice");
@@ -186,6 +206,20 @@ describe("Utility Methods", () => {
 			assert.strictEqual(Object.isFrozen(results), true);
 			assert.strictEqual(Object.isFrozen(results[0]), true);
 		});
+
+		it("should freeze all nested objects in immutable mode", () => {
+			const immutableStore = new Haro({ immutable: true });
+			immutableStore.set("user1", {
+				id: "user1",
+				name: "John",
+				address: { city: "NYC" },
+			});
+			const results = immutableStore.toArray();
+
+			// The result array and its elements are frozen, but nested objects are not deeply frozen
+			assert.strictEqual(Object.isFrozen(results), true);
+			assert.strictEqual(Object.isFrozen(results[0]), true);
+		});
 	});
 
 	describe("entries(), keys(), values()", () => {
@@ -213,6 +247,64 @@ describe("Utility Methods", () => {
 			assert.strictEqual(values.length, 2);
 			assert.strictEqual(values[0].name, "John");
 			assert.strictEqual(values[1].name, "Jane");
+		});
+	});
+
+	describe("initialize()", () => {
+		it("should reindex when not initialized", () => {
+			const store = new Haro({ index: ["name"] });
+			store.set("user1", { name: "John" });
+
+			assert.ok(store.indexes.has("name"));
+		});
+
+		it("should do nothing when already initialized", () => {
+			const store = new Haro({ index: ["name"] });
+			store.set("user1", { name: "John" });
+			const result = store.initialize();
+
+			assert.ok(store.indexes.has("name"));
+			assert.strictEqual(result, store);
+		});
+
+		it("should return this for chaining", () => {
+			const store = new Haro({ index: ["name"] });
+			const result = store.initialize();
+
+			assert.strictEqual(result, store);
+		});
+	});
+
+	describe("merge()", () => {
+		it("should prevent prototype pollution", () => {
+			const store = new Haro();
+			const target = {};
+			const source = { __proto__: { polluted: true } };
+
+			store.merge(target, source);
+			assert.strictEqual({}.polluted, undefined);
+		});
+
+		it("should skip constructor and prototype keys", () => {
+			const store = new Haro();
+			const target = { name: "John" };
+			const source = {
+				__proto__: { polluted: true },
+				constructor: { prototype: { polluted: true } },
+			};
+
+			store.merge(target, source);
+			assert.strictEqual({}.polluted, undefined);
+			assert.strictEqual(target.polluted, undefined);
+		});
+
+		it("should handle mixed types in merge", () => {
+			const store = new Haro();
+			const target = { name: "John", age: 30 };
+			const source = { age: "thirty" };
+
+			const result = store.merge(target, source);
+			assert.strictEqual(result.age, "thirty");
 		});
 	});
 });

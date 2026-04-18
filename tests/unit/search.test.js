@@ -45,6 +45,12 @@ describe("Searching and Filtering", () => {
 			}, /search: value cannot be null or undefined/);
 		});
 
+		it("should throw error for undefined value", () => {
+			assert.throws(() => {
+				store.search(undefined);
+			}, /search: value cannot be null or undefined/);
+		});
+
 		it("should return frozen results in immutable mode with raw=false", () => {
 			const immutableStore = new Haro({
 				index: ["name", "tags"],
@@ -92,6 +98,24 @@ describe("Searching and Filtering", () => {
 			const results = store.where({ age: 30 });
 			assert.strictEqual(results.length, 1);
 			assert.strictEqual(results[0].name, "John");
+		});
+
+		it("should throw error when predicate is not an object", () => {
+			assert.throws(() => {
+				store.where("not an object");
+			}, /where: predicate must be an object/);
+		});
+
+		it("should throw error when predicate is null", () => {
+			assert.throws(() => {
+				store.where(null);
+			}, /where: predicate must be an object/);
+		});
+
+		it("should throw error when op is not a string", () => {
+			assert.throws(() => {
+				store.where({ age: 30 }, 123);
+			}, /where: op must be a string/);
 		});
 
 		it("should filter with array predicate using OR logic", () => {

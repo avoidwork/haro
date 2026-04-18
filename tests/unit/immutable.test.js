@@ -24,6 +24,15 @@ describe("Immutable Mode", () => {
 		assert.strictEqual(Object.isFrozen(results), true);
 	});
 
+	it("should return frozen arrays from limit()", () => {
+		immutableStore.set("user1", { id: "user1", name: "John" });
+		immutableStore.set("user2", { id: "user2", name: "Jane" });
+		const results = immutableStore.limit(0, 1);
+
+		assert.strictEqual(Object.isFrozen(results), true);
+		assert.strictEqual(Object.isFrozen(results[0]), true);
+	});
+
 	it("should return frozen arrays from toArray()", () => {
 		immutableStore.set("user1", { id: "user1", name: "John" });
 		const results = immutableStore.toArray();

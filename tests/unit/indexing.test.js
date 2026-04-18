@@ -18,6 +18,18 @@ describe("Indexing", () => {
 			indexedStore.set("user3", { id: "user3", name: "Bob", age: 30, department: "IT" });
 		});
 
+		it("should throw error when where is not an object", () => {
+			assert.throws(() => {
+				indexedStore.find("not an object");
+			}, /find: where must be an object/);
+		});
+
+		it("should throw error when where is null", () => {
+			assert.throws(() => {
+				indexedStore.find(null);
+			}, /find: where must be an object/);
+		});
+
 		it("should find records by single field", () => {
 			const results = indexedStore.find({ name: "John" });
 			assert.strictEqual(results.length, 1);
