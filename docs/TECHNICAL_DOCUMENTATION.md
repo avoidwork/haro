@@ -123,33 +123,32 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    A["🔍 Query Request"] --> B{"Index Available?"}
+    A["🔍 Query Request"] --> B["🔑 Extract Keys from Criteria"]
     
-    B -->|Yes| C["📇 Index Lookup"]
-    B -->|No| D["🔄 Full Scan"]
+    B --> C{"Index Available?"}
     
-    C --> E["🔑 Extract Keys"]
-    D --> F["🔍 Filter Records"]
+    C -->|Yes| D["📇 Index Lookup"]
+    C -->|No| E["🔄 Full Scan"]
     
-    E --> G["📊 Fetch Records"]
-    F --> G
+    D --> F["📊 Fetch Records"]
+    E --> F
     
-    G --> H{"Immutable Mode?"}
+    F --> G{"Immutable Mode?"}
     
-    H -->|Yes| I["🔒 Freeze Results"]
-    H -->|No| J["✅ Return Results"]
+    G -->|Yes| H["🔒 Freeze Results"]
+    G -->|No| I["✅ Return Results"]
     
-    I --> J
+    H --> I
     
     classDef query fill:#0066CC,stroke:#004499,stroke-width:2px,color:#fff
     classDef index fill:#008000,stroke:#006600,stroke-width:2px,color:#fff
     classDef scan fill:#FF8C00,stroke:#CC7000,stroke-width:2px,color:#fff
     classDef result fill:#6600CC,stroke:#440088,stroke-width:2px,color:#fff
     
-    class A,B query
-    class C,E index
-    class D,F scan
-    class G,H,I,J result
+    class A,B,C query
+    class D index
+    class E scan
+    class F,G,H,I result
 ```
 
 ## Indexing System
