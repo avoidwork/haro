@@ -136,12 +136,7 @@ function benchmarkDeleteOperations(dataSizes) {
 				const keys = Array.from(deleteStore.keys());
 				if (keys.length > 0) {
 					const randomKey = keys[Math.floor(Math.random() * keys.length)];
-					try {
-						deleteStore.del(randomKey);
-					} catch (e) {
-						// eslint-disable-line no-unused-vars
-						// Record might already be deleted
-					}
+					deleteStore.delete(randomKey);
 				}
 			},
 			Math.min(100, size),

@@ -156,12 +156,7 @@ function benchmarkOperationMemory(dataSizes) {
 				const store = haro(testData);
 				const keys = Array.from(store.keys());
 				for (let i = 0; i < Math.min(keys.length, 100); i++) {
-					try {
-						store.del(keys[i]);
-					} catch (e) {
-						// eslint-disable-line no-unused-vars
-						// Record might already be deleted
-					}
+					store.delete(keys[i]);
 				}
 
 				return store;

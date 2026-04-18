@@ -274,12 +274,7 @@ function benchmarkIndexModificationOperations(dataSizes) {
 				const keys = Array.from(store.keys());
 				if (keys.length > 0) {
 					const randomKey = keys[Math.floor(Math.random() * keys.length)];
-					try {
-						store.del(randomKey);
-					} catch (e) {
-						// eslint-disable-line no-unused-vars
-						// Record might already be deleted
-					}
+					store.delete(randomKey);
 				}
 			},
 			50,
