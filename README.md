@@ -201,7 +201,6 @@ const store = haro([
 // Use familiar Array methods
 const adults = store.filter(record => record.age >= 30);
 const names = store.map(record => record.name);
-const totalAge = store.reduce((sum, record) => sum + record.age, 0);
 
 store.forEach((record, key) => {
   console.log(`${key}: ${record.name} (${record.age})`);
@@ -265,7 +264,7 @@ The test suite is organized into focused areas:
 - **Immutable Mode** - Data freezing and immutability guarantees
 - **Versioning** - MVCC-style record versioning
 - **Lifecycle Hooks** - beforeSet, onset, ondelete, etc.
-- **Utility Methods** - clone(), merge(), limit(), map(), reduce(), etc.
+- **Utility Methods** - clone(), merge(), limit(), map(), etc.
 - **Error Handling** - Validation and error scenarios
 - **Factory Function** - haro() factory with various initialization patterns
 
@@ -508,12 +507,12 @@ console.log(store.versioning); // true
 
 ### Methods
 
-#### batch(array, type)
+#### batch(args, type)
 
 Performs batch operations on multiple records for efficient bulk processing.
 
 **Parameters:**
-- `array` `{Array}` - Array of records to process
+- `args` `{Array}` - Array of records to process
 - `type` `{String}` - Operation type: `'set'` or `'del'` (default: `'set'`)
 
 **Returns:** `{Array}` Array of results from the batch operation
@@ -594,23 +593,7 @@ fs.writeFileSync('backup.json', JSON.stringify(records));
 
 **See also:** override()
 
-#### each(array, fn)
 
-Utility method to iterate over an array with a callback function.
-
-**Parameters:**
-- `array` `{Array}` - Array to iterate over
-- `fn` `{Function}` - Function to call for each element
-
-**Returns:** `{Array}` The original array for method chaining
-
-```javascript
-store.each([1, 2, 3], (item, index) => {
-  console.log(`Item ${index}: ${item}`);
-});
-```
-
-#### entries()
 
 Returns an iterator of [key, value] pairs for each record in the store.
 
@@ -624,13 +607,12 @@ for (const [key, value] of store.entries()) {
 
 **See also:** keys(), values()
 
-#### filter(fn, raw)
+#### filter(fn)
 
 Filters records using a predicate function, similar to Array.filter.
 
 **Parameters:**
-- `fn` `{Function}` - Predicate function to test each record
-- `raw` `{Boolean}` - Whether to return raw data (default: `false`)
+- `fn` `{Function}` - Predicate function to test each record (record, key, store)
 
 **Returns:** `{Array}` Array of records that pass the predicate test
 
@@ -645,13 +627,12 @@ const recentUsers = store.filter(record =>
 
 **See also:** find(), where(), map()
 
-#### find(where, raw)
+#### find(where)
 
 Finds records matching the specified criteria using indexes for optimal performance.
 
 **Parameters:**
 - `where` `{Object}` - Object with field-value pairs to match
-- `raw` `{Boolean}` - Whether to return raw data (default: `false`)
 
 **Returns:** `{Array}` Array of matching records
 
@@ -678,7 +659,7 @@ store.forEach((record, key) => {
 });
 ```
 
-**See also:** map(), filter()
+**See also:** map()
 
 #### freeze(...args)
 
@@ -694,19 +675,17 @@ const frozen = store.freeze(obj1, obj2, obj3);
 // Returns Object.freeze([Object.freeze(obj1), ...])
 ```
 
-#### get(key, raw)
+#### get(key)
 
 Retrieves a record by its key.
 
 **Parameters:**
 - `key` `{String}` - Key of record to retrieve
-- `raw` `{Boolean}` - Whether to return raw data (default: `false`)
 
 **Returns:** `{Object|null}` The record if found, null if not found
 
 ```javascript
 const user = store.get('user123');
-const rawUser = store.get('user123', true);
 ```
 
 **See also:** has(), set()
@@ -742,14 +721,13 @@ for (const key of store.keys()) {
 
 **See also:** values(), entries()
 
-#### limit(offset, max, raw)
+#### limit(offset, max)
 
 Returns a limited subset of records with offset support for pagination.
 
 **Parameters:**
 - `offset` `{Number}` - Number of records to skip (default: `0`)
 - `max` `{Number}` - Maximum number of records to return (default: `0`)
-- `raw` `{Boolean}` - Whether to return raw data (default: `false`)
 
 **Returns:** `{Array}` Array of records within the specified range
 
@@ -761,13 +739,12 @@ const page3 = store.limit(20, 10);  // Records 21-30
 
 **See also:** toArray(), sort()
 
-#### map(fn, raw)
+#### map(fn)
 
 Transforms all records using a mapping function, similar to Array.map.
 
 **Parameters:**
-- `fn` `{Function}` - Function to transform each record
-- `raw` `{Boolean}` - Whether to return raw data (default: `false`)
+- `fn` `{Function}` - Function to transform each record (record, key)
 
 **Returns:** `{Array}` Array of transformed results
 
@@ -821,25 +798,7 @@ store.override(backup, 'records');
 
 **See also:** dump(), clear()
 
-#### reduce(fn, accumulator)
 
-Reduces all records to a single value using a reducer function.
-
-**Parameters:**
-- `fn` `{Function}` - Reducer function (accumulator, value, key, store)
-- `accumulator` `{*}` - Initial accumulator value (default: `[]`)
-
-**Returns:** `{*}` Final reduced value
-
-```javascript
-const totalAge = store.reduce((sum, record) => sum + record.age, 0);
-const emailList = store.reduce((emails, record) => {
-  emails.push(record.email);
-  return emails;
-}, []);
-```
-
-**See also:** map(), filter()
 
 #### reindex(index)
 
@@ -856,14 +815,13 @@ store.reindex('name'); // Rebuild only name index
 store.reindex(['name', 'email']); // Rebuild specific indexes
 ```
 
-#### search(value, index, raw)
+#### search(value, index)
 
 Searches for records containing a value across specified indexes.
 
 **Parameters:**
 - `value` `{Function|RegExp|*}` - Value to search for
 - `index` `{String|Array}` - Index(es) to search in (optional)
-- `raw` `{Boolean}` - Whether to return raw data (default: `false`)
 
 **Returns:** `{Array}` Array of matching records
 
@@ -923,13 +881,12 @@ const frozen = store.sort((a, b) => a.created - b.created, true);
 
 **See also:** sortBy(), limit()
 
-#### sortBy(index, raw)
+#### sortBy(index)
 
 Sorts records by a specific indexed field in ascending order.
 
 **Parameters:**
 - `index` `{String}` - Index field name to sort by
-- `raw` `{Boolean}` - Whether to return raw data (default: `false`)
 
 **Returns:** `{Array}` Array of records sorted by the specified field
 
@@ -938,7 +895,6 @@ Sorts records by a specific indexed field in ascending order.
 ```javascript
 const byAge = store.sortBy('age');
 const byName = store.sortBy('name');
-const rawByDate = store.sortBy('created', true);
 ```
 
 **See also:** sort(), find()
@@ -1257,10 +1213,12 @@ function getEventStats(timeframe = 'hour') {
   const since = now - intervals[timeframe];
   const recentEvents = events.filter(event => event.timestamp > since);
   
-  return recentEvents.reduce((stats, event) => {
+  const stats = {};
+  recentEvents.forEach(event => {
     stats[event.type] = (stats[event.type] || 0) + 1;
-    return stats;
-  }, {});
+  });
+  
+  return stats;
 }
 
 // Usage
@@ -1307,10 +1265,12 @@ class ConfigStore extends Haro {
   }
 
   getEnvironmentConfig(environment) {
-    return this.find({ environment }).reduce((config, item) => {
+    const items = this.find({ environment });
+    const config = {};
+    items.forEach(item => {
       config[item.key] = item.value;
-      return config;
-    }, {});
+    });
+    return config;
   }
 
   updateConfig(key, value, environment = 'dev') {
