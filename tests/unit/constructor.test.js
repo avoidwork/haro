@@ -62,13 +62,4 @@ describe("Constructor", () => {
 			globalThis.structuredClone = originalStructuredClone;
 		}
 	});
-
-	it("should reindex when initialize is called on uninitialized instance", () => {
-		const instance = new Haro({ index: ["name"] });
-		instance.initialized = false;
-		const result = instance.initialize();
-		assert.strictEqual(instance.initialized, true);
-		assert.strictEqual(result, instance);
-		assert.strictEqual(instance.indexes.has("name"), true);
-	});
 });

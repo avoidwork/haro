@@ -94,8 +94,7 @@ class Haro {
 			enumerable: true,
 			get: () => this.data.size,
 		});
-
-		this.initialized = true;
+		this.reindex();
 	}
 
 	/**
@@ -148,22 +147,6 @@ class Haro {
 		}
 
 		/* node:coverage ignore */ return JSON.parse(JSON.stringify(arg));
-	}
-
-	/**
-	 * Initializes the store by building indexes for existing data
-	 * @returns {Haro} This instance for method chaining
-	 * @example
-	 * const store = new Haro({ index: ['name'] });
-	 * store.initialize(); // Build indexes
-	 */
-	initialize() {
-		if (!this.initialized) {
-			this.reindex();
-			this.initialized = true;
-		}
-
-		return this;
 	}
 
 	/**
@@ -620,10 +603,6 @@ class Haro {
 			key = data[this.key] ?? this.uuid();
 		}
 		let x = { ...data, [this.key]: key };
-		if (!this.initialized) {
-			this.reindex();
-			this.initialized = true;
-		}
 		if (!this.data.has(key)) {
 			if (this.versioning) {
 				this.versions.set(key, new Set());

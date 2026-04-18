@@ -250,31 +250,6 @@ describe("Utility Methods", () => {
 		});
 	});
 
-	describe("initialize()", () => {
-		it("should reindex when not initialized", () => {
-			const store = new Haro({ index: ["name"] });
-			store.set("user1", { name: "John" });
-
-			assert.ok(store.indexes.has("name"));
-		});
-
-		it("should do nothing when already initialized", () => {
-			const store = new Haro({ index: ["name"] });
-			store.set("user1", { name: "John" });
-			const result = store.initialize();
-
-			assert.ok(store.indexes.has("name"));
-			assert.strictEqual(result, store);
-		});
-
-		it("should return this for chaining", () => {
-			const store = new Haro({ index: ["name"] });
-			const result = store.initialize();
-
-			assert.strictEqual(result, store);
-		});
-	});
-
 	describe("merge()", () => {
 		it("should prevent prototype pollution", () => {
 			const store = new Haro();

@@ -59,14 +59,6 @@ describe("Basic CRUD Operations", () => {
 			}, /set: key must be a string or number/);
 		});
 
-		it("should reindex when set is called on uninitialized instance", () => {
-			const instance = new Haro({ index: ["name"] });
-			instance.initialized = false;
-			instance.set("test", { name: "Test" });
-			assert.strictEqual(instance.initialized, true);
-			assert.strictEqual(instance.indexes.has("name"), true);
-		});
-
 		it("should throw error when data is not an object", () => {
 			assert.throws(() => {
 				store.set("user1", "invalid");
