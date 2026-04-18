@@ -102,61 +102,10 @@ export class Haro {
 	 * ], 'set');
 	 */
 	batch(args, type = STRING_SET) {
-		this.beforeBatch(args, type);
 		const fn =
 			type === STRING_DEL ? (i) => this.delete(i, true) : (i) => this.set(null, i, true, true);
 
-		return this.onBatch(args.map(fn), type);
-	}
-
-	/**
-	 * Lifecycle hook executed before batch operations for custom preprocessing
-	 * @param {Array<Object>} arg - Arguments passed to batch operation
-	 * @param {string} [type=STRING_EMPTY] - Type of batch operation ('set' or 'del')
-	 * @returns {void} Override this method in subclasses to implement custom logic
-	 */
-	beforeBatch(arg, type = STRING_EMPTY) {
-		// eslint-disable-line no-unused-vars
-		// Hook for custom logic before batch; override in subclass if needed
-	}
-
-	/**
-	 * Lifecycle hook executed before clear operation for custom preprocessing
-	 * @returns {void} Override this method in subclasses to implement custom logic
-	 * @example
-	 * class MyStore extends Haro {
-	 *   beforeClear() {
-	 *     this.backup = this.toArray();
-	 *   }
-	 * }
-	 */
-	beforeClear() {
-		// Hook for custom logic before clear; override in subclass if needed
-	}
-
-	/**
-	 * Lifecycle hook executed before delete operation for custom preprocessing
-	 * @param {string} [key=STRING_EMPTY] - Key of record to delete
-	 * @param {boolean} [batch=false] - Whether this is part of a batch operation
-	 * @returns {void} Override this method in subclasses to implement custom logic
-	 */
-	beforeDelete(key = STRING_EMPTY, batch = false) {
-		// eslint-disable-line no-unused-vars
-		// Hook for custom logic before delete; override in subclass if needed
-	}
-
-	/**
-	 * Lifecycle hook executed before set operation for custom preprocessing
-	 * @param {string} [key=STRING_EMPTY] - Key of record to set
-	 * @param {Object} [data={}] - Record data being set
-	 * @param {boolean} [batch=false] - Whether this is part of a batch operation
-	 * @param {boolean} [override=false] - Whether to override existing data
-	 * @returns {Object} Modified data object (override this method to implement custom logic)
-	 */
-	beforeSet(key = STRING_EMPTY, data = {}, batch = false, override = false) {
-		// eslint-disable-line no-unused-vars
-		// Hook for custom logic before set; override in subclass if needed
-		return data;
+		return args.map(fn);
 	}
 
 	/**
@@ -167,11 +116,10 @@ export class Haro {
 	 * console.log(store.size); // 0
 	 */
 	clear() {
-		this.beforeClear();
 		this.data.clear();
 		this.indexes.clear();
 		this.versions.clear();
-		this.reindex().onClear();
+		this.reindex();
 
 		return this;
 	}
@@ -227,10 +175,8 @@ export class Haro {
 			throw new Error(STRING_RECORD_NOT_FOUND);
 		}
 		const og = this.get(key, true);
-		this.beforeDelete(key, batch);
 		this.deleteIndex(key, og);
 		this.data.delete(key);
-		this.onDelete(key, batch);
 		if (this.versioning) {
 			this.versions.delete(key);
 		}
@@ -565,63 +511,6 @@ export class Haro {
 	}
 
 	/**
-	 * Lifecycle hook executed after batch operations for custom postprocessing
-	 * @param {Array<Object>} arg - Result of batch operation
-	 * @param {string} [type=STRING_EMPTY] - Type of batch operation that was performed
-	 * @returns {Array<Object>} Modified result (override this method to implement custom logic)
-	 */
-	onBatch(arg, type = STRING_EMPTY) {
-		// eslint-disable-line no-unused-vars
-		return arg;
-	}
-
-	/**
-	 * Lifecycle hook executed after clear operation for custom postprocessing
-	 * @returns {void} Override this method in subclasses to implement custom logic
-	 * @example
-	 * class MyStore extends Haro {
-	 *   onClear() {
-	 *     console.log('Store cleared');
-	 *   }
-	 * }
-	 */
-	onClear() {
-		// Hook for custom logic after clear; override in subclass if needed
-	}
-
-	/**
-	 * Lifecycle hook executed after delete operation for custom postprocessing
-	 * @param {string} [key=STRING_EMPTY] - Key of deleted record
-	 * @param {boolean} [batch=false] - Whether this was part of a batch operation
-	 * @returns {void} Override this method in subclasses to implement custom logic
-	 */
-	onDelete(key = STRING_EMPTY, batch = false) {
-		// eslint-disable-line no-unused-vars
-		// Hook for custom logic after delete; override in subclass if needed
-	}
-
-	/**
-	 * Lifecycle hook executed after override operation for custom postprocessing
-	 * @param {string} [type=STRING_EMPTY] - Type of override operation that was performed
-	 * @returns {void} Override this method in subclasses to implement custom logic
-	 */
-	onOverride(type = STRING_EMPTY) {
-		// eslint-disable-line no-unused-vars
-		// Hook for custom logic after override; override in subclass if needed
-	}
-
-	/**
-	 * Lifecycle hook executed after set operation for custom postprocessing
-	 * @param {Object} [arg={}] - Record that was set
-	 * @param {boolean} [batch=false] - Whether this was part of a batch operation
-	 * @returns {void} Override this method in subclasses to implement custom logic
-	 */
-	onSet(arg = {}, batch = false) {
-		// eslint-disable-line no-unused-vars
-		// Hook for custom logic after set; override in subclass if needed
-	}
-
-	/**
 	 * Replaces all store data or indexes with new data for bulk operations
 	 * @param {Array<Array>} data - Data to replace with (format depends on type)
 	 * @param {string} [type=STRING_RECORDS] - Type of data: 'records' or 'indexes'
@@ -643,7 +532,6 @@ export class Haro {
 		} else {
 			throw new Error(STRING_INVALID_TYPE);
 		}
-		this.onOverride(type);
 
 		return result;
 	}
@@ -756,7 +644,6 @@ export class Haro {
 			key = data[this.key] ?? this.uuid();
 		}
 		let x = { ...data, [this.key]: key };
-		this.beforeSet(key, x, batch, override);
 		if (!this.initialized) {
 			this.reindex();
 			this.initialized = true;
@@ -778,7 +665,6 @@ export class Haro {
 		this.data.set(key, x);
 		this.setIndex(key, x, null);
 		const result = this.get(key);
-		this.onSet(result, batch);
 
 		return result;
 	}
