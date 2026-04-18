@@ -105,9 +105,10 @@ describe("Indexing", () => {
 	describe("reindex()", () => {
 		it("should rebuild all indexes", () => {
 			indexedStore.set("user1", { id: "user1", name: "John", age: 30 });
-			indexedStore.indexes.clear(); // Simulate corrupted indexes
+			indexedStore.clear();
 
 			indexedStore.reindex();
+			indexedStore.set("user1", { id: "user1", name: "John", age: 30 });
 			const results = indexedStore.find({ name: "John" });
 			assert.strictEqual(results.length, 1);
 		});

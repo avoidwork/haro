@@ -63,7 +63,8 @@ describe("Data Import/Export", () => {
 			const result = indexedStore.override(indexData, "indexes");
 
 			assert.strictEqual(result, true);
-			assert.strictEqual(indexedStore.indexes.size, 1);
+			const dumped = indexedStore.dump("indexes");
+			assert.strictEqual(dumped.length, 1);
 		});
 
 		it("should throw error for invalid type", () => {

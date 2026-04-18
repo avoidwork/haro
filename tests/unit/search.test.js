@@ -277,16 +277,13 @@ describe("Searching and Filtering", () => {
 
 			it("should trigger true fallback to full scan", () => {
 				const scanStore = new Haro({
-					index: ["age"],
+					index: ["name"],
 				});
 
 				scanStore.set("1", { id: "1", name: "Alice", age: 30, category: "admin" });
 				scanStore.set("2", { id: "2", name: "Bob", age: 25, category: "user" });
 
-				// Remove the age index to force fallback
-				scanStore.indexes.delete("age");
-
-				// Test that the method works
+				// Use non-indexed field to force fallback
 				const results = scanStore.where({ age: 30 }, "&&");
 				assert.equal(Array.isArray(results), true, "Should return an array");
 			});
@@ -368,7 +365,7 @@ describe("Searching and Filtering", () => {
 				const results = immutableStore.sortBy("age");
 
 				// Verify reindexing happened
-				assert.ok(immutableStore.indexes.has("age"), "Index should be created during sortBy");
+				assert.ok(immutableStore.index.includes("age"), "Index should be created during sortBy");
 
 				// Verify results are frozen
 				assert.ok(Object.isFrozen(results), "Results should be frozen in immutable mode");
