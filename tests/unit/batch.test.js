@@ -48,40 +48,4 @@ describe("Batch Operations", () => {
 			});
 		});
 	});
-
-	describe("batch() - deprecated", () => {
-		it("should batch set multiple records", () => {
-			const store = new Haro();
-			const data = [
-				{ id: "user1", name: "John", age: 30 },
-				{ id: "user2", name: "Jane", age: 25 },
-			];
-			const results = store.batch(data, "set");
-
-			assert.strictEqual(results.length, 2);
-			assert.strictEqual(store.size, 2);
-			assert.strictEqual(store.has("user1"), true);
-			assert.strictEqual(store.has("user2"), true);
-		});
-
-		it("should batch delete multiple records", () => {
-			const store = new Haro();
-			store.set("user1", { id: "user1", name: "John" });
-			store.set("user2", { id: "user2", name: "Jane" });
-
-			const results = store.batch(["user1", "user2"], "del");
-
-			assert.strictEqual(results.length, 2);
-			assert.strictEqual(store.size, 0);
-		});
-
-		it("should default to set operation", () => {
-			const store = new Haro();
-			const data = [{ id: "user1", name: "John" }];
-			const results = store.batch(data);
-
-			assert.strictEqual(results.length, 1);
-			assert.strictEqual(store.size, 1);
-		});
-	});
 });

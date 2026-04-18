@@ -87,21 +87,16 @@ class UserStore extends Haro {
     });
   }
 
-  beforeSet(key, data, batch, override) {
-    // Validate email format
-    if (data.email && !this.isValidEmail(data.email)) {
-      throw new Error('Invalid email format');
-    }
-  }
-
-  onset(record, batch) {
-    console.log(`User ${record.name} was added/updated`);
-  }
-
   isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 }
+
+const store = new UserStore();
+const user = store.set(null, { 
+  name: 'John', 
+  email: 'john@example.com' 
+});
 ```
 
 ## Parameters
@@ -144,7 +139,7 @@ const store = haro(null, { key: 'userId' });
 ```
 
 ### versioning
-**Boolean** - Enable MVCC-style versioning to track record changes (default: `false`)
+**Boolean** - Enable version history tracking to record changes (default: `false`)
 
 ```javascript
 const store = haro(null, { versioning: true });
@@ -187,8 +182,6 @@ const store = new Haro<{ name: string; age: number }>({
 
 ### Array Methods Compatibility
 
-Haro provides Array-like methods for familiar data manipulation:
-
 ```javascript
 import { haro } from 'haro';
 
@@ -207,26 +200,7 @@ store.forEach((record, key) => {
 });
 ```
 
-### Event-Driven Architecture
 
-Compatible with event-driven patterns through lifecycle hooks:
-
-```javascript
-class EventedStore extends Haro {
-  constructor(eventEmitter, config) {
-    super(config);
-    this.events = eventEmitter;
-  }
-
-  onset(record, batch) {
-    this.events.emit('record:created', record);
-  }
-
-  ondelete(key, batch) {
-    this.events.emit('record:deleted', key);
-  }
-}
-```
 
 ## Contributing
 
@@ -262,8 +236,7 @@ The test suite is organized into focused areas:
 - **Indexing** - Index creation, composite indexes, and reindexing
 - **Searching & Filtering** - find(), where(), search(), filter(), and sortBy() methods
 - **Immutable Mode** - Data freezing and immutability guarantees
-- **Versioning** - MVCC-style record versioning
-- **Lifecycle Hooks** - beforeSet, onset, ondelete, etc.
+- **Versioning** - Record version history tracking
 - **Utility Methods** - clone(), merge(), limit(), map(), setMany(), deleteMany(), etc.
 - **Error Handling** - Validation and error scenarios
 - **Factory Function** - haro() factory with various initialization patterns
@@ -508,29 +481,6 @@ console.log(store.versioning); // true
 
 ### Methods
 
-#### batch(args, type)
-
-**Deprecated:** Use `setMany()` or `deleteMany()` instead.
-
-Performs batch operations on multiple records for efficient bulk processing.
-
-**Parameters:**
-- `args` `{Array}` - Array of records to process
-- `type` `{String}` - Operation type: `'set'` or `'del'` (default: `'set'`)
-
-**Returns:** `{Array}` Array of results from the batch operation
-
-```javascript
-const results = store.batch([
-  { name: 'Alice', age: 30 },
-  { name: 'Bob', age: 28 }
-], 'set');
-
-// Delete multiple records
-store.batch(['key1', 'key2'], 'del');
-```
-
-**See also:** setMany(), deleteMany()
 
 #### clear()
 
@@ -543,7 +493,7 @@ store.clear();
 console.log(store.size); // 0
 ```
 
-**See also:** delete()
+**See also:** deleteMany()
 
 #### clone(arg)
 
@@ -576,7 +526,7 @@ Deletes a record from the store and removes it from all indexes.
 store.delete('user123');
 ```
 
-**See also:** has(), clear(), batch()
+**See also:** has(), clear(), setMany(), deleteMany()
 
 #### dump(type)
 
@@ -1001,33 +951,6 @@ const multiDeptUsers = store.where({ departments: ['IT', 'HR'] });
 
 **See also:** find(), filter(), search()
 
-## Lifecycle Hooks
-
-Override these methods in subclasses for custom behavior:
-
-### beforeBatch(args, type)
-Executed before batch operations for preprocessing.
-
-### beforeClear()
-Executed before clear operation for cleanup preparation.
-
-### beforeDelete(key, batch)
-Executed before delete operation for validation or logging.
-
-### beforeSet(key, data, batch, override)
-Executed before set operation for data validation or transformation.
-
-### onbatch(results, type)
-Executed after batch operations for postprocessing.
-
-### onclear()
-Executed after clear operation for cleanup tasks.
-
-### ondelete(key, batch)
-Executed after delete operation for logging or notifications.
-
-### onset(record, batch)
-Executed after set operation for indexing or event emission.
 
 ## Examples
 
@@ -1385,7 +1308,7 @@ Haro is optimized for:
 - **Efficient searches**: Regex and function-based filtering with index acceleration  
 - **Memory efficiency**: Minimal overhead with optional immutability
 - **Batch operations**: Optimized bulk inserts and updates
-- **Version tracking**: Efficient MVCC-style versioning when enabled
+- **Version tracking**: Efficient version history when enabled
 
 ### Performance Characteristics
 
