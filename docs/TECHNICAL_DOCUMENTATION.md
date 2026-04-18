@@ -74,46 +74,26 @@ graph TB
 - **Features**: Immutable version snapshots, configurable retention
 
 ### Configuration
-- **Purpose**: Store instance settings and behavior
-- **Options**: Immutable mode, versioning, custom delimiters, key fields, warnOnFullScan
-
-## Data Flow
-
-### Record Creation Flow
 
 ```mermaid
-sequenceDiagram
-    participant Client
-    participant Haro
-    participant DataStore
-    participant IndexSystem
-    participant VersionStore
+graph TD
+    A["⚙️ Constructor Options"] --> B["🔑 Key Field"]
+    A --> C["📇 Index Fields"]
+    A --> D["🔒 Immutable Mode"]
+    A --> E["📚 Versioning"]
+    A --> F["🔗 Delimiter"]
     
-    Client->>+Haro: set(key, data)
+    B --> G["🎯 Primary Key Selection"]
+    C --> H["⚡ Query Optimization"]
+    D --> I["🛡️ Data Protection"]
+    E --> J["📜 Change Tracking"]
+    F --> K["🔗 Composite Keys"]
     
-    Note over Haro: Validate and prepare data
+    classDef config fill:#6600CC,stroke:#440088,stroke-width:2px,color:#fff
+    classDef feature fill:#0066CC,stroke:#004499,stroke-width:2px,color:#fff
     
-    alt Key exists
-        Haro->>+DataStore: get(key)
-        DataStore-->>-Haro: existing record
-        Haro->>+IndexSystem: deleteIndex(key, oldData)
-        IndexSystem-->>-Haro: indexes updated
-        
-        opt Versioning enabled
-            Haro->>+VersionStore: add version
-            VersionStore-->>-Haro: version stored
-        end
-        
-        Haro->>Haro: merge(oldData, newData)
-    end
-    
-    Haro->>+DataStore: set(key, processedData)
-    DataStore-->>-Haro: record stored
-    
-    Haro->>+IndexSystem: setIndex(key, data)
-    IndexSystem-->>-Haro: indexes updated
-    
-    Haro-->>-Client: processed record
+    class A,B,C,D,E,F config
+    class G,H,I,J,K feature
 ```
 
 ### Query Processing Flow
@@ -158,7 +138,7 @@ Haro's indexing system provides O(1) lookup performance for indexed fields:
 graph LR
     A["🏷️ Index Types"] --> B["📊 Single Field<br/>name → users"]
     A --> C["🔗 Composite<br/>name|dept → users"]
-    A --> D["📚 Array Field<br/>tags[*] → users"]
+    A --> D["📚 Array Field<br/>tags → users"]
     
     B --> E["🔍 Direct Lookup<br/>O(1) complexity"]
     C --> F["🔍 Multi-key Lookup<br/>O(k) complexity"]
@@ -216,7 +196,7 @@ Haro's operations are grounded in computer science fundamentals, providing predi
 | Operation | Complexity | Description |
 |-----------|------------|-------------|
 | GET | $O(1)$ | Direct hash map lookup |
-| SET | $O(1) + O(i)$ | Hash map insert + index updates |
+| SET | $O(1) + O(i) + O(v)$ | Hash map insert + index updates + version storage (if versioning enabled) |
 | DELETE | $O(1) + O(i)$ | Hash map delete + index cleanup |
 | HAS | $O(1)$ | Hash map key existence check |
 
@@ -228,26 +208,28 @@ Haro's operations are grounded in computer science fundamentals, providing predi
 | SEARCH | $O(n \times m)$ | n = total index entries, m = indexes searched |
 | WHERE | $O(1)$ to $O(n)$ | Indexed lookup or full scan fallback |
 | FILTER | $O(n)$ | Predicate evaluation per record |
-| SORTBY | $O(n \log n)$ | Sorting by indexed field |
+| SORTBY | $O(k \log k + n)$ | Sorting by indexed field (k = unique indexed values) |
 | LIMIT | $O(m)$ | m = max records to return |
 
 #### Composite Index Formula
 
-For a composite index with fields $F = [f_1, f_2, \dots, f_n]$, the index keys are computed as the Cartesian product of field values:
+For a composite index with fields $F = [f_1, f_2, \dots, f_n]$, the index keys are computed by concatenating field values with the delimiter:
 
-$$IK = V(f_1) \times V(f_2) \times \dots \times V(f_n)$$
+$$IK = V(f_1) + \text{delimiter} + V(f_2) + \dots + \text{delimiter} + V(f_n)$$
 
 Where:
-- $V(f)$ = Set of values for field $f$
-- $|IK| = \prod_{i=1}^{n}|V(f_i)|$ (total number of index keys)
+- $V(f)$ = Value(s) for field $f$
+- For array fields, each array element generates a separate key
 
 **Example:**
 
-For data `{name: ['John', 'Jane'], dept: ['IT', 'HR']}` with composite index `name|dept`:
+For data `{name: 'John', dept: 'IT'}` with composite index `name|dept`:
 
-$$|IK| = |V(\text{name})| \times |V(\text{dept})| = 2 \times 2 = 4$$
+Generated key: `'John|IT'`
 
-Generated keys: `['John|IT', 'John|HR', 'Jane|IT', 'Jane|HR']`
+For array data `{name: ['John', 'Jane'], dept: 'IT'}` with composite index `name|dept`:
+
+Generated keys: `['John|IT', 'Jane|IT']`
 
 ### Set Theory Operations
 
@@ -283,19 +265,23 @@ $$\text{freeze}(\text{obj}) = \text{obj} \text{ where } \forall \text{prop} \in 
 
 $$\text{deepFreeze}(\text{obj}) = \text{freeze}(\text{obj}) \text{ where } \forall \text{prop} \in \text{obj}: \text{deepFreeze}(\text{prop})$$
 
+Note: The `freeze()` method takes multiple arguments and returns a frozen array containing them.
+
 ### Merge Operation
 
 The merge operation combines two values with the following recursive definition:
 
 $$
-\text{merge}(a, b) = 
+\text{merge}(a, b, \text{override}) = 
 \begin{cases}
   b & \text{if } a, b \in \text{Array} \land \text{override} \\
   a \concat b & \text{if } a, b \in \text{Array} \land \lnot\text{override} \\
-  \{k: \text{merge}(a[k], b[k]) \mid k \in \text{keys}(b)\} & \text{if } a, b \in \text{Object} \\
+  \{k: \text{merge}(a[k], b[k], \text{override}) \mid k \in \text{keys}(b)\} & \text{if } a, b \in \text{Object} \\
   b & \text{otherwise}
 \end{cases}
 $$
+
+The merge operation recursively merges all keys from `b` into `a`, preserving keys in `a` that don't exist in `b`.
 
 ## Operations
 
@@ -319,7 +305,7 @@ $$
 graph TD
     A["📦 Batch Request"] --> B["📊 Process Items"]
     
-    B --> C["🔗 Parallel Processing"]
+    B --> C["🔗 Sequential Processing"]
     C --> D1["⚡ Item 1"]
     C --> D2["⚡ Item 2"]
     C --> D3["⚡ Item N"]
@@ -333,14 +319,18 @@ graph TD
     
     classDef batch fill:#0066CC,stroke:#004499,stroke-width:2px,color:#fff
     classDef process fill:#008000,stroke:#006600,stroke-width:2px,color:#fff
-    classDef parallel fill:#FF8C00,stroke:#CC7000,stroke-width:2px,color:#fff
+    classDef sequential fill:#FF8C00,stroke:#CC7000,stroke-width:2px,color:#fff
     
     class A,F,G batch
     class B,E process
-    class C,D1,D2,D3 parallel
+    class C,D1,D2,D3 sequential
 ```
 
 ## Configuration
+
+### Configuration Runtime Behavior
+
+Configuration options are set at construction time and cannot be changed at runtime. To modify configuration, create a new Haro instance with the desired options.
 
 ### Initialization Options
 
@@ -364,16 +354,18 @@ const store = new Haro({
   // Instance identifier (auto-generated if not provided)
   id: 'user-store-1',
   
-  // Enable warnings for full table scan queries
+  // Enable warnings for full table scan queries (only applies to where())
   warnOnFullScan: true
 });
 ```
 
 ### Runtime Configuration
 
+> **Note:** Configuration is set at construction time. See [Initialization Options](#initialization-options) for details.
+
 ```mermaid
 graph TD
-    A["⚙️ Configuration"] --> B["🔑 Key Field"]
+    A["⚙️ Constructor Options"] --> B["🔑 Key Field"]
     A --> C["📇 Index Fields"]
     A --> D["🔒 Immutable Mode"]
     A --> E["📚 Versioning"]
@@ -408,12 +400,14 @@ pie title Memory Distribution
 
 ```mermaid
 xychart-beta
-    title "Query Performance by Data Size"
+    title "Query Performance by Data Size (Relative)"
     x-axis [1K, 10K, 100K, 1M, 10M]
-    y-axis "Response Time (ms)" 0 --> 100
-    line "Indexed Query" [0.1, 0.15, 0.2, 0.3, 0.5]
-    line "Full Scan" [1, 10, 100, 1000, 10000]
+    y-axis "Relative Time" 0 --> 100
+    line "Indexed Query" [1, 1.5, 2, 3, 5]
+    line "Full Scan" [10, 100, 1000, 10000, 100000]
 ```
+
+> **Note:** Actual performance varies based on hardware, data characteristics, and index configuration. Run `npm run benchmark` for environment-specific measurements.
 
 ## Usage Patterns
 
@@ -854,7 +848,7 @@ new Haro(config)
 
 | Method | Description | Time Complexity |
 |--------|-------------|----------------|
-| `set(key, data)` | Create or update record | O(1) + O(i) |
+| `set(key, data)` | Create or update record | O(1) + O(i) + O(v) |
 | `get(key)` | Retrieve record by key | O(1) |
 | `delete(key)` | Remove record | O(1) + O(i) |
 | `find(criteria)` | Query with indexes | O(1) to O(n) |
@@ -863,24 +857,28 @@ new Haro(config)
 | `deleteMany(keys)` | Bulk delete | O(n) + O(ni) |
 | `clear()` | Remove all records | O(n) |
 
+> Note: O(v) = version storage overhead when versioning is enabled
+
 ### Query Methods
 
 | Method | Description | Use Case | Time Complexity |
 |--------|-------------|----------|----------------|
 | `filter(predicate)` | Filter with function | Complex logic | O(n) |
 | `where(criteria, op)` | Advanced filtering with AND/OR | Multi-condition queries | O(1) to O(n) |
-| `sortBy(field)` | Sort by indexed field | Ordered results | O(n log n) |
+| `sortBy(field)` | Sort by indexed field | Ordered results | O(k log k + n) |
 | `limit(offset, max)` | Pagination | Large datasets | O(max) |
 | `map(transform)` | Transform records | Data projection | O(n) |
 | `reduce(fn, acc)` | Reduce to single value | Aggregations | O(n) |
 | `search(value, index)` | Search across indexes | Full-text search | O(n) |
+
+> Note: k = number of unique indexed values for sortBy
 
 ### Utility Methods
 
 | Method | Description | Use Case |
 |--------|-------------|----------|
 | `clone(arg)` | Deep clone object | Data isolation |
-| `freeze(...args)` | Freeze objects/arrays | Immutability |
+| `freeze(...args)` | Freeze array of arguments | Immutability (returns frozen array) |
 | `merge(a, b)` | Merge two values | Data combination |
 
 ## Best Practices
