@@ -322,7 +322,7 @@ try {
 | **Performance (1k records)** | ⚡ Fast | ⚡ Fastest | ⚡ Fast | 🐌 Slower | ⚡ Fast |
 | **Memory Overhead** | Medium | Low | Low | Medium | High |
 | **TypeScript Support** | ✅ | ✅ | ✅ | ✅ | ⚠️ Community |
-| **Bundle Size** | ~3KB gzipped | Native | Native | ~15KB | ~45KB |
+| **Bundle Size** | ~6KB gzipped | Native | Native | ~15KB | ~45KB |
 | **Learning Curve** | Low | Low | Low | Low | Medium |
 
 **Legend**: ✅ Yes | ❌ No | ⚠️ Limited/Optional
