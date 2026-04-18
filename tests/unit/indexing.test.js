@@ -21,7 +21,7 @@ describe("Indexing", () => {
 		it("should find records by single field", () => {
 			const results = indexedStore.find({ name: "John" });
 			assert.strictEqual(results.length, 1);
-			assert.strictEqual(results[0][1].name, "John");
+			assert.strictEqual(results[0].name, "John");
 		});
 
 		it("should find records by multiple fields", () => {
@@ -32,7 +32,7 @@ describe("Indexing", () => {
 		it("should find records using composite index", () => {
 			const results = indexedStore.find({ name: "John", department: "IT" });
 			assert.strictEqual(results.length, 1);
-			assert.strictEqual(results[0][1].name, "John");
+			assert.strictEqual(results[0].name, "John");
 		});
 
 		it("should find records using composite index with out-of-order predicates", () => {
@@ -42,11 +42,11 @@ describe("Indexing", () => {
 
 			assert.strictEqual(results1.length, 1);
 			assert.strictEqual(results2.length, 1);
-			assert.strictEqual(results1[0][1].name, "John");
-			assert.strictEqual(results2[0][1].name, "John");
+			assert.strictEqual(results1[0].name, "John");
+			assert.strictEqual(results2[0].name, "John");
 
-			// Should find the same record
-			assert.strictEqual(results1[0][0], results2[0][0]);
+			// Should find the same record id
+			assert.strictEqual(results1[0].id, results2[0].id);
 		});
 
 		it("should work with three-field composite index regardless of predicate order", () => {
@@ -67,10 +67,10 @@ describe("Indexing", () => {
 			assert.strictEqual(results2.length, 1);
 			assert.strictEqual(results3.length, 1);
 
-			// All should find the same record
-			assert.strictEqual(results1[0][0], results2[0][0]);
-			assert.strictEqual(results2[0][0], results3[0][0]);
-			assert.strictEqual(results1[0][1].name, "John");
+			// All should find the same record id
+			assert.strictEqual(results1[0].id, results2[0].id);
+			assert.strictEqual(results2[0].id, results3[0].id);
+			assert.strictEqual(results1[0].name, "John");
 		});
 
 		it("should return empty array when no matches found", () => {

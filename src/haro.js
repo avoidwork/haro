@@ -323,13 +323,12 @@ export class Haro {
 	/**
 	 * Finds records matching the specified criteria using indexes for optimal performance
 	 * @param {Object} [where={}] - Object with field-value pairs to match against
-	 * @param {boolean} [raw=false] - Whether to return raw data without processing
 	 * @returns {Array<Object>} Array of matching records (frozen if immutable mode)
 	 * @example
 	 * const users = store.find({department: 'engineering', active: true});
 	 * const admins = store.find({role: 'admin'});
 	 */
-	find(where = {}, raw = false) {
+	find(where = {}) {
 		if (typeof where !== STRING_OBJECT || where === null) {
 			throw new Error("find: where must be an object");
 		}
@@ -352,21 +351,20 @@ export class Haro {
 			}
 		}
 
-		const records = Array.from(result, (i) => this.get(i, raw));
-		return this.#freezeResult(records, raw);
+		const records = Array.from(result, (i) => this.get(i));
+		return this.#freezeResult(records);
 	}
 
 	/**
 	 * Filters records using a predicate function, similar to Array.filter
 	 * @param {Function} fn - Predicate function to test each record (record, key, store)
-	 * @param {boolean} [raw=false] - Whether to return raw data without processing
 	 * @returns {Array<Object>} Array of records that pass the predicate test
 	 * @throws {Error} Throws error if fn is not a function
 	 * @example
 	 * const adults = store.filter(record => record.age >= 18);
 	 * const recent = store.filter(record => record.created > Date.now() - 86400000);
 	 */
-	filter(fn, raw = false) {
+	filter(fn) {
 		if (typeof fn !== STRING_FUNCTION) {
 			throw new Error(STRING_INVALID_FUNCTION);
 		}
@@ -377,10 +375,7 @@ export class Haro {
 
 			return a;
 		}, []);
-		if (!raw) {
-			result = result.map((i) => this.list(i));
-			result = this.#freezeResult(result);
-		}
+		result = this.#freezeResult(result);
 
 		return result;
 	}
@@ -421,19 +416,16 @@ export class Haro {
 	/**
 	 * Retrieves a record by its key
 	 * @param {string} key - Key of record to retrieve
-	 * @param {boolean} [raw=false] - Whether to return raw data (true) or processed/frozen data (false)
 	 * @returns {Object|null} The record if found, null if not found
 	 * @example
 	 * const user = store.get('user123');
-	 * const rawUser = store.get('user123', true);
 	 */
-	get(key, raw = false) {
+	get(key) {
 		if (typeof key !== STRING_STRING && typeof key !== STRING_NUMBER) {
 			throw new Error("get: key must be a string or number");
 		}
 		let result = this.data.get(key) ?? null;
-		if (result !== null && !raw) {
-			result = this.list(result);
+		if (result !== null) {
 			result = this.#freezeResult(result);
 		}
 
@@ -501,59 +493,40 @@ export class Haro {
 	 * Returns a limited subset of records with offset support for pagination
 	 * @param {number} [offset=INT_0] - Number of records to skip from the beginning
 	 * @param {number} [max=INT_0] - Maximum number of records to return
-	 * @param {boolean} [raw=false] - Whether to return raw data without processing
 	 * @returns {Array<Object>} Array of records within the specified range
 	 * @example
 	 * const page1 = store.limit(0, 10);   // First 10 records
 	 * const page2 = store.limit(10, 10);  // Next 10 records
 	 */
-	limit(offset = INT_0, max = INT_0, raw = false) {
+	limit(offset = INT_0, max = INT_0) {
 		if (typeof offset !== STRING_NUMBER) {
 			throw new Error("limit: offset must be a number");
 		}
 		if (typeof max !== STRING_NUMBER) {
 			throw new Error("limit: max must be a number");
 		}
-		let result = this.registry.slice(offset, offset + max).map((i) => this.get(i, raw));
-		result = this.#freezeResult(result, raw);
+		let result = this.registry.slice(offset, offset + max).map((i) => this.get(i));
+		result = this.#freezeResult(result);
 
 		return result;
 	}
 
 	/**
-	 * Converts a record into a [key, value] pair array format
-	 * @param {Object} arg - Record object to convert to list format
-	 * @returns {Array<*>} Array containing [key, record] where key is extracted from record's key field
-	 * @example
-	 * const record = {id: 'user123', name: 'John', age: 30};
-	 * const pair = store.list(record); // ['user123', {id: 'user123', name: 'John', age: 30}]
-	 */
-	list(arg) {
-		const result = [arg[this.key], arg];
-
-		return this.immutable ? this.freeze(...result) : result;
-	}
-
-	/**
 	 * Transforms all records using a mapping function, similar to Array.map
 	 * @param {Function} fn - Function to transform each record (record, key)
-	 * @param {boolean} [raw=false] - Whether to return raw data without processing
 	 * @returns {Array<*>} Array of transformed results
 	 * @throws {Error} Throws error if fn is not a function
 	 * @example
 	 * const names = store.map(record => record.name);
 	 * const summaries = store.map(record => ({id: record.id, name: record.name}));
 	 */
-	map(fn, raw = false) {
+	map(fn) {
 		if (typeof fn !== STRING_FUNCTION) {
 			throw new Error(STRING_INVALID_FUNCTION);
 		}
 		let result = [];
 		this.forEach((value, key) => result.push(fn(value, key)));
-		if (!raw) {
-			result = result.map((i) => this.list(i));
-			result = this.#freezeResult(result);
-		}
+		result = this.#freezeResult(result);
 
 		return result;
 	}
@@ -716,14 +689,13 @@ export class Haro {
 	 * Searches for records containing a value across specified indexes
 	 * @param {*} value - Value to search for (string, function, or RegExp)
 	 * @param {string|string[]} [index] - Index(es) to search in, or all if not specified
-	 * @param {boolean} [raw=false] - Whether to return raw data without processing
 	 * @returns {Array<Object>} Array of matching records
 	 * @example
 	 * const results = store.search('john'); // Search all indexes
 	 * const nameResults = store.search('john', 'name'); // Search only name index
 	 * const regexResults = store.search(/^admin/, 'role'); // Regex search
 	 */
-	search(value, index, raw = false) {
+	search(value, index) {
 		if (value === null || value === undefined) {
 			throw new Error("search: value cannot be null or undefined");
 		}
@@ -757,8 +729,8 @@ export class Haro {
 				}
 			}
 		}
-		const records = Array.from(result, (key) => this.get(key, raw));
-		return this.#freezeResult(records, raw);
+		const records = Array.from(result, (key) => this.get(key));
+		return this.#freezeResult(records);
 	}
 
 	/**
@@ -892,14 +864,13 @@ export class Haro {
 	/**
 	 * Sorts records by a specific indexed field in ascending order
 	 * @param {string} [index=STRING_EMPTY] - Index field name to sort by
-	 * @param {boolean} [raw=false] - Whether to return raw data without processing
 	 * @returns {Array<Object>} Array of records sorted by the specified field
 	 * @throws {Error} Throws error if index field is empty or invalid
 	 * @example
 	 * const byAge = store.sortBy('age');
 	 * const byName = store.sortBy('name');
 	 */
-	sortBy(index = STRING_EMPTY, raw = false) {
+	sortBy(index = STRING_EMPTY) {
 		if (index === STRING_EMPTY) {
 			throw new Error(STRING_INVALID_FIELD);
 		}
@@ -910,7 +881,7 @@ export class Haro {
 		const lindex = this.indexes.get(index);
 		lindex.forEach((idx, key) => keys.push(key));
 		keys.sort(this.sortKeys);
-		const result = keys.flatMap((i) => Array.from(lindex.get(i)).map((key) => this.get(key, raw)));
+		const result = keys.flatMap((i) => Array.from(lindex.get(i)).map((key) => this.get(key)));
 
 		return this.#freezeResult(result);
 	}
@@ -957,11 +928,10 @@ export class Haro {
 	/**
 	 * Internal helper to freeze result if immutable mode is enabled
 	 * @param {Array|Object} result - Result to freeze
-	 * @param {boolean} raw - Whether to skip freezing
 	 * @returns {Array|Object} Frozen or original result
 	 */
-	#freezeResult(result, raw = false) {
-		if (!raw && this.immutable) {
+	#freezeResult(result) {
+		if (this.immutable) {
 			result = Object.freeze(result);
 		}
 
@@ -1066,9 +1036,9 @@ export class Haro {
 			// Filter candidates with full predicate logic
 			const results = [];
 			for (const key of candidateKeys) {
-				const record = this.get(key, true);
+				const record = this.get(key);
 				if (this.matchesPredicate(record, predicate, op)) {
-					results.push(this.immutable ? this.get(key) : record);
+					results.push(record);
 				}
 			}
 

@@ -72,8 +72,8 @@ describe("Utility Methods", () => {
 		it("should transform all records", () => {
 			const results = store.map((record) => record.name);
 			assert.strictEqual(results.length, 2);
-			assert.strictEqual(results[0][1], "John");
-			assert.strictEqual(results[1][1], "Jane");
+			assert.strictEqual(results[0], "John");
+			assert.strictEqual(results[1], "Jane");
 		});
 
 		it("should throw error for non-function mapper", () => {
@@ -161,23 +161,6 @@ describe("Utility Methods", () => {
 		});
 	});
 
-	describe("list()", () => {
-		it("should convert record to [key, value] format", () => {
-			const record = { id: "user1", name: "John" };
-			const result = store.list(record);
-
-			assert.deepStrictEqual(result, ["user1", record]);
-		});
-
-		it("should freeze result in immutable mode", () => {
-			const immutableStore = new Haro({ immutable: true });
-			const record = { id: "user1", name: "John" };
-			const result = immutableStore.list(record);
-
-			assert.strictEqual(Object.isFrozen(result), true);
-		});
-	});
-
 	describe("limit()", () => {
 		beforeEach(() => {
 			for (let i = 0; i < 10; i++) {
@@ -193,7 +176,7 @@ describe("Utility Methods", () => {
 		it("should support offset", () => {
 			const results = store.limit(5, 3);
 			assert.strictEqual(results.length, 3);
-			assert.strictEqual(results[0][0], "user5");
+			assert.strictEqual(results[0].id, "user5");
 		});
 
 		it("should handle offset beyond data size", () => {

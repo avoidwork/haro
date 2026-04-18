@@ -16,7 +16,7 @@ describe("Searching and Filtering", () => {
 		it("should search by exact value", () => {
 			const results = store.search("John");
 			assert.strictEqual(results.length, 1);
-			assert.strictEqual(results[0][1].name, "John");
+			assert.strictEqual(results[0].name, "John");
 		});
 
 		it("should search in specific index", () => {
@@ -55,14 +55,14 @@ describe("Searching and Filtering", () => {
 			immutableStore.set("user2", { id: "user2", name: "Bob", tags: ["user"] });
 
 			// Call search with raw=false (default) and immutable=true to cover lines 695-696
-			const results = immutableStore.search("Alice", "name", false);
+			const results = immutableStore.search("Alice", "name");
 			assert.strictEqual(
 				Object.isFrozen(results),
 				true,
 				"Search results should be frozen in immutable mode",
 			);
 			assert.strictEqual(results.length, 1);
-			assert.strictEqual(results[0][1].name, "Alice");
+			assert.strictEqual(results[0].name, "Alice");
 		});
 	});
 
@@ -225,9 +225,9 @@ describe("Searching and Filtering", () => {
 	describe("sortBy()", () => {
 		it("should sort by indexed field", () => {
 			const results = store.sortBy("name");
-			assert.strictEqual(results[0][1].name, "Bob");
-			assert.strictEqual(results[1][1].name, "Jane");
-			assert.strictEqual(results[2][1].name, "John");
+			assert.strictEqual(results[0].name, "Bob");
+			assert.strictEqual(results[1].name, "Jane");
+			assert.strictEqual(results[2].name, "John");
 		});
 
 		it("should throw error for empty field", () => {
@@ -238,9 +238,9 @@ describe("Searching and Filtering", () => {
 
 		it("should create index if not exists", () => {
 			const results = store.sortBy("name");
-			assert.strictEqual(results[0][1].name, "Bob");
-			assert.strictEqual(results[1][1].name, "Jane");
-			assert.strictEqual(results[2][1].name, "John");
+			assert.strictEqual(results[0].name, "Bob");
+			assert.strictEqual(results[1].name, "Jane");
+			assert.strictEqual(results[2].name, "John");
 		});
 
 		describe("with reindexing and immutable mode", () => {
@@ -263,9 +263,9 @@ describe("Searching and Filtering", () => {
 				assert.ok(Object.isFrozen(results), "Results should be frozen in immutable mode");
 
 				// Verify sorting worked - results are [key, record] pairs
-				assert.equal(results[0][1].age, 25);
-				assert.equal(results[1][1].age, 30);
-				assert.equal(results[2][1].age, 35);
+				assert.equal(results[0].age, 25);
+				assert.equal(results[1].age, 30);
+				assert.equal(results[2].age, 35);
 			});
 		});
 	});

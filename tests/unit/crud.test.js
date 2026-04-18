@@ -14,9 +14,8 @@ describe("Basic CRUD Operations", () => {
 			const data = { name: "John", age: 30 };
 			const result = store.set(null, data);
 
-			assert.strictEqual(typeof result[0], "string");
-			assert.strictEqual(result[1].name, "John");
-			assert.strictEqual(result[1].age, 30);
+			assert.strictEqual(result.name, "John");
+			assert.strictEqual(result.age, 30);
 			assert.strictEqual(store.size, 1);
 		});
 
@@ -24,34 +23,34 @@ describe("Basic CRUD Operations", () => {
 			const data = { id: "user123", name: "John", age: 30 };
 			const result = store.set("user123", data);
 
-			assert.strictEqual(result[0], "user123");
-			assert.strictEqual(result[1].name, "John");
-			assert.strictEqual(result[1].age, 30);
+			assert.strictEqual(result.id, "user123");
+			assert.strictEqual(result.name, "John");
+			assert.strictEqual(result.age, 30);
 		});
 
 		it("should use record key field when key is null", () => {
 			const data = { id: "user456", name: "Jane", age: 25 };
 			const result = store.set(null, data);
 
-			assert.strictEqual(result[0], "user456");
-			assert.strictEqual(result[1].name, "Jane");
+			assert.strictEqual(result.id, "user456");
+			assert.strictEqual(result.name, "Jane");
 		});
 
 		it("should merge with existing record by default", () => {
 			store.set("user1", { id: "user1", name: "John", age: 30 });
 			const result = store.set("user1", { age: 31, city: "NYC" });
 
-			assert.strictEqual(result[1].name, "John");
-			assert.strictEqual(result[1].age, 31);
-			assert.strictEqual(result[1].city, "NYC");
+			assert.strictEqual(result.name, "John");
+			assert.strictEqual(result.age, 31);
+			assert.strictEqual(result.city, "NYC");
 		});
 
 		it("should override existing record when override is true", () => {
 			store.set("user1", { id: "user1", name: "John", age: 30 });
 			const result = store.set("user1", { id: "user1", age: 31 }, false, true);
 
-			assert.strictEqual(result[1].name, undefined);
-			assert.strictEqual(result[1].age, 31);
+			assert.strictEqual(result.name, undefined);
+			assert.strictEqual(result.age, 31);
 		});
 	});
 
@@ -62,8 +61,8 @@ describe("Basic CRUD Operations", () => {
 
 		it("should retrieve existing record", () => {
 			const result = store.get("user1");
-			assert.strictEqual(result[0], "user1");
-			assert.strictEqual(result[1].name, "John");
+			assert.strictEqual(result.id, "user1");
+			assert.strictEqual(result.name, "John");
 		});
 
 		it("should return null for non-existent record", () => {

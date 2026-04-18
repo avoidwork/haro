@@ -86,7 +86,7 @@ describe("Lifecycle Hooks", () => {
 		assert.strictEqual(testStore.hooks.beforeSet.length, 1);
 		assert.strictEqual(testStore.hooks.onset.length, 1);
 		assert.strictEqual(testStore.hooks.beforeSet[0].key, "user1");
-		assert.strictEqual(testStore.hooks.onset[0].result[1].name, "John");
+		assert.strictEqual(testStore.hooks.onset[0].result.name, "John");
 	});
 
 	it("should call beforeDelete and ondelete hooks", () => {

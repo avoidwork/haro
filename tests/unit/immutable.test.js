@@ -46,7 +46,7 @@ describe("Immutable Mode", () => {
 			assert.ok(Object.isFrozen(results), "Results array should be frozen in immutable mode");
 			assert.equal(results.length, 1);
 			// Results are [key, record] pairs when not using raw=true
-			assert.equal(results[0][1].name, "Alice");
+			assert.equal(results[0].name, "Alice");
 		});
 
 		it("should return frozen array with raw=false explicitly", () => {
@@ -59,7 +59,7 @@ describe("Immutable Mode", () => {
 			store.set("item2", { id: "item2", category: "books", title: "Book 2" });
 
 			// Call find with explicit false for raw parameter to ensure !raw is true
-			const results = store.find({ category: "books" }, false);
+			const results = store.find({ category: "books" });
 
 			// Verify the array is frozen
 			assert.ok(Object.isFrozen(results), "Results array must be frozen");
@@ -74,16 +74,9 @@ describe("Immutable Mode", () => {
 
 			store.set("1", { id: "1", type: "test" });
 
-			// Test raw=false with immutable=true (should freeze)
-			const frozenResults = store.find({ type: "test" }, false);
-			assert.ok(
-				Object.isFrozen(frozenResults),
-				"Should be frozen when raw=false and immutable=true",
-			);
-
-			// Test raw=true with immutable=true (should NOT freeze)
-			const unfrozenResults = store.find({ type: "test" }, true);
-			assert.ok(!Object.isFrozen(unfrozenResults), "Should NOT be frozen when raw=true");
+			// Test with immutable=true (should freeze)
+			const frozenResults = store.find({ type: "test" });
+			assert.ok(Object.isFrozen(frozenResults), "Should be frozen when immutable=true");
 		});
 	});
 

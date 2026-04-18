@@ -90,8 +90,7 @@ describe("haro factory function", () => {
 			// Verify indexing worked
 			const aliceResults = store.find({ name: "Alice" });
 			assert.equal(aliceResults.length, 1);
-			// Results are [key, record] pairs
-			assert.equal(aliceResults[0][1].age, 30);
+			assert.equal(aliceResults[0].age, 30);
 		});
 
 		it("should work with empty array data", () => {
