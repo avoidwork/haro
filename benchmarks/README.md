@@ -9,9 +9,6 @@ The benchmark suite consists of several modules that test different aspects of H
 - **Basic Operations** - CRUD operations (Create, Read, Update, Delete)
 - **Search & Filter** - Query performance with various patterns
 - **Index Operations** - Indexing performance and benefits
-- **Memory Usage** - Memory consumption patterns and efficiency
-- **Comparison** - Performance vs native JavaScript structures
-- **Utility Operations** - Helper methods (clone, merge, freeze, forEach, uuid)
 - **Pagination** - Limit-based pagination performance
 - **Persistence** - Dump/override operations for data serialization
 - **Immutable Comparison** - Performance comparison between mutable and immutable modes
@@ -42,8 +39,7 @@ node benchmarks/index.js --memory-only
 # Run only comparison benchmarks
 node benchmarks/index.js --comparison-only
 
-# Run only utility operations benchmarks
-node benchmarks/index.js --utilities-only
+
 
 # Run only pagination benchmarks
 node benchmarks/index.js --pagination-only
@@ -85,8 +81,7 @@ node benchmarks/memory-usage.js
 # Performance comparisons
 node benchmarks/comparison.js
 
-# Utility operations
-node benchmarks/utility-operations.js
+
 
 # Pagination benchmarks
 node benchmarks/pagination.js
@@ -108,7 +103,6 @@ Tests fundamental CRUD operations performance:
 - **GET operations**: Record retrieval by key
 - **DELETE operations**: Individual and batch record deletion
 - **CLEAR operations**: Store clearing performance
-- **Utility operations**: `toArray()`, `keys()`, `values()`, `entries()`
 
 **Data Sizes Tested**: 100, 1,000, 10,000, 50,000 records
 
@@ -195,26 +189,7 @@ Compares Haro performance with native JavaScript structures:
 - Sorting operations
 - Memory usage
 
-### 6. Utility Operations (`utility-operations.js`)
-
-Tests performance of helper and utility methods:
-
-- **CLONE operations**: Deep cloning of objects and arrays
-- **MERGE operations**: Object and array merging with different strategies
-- **FREEZE operations**: Object freezing for immutability
-- **forEach operations**: Iteration with different callback complexities
-- **UUID operations**: UUID generation and uniqueness testing
-
-**Data Sizes Tested**: 100, 1,000, 5,000 records
-
-**Key Features Tested**:
-
-- Simple vs complex object cloning
-- Array vs object merging strategies
-- Performance vs safety trade-offs
-- UUID generation rates and uniqueness
-
-### 7. Pagination (`pagination.js`)
+### 6. Pagination (`pagination.js`)
 
 Tests pagination and data limiting performance:
 
@@ -233,7 +208,7 @@ Tests pagination and data limiting performance:
 - Memory efficiency of chunked vs full data access
 - Integration with query operations
 
-### 8. Persistence (`persistence.js`)
+### 7. Persistence (`persistence.js`)
 
 Tests data serialization and restoration performance:
 
@@ -252,176 +227,133 @@ Tests data serialization and restoration performance:
 - Memory impact of persistence operations
 - Complex object serialization performance
 
-### 9. Immutable Comparison (`immutable-comparison.js`)
+### 8. Immutable Comparison (`immutable-comparison.js`)
 
-Compares performance between immutable and mutable modes:
+Compares performance between immutable and mutable modes.
 
-- **STORE CREATION**: Setup performance comparison
-- **CRUD operations**: Create, Read, Update, Delete in both modes
-- **QUERY operations**: Find, filter, search, where performance
-- **TRANSFORMATION**: Map, reduce, sort, forEach comparison
-- **MEMORY usage**: Memory consumption patterns
-- **DATA SAFETY**: Mutation protection analysis
-
-**Data Sizes Tested**: 100, 1,000, 5,000 records
-
-**Key Features Tested**:
-
-- Performance vs safety trade-offs
-- Memory overhead of immutable mode
-- Operation-specific performance differences
-- Data protection effectiveness
+**Note**: This benchmark file exists but is not integrated into the main benchmark runner.
 
 ## Latest Benchmark Results
 
-### Performance Summary (Last Updated: December 2024)
+### Performance Summary (Last Updated: April 2026)
 
 **Overall Test Results:**
 
-- **Total Tests**: 572 tests across 9 categories
-- **Total Runtime**: 1.6 minutes
-- **Test Environment**: Node.js on macOS (darwin 24.5.0)
+- **Total Tests**: 24 tests across 6 categories
+- **Total Runtime**: ~30 seconds
+- **Test Environment**: Node.js v25.8.1 on Linux
 
 **Performance Highlights:**
 
-- **Fastest Operation**: HAS operation (20,815,120 ops/second on 1,000 records)
-- **Slowest Operation**: BATCH SET (88 ops/second on 50,000 records)
-- **Memory Efficiency**: Most efficient DELETE operations (-170.19 MB for 100 deletions)
-- **Least Memory Efficient**: FIND operations (34.49 MB for 25,000 records with 100 queries)
+- **Fastest Operation**: HAS operation (494,071 ops/second on 10,000 keys)
+- **Slowest Operation**: CREATE indexes (160 ops/second on 10,000 records)
+- **Most Efficient**: DUMP indexes (45,891 ops/sec for 5,000 records)
 
 ### Category Performance Breakdown
 
 #### Basic Operations
 
-- **Tests**: 40 tests
-- **Runtime**: 249ms
-- **Average Performance**: 3,266,856 ops/second
+- **Tests**: 4 tests
+- **Runtime**: ~2 seconds
+- **Average Performance**: 131,678 ops/second
 - **Key Findings**: Excellent performance for core CRUD operations
 
 #### Search & Filter Operations
 
-- **Tests**: 93 tests
-- **Runtime**: 1.2 minutes
-- **Average Performance**: 856,503 ops/second
+- **Tests**: 4 tests
+- **Runtime**: ~2 seconds
+- **Average Performance**: 9,059 ops/second
 - **Key Findings**: Strong performance for indexed queries, good filter performance
 
 #### Index Operations
 
-- **Tests**: 60 tests
-- **Runtime**: 2.1 seconds
-- **Average Performance**: 386,859 ops/second
+- **Tests**: 3 tests
+- **Runtime**: ~2 seconds
+- **Average Performance**: 186 ops/second
 - **Key Findings**: Efficient index creation and maintenance
 
 #### Memory Usage
 
-- **Tests**: 60 tests
-- **Runtime**: 419ms
-- **Average Memory**: 1.28 MB
-- **Key Findings**: Efficient memory usage patterns
+- **Tests**: Not implemented in current version
+- **Runtime**: N/A
+- **Average Memory**: N/A
+- **Key Findings**: Memory benchmarks not available
 
 #### Comparison with Native Structures
 
-- **Tests**: 93 tests
-- **Runtime**: 12.6 seconds
-- **Average Performance**: 2,451,027 ops/second
-- **Key Findings**: Competitive with native structures considering feature richness
-
-#### Utility Operations
-
-- **Tests**: 45 tests
-- **Runtime**: 206ms
-- **Average Performance**: 3,059,333 ops/second
-- **Key Findings**: Excellent performance for clone, merge, freeze operations
+- **Tests**: Not implemented in current version
+- **Runtime**: N/A
+- **Average Performance**: N/A
+- **Key Findings**: Comparison benchmarks not available
 
 #### Pagination
 
-- **Tests**: 65 tests
-- **Runtime**: 579ms
-- **Average Performance**: 100,162 ops/second
+- **Tests**: 4 tests
+- **Runtime**: ~1 second
+- **Average Performance**: 64,911 ops/second
 - **Key Findings**: Efficient pagination suitable for UI requirements
 
 #### Persistence
 
-- **Tests**: 38 tests
-- **Runtime**: 314ms
-- **Average Performance**: 114,384 ops/second
+- **Tests**: 3 tests
+- **Runtime**: ~1 second
+- **Average Performance**: 20,954 ops/second
 - **Key Findings**: Good performance for data serialization/deserialization
 
 #### Immutable vs Mutable Comparison
 
-- **Tests**: 78 tests
-- **Runtime**: 8.4 seconds
-- **Average Performance**: 835,983 ops/second
-- **Key Findings**: Minimal performance difference for most operations
+- **Tests**: Not implemented in current version
+- **Runtime**: N/A
+- **Average Performance**: N/A
+- **Key Findings**: Immutable comparison benchmarks not available
 
 ### Detailed Performance Results
 
 #### Basic Operations Performance
 
-- **SET operations**: Up to 3.2M ops/sec for typical workloads
-- **GET operations**: Up to 20M ops/sec with index lookups
-- **DELETE operations**: Efficient cleanup with index maintenance
-- **HAS operations**: 20,815,120 ops/sec (best performer)
-- **CLEAR operations**: Fast bulk deletion
-- **BATCH operations**: Optimized for bulk data manipulation
+- **SET operations**: 826 ops/sec (10,000 records)
+- **GET operations**: 29,426 ops/sec (10,000 records)
+- **DELETE operations**: 471 ops/sec (10,000 records)
+- **HAS operations**: 494,071 ops/sec (10,000 keys)
+- **CLEAR operations**: Not benchmarked
+- **BATCH operations**: Not benchmarked
 
 #### Query Operations Performance
 
-- **FIND (indexed)**: 64,594 ops/sec (1,000 records)
-- **FILTER operations**: 46,255 ops/sec
-- **SEARCH operations**: Strong regex and text search performance
-- **WHERE clauses**: 60,710 ops/sec for complex queries
-- **SORT operations**: Efficient sorting with index optimization
+- **FIND (indexed)**: 10,272 ops/sec (10,000 records)
+- **FILTER operations**: 8,984 ops/sec (10,000 records)
+- **SEARCH operations**: 8,839 ops/sec (10,000 records)
+- **WHERE clauses**: 8,436 ops/sec (10,000 records)
+- **SORT operations**: Not benchmarked
 
 #### Comparison with Native Structures
 
-- **Haro vs Array Filter**: 46,255 vs 189,293 ops/sec
-- **Haro vs Map**: Comparable performance for basic operations
-- **Haro vs Object**: Trade-off between features and raw performance
-- **Advanced Features**: Unique capabilities not available in native structures
+- Not implemented in current benchmark suite
 
 #### Memory Usage Analysis
 
-- **Haro (50,000 records)**: 13.98 MB
-- **Map (50,000 records)**: 3.52 MB
-- **Object (50,000 records)**: 1.27 MB
-- **Array (50,000 records)**: 0.38 MB
-- **Overhead Analysis**: Reasonable for feature set provided
-
-#### Utility Operations Performance
-
-- **Clone simple objects**: 1,605,780 ops/sec
-- **Clone complex objects**: 234,455 ops/sec
-- **Merge operations**: Up to 2,021,394 ops/sec
-- **Freeze operations**: Up to 17,316,017 ops/sec
-- **forEach operations**: Up to 58,678 ops/sec
-- **UUID generation**: 14,630,218 ops/sec
+- Not implemented in current benchmark suite
 
 #### Pagination Performance
 
-- **Small pages (10 items)**: 616,488 ops/sec
-- **Medium pages (50 items)**: 271,554 ops/sec
-- **Large pages (100 items)**: 153,433 ops/sec
-- **Sequential pagination**: Efficient for typical UI patterns
+- **Small pages (10 items)**: 69,852 ops/sec (10,000 records)
+- **Medium pages (50 items)**: 65,794 ops/sec (10,000 records)
+- **Large pages (100 items)**: 61,308 ops/sec (10,000 records)
+- **Sequential pagination**: Efficient for typical UI requirements
 
 #### Immutable vs Mutable Performance
 
-- **Creation**: Minimal difference (1.27x faster mutable)
-- **Read operations**: Comparable performance
-- **Write operations**: Slight advantage to mutable mode
-- **Transformation operations**: Significant cost in immutable mode
+- Not implemented in current benchmark suite
 
 ### Performance Recommendations
 
 Based on the latest benchmark results:
 
-1. **✅ Basic operations performance is excellent** for most use cases
-2. **✅ Memory usage is efficient** for typical workloads
-3. **📊 Review comparison results** to understand trade-offs vs native structures
-4. **✅ Utility operations** (clone, merge, freeze) perform well
-5. **✅ Pagination performance** is suitable for typical UI requirements
-6. **💾 Persistence operations** available for data serialization needs
-7. **🔒 Review immutable vs mutable comparison** for data safety vs performance trade-offs
+1. **✅ Basic operations perform well** - HAS is fastest at 494K ops/sec
+2. **✅ Indexed queries are efficient** - FIND at 10K ops/sec for 10K records
+3. **✅ Pagination is fast** - 69K ops/sec for small pages
+4. **✅ Persistence is reasonable** - DUMP indexes at 45K ops/sec
+5. **⚠️ Index creation is slow** - 160 ops/sec (consider one-time setup)
 
 ## Understanding Results
 
@@ -454,11 +386,11 @@ Based on the latest benchmark results, here are the key insights:
 
 #### Performance Strengths
 
-1. **Excellent Basic Operations**: Core CRUD operations perform exceptionally well (3.2M+ ops/sec)
-2. **Fast Record Lookups**: HAS operations achieve 20M+ ops/sec, demonstrating efficient key-based access
-3. **Efficient Indexing**: Index-based queries provide significant performance benefits
-4. **Strong Utility Performance**: Clone, merge, and freeze operations are highly optimized
-5. **Competitive with Native Structures**: Maintains competitive performance while providing rich features
+1. **Excellent Basic Operations**: HAS achieves 494K ops/sec
+2. **Fast Record Lookups**: GET at 29K ops/sec for 10K records
+3. **Efficient Indexing**: FIND at 10K ops/sec for 10K records
+4. **Fast Pagination**: 69K ops/sec for small pages
+5. **Good Persistence**: DUMP indexes at 45K ops/sec
 
 #### Performance Considerations
 
@@ -489,7 +421,7 @@ Based on the latest benchmark results, here are the key insights:
 
 - Use immutable mode for data integrity
 - Accept performance trade-offs for safety
-- Use utility methods (clone, merge) for safe data manipulation
+
 - Enable versioning only when needed
 - Consider persistence for backup/restore needs
 
@@ -537,9 +469,9 @@ Based on the latest benchmark results, consider these optimizations:
 5. **Consider memory limits** for large datasets (13.98MB for 50K records)
 6. **Use immutable mode** strategically for data safety vs performance
 7. **Implement pagination** for large result sets using `limit()` (616K ops/sec for small pages)
-8. **Use utility methods** (clone: 1.6M ops/sec, merge: 2M ops/sec) for safe data manipulation
-9. **Consider persistence** for data backup and restoration needs (114K ops/sec)
-10. **Optimize WHERE queries** with proper indexing and operators
+
+8. **Consider persistence** for data backup and restoration needs (114K ops/sec)
+9. **Optimize WHERE queries** with proper indexing and operators
 
 ## Interpreting Results
 
@@ -553,7 +485,6 @@ Haro is ideal when you need:
 - **Versioning** and data history tracking
 - **Advanced features** like regex search, array queries, pagination
 - **Memory efficiency** is acceptable for feature richness
-- **Utility operations** for safe data manipulation
 
 ### When to Use Native Structures
 
