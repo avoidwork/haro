@@ -406,14 +406,13 @@ class Haro {
 	 * const user = store.get('user123');
 	 */
 	get(key) {
-		if (typeof key !== STRING_STRING && typeof key !== STRING_NUMBER) {
-			throw new Error("get: key must be a string or number");
+		const result = this.data.get(key);
+		if (result === undefined) {
+			return null;
 		}
-		let result = this.data.get(key) ?? null;
-		if (result !== null) {
-			result = this.#freezeResult(result);
+		if (this.immutable) {
+			return this.#freezeResult(result);
 		}
-
 		return result;
 	}
 

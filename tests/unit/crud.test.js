@@ -103,10 +103,9 @@ describe("Basic CRUD Operations", () => {
 			assert.strictEqual(Object.isFrozen(result[1]), true);
 		});
 
-		it("should throw error when key is not string or number", () => {
-			assert.throws(() => {
-				store.get({ key: "user1" });
-			}, /get: key must be a string or number/);
+		it("should return null when key is not found", () => {
+			const result = store.get("nonexistent");
+			assert.strictEqual(result, null);
 		});
 	});
 
