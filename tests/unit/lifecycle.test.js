@@ -11,11 +11,11 @@ describe("Lifecycle Hooks", () => {
 				beforeClear: [],
 				beforeDelete: [],
 				beforeSet: [],
-				onbatch: [],
-				onclear: [],
-				ondelete: [],
-				onoverride: [],
-				onset: [],
+				onBatch: [],
+				onClear: [],
+				onDelete: [],
+				onOverride: [],
+				onSet: [],
 			};
 		}
 
@@ -43,34 +43,34 @@ describe("Lifecycle Hooks", () => {
 			return super.beforeSet(key, data, batch, override);
 		}
 
-		onbatch(result, type) {
-			this.hooks.onbatch.push({ result, type });
+		onBatch(result, type) {
+			this.hooks.onBatch.push({ result, type });
 
-			return super.onbatch(result, type);
+			return super.onBatch(result, type);
 		}
 
-		onclear() {
-			this.hooks.onclear.push(true);
+		onClear() {
+			this.hooks.onClear.push(true);
 
-			return super.onclear();
+			return super.onClear();
 		}
 
-		ondelete(key, batch) {
-			this.hooks.ondelete.push({ key, batch });
+		onDelete(key, batch) {
+			this.hooks.onDelete.push({ key, batch });
 
-			return super.ondelete(key, batch);
+			return super.onDelete(key, batch);
 		}
 
-		onoverride(type) {
-			this.hooks.onoverride.push({ type });
+		onOverride(type) {
+			this.hooks.onOverride.push({ type });
 
-			return super.onoverride(type);
+			return super.onOverride(type);
 		}
 
-		onset(result, batch) {
-			this.hooks.onset.push({ result, batch });
+		onSet(result, batch) {
+			this.hooks.onSet.push({ result, batch });
 
-			return super.onset(result, batch);
+			return super.onSet(result, batch);
 		}
 	}
 
@@ -80,45 +80,45 @@ describe("Lifecycle Hooks", () => {
 		testStore = new TestStore();
 	});
 
-	it("should call beforeSet and onset hooks", () => {
+	it("should call beforeSet and onSet hooks", () => {
 		testStore.set("user1", { id: "user1", name: "John" });
 
 		assert.strictEqual(testStore.hooks.beforeSet.length, 1);
-		assert.strictEqual(testStore.hooks.onset.length, 1);
+		assert.strictEqual(testStore.hooks.onSet.length, 1);
 		assert.strictEqual(testStore.hooks.beforeSet[0].key, "user1");
-		assert.strictEqual(testStore.hooks.onset[0].result.name, "John");
+		assert.strictEqual(testStore.hooks.onSet[0].result.name, "John");
 	});
 
-	it("should call beforeDelete and ondelete hooks", () => {
+	it("should call beforeDelete and onDelete hooks", () => {
 		testStore.set("user1", { id: "user1", name: "John" });
 		testStore.delete("user1");
 
 		assert.strictEqual(testStore.hooks.beforeDelete.length, 1);
-		assert.strictEqual(testStore.hooks.ondelete.length, 1);
+		assert.strictEqual(testStore.hooks.onDelete.length, 1);
 		assert.strictEqual(testStore.hooks.beforeDelete[0].key, "user1");
 	});
 
-	it("should call beforeClear and onclear hooks", () => {
+	it("should call beforeClear and onClear hooks", () => {
 		testStore.set("user1", { id: "user1", name: "John" });
 		testStore.clear();
 
 		assert.strictEqual(testStore.hooks.beforeClear.length, 1);
-		assert.strictEqual(testStore.hooks.onclear.length, 1);
+		assert.strictEqual(testStore.hooks.onClear.length, 1);
 	});
 
-	it("should call beforeBatch and onbatch hooks", () => {
+	it("should call beforeBatch and onBatch hooks", () => {
 		const data = [{ id: "user1", name: "John" }];
 		testStore.batch(data);
 
 		assert.strictEqual(testStore.hooks.beforeBatch.length, 1);
-		assert.strictEqual(testStore.hooks.onbatch.length, 1);
+		assert.strictEqual(testStore.hooks.onBatch.length, 1);
 	});
 
-	it("should call onoverride hook", () => {
+	it("should call onOverride hook", () => {
 		const data = [["user1", { id: "user1", name: "John" }]];
 		testStore.override(data, "records");
 
-		assert.strictEqual(testStore.hooks.onoverride.length, 1);
-		assert.strictEqual(testStore.hooks.onoverride[0].type, "records");
+		assert.strictEqual(testStore.hooks.onOverride.length, 1);
+		assert.strictEqual(testStore.hooks.onOverride[0].type, "records");
 	});
 });

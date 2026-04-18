@@ -105,7 +105,7 @@ export class Haro {
 		const fn =
 			type === STRING_DEL ? (i) => this.delete(i, true) : (i) => this.set(null, i, true, true);
 
-		return this.onbatch(this.beforeBatch(args, type).map(fn), type);
+		return this.onBatch(this.beforeBatch(args, type).map(fn), type);
 	}
 
 	/**
@@ -170,7 +170,7 @@ export class Haro {
 		this.data.clear();
 		this.indexes.clear();
 		this.versions.clear();
-		this.reindex().onclear();
+		this.reindex().onClear();
 
 		return this;
 	}
@@ -229,7 +229,7 @@ export class Haro {
 		this.beforeDelete(key, batch);
 		this.deleteIndex(key, og);
 		this.data.delete(key);
-		this.ondelete(key, batch);
+		this.onDelete(key, batch);
 		if (this.versioning) {
 			this.versions.delete(key);
 		}
@@ -569,7 +569,7 @@ export class Haro {
 	 * @param {string} [type=STRING_EMPTY] - Type of batch operation that was performed
 	 * @returns {Array<Object>} Modified result (override this method to implement custom logic)
 	 */
-	onbatch(arg, type = STRING_EMPTY) {
+	onBatch(arg, type = STRING_EMPTY) {
 		// eslint-disable-line no-unused-vars
 		return arg;
 	}
@@ -579,12 +579,12 @@ export class Haro {
 	 * @returns {void} Override this method in subclasses to implement custom logic
 	 * @example
 	 * class MyStore extends Haro {
-	 *   onclear() {
+	 *   onClear() {
 	 *     console.log('Store cleared');
 	 *   }
 	 * }
 	 */
-	onclear() {
+	onClear() {
 		// Hook for custom logic after clear; override in subclass if needed
 	}
 
@@ -594,7 +594,7 @@ export class Haro {
 	 * @param {boolean} [batch=false] - Whether this was part of a batch operation
 	 * @returns {void} Override this method in subclasses to implement custom logic
 	 */
-	ondelete(key = STRING_EMPTY, batch = false) {
+	onDelete(key = STRING_EMPTY, batch = false) {
 		// eslint-disable-line no-unused-vars
 		// Hook for custom logic after delete; override in subclass if needed
 	}
@@ -604,7 +604,7 @@ export class Haro {
 	 * @param {string} [type=STRING_EMPTY] - Type of override operation that was performed
 	 * @returns {void} Override this method in subclasses to implement custom logic
 	 */
-	onoverride(type = STRING_EMPTY) {
+	onOverride(type = STRING_EMPTY) {
 		// eslint-disable-line no-unused-vars
 		// Hook for custom logic after override; override in subclass if needed
 	}
@@ -615,7 +615,7 @@ export class Haro {
 	 * @param {boolean} [batch=false] - Whether this was part of a batch operation
 	 * @returns {void} Override this method in subclasses to implement custom logic
 	 */
-	onset(arg = {}, batch = false) {
+	onSet(arg = {}, batch = false) {
 		// eslint-disable-line no-unused-vars
 		// Hook for custom logic after set; override in subclass if needed
 	}
@@ -642,7 +642,7 @@ export class Haro {
 		} else {
 			throw new Error(STRING_INVALID_TYPE);
 		}
-		this.onoverride(type);
+		this.onOverride(type);
 
 		return result;
 	}
@@ -777,7 +777,7 @@ export class Haro {
 		this.data.set(key, x);
 		this.setIndex(key, x, null);
 		const result = this.get(key);
-		this.onset(result, batch);
+		this.onSet(result, batch);
 
 		return result;
 	}
