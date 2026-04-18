@@ -8,33 +8,30 @@ import { haro } from "../dist/haro.js";
  */
 function createBasicOperationsBench(size = 10000) {
 	const bench = new Bench({ time: 500 });
-	const store = haro();
-	const testData = { id: 1, name: "test", category: "A" };
-
-	store.set(1, testData);
+	const testData = Array.from({ length: size }, (_, i) => ({ id: i, name: `test${i}`, category: "A" }));
+	const store = haro(testData);
 
 	bench
-		.add(`SET (${size} records)`, () => {
+		.add(`SET ${size} records`, () => {
+			const newStore = haro();
 			for (let i = 0; i < size; i++) {
-				store.set(i, { ...testData, id: i });
+				newStore.set(i, testData[i]);
 			}
 		})
-		.add(`GET (${size} records)`, () => {
+		.add(`GET ${size} records`, () => {
 			for (let i = 0; i < size; i++) {
 				store.get(i);
 			}
 		})
-		.add(`HAS (${size} records)`, () => {
+		.add(`HAS ${size} keys`, () => {
 			for (let i = 0; i < size; i++) {
 				store.has(i);
 			}
 		})
-		.add(`DELETE (${size} records)`, () => {
+		.add(`DELETE ${size} records`, () => {
+			const deleteStore = haro(testData);
 			for (let i = 0; i < size; i++) {
-				store.delete(i);
-			}
-			for (let i = 0; i < size; i++) {
-				store.set(i, { ...testData, id: i });
+				deleteStore.delete(i);
 			}
 		});
 
