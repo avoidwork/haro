@@ -12,23 +12,23 @@ function createBasicOperationsBench(size = 10000) {
 	const store = haro(testData);
 
 	bench
-		.add(`SET ${size} records`, () => {
+		.add(`store.set() ${size} records`, () => {
 			const newStore = haro();
 			for (let i = 0; i < size; i++) {
 				newStore.set(i, testData[i]);
 			}
 		})
-		.add(`GET ${size} records`, () => {
+		.add(`store.get() ${size} records`, () => {
 			for (let i = 0; i < size; i++) {
 				store.get(i);
 			}
 		})
-		.add(`HAS ${size} keys`, () => {
+		.add(`store.has() ${size} keys`, () => {
 			for (let i = 0; i < size; i++) {
 				store.has(i);
 			}
 		})
-		.add(`DELETE ${size} records`, () => {
+		.add(`store.delete() ${size} records`, () => {
 			const deleteStore = haro(testData);
 			for (let i = 0; i < size; i++) {
 				deleteStore.delete(i);
