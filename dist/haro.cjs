@@ -343,20 +343,19 @@ class Haro {
 			throw new Error("find: where must be an object");
 		}
 		const whereKeys = Object.keys(where).sort(this.#sortKeys);
-		const key = whereKeys.join(this.#delimiter);
+		const compositeKey = whereKeys.join(this.#delimiter);
 		const result = new Set();
 
-		for (const [indexName, index] of this.#indexes) {
-			if (indexName.startsWith(key + this.#delimiter) || indexName === key) {
-				const keys = this.#getIndexKeys(indexName, this.#delimiter, where);
-				const keysLen = keys.length;
-				for (let i = 0; i < keysLen; i++) {
-					const v = keys[i];
-					if (index.has(v)) {
-						const keySet = index.get(v);
-						for (const k of keySet) {
-							result.add(k);
-						}
+		const index = this.#indexes.get(compositeKey);
+		if (index) {
+			const keys = this.#getIndexKeys(compositeKey, this.#delimiter, where);
+			const keysLen = keys.length;
+			for (let i = 0; i < keysLen; i++) {
+				const v = keys[i];
+				if (index.has(v)) {
+					const keySet = index.get(v);
+					for (const k of keySet) {
+						result.add(k);
 					}
 				}
 			}
