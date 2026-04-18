@@ -340,18 +340,20 @@ export class Haro {
 		for (const [indexName, index] of this.indexes) {
 			if (indexName.startsWith(key + this.delimiter) || indexName === key) {
 				const keys = this.indexKeys(indexName, this.delimiter, where);
-				keys.forEach((v) => {
+				for (let i = 0; i < keys.length; i++) {
+					const v = keys[i];
 					if (index.has(v)) {
-						index.get(v).forEach((k) => result.add(k));
+						const keySet = index.get(v);
+						for (const k of keySet) {
+							result.add(k);
+						}
 					}
-				});
+				}
 			}
 		}
 
-		let records = Array.from(result).map((i) => this.get(i, raw));
-		records = this._freezeResult(records, raw);
-
-		return records;
+		const records = Array.from(result, (i) => this.get(i, raw));
+		return this.#freezeResult(records, raw);
 	}
 
 	/**
@@ -377,7 +379,7 @@ export class Haro {
 		}, []);
 		if (!raw) {
 			result = result.map((i) => this.list(i));
-			result = this._freezeResult(result);
+			result = this.#freezeResult(result);
 		}
 
 		return result;
@@ -432,7 +434,7 @@ export class Haro {
 		let result = this.data.get(key) ?? null;
 		if (result !== null && !raw) {
 			result = this.list(result);
-			result = this._freezeResult(result);
+			result = this.#freezeResult(result);
 		}
 
 		return result;
@@ -513,7 +515,7 @@ export class Haro {
 			throw new Error("limit: max must be a number");
 		}
 		let result = this.registry.slice(offset, offset + max).map((i) => this.get(i, raw));
-		result = this._freezeResult(result, raw);
+		result = this.#freezeResult(result, raw);
 
 		return result;
 	}
@@ -550,7 +552,7 @@ export class Haro {
 		this.forEach((value, key) => result.push(fn(value, key)));
 		if (!raw) {
 			result = result.map((i) => this.list(i));
-			result = this._freezeResult(result);
+			result = this.#freezeResult(result);
 		}
 
 		return result;
@@ -729,34 +731,34 @@ export class Haro {
 		const fn = typeof value === STRING_FUNCTION;
 		const rgex = value && typeof value.test === STRING_FUNCTION;
 		const indices = index ? (Array.isArray(index) ? index : [index]) : this.index;
-		for (const i of indices) {
-			const idx = this.indexes.get(i);
-			if (idx) {
-				for (const [lkey, lset] of idx) {
-					let match = false;
 
-					if (fn) {
-						match = value(lkey, i);
-					} else if (rgex) {
-						match = value.test(Array.isArray(lkey) ? lkey.join(STRING_COMMA) : lkey);
-					} else {
-						match = lkey === value;
-					}
+		for (let i = 0; i < indices.length; i++) {
+			const idxName = indices[i];
+			const idx = this.indexes.get(idxName);
+			if (!idx) continue;
 
-					if (match) {
-						for (const key of lset) {
-							if (this.data.has(key)) {
-								result.add(key);
-							}
+			for (const [lkey, lset] of idx) {
+				let match = false;
+
+				if (fn) {
+					match = value(lkey, idxName);
+				} else if (rgex) {
+					match = value.test(Array.isArray(lkey) ? lkey.join(STRING_COMMA) : lkey);
+				} else {
+					match = lkey === value;
+				}
+
+				if (match) {
+					for (const key of lset) {
+						if (this.data.has(key)) {
+							result.add(key);
 						}
 					}
 				}
 			}
 		}
-		let records = Array.from(result).map((key) => this.get(key, raw));
-		records = this._freezeResult(records, raw);
-
-		return records;
+		const records = Array.from(result, (key) => this.get(key, raw));
+		return this.#freezeResult(records, raw);
 	}
 
 	/**
@@ -910,7 +912,7 @@ export class Haro {
 		keys.sort(this.sortKeys);
 		const result = keys.flatMap((i) => Array.from(lindex.get(i)).map((key) => this.get(key, raw)));
 
-		return this._freezeResult(result);
+		return this.#freezeResult(result);
 	}
 
 	/**
@@ -953,27 +955,12 @@ export class Haro {
 	}
 
 	/**
-	 * Internal helper for validating method arguments
-	 * @param {*} value - Value to validate
-	 * @param {string} expectedType - Expected type name
-	 * @param {string} methodName - Name of method being called
-	 * @param {string} paramName - Name of parameter
-	 * @throws {Error} Throws error if validation fails
-	 */
-	_validateType(value, expectedType, methodName, paramName) {
-		const actualType = typeof value;
-		if (actualType !== expectedType) {
-			throw new Error(`${methodName}: ${paramName} must be ${expectedType}, got ${actualType}`);
-		}
-	}
-
-	/**
 	 * Internal helper to freeze result if immutable mode is enabled
 	 * @param {Array|Object} result - Result to freeze
 	 * @param {boolean} raw - Whether to skip freezing
 	 * @returns {Array|Object} Frozen or original result
 	 */
-	_freezeResult(result, raw = false) {
+	#freezeResult(result, raw = false) {
 		if (!raw && this.immutable) {
 			result = Object.freeze(result);
 		}
@@ -1085,7 +1072,7 @@ export class Haro {
 				}
 			}
 
-			return this._freezeResult(results);
+			return this.#freezeResult(results);
 		}
 
 		if (this.warnOnFullScan) {
