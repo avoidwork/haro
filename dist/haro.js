@@ -186,7 +186,6 @@ class Haro {
 		this.#data.clear();
 		this.#indexes.clear();
 		this.#versions.clear();
-		this.reindex();
 
 		return this;
 	}
@@ -719,7 +718,7 @@ class Haro {
 			throw new Error("sort: fn must be a function");
 		}
 		const dataSize = this.#data.size;
-		let result = this.limit(INT_0, dataSize, true).sort(fn);
+		let result = this.limit(INT_0, dataSize).sort(fn);
 		if (frozen) {
 			result = Object.freeze(result);
 		}
