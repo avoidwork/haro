@@ -98,7 +98,33 @@ class Haro {
 	}
 
 	/**
+	 * Inserts or updates multiple records in a single operation
+	 * @param {Array<Object>} records - Array of records to insert or update
+	 * @returns {Array<Object>} Array of stored records
+	 * @example
+	 * const results = store.setMany([
+	 *   {id: 1, name: 'John'},
+	 *   {id: 2, name: 'Jane'}
+	 * ]);
+	 */
+	setMany(records) {
+		return records.map((i) => this.set(null, i, true, true));
+	}
+
+	/**
+	 * Deletes multiple records in a single operation
+	 * @param {Array<string|number>} keys - Array of keys to delete
+	 * @returns {Array<void>} Array of undefined values
+	 * @example
+	 * store.deleteMany(['key1', 'key2', 'key3']);
+	 */
+	deleteMany(keys) {
+		return keys.map((i) => this.delete(i, true));
+	}
+
+	/**
 	 * Performs batch operations on multiple records for efficient bulk processing
+	 * @deprecated Use setMany() or deleteMany() instead
 	 * @param {Array<Object>} args - Array of records to process
 	 * @param {string} [type=STRING_SET] - Type of operation: 'set' for upsert, 'del' for delete
 	 * @returns {Array<Object>} Array of results from the batch operation
@@ -189,7 +215,8 @@ class Haro {
 				: Array.isArray(data[i])
 					? data[i]
 					: [data[i]];
-			for (let j = 0; j < values.length; j++) {
+			const len = values.length;
+			for (let j = 0; j < len; j++) {
 				const value = values[j];
 				if (idx.has(value)) {
 					const o = idx.get(value);
@@ -241,13 +268,16 @@ class Haro {
 	#getIndexKeys(arg, delimiter, data) {
 		const fields = arg.split(delimiter).sort(this.#sortKeys);
 		const result = [""];
-		for (let i = 0; i < fields.length; i++) {
+		const fieldsLen = fields.length;
+		for (let i = 0; i < fieldsLen; i++) {
 			const field = fields[i];
 			const values = Array.isArray(data[field]) ? data[field] : [data[field]];
 			const newResult = [];
-			for (let j = 0; j < result.length; j++) {
+			const resultLen = result.length;
+			const valuesLen = values.length;
+			for (let j = 0; j < resultLen; j++) {
 				const existing = result[j];
-				for (let k = 0; k < values.length; k++) {
+				for (let k = 0; k < valuesLen; k++) {
 					const value = values[k];
 					const newKey = i === 0 ? value : `${existing}${delimiter}${value}`;
 					newResult.push(newKey);
@@ -290,7 +320,8 @@ class Haro {
 		for (const [indexName, index] of this.indexes) {
 			if (indexName.startsWith(key + this.delimiter) || indexName === key) {
 				const keys = this.#getIndexKeys(indexName, this.delimiter, where);
-				for (let i = 0; i < keys.length; i++) {
+				const keysLen = keys.length;
+				for (let i = 0; i < keysLen; i++) {
 					const v = keys[i];
 					if (index.has(v)) {
 						const keySet = index.get(v);
@@ -521,11 +552,12 @@ class Haro {
 		if (index && this.index.includes(index) === false) {
 			this.index.push(index);
 		}
-		for (let i = 0; i < indices.length; i++) {
+		const indicesLen = indices.length;
+		for (let i = 0; i < indicesLen; i++) {
 			this.indexes.set(indices[i], new Map());
 		}
 		this.forEach((data, key) => {
-			for (let i = 0; i < indices.length; i++) {
+			for (let i = 0; i < indicesLen; i++) {
 				this.#setIndex(key, data, indices[i]);
 			}
 		});
@@ -551,8 +583,9 @@ class Haro {
 		const fn = typeof value === STRING_FUNCTION;
 		const rgex = value && typeof value.test === STRING_FUNCTION;
 		const indices = index ? (Array.isArray(index) ? index : [index]) : this.index;
+		const indicesLen = indices.length;
 
-		for (let i = 0; i < indices.length; i++) {
+		for (let i = 0; i < indicesLen; i++) {
 			const idxName = indices[i];
 			const idx = this.indexes.get(idxName);
 			if (!idx) continue;
@@ -633,7 +666,8 @@ class Haro {
 	 */
 	#setIndex(key, data, indice) {
 		const indices = indice === null ? this.index : [indice];
-		for (let i = 0; i < indices.length; i++) {
+		const indicesLen = indices.length;
+		for (let i = 0; i < indicesLen; i++) {
 			const field = indices[i];
 			let idx = this.indexes.get(field);
 			if (!idx) {
@@ -645,7 +679,8 @@ class Haro {
 				: Array.isArray(data[field])
 					? data[field]
 					: [data[field]];
-			for (let j = 0; j < values.length; j++) {
+			const valuesLen = values.length;
+			for (let j = 0; j < valuesLen; j++) {
 				const value = values[j];
 				if (!idx.has(value)) {
 					idx.set(value, new Set());
@@ -718,7 +753,12 @@ class Haro {
 		const lindex = this.indexes.get(index);
 		lindex.forEach((idx, key) => keys.push(key));
 		keys.sort(this.#sortKeys);
-		const result = keys.flatMap((i) => Array.from(lindex.get(i)).map((key) => this.get(key)));
+		const result = keys.flatMap((i) => {
+			const inner = Array.from(lindex.get(i));
+			const innerLen = inner.length;
+			const mapped = Array.from({ length: innerLen }, (_, j) => this.get(inner[j]));
+			return mapped;
+		});
 
 		return this.#freezeResult(result);
 	}
@@ -733,7 +773,8 @@ class Haro {
 	toArray() {
 		const result = Array.from(this.data.values());
 		if (this.immutable) {
-			for (let i = 0; i < result.length; i++) {
+			const resultLen = result.length;
+			for (let i = 0; i < resultLen; i++) {
 				Object.freeze(result[i]);
 			}
 			Object.freeze(result);

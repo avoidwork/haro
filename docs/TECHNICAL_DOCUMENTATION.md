@@ -92,7 +92,6 @@ sequenceDiagram
     Client->>+Haro: set(key, data)
     
     Note over Haro: Validate and prepare data
-    Haro->>Haro: beforeSet(key, data)
     
     alt Key exists
         Haro->>+DataStore: get(key)
@@ -113,8 +112,6 @@ sequenceDiagram
     
     Haro->>+IndexSystem: setIndex(key, data)
     IndexSystem-->>-Haro: indexes updated
-    
-    Haro->>Haro: onset(record)
     
     Haro-->>-Client: processed record
 ```
@@ -312,36 +309,35 @@ $$
 | **Delete** | O(i) | O(1) | i = number of indexes |
 | **Find** | O(i × k) | O(r) | i = indexes, k = composite keys, r = results |
 | **Search** | O(n × m) | O(r) | n = index entries, m = indexes searched |
-| **Batch** | O(n × i) | O(n) | n = batch size, i = indexes |
+| **setMany** | O(n × i) | O(n) | n = records size, i = indexes |
+| **deleteMany** | O(n × i) | O(n) | n = keys size, i = indexes |
 | **Clear** | O(n) | O(1) | Remove all records |
 
 ### Batch Operations
 
 ```mermaid
 graph TD
-    A["📦 Batch Request"] --> B["🔄 beforeBatch()"]
-    B --> C["📊 Process Items"]
+    A["📦 Batch Request"] --> B["📊 Process Items"]
     
-    C --> D["🔗 Parallel Processing"]
-    D --> E1["⚡ Item 1"]
-    D --> E2["⚡ Item 2"]
-    D --> E3["⚡ Item N"]
+    B --> C["🔗 Parallel Processing"]
+    C --> D1["⚡ Item 1"]
+    C --> D2["⚡ Item 2"]
+    C --> D3["⚡ Item N"]
     
-    E1 --> F["📝 Individual Operation"]
-    E2 --> F
-    E3 --> F
+    D1 --> E["📝 Individual Operation"]
+    D2 --> E
+    D3 --> E
     
-    F --> G["📊 Collect Results"]
-    G --> H["🔄 onbatch()"]
-    H --> I["✅ Return Results"]
+    E --> F["📊 Collect Results"]
+    F --> G["✅ Return Results"]
     
     classDef batch fill:#0066CC,stroke:#004499,stroke-width:2px,color:#fff
     classDef process fill:#008000,stroke:#006600,stroke-width:2px,color:#fff
     classDef parallel fill:#FF8C00,stroke:#CC7000,stroke-width:2px,color:#fff
     
-    class A,B,H,I batch
-    class C,F,G process
-    class D,E1,E2,E3 parallel
+    class A,F,G batch
+    class B,E process
+    class C,D1,D2,D3 parallel
 ```
 
 ## Configuration
@@ -555,7 +551,7 @@ class EdgeDataManager {
   
   async syncToCloud() {
     const batch = this.syncQueue.splice(0, 100);
-    await this.cloudSync.batch(batch);
+    await this.cloudSync.setMany(batch);
   }
 }
 ```
@@ -652,7 +648,7 @@ class MLFeatureStore {
       }
     }));
     
-    return this.store.batch(batch, 'set');
+    return this.store.setMany(batch);
   }
   
   getFeatureVector(entityId, featureTypes, version = 'latest') {
@@ -863,7 +859,8 @@ new Haro(config)
 | `delete(key)` | Remove record | O(1) + O(i) |
 | `find(criteria)` | Query with indexes | O(1) to O(n) |
 | `search(value, index)` | Search across indexes | O(n) |
-| `batch(records, type)` | Bulk operations | O(n) + O(ni) |
+| `setMany(records)` | Bulk insert/update | O(n) + O(ni) |
+| `deleteMany(keys)` | Bulk delete | O(n) + O(ni) |
 | `clear()` | Remove all records | O(n) |
 
 ### Query Methods
@@ -885,8 +882,6 @@ new Haro(config)
 | `clone(arg)` | Deep clone object | Data isolation |
 | `freeze(...args)` | Freeze objects/arrays | Immutability |
 | `merge(a, b)` | Merge two values | Data combination |
-| `each(arr, fn)` | Iterate array | Custom iteration |
-| `list(arg)` | Convert to [key, value] | Data transformation |
 
 ## Best Practices
 
@@ -913,28 +908,15 @@ const auditStore = new Haro({
   immutable: true
 });
 
-// ✅ Good - Batch operations for bulk updates
+// ✅ Good - Batch operations for bulk data
 const records = [...largeDataset];
-store.batch(records, 'set');
+store.setMany(records);
 
 // ❌ Bad - Individual operations for bulk data
 largeDataset.forEach(record => store.set(null, record));
 ```
 
-### Lifecycle Hooks
 
-```javascript
-// ✅ Good - Use lifecycle hooks for custom logic
-class AuditStore extends Haro {
-  beforeSet(key, data, batch, override) {
-    console.log('Setting record:', key);
-  }
-  
-  onset(record, batch) {
-    auditLog.push({ action: 'set', record, timestamp: Date.now() });
-  }
-}
-```
 
 ### Query Optimization
 

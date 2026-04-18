@@ -24,7 +24,8 @@ Haro is a modern immutable DataStore for collections of records with indexing, v
   - [sort()](#sortfn-frozen)
   - [limit()](#limitoffset-max)
 - [Batch Operations](#batch-operations)
-  - [batch()](#batchargs-type)
+  - [setMany()](#setmanyrecords)
+  - [deleteMany()](#deletemanykeys)
   - [override()](#overridedata-type)
 - [Iteration Methods](#iteration-methods)
   - [entries()](#entries)
@@ -322,24 +323,37 @@ const page2 = store.limit(10, 10);  // Next 10 records
 
 ## Batch Operations
 
-### batch(args, type)
+### setMany(records)
 
-Performs batch operations on multiple records for efficient bulk processing.
+Inserts or updates multiple records in a single operation.
 
 **Parameters:**
-- `args` (Array<Object>): Array of records to process
-- `type` (string): Type of operation: 'set' for upsert, 'del' for delete (default: `'set'`)
+- `records` (Array<Object>): Array of records to insert or update
 
-**Returns:** Array<Object> - Array of results from the batch operation
-
-**Throws:** Error if individual operations fail during batch processing
+**Returns:** Array<Object> - Array of stored records
 
 **Example:**
 ```javascript
-const results = store.batch([
+const results = store.setMany([
   {id: 1, name: 'John'},
   {id: 2, name: 'Jane'}
-], 'set');
+]);
+```
+
+---
+
+### deleteMany(keys)
+
+Deletes multiple records in a single operation.
+
+**Parameters:**
+- `keys` (Array<string|number>): Array of keys to delete
+
+**Returns:** Array<void> - Array of undefined values
+
+**Example:**
+```javascript
+store.deleteMany(['key1', 'key2', 'key3']);
 ```
 
 ---
