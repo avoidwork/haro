@@ -117,22 +117,22 @@ class Haro {
 	 * ], 'set');
 	 */
 	batch(args, type = STRING_SET) {
+		this.beforeBatch(args, type);
 		const fn =
 			type === STRING_DEL ? (i) => this.delete(i, true) : (i) => this.set(null, i, true, true);
 
-		return this.onBatch(this.beforeBatch(args, type).map(fn), type);
+		return this.onBatch(args.map(fn), type);
 	}
 
 	/**
 	 * Lifecycle hook executed before batch operations for custom preprocessing
 	 * @param {Array<Object>} arg - Arguments passed to batch operation
 	 * @param {string} [type=STRING_EMPTY] - Type of batch operation ('set' or 'del')
-	 * @returns {Array<Object>} The arguments array (possibly modified) to be processed
+	 * @returns {void} Override this method in subclasses to implement custom logic
 	 */
 	beforeBatch(arg, type = STRING_EMPTY) {
 		// eslint-disable-line no-unused-vars
 		// Hook for custom logic before batch; override in subclass if needed
-		return arg;
 	}
 
 	/**
@@ -166,11 +166,12 @@ class Haro {
 	 * @param {Object} [data={}] - Record data being set
 	 * @param {boolean} [batch=false] - Whether this is part of a batch operation
 	 * @param {boolean} [override=false] - Whether to override existing data
-	 * @returns {void} Override this method in subclasses to implement custom logic
+	 * @returns {Object} Modified data object (override this method to implement custom logic)
 	 */
 	beforeSet(key = STRING_EMPTY, data = {}, batch = false, override = false) {
 		// eslint-disable-line no-unused-vars
 		// Hook for custom logic before set; override in subclass if needed
+		return data;
 	}
 
 	/**
