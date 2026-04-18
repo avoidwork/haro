@@ -8,7 +8,11 @@ import { haro } from "../dist/haro.js";
  */
 function createBasicOperationsBench(size = 10000) {
 	const bench = new Bench({ time: 500 });
-	const testData = Array.from({ length: size }, (_, i) => ({ id: i, name: `test${i}`, category: "A" }));
+	const testData = Array.from({ length: size }, (_, i) => ({
+		id: i,
+		name: `test${i}`,
+		category: "A",
+	}));
 	const store = haro(testData);
 
 	bench
@@ -232,7 +236,14 @@ async function runAllBenchmarks(options = {}) {
 	} = options;
 
 	const results = {};
-	const sizes = { basic: 10000, search: 10000, index: 10000, utility: 1000, pagination: 10000, persistence: 5000 };
+	const sizes = {
+		basic: 10000,
+		search: 10000,
+		index: 10000,
+		utility: 1000,
+		pagination: 10000,
+		persistence: 5000,
+	};
 
 	console.log("🚀 Starting Haro Benchmark Suite (tinybench)...\n");
 	console.log(`Node.js: ${process.version}\n`);
