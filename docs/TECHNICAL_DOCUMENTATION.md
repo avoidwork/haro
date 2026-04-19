@@ -320,9 +320,9 @@ CK = 'where_' + SHA256(JSON.stringify([{ name: 'John' }]))
 
 When cache size exceeds maximum ($S > S_{max}$), the least recently used entry is evicted:
 
-$$\text{evict}() = \text{LRU\_head}$$
+$$\text{evict}() = \text{LRU\\_head}$$
 
-Where `$\text{LRU\_head}$` is the oldest accessed entry in the doubly-linked list.
+Where `$\text{LRU\\_head}$` is the oldest accessed entry in the doubly-linked list.
 
 **Time Complexity:**
 - Cache hit: `$O(1)$` - Direct hash lookup + move to end
