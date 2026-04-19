@@ -35,6 +35,7 @@ A fast, flexible immutable DataStore for collections of records with indexing, v
 - **📚 Built-in Versioning**: Automatic change tracking without writing audit trail code
 - **🔒 Immutable Mode**: Data safety with frozen objects - prevent accidental mutations
 - **🔍 Advanced Querying**: Complex queries with `find()`, `where()`, `search()` - no manual filtering
+- **🎯 Deep Indexing**: Query nested objects with dot notation (e.g., `user.profile.department`)
 - **🗄️ LRU Caching**: Built-in cache for repeated queries with automatic invalidation
 - **📦 Batch Operations**: Process thousands of records in milliseconds with `setMany()`/`deleteMany()`
 - **🛠️ Zero Boilerplate**: No setup required - just instantiate and query
@@ -283,6 +284,51 @@ const affordable = products.filter(p => p.price < 500);
 // Sort and paginate
 const sorted = products.sortBy('price');
 const page1 = products.limit(0, 10);
+```
+
+### Deep Indexing (Nested Paths)
+
+```javascript
+import { haro } from 'haro';
+
+const users = haro(null, {
+  index: ['name', 'user.email', 'user.profile.department', 'user.email|user.profile.department']
+});
+
+users.setMany([
+  { 
+    id: '1', 
+    name: 'Alice', 
+    user: { 
+      email: 'alice@company.com',
+      profile: { department: 'Engineering' }
+    } 
+  },
+  { 
+    id: '2', 
+    name: 'Bob', 
+    user: { 
+      email: 'bob@company.com',
+      profile: { department: 'Sales' }
+    } 
+  }
+]);
+
+// Find by nested field
+const alice = users.find({ 'user.email': 'alice@company.com' });
+
+// Query by deeply nested field
+const engineers = users.find({ 'user.profile.department': 'Engineering' });
+
+// Composite index with nested fields
+const aliceEng = users.find({
+  'user.email': 'alice@company.com',
+  'user.profile.department': 'Engineering'
+});
+
+// Works with where(), search(), and sortBy()
+const results = await users.where({ 'user.profile.department': 'Engineering' });
+const sorted = users.sortBy('user.profile.department');
 ```
 
 ### Versioning

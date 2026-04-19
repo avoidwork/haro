@@ -189,34 +189,41 @@ store.clear();
 
 ### find(where)
 
-Finds records matching criteria using indexes.
+Finds records matching criteria using indexes. Supports dot notation for nested fields.
 
 **Parameters:**
-- `where` (Object): Field-value pairs to match
+- `where` (Object): Field-value pairs to match (supports dot notation for nested paths)
 
 **Returns:** Array<Object> - Matching records
 
 **Example:**
 ```javascript
-store.find({department: 'engineering', active: true});
+// Flat field
+store.find({department: 'engineering'});
+
+// Nested field with dot notation
+store.find({'user.email': 'john@example.com', 'user.profile.department': 'IT'});
 ```
 
 ---
 
 ### where(predicate, op)
 
-Filters records with predicate logic supporting AND/OR on arrays.
+Filters records with predicate logic supporting AND/OR on arrays. Supports dot notation for nested fields.
 
 **Parameters:**
-- `predicate` (Object): Field-value pairs
+- `predicate` (Object): Field-value pairs (supports dot notation for nested paths)
 - `op` (string): Operator: '||' (OR) or '&&' (AND) (default: `'||'`)
 
 **Returns:** Promise<Array<Object>> - Matching records (async)
 
 **Example:**
 ```javascript
+// Flat field
 const results = await store.where({tags: ['admin', 'user']}, '||');
-const filtered = await store.where({email: /^admin@/});
+
+// Nested field with dot notation
+const filtered = await store.where({'user.profile.department': 'IT', 'user.status': 'active'});
 ```
 
 ---

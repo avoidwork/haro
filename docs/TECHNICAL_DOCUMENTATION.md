@@ -174,7 +174,7 @@ flowchart TD
 
 ## Indexing System
 
-Haro's indexing system provides O(1) lookup performance for indexed fields:
+Haro's indexing system provides O(1) lookup performance for indexed fields, including support for nested paths with dot notation:
 
 ### Index Types
 
@@ -183,16 +183,18 @@ graph LR
     A["🏷️ Index Types"] --> B["📊 Single Field<br/>name → users"]
     A --> C["🔗 Composite<br/>name|dept → users"]
     A --> D["📚 Array Field<br/>tags → users"]
+    A --> E["🔍 Nested Path<br/>user.email → users"]
     
-    B --> E["🔍 Direct Lookup<br/>O(1) complexity"]
-    C --> F["🔍 Multi-key Lookup<br/>O(k) complexity"]
-    D --> G["🔍 Array Search<br/>O(m) complexity"]
+    B --> F["🔍 Direct Lookup<br/>O(1) complexity"]
+    C --> G["🔍 Multi-key Lookup<br/>O(k) complexity"]
+    D --> H["🔍 Array Search<br/>O(m) complexity"]
+    E --> I["🔍 Nested Lookup<br/>O(1) complexity"]
     
     classDef indexType fill:#0066CC,stroke:#004499,stroke-width:2px,color:#fff
     classDef performance fill:#008000,stroke:#006600,stroke-width:2px,color:#fff
     
-    class A,B,C,D indexType
-    class E,F,G performance
+    class A,B,C,D,E indexType
+    class F,G,H,I performance
 ```
 
 ### Index Maintenance
@@ -264,7 +266,7 @@ For a composite index with fields $F = [f_1, f_2, \dots, f_n]$, the index keys a
 $$IK = V(f_1) + \text{delimiter} + V(f_2) + \dots + \text{delimiter} + V(f_n)$$
 
 Where:
-- `$V(f)$` = Value(s) for field `f`
+- `$V(f)$` = Value(s) for field `f` (supports dot notation for nested paths)
 - For array fields, each array element generates a separate key
 
 **Example:**
@@ -277,9 +279,13 @@ For array data `{name: ['John', 'Jane'], dept: 'IT'}` with composite index `name
 
 Generated keys: `['John|IT', 'Jane|IT']`
 
+For nested data `{user: {email: 'john@example.com', profile: {dept: 'IT'}}}` with composite index `user.email|user.profile.dept`:
+
+Generated keys: `['john@example.com|IT']`
+
 ### Set Theory Operations
 
-Haro's `find()` and `where()` methods use set operations for query optimization:
+Haro's `find()` and `where()` methods use set operations for query optimization, including support for nested paths:
 
 **Find operation (AND logic across fields):**
 
@@ -302,6 +308,14 @@ Haro's `find()` and `where()` methods use set operations for query optimization:
 ```
 
 > Example: Records with status='active' ∩ Records with role='admin' (must have BOTH)
+
+**Nested path example:**
+
+```math
+\text{find}(\{\text{user.email}: v_e, \text{user.profile.dept}: v_d\}) = \bigcap_{k \in \{e,d\}} \text{Index}(k = v_k)
+```
+
+> Example: Records with user.email='john@example.com' ∩ Records with user.profile.dept='IT'
 
 ### Cache Key Generation
 

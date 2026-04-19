@@ -46,6 +46,7 @@ npm run benchmark         # Run benchmarks
 ## Important Notes
 - The `immutable` option freezes data for immutability
 - Indexes improve query performance for `find()` and `where()` operations
+- Deep indexing with dot notation is supported (e.g., `user.profile.department`)
 - Versioning tracks historical changes when enabled
 - Batch operations are more efficient than individual operations
 - LRU caching is available for `search()` and `where()` methods (opt-in with `cache: true`)
