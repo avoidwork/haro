@@ -2,6 +2,8 @@
  * Configuration object for creating a Haro instance
  */
 export interface HaroConfig {
+  cache?: boolean;
+  cacheSize?: number;
   delimiter?: string;
   id?: string;
   immutable?: boolean;
@@ -294,9 +296,9 @@ export class Haro {
    * @param value - Value to search for (string, function, or RegExp)
    * @param index - Index(es) to search in, or all if not specified
    * @param raw - Whether to return raw data without processing
-   * @returns Array of matching records
+   * @returns Promise resolving to array of matching records
    */
-  search(value: any, index?: string | string[], raw?: boolean): any[];
+  search(value: any, index?: string | string[], raw?: boolean): Promise<any[]>;
 
   /**
    * Sets or updates a record in the store with automatic indexing
@@ -363,9 +365,33 @@ export class Haro {
    * Advanced filtering with predicate logic supporting AND/OR operations on arrays
    * @param predicate - Object with field-value pairs for filtering
    * @param op - Operator for array matching ('||' for OR, '&&' for AND)
-   * @returns Array of records matching the predicate criteria
+   * @returns Promise resolving to array of records matching the predicate criteria
    */
-  where(predicate?: Record<string, any>, op?: string): any[];
+  where(predicate?: Record<string, any>, op?: string): Promise<any[]>;
+
+  /**
+   * Clears the cache
+   * @returns This instance for method chaining
+   */
+  clearCache(): this;
+
+  /**
+   * Returns the current cache size
+   * @returns Number of entries in cache
+   */
+  getCacheSize(): number;
+
+  /**
+   * Returns cache statistics
+   * @returns Statistics object with hits, misses, sets, deletes, evictions
+   */
+  getCacheStats(): {
+    hits: number;
+    misses: number;
+    sets: number;
+    deletes: number;
+    evictions: number;
+  } | null;
 }
 
 /**

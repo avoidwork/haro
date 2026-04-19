@@ -73,6 +73,8 @@ The Haro class uses the following private fields (denoted by `#` prefix):
 - `#versioning` - Boolean flag for versioning
 - `#warnOnFullScan` - Boolean flag for full scan warnings
 - `#inBatch` - Boolean flag for batch operation state
+- `#cache` - LRU cache instance (when enabled)
+- `#cacheEnabled` - Boolean flag for cache state
 
 These fields are encapsulated and not directly accessible from outside the class.
 
@@ -93,25 +95,35 @@ These fields are encapsulated and not directly accessible from outside the class
 
 ### Configuration
 
-```mermaid
-graph TD
-    A["⚙️ Constructor Options"] --> B["🔑 Key Field"]
-    A --> C["📇 Index Fields"]
-    A --> D["🔒 Immutable Mode"]
-    A --> E["📚 Versioning"]
-    A --> F["🔗 Delimiter"]
-    
-    B --> G["🎯 Primary Key Selection"]
-    C --> H["⚡ Query Optimization"]
-    D --> I["🛡️ Data Protection"]
-    E --> J["📜 Change Tracking"]
-    F --> K["🔗 Composite Keys"]
-    
-    classDef config fill:#6600CC,stroke:#440088,stroke-width:2px,color:#fff
-    classDef feature fill:#0066CC,stroke:#004499,stroke-width:2px,color:#fff
-    
-    class A,B,C,D,E,F config
-    class G,H,I,J,K feature
+```javascript
+const store = new Haro({
+  // Primary key field (default: 'id')
+  key: 'userId',
+  
+  // Index configuration
+  index: ['name', 'email', 'department', 'name|department'],
+  
+  // Immutable mode - returns frozen objects
+  immutable: true,
+  
+  // Version tracking
+  versioning: true,
+  
+  // Composite key delimiter
+  delimiter: '|',
+  
+  // Instance identifier (auto-generated if not provided)
+  id: 'user-store-1',
+  
+  // Enable warnings for full table scan queries (only applies to where())
+  warnOnFullScan: true,
+  
+  // Enable LRU caching for search/where (default: false)
+  cache: true,
+  
+  // Maximum cache size (default: 1000)
+  cacheSize: 500
+});
 ```
 
 ### Query Processing Flow
@@ -120,30 +132,39 @@ graph TD
 flowchart TD
     A["🔍 Query Request"] --> B["🔑 Extract Keys from Criteria"]
     
-    B --> C{"Index Available?"}
+    B --> C{"Cache Enabled?"}
     
-    C -->|Yes| D["📇 Index Lookup"]
-    C -->|No| E["🔄 Full Scan"]
+    C -->|Yes| D{"Cache Hit?"}
+    C -->|No| E{"Index Available?"}
     
-    D --> F["📊 Fetch Records"]
-    E --> F
+    D -->|Yes| F["💾 Return Cached Result"]
+    D -->|No| E
     
-    F --> G{"Immutable Mode?"}
+    E -->|Yes| G["📇 Index Lookup"]
+    E -->|No| H["🔄 Full Scan"]
     
-    G -->|Yes| H["🔒 Freeze Results"]
-    G -->|No| I["✅ Return Results"]
-    
+    G --> I["📊 Fetch Records"]
     H --> I
     
+    I --> J{"Immutable Mode?"}
+    
+    J -->|Yes| K["🔒 Freeze Results"]
+    J -->|No| L["✅ Return Results"]
+    
+    K --> L
+    L --> M["💾 Cache Result"]
+    
     classDef query fill:#0066CC,stroke:#004499,stroke-width:2px,color:#fff
+    classDef cache fill:#FF8C00,stroke:#CC7000,stroke-width:2px,color:#fff
     classDef index fill:#008000,stroke:#006600,stroke-width:2px,color:#fff
-    classDef scan fill:#FF8C00,stroke:#CC7000,stroke-width:2px,color:#fff
+    classDef scan fill:#FF4500,stroke:#CC3700,stroke-width:2px,color:#fff
     classDef result fill:#6600CC,stroke:#440088,stroke-width:2px,color:#fff
     
     class A,B,C query
-    class D index
-    class E scan
-    class F,G,H,I result
+    class D,F,M cache
+    class G index
+    class H scan
+    class I,J,K,L result
 ```
 
 ## Indexing System
@@ -223,8 +244,10 @@ Haro's operations are grounded in computer science fundamentals, providing predi
 | Operation | Complexity | Description |
 |-----------|------------|-------------|
 | FIND | $O(i \times k)$ | i = number of indexes, k = composite keys generated |
-| SEARCH | $O(n \times m)$ | n = total index entries, m = indexes searched |
-| WHERE | $O(1)$ to $O(n)$ | Indexed lookup or full scan fallback |
+| SEARCH (cached) | $O(1)$ | Direct cache lookup |
+| SEARCH (uncached) | $O(n \times m)$ | n = total index entries, m = indexes searched |
+| WHERE (cached) | $O(1)$ | Direct cache lookup |
+| WHERE (uncached) | $O(1)$ to $O(n)$ | Indexed lookup or full scan fallback |
 | FILTER | $O(n)$ | Predicate evaluation per record |
 | SORTBY | $O(k \log k + n)$ | Sorting by indexed field (k = unique indexed values) |
 | LIMIT | $O(m)$ | m = max records to return |
@@ -389,10 +412,17 @@ graph TD
 ### Memory Usage
 
 ```mermaid
-pie title Memory Distribution
+pie title Memory Distribution (without cache)
     "Record Data" : 60
     "Index Structures" : 25
     "Version History" : 10
+    "Metadata" : 5
+
+pie title Memory Distribution (with cache enabled)
+    "Record Data" : 50
+    "Index Structures" : 20
+    "Version History" : 10
+    "Cache" : 15
     "Metadata" : 5
 ```
 
@@ -439,29 +469,25 @@ function handleUserEvent(event) {
 ### Caching Layer
 
 ```javascript
-// Cache configuration
-const cache = new Haro({
-  key: 'cacheKey',
-  index: ['category', 'expiry'],
-  immutable: false
+// Built-in query cache
+const store = new Haro({
+  index: ['name', 'category'],
+  cache: true,
+  cacheSize: 1000
 });
 
-// Cache with TTL
-function setCache(key, data, ttl = 3600000) {
-  return cache.set(key, {
-    cacheKey: key,
-    data: data,
-    expiry: Date.now() + ttl,
-    category: 'api-response'
-  });
-}
+// First call - cache miss
+const results1 = await store.where({ name: 'John' });
 
-// Cleanup expired entries
-function cleanupCache() {
-  const now = Date.now();
-  const expired = cache.filter(record => record.expiry < now);
-  expired.forEach(record => cache.delete(record.cacheKey));
-}
+// Second call - cache hit (instant)
+const results2 = await store.where({ name: 'John' });
+
+// Get cache statistics
+console.log(store.getCacheStats()); 
+// { hits: 1, misses: 1, sets: 1, deletes: 0, evictions: 0 }
+
+// Manual cache clear
+store.clearCache();
 ```
 
 ### State Management
@@ -846,18 +872,19 @@ new Haro(config)
 
 ### Core Methods
 
-| Method | Description | Time Complexity |
-|--------|-------------|----------------|
-| `set(key, data)` | Create or update record | O(1) + O(i) + O(v) |
-| `get(key)` | Retrieve record by key | O(1) |
-| `delete(key)` | Remove record | O(1) + O(i) |
-| `find(criteria)` | Query with indexes | O(1) to O(n) |
-| `search(value, index)` | Search across indexes | O(n) |
-| `setMany(records)` | Bulk insert/update | O(n) + O(ni) |
-| `deleteMany(keys)` | Bulk delete | O(n) + O(ni) |
-| `clear()` | Remove all records | O(n) |
+| Method | Description | Time Complexity (Uncached) | Time Complexity (Cached) |
+|--------|-------------|----------------|----------------|
+| `set(key, data)` | Create or update record | O(1) + O(i) + O(v) | O(1) + O(i) + O(v) |
+| `get(key)` | Retrieve record by key | O(1) | O(1) |
+| `delete(key)` | Remove record | O(1) + O(i) | O(1) + O(i) |
+| `find(criteria)` | Query with indexes | O(1) to O(n) | O(1) to O(n) |
+| `search(value, index)` | Search across indexes | O(n × m) | O(1) |
+| `where(criteria, op)` | Advanced filtering | O(1) to O(n) | O(1) |
+| `setMany(records)` | Bulk insert/update | O(n) + O(ni) | O(n) + O(ni) |
+| `deleteMany(keys)` | Bulk delete | O(n) + O(ni) | O(n) + O(ni) |
+| `clear()` | Remove all records | O(n) | O(n) |
 
-> Note: O(v) = version storage overhead when versioning is enabled
+> Note: O(v) = version storage overhead when versioning enabled, O(i) = number of indexes, O(n) = number of records, O(m) = number of indexes searched
 
 ### Query Methods
 

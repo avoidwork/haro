@@ -1,4 +1,5 @@
 import { randomUUID as uuid } from "crypto";
+import { lru } from "tiny-lru";
 import {
 	INT_0,
 	STRING_COMMA,
@@ -31,6 +32,8 @@ import {
  * const results = store.find({name: 'John'});
  */
 export class Haro {
+	#cache;
+	#cacheEnabled;
 	#data;
 	#delimiter;
 	#id;
@@ -58,6 +61,8 @@ export class Haro {
 	 * const store = new Haro({ index: ['name', 'email'], key: 'userId', versioning: true });
 	 */
 	constructor({
+		cache = false,
+		cacheSize = 1000,
 		delimiter = STRING_PIPE,
 		id = uuid(),
 		immutable = false,
@@ -67,6 +72,8 @@ export class Haro {
 		warnOnFullScan = true,
 	} = {}) {
 		this.#data = new Map();
+		this.#cacheEnabled = cache === true;
+		this.#cache = cache === true ? lru(cacheSize) : null;
 		this.#delimiter = delimiter;
 		this.#id = id;
 		this.#immutable = immutable;
@@ -136,6 +143,7 @@ export class Haro {
 		const results = records.map((i) => this.set(null, i, true));
 		this.#inBatch = false;
 		this.reindex();
+		this.#invalidateCache();
 		return results;
 	}
 
@@ -156,6 +164,7 @@ export class Haro {
 		const results = keys.map((i) => this.delete(i));
 		this.#inBatch = false;
 		this.reindex();
+		this.#invalidateCache();
 		return results;
 	}
 
@@ -177,6 +186,7 @@ export class Haro {
 		this.#data.clear();
 		this.#indexes.clear();
 		this.#versions.clear();
+		this.#invalidateCache();
 
 		return this;
 	}
@@ -215,6 +225,59 @@ export class Haro {
 		this.#data.delete(key);
 		if (this.#versioning && !this.#inBatch) {
 			this.#versions.delete(key);
+		}
+		this.#invalidateCache();
+	}
+
+	/**
+	 * Generates a cache key using SHA-256 hash.
+	 * @param {string} domain - Cache key prefix (e.g., 'search', 'where')
+	 * @param {...*} args - Arguments to hash
+	 * @returns {string} Cache key in format 'domain_HASH'
+	 */
+	async #getCacheKey(domain, ...args) {
+		const data = JSON.stringify(args);
+		const encoder = new TextEncoder();
+		const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(data));
+		const hashArray = Array.from(new Uint8Array(hashBuffer));
+		const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+		return `${domain}_${hashHex}`;
+	}
+
+	/**
+	 * Clears the cache.
+	 * @returns {Haro} This instance
+	 */
+	clearCache() {
+		if (this.#cacheEnabled) {
+			this.#cache.clear();
+		}
+		return this;
+	}
+
+	/**
+	 * Returns the current cache size.
+	 * @returns {number} Number of entries in cache
+	 */
+	getCacheSize() {
+		return this.#cacheEnabled ? this.#cache.size : 0;
+	}
+
+	/**
+	 * Returns cache statistics.
+	 * @returns {Object|null} Stats object with hits, misses, sets, deletes, evictions
+	 */
+	getCacheStats() {
+		return this.#cacheEnabled ? this.#cache.stats() : null;
+	}
+
+	/**
+	 * Invalidates the cache if enabled and not in batch mode.
+	 * @returns {void}
+	 */
+	#invalidateCache() {
+		if (this.#cacheEnabled && !this.#inBatch) {
+			this.#cache.clear();
 		}
 	}
 
@@ -532,6 +595,7 @@ export class Haro {
 		} else {
 			throw new Error(STRING_INVALID_TYPE);
 		}
+		this.#invalidateCache();
 
 		return result;
 	}
@@ -558,6 +622,7 @@ export class Haro {
 				this.#setIndex(key, data, indices[i]);
 			}
 		});
+		this.#invalidateCache();
 
 		return this;
 	}
@@ -566,15 +631,25 @@ export class Haro {
 	 * Searches for records containing a value.
 	 * @param {*} value - Search value (string, function, or RegExp)
 	 * @param {string|string[]} [index] - Index(es) to search, or all
-	 * @returns {Array<Object>} Matching records
+	 * @returns {Promise<Array<Object>>} Matching records
 	 * @example
 	 * store.search('john');
 	 * store.search(/^admin/, 'role');
 	 */
-	search(value, index) {
+	async search(value, index) {
 		if (value === null || value === undefined) {
 			throw new Error("search: value cannot be null or undefined");
 		}
+
+		let cacheKey;
+		if (this.#cacheEnabled) {
+			cacheKey = await this.#getCacheKey("search", value, index);
+			const cached = this.#cache.get(cacheKey);
+			if (cached !== undefined) {
+				return this.#immutable ? Object.freeze(cached) : this.#clone(cached);
+			}
+		}
+
 		const result = new Set();
 		const fn = typeof value === STRING_FUNCTION;
 		const rgex = value && typeof value.test === STRING_FUNCTION;
@@ -607,6 +682,11 @@ export class Haro {
 			}
 		}
 		const records = Array.from(result, (key) => this.get(key));
+
+		if (this.#cacheEnabled) {
+			this.#cache.set(cacheKey, records);
+		}
+
 		if (this.#immutable) {
 			return Object.freeze(records);
 		}
@@ -657,6 +737,7 @@ export class Haro {
 		}
 
 		const result = this.get(key);
+		this.#invalidateCache();
 
 		return result;
 	}
@@ -842,18 +923,28 @@ export class Haro {
 	 * Filters records with predicate logic supporting AND/OR on arrays.
 	 * @param {Object} [predicate={}] - Field-value pairs
 	 * @param {string} [op=STRING_DOUBLE_PIPE] - Operator: '||' (OR) or '&&' (AND)
-	 * @returns {Array<Object>} Matching records
+	 * @returns {Promise<Array<Object>>} Matching records
 	 * @example
 	 * store.where({tags: ['admin', 'user']}, '||');
 	 * store.where({email: /^admin@/});
 	 */
-	where(predicate = {}, op = STRING_DOUBLE_PIPE) {
+	async where(predicate = {}, op = STRING_DOUBLE_PIPE) {
 		if (typeof predicate !== STRING_OBJECT || predicate === null) {
 			throw new Error("where: predicate must be an object");
 		}
 		if (typeof op !== STRING_STRING) {
 			throw new Error("where: op must be a string");
 		}
+
+		let cacheKey;
+		if (this.#cacheEnabled) {
+			cacheKey = await this.#getCacheKey("where", predicate, op);
+			const cached = this.#cache.get(cacheKey);
+			if (cached !== undefined) {
+				return this.#immutable ? Object.freeze(cached) : this.#clone(cached);
+			}
+		}
+
 		const keys = this.#index.filter((i) => i in predicate);
 		if (keys.length === 0) {
 			if (this.#warnOnFullScan) {
@@ -918,6 +1009,10 @@ export class Haro {
 				if (this.#matchesPredicate(record, predicate, op)) {
 					results.push(record);
 				}
+			}
+
+			if (this.#cacheEnabled) {
+				this.#cache.set(cacheKey, results);
 			}
 
 			if (this.#immutable) {

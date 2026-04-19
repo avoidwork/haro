@@ -39,6 +39,10 @@ Haro is an immutable DataStore with indexing, versioning, and batch operations. 
   - [merge()](#mergea-b-override)
 - [Index Management](#index-management)
   - [reindex()](#reindexindex)
+- [Cache Control Methods](#cache-control-methods)
+  - [clearCache()](#clearcache)
+  - [getCacheSize()](#getcachesize)
+  - [getCacheStats()](#getcachestats)
 - [Export Methods](#export-methods)
   - [dump()](#dumptype)
   - [toArray()](#toarray)
@@ -74,6 +78,8 @@ Creates a new Haro instance.
 
 **Parameters:**
 - `config` (Object): Configuration object
+  - `cache` (boolean): Enable LRU caching for `search()` and `where()` (default: `false`)
+  - `cacheSize` (number): Maximum cache entries (default: `1000`)
   - `delimiter` (string): Delimiter for composite indexes (default: `'|'`)
   - `id` (string): Unique instance identifier (auto-generated)
   - `immutable` (boolean): Return frozen objects (default: `false`)
@@ -84,7 +90,13 @@ Creates a new Haro instance.
 
 **Example:**
 ```javascript
-const store = new Haro({ index: ['name', 'email'], key: 'userId', versioning: true });
+const store = new Haro({ 
+  index: ['name', 'email'], 
+  key: 'userId', 
+  versioning: true,
+  cache: true,
+  cacheSize: 500
+});
 ```
 
 ---
@@ -199,12 +211,12 @@ Filters records with predicate logic supporting AND/OR on arrays.
 - `predicate` (Object): Field-value pairs
 - `op` (string): Operator: '||' (OR) or '&&' (AND) (default: `'||'`)
 
-**Returns:** Array<Object> - Matching records
+**Returns:** Promise<Array<Object>> - Matching records (async)
 
 **Example:**
 ```javascript
-store.where({tags: ['admin', 'user']}, '||');
-store.where({email: /^admin@/});
+const results = await store.where({tags: ['admin', 'user']}, '||');
+const filtered = await store.where({email: /^admin@/});
 ```
 
 ---
@@ -217,12 +229,12 @@ Searches for records containing a value.
 - `value` (*): Search value (string, function, or RegExp)
 - `index` (string|string[]): Index(es) to search, or all
 
-**Returns:** Array<Object> - Matching records
+**Returns:** Promise<Array<Object>> - Matching records (async)
 
 **Example:**
 ```javascript
-store.search('john');
-store.search(/^admin/, 'role');
+const results = await store.search('john');
+const matches = await store.search(/^admin/, 'role');
 ```
 
 ---
@@ -498,6 +510,42 @@ store.reindex('name');
 ```
 
 ---
+
+## Cache Control Methods
+
+### clearCache()
+
+Clears the query cache.
+
+**Returns:** Haro - This instance
+
+**Example:**
+```javascript
+store.clearCache();
+```
+
+### getCacheSize()
+
+Returns the current cache size.
+
+**Returns:** number - Number of entries in cache
+
+**Example:**
+```javascript
+console.log(store.getCacheSize()); // 5
+```
+
+### getCacheStats()
+
+Returns cache statistics.
+
+**Returns:** Object - Stats with hits, misses, sets, deletes, evictions
+
+**Example:**
+```javascript
+console.log(store.getCacheStats()); 
+// { hits: 10, misses: 2, sets: 12, deletes: 0, evictions: 0 }
+```
 
 ## Export Methods
 

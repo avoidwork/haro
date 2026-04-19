@@ -35,6 +35,7 @@ A fast, flexible immutable DataStore for collections of records with indexing, v
 - **📚 Built-in Versioning**: Automatic change tracking without writing audit trail code
 - **🔒 Immutable Mode**: Data safety with frozen objects - prevent accidental mutations
 - **🔍 Advanced Querying**: Complex queries with `find()`, `where()`, `search()` - no manual filtering
+- **🗄️ LRU Caching**: Built-in cache for repeated queries with automatic invalidation
 - **📦 Batch Operations**: Process thousands of records in milliseconds with `setMany()`/`deleteMany()`
 - **🛠️ Zero Boilerplate**: No setup required - just instantiate and query
 - **📝 TypeScript Ready**: Full type definitions included - no @types packages needed
@@ -150,6 +151,22 @@ const user = store.set(null, {
 ```
 
 ## Configuration Options
+
+### cache
+
+**Boolean** - Enable LRU caching for `search()` and `where()` methods (default: `false`)
+
+```javascript
+const store = haro(null, { cache: true });
+```
+
+### cacheSize
+
+**Number** - Maximum number of cached query results (default: `1000`)
+
+```javascript
+const store = haro(null, { cache: true, cacheSize: 500 });
+```
 
 ### delimiter
 
@@ -299,6 +316,32 @@ try {
 } catch (error) {
   console.error(error.message);
 }
+```
+
+### Caching
+
+```javascript
+import { haro } from 'haro';
+
+const store = haro(null, { 
+  index: ['name'],
+  cache: true,
+  cacheSize: 1000
+});
+
+store.set("user1", { id: "user1", name: "John" });
+
+// First call - cache miss
+const results1 = await store.where({ name: "John" });
+
+// Second call - cache hit (much faster)
+const results2 = await store.where({ name: "John" });
+
+// Get cache statistics
+console.log(store.getCacheStats()); // { hits: 1, misses: 1, sets: 1, ... }
+
+// Clear cache manually
+store.clearCache();
 ```
 
 ## Comparison with Alternatives
