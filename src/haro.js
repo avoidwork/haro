@@ -282,6 +282,29 @@ export class Haro {
 	}
 
 	/**
+	 * Retrieves a value from a nested object using dot notation.
+	 * @param {Object} obj - Object to traverse
+	 * @param {string} path - Dot-notation path (e.g., 'user.address.city')
+	 * @returns {*} Value at path, or undefined if path doesn't exist
+	 */
+	#getNestedValue(obj, path) {
+		if (obj === null || obj === undefined || path === STRING_EMPTY) {
+			return undefined;
+		}
+		const keys = path.split(".");
+		let result = obj;
+		const keysLen = keys.length;
+		for (let i = 0; i < keysLen; i++) {
+			const key = keys[i];
+			if (result === null || result === undefined || !(key in result)) {
+				return undefined;
+			}
+			result = result[key];
+		}
+		return result;
+	}
+
+	/**
 	 * Removes a record from all indexes.
 	 * @param {string} key - Record key
 	 * @param {Object} data - Record data
@@ -293,9 +316,9 @@ export class Haro {
 			if (!idx) return;
 			const values = i.includes(this.#delimiter)
 				? this.#getIndexKeys(i, this.#delimiter, data)
-				: Array.isArray(data[i])
-					? data[i]
-					: [data[i]];
+				: Array.isArray(this.#getNestedValue(data, i))
+					? this.#getNestedValue(data, i)
+					: [this.#getNestedValue(data, i)];
 			const len = values.length;
 			for (let j = 0; j < len; j++) {
 				const value = values[j];
@@ -339,7 +362,7 @@ export class Haro {
 	}
 
 	/**
-	 * Generates index keys for composite indexes.
+	 * Generates index keys for composite indexes from data object.
 	 * @param {string} arg - Composite index field names
 	 * @param {string} delimiter - Field delimiter
 	 * @param {Object} data - Data object
@@ -351,7 +374,46 @@ export class Haro {
 		const fieldsLen = fields.length;
 		for (let i = 0; i < fieldsLen; i++) {
 			const field = fields[i];
-			const values = Array.isArray(data[field]) ? data[field] : [data[field]];
+			const fieldValue = this.#getNestedValue(data, field);
+			const values = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
+			const newResult = [];
+			const resultLen = result.length;
+			const valuesLen = values.length;
+			for (let j = 0; j < resultLen; j++) {
+				const existing = result[j];
+				for (let k = 0; k < valuesLen; k++) {
+					const value = values[k];
+					const newKey = i === 0 ? value : `${existing}${this.#delimiter}${value}`;
+					newResult.push(newKey);
+				}
+			}
+			result.length = 0;
+			result.push(...newResult);
+		}
+		return result;
+	}
+
+	/**
+	 * Generates index keys for where object (handles both dot notation and direct access).
+	 * @param {string} arg - Composite index field names
+	 * @param {string} delimiter - Field delimiter
+	 * @param {Object} where - Where object
+	 * @returns {string[]} Index keys
+	 */
+	#getIndexKeysForWhere(arg, delimiter, where) {
+		const fields = arg.split(this.#delimiter).sort(this.#sortKeys);
+		const result = [""];
+		const fieldsLen = fields.length;
+		for (let i = 0; i < fieldsLen; i++) {
+			const field = fields[i];
+			// Check if field exists directly in where object first (for dot notation keys)
+			let fieldValue;
+			if (field in where) {
+				fieldValue = where[field];
+			} else {
+				fieldValue = this.#getNestedValue(where, field);
+			}
+			const values = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
 			const newResult = [];
 			const resultLen = result.length;
 			const valuesLen = values.length;
@@ -396,7 +458,7 @@ export class Haro {
 
 		const index = this.#indexes.get(compositeKey);
 		if (index) {
-			const keys = this.#getIndexKeys(compositeKey, this.#delimiter, where);
+			const keys = this.#getIndexKeysForWhere(compositeKey, this.#delimiter, where);
 			const keysLen = keys.length;
 			for (let i = 0; i < keysLen; i++) {
 				const v = keys[i];
@@ -761,9 +823,9 @@ export class Haro {
 			}
 			const values = field.includes(this.#delimiter)
 				? this.#getIndexKeys(field, this.#delimiter, data)
-				: Array.isArray(data[field])
-					? data[field]
-					: [data[field]];
+				: Array.isArray(this.#getNestedValue(data, field))
+					? this.#getNestedValue(data, field)
+					: [this.#getNestedValue(data, field)];
 			const valuesLen = values.length;
 			for (let j = 0; j < valuesLen; j++) {
 				const value = values[j];
@@ -890,7 +952,8 @@ export class Haro {
 
 		return keys.every((key) => {
 			const pred = predicate[key];
-			const val = record[key];
+			// Use nested value extraction for dot notation paths
+			const val = this.#getNestedValue(record, key);
 			if (Array.isArray(pred)) {
 				if (Array.isArray(val)) {
 					return op === STRING_DOUBLE_AND
@@ -955,6 +1018,13 @@ export class Haro {
 
 		// Try to use indexes for better performance
 		const indexedKeys = keys.filter((k) => this.#indexes.has(k));
+		if (indexedKeys.length === 0) {
+			// No indexed keys found, fall through to full scan
+			if (this.#warnOnFullScan) {
+				console.warn("where(): performing full table scan - consider adding an index");
+			}
+			return this.filter((a) => this.#matchesPredicate(a, predicate, op));
+		}
 		if (indexedKeys.length > 0) {
 			// Use index-based filtering for better performance
 			let candidateKeys = new Set();
@@ -980,6 +1050,8 @@ export class Haro {
 						}
 					}
 				} else {
+					// Direct value lookup - works for both flat and nested fields
+					// Also check for RegExp keys that match the predicate
 					for (const [indexKey, keySet] of idx) {
 						if (indexKey instanceof RegExp) {
 							if (indexKey.test(pred)) {
