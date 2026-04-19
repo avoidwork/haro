@@ -6,7 +6,7 @@ import { haro } from "../dist/haro.js";
  * @param {number} size - Number of records to generate
  * @returns {Array} Array of test records with complex nested structures
  */
-function generateUtilityTestData (size) {
+function generateUtilityTestData(size) {
 	const data = [];
 	for (let i = 0; i < size; i++) {
 		data.push({
@@ -24,15 +24,15 @@ function generateUtilityTestData (size) {
 					notifications: Math.random() > 0.5,
 					settings: {
 						privacy: Math.random() > 0.3,
-						analytics: Math.random() > 0.7
-					}
-				}
+						analytics: Math.random() > 0.7,
+					},
+				},
 			},
-			history: Array.from({ length: Math.min(i % 20 + 1, 10) }, (_, j) => ({
+			history: Array.from({ length: Math.min((i % 20) + 1, 10) }, (_, j) => ({
 				action: `action_${j}`,
 				timestamp: new Date(Date.now() - j * 1000 * 60),
-				data: { value: Math.random() * 1000 }
-			}))
+				data: { value: Math.random() * 1000 },
+			})),
 		});
 	}
 
@@ -46,7 +46,7 @@ function generateUtilityTestData (size) {
  * @param {number} iterations - Number of iterations to run
  * @returns {Object} Benchmark results
  */
-function benchmark (name, fn, iterations = 1000) {
+function benchmark(name, fn, iterations = 1000) {
 	const start = performance.now();
 	for (let i = 0; i < iterations; i++) {
 		fn();
@@ -60,7 +60,7 @@ function benchmark (name, fn, iterations = 1000) {
 		iterations,
 		totalTime: total,
 		avgTime,
-		opsPerSecond: Math.floor(1000 / avgTime)
+		opsPerSecond: Math.floor(1000 / avgTime),
 	};
 }
 
@@ -69,10 +69,10 @@ function benchmark (name, fn, iterations = 1000) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkCloneOperations (dataSizes) {
+function benchmarkCloneOperations(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generateUtilityTestData(size);
 		const store = haro(testData);
 
@@ -92,9 +92,13 @@ function benchmarkCloneOperations (dataSizes) {
 
 		// Clone arrays
 		const arrayData = testData.slice(0, Math.min(100, size));
-		const cloneArrayResult = benchmark(`Clone array (${arrayData.length} items, ${Math.min(100, size)} iterations)`, () => {
-			store.clone(arrayData);
-		}, Math.min(100, size));
+		const cloneArrayResult = benchmark(
+			`Clone array (${arrayData.length} items, ${Math.min(100, size)} iterations)`,
+			() => {
+				store.clone(arrayData);
+			},
+			Math.min(100, size),
+		);
 		results.push(cloneArrayResult);
 	});
 
@@ -106,10 +110,10 @@ function benchmarkCloneOperations (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkMergeOperations (dataSizes) {
+function benchmarkMergeOperations(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const store = haro();
 
 		// Merge simple objects
@@ -125,12 +129,12 @@ function benchmarkMergeOperations (dataSizes) {
 			id: 1,
 			profile: { name: "John", age: 30 },
 			settings: { theme: "dark", notifications: true },
-			tags: ["user", "admin"]
+			tags: ["user", "admin"],
 		};
 		const complexUpdate = {
 			profile: { age: 31, location: "NYC" },
 			settings: { privacy: true },
-			tags: ["power-user"]
+			tags: ["power-user"],
 		};
 		const mergeComplexResult = benchmark(`Merge complex objects (${size} iterations)`, () => {
 			store.merge(store.clone(complexBase), complexUpdate);
@@ -160,10 +164,10 @@ function benchmarkMergeOperations (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkFreezeOperations (dataSizes) {
+function benchmarkFreezeOperations(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generateUtilityTestData(size);
 		const store = haro();
 
@@ -176,19 +180,27 @@ function benchmarkFreezeOperations (dataSizes) {
 
 		// Freeze multiple objects
 		const multipleObjects = testData.slice(0, Math.min(10, size));
-		const freezeMultipleResult = benchmark(`Freeze multiple objects (${multipleObjects.length} objects, ${Math.min(100, size)} iterations)`, () => {
-			store.freeze(...multipleObjects);
-		}, Math.min(100, size));
+		const freezeMultipleResult = benchmark(
+			`Freeze multiple objects (${multipleObjects.length} objects, ${Math.min(100, size)} iterations)`,
+			() => {
+				store.freeze(...multipleObjects);
+			},
+			Math.min(100, size),
+		);
 		results.push(freezeMultipleResult);
 
 		// Freeze nested structures
 		const nestedStructure = {
 			data: testData.slice(0, Math.min(50, size)),
-			metadata: { count: size, timestamp: new Date() }
+			metadata: { count: size, timestamp: new Date() },
 		};
-		const freezeNestedResult = benchmark(`Freeze nested structure (${Math.min(10, size)} iterations)`, () => {
-			store.freeze(nestedStructure);
-		}, Math.min(10, size));
+		const freezeNestedResult = benchmark(
+			`Freeze nested structure (${Math.min(10, size)} iterations)`,
+			() => {
+				store.freeze(nestedStructure);
+			},
+			Math.min(10, size),
+		);
 		results.push(freezeNestedResult);
 	});
 
@@ -200,43 +212,58 @@ function benchmarkFreezeOperations (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkForEachOperations (dataSizes) {
+function benchmarkForEachOperations(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generateUtilityTestData(size);
 		const store = haro(testData);
 
 		// Simple forEach operation
-		const forEachSimpleResult = benchmark(`forEach simple operation (${size} records)`, () => {
-			let count = 0; // eslint-disable-line no-unused-vars
-			store.forEach(() => { count++; });
-		}, 1);
+		const forEachSimpleResult = benchmark(
+			`forEach simple operation (${size} records)`,
+			() => {
+				let count = 0; // eslint-disable-line no-unused-vars
+				store.forEach(() => {
+					count++;
+				});
+			},
+			1,
+		);
 		results.push(forEachSimpleResult);
 
 		// Complex forEach operation
 		const aggregated = {};
-		const forEachComplexResult = benchmark(`forEach complex operation (${size} records)`, () => {
-			store.forEach(record => {
-				const dept = record.metadata?.preferences?.theme || "unknown";
-				aggregated[dept] = (aggregated[dept] || 0) + 1;
-			});
-		}, 1);
+		const forEachComplexResult = benchmark(
+			`forEach complex operation (${size} records)`,
+			() => {
+				store.forEach((record) => {
+					const dept = record.metadata?.preferences?.theme || "unknown";
+					aggregated[dept] = (aggregated[dept] || 0) + 1;
+				});
+			},
+			1,
+		);
 		results.push(forEachComplexResult);
 
 		// forEach with context
 		const context = { processed: 0, errors: 0 };
-		const forEachContextResult = benchmark(`forEach with context (${size} records)`, () => {
-			store.forEach(function (record) {
-				try {
-					if (record.age > 0) {
-						this.processed++;
+		const forEachContextResult = benchmark(
+			`forEach with context (${size} records)`,
+			() => {
+				store.forEach(function (record) {
+					try {
+						if (record.age > 0) {
+							this.processed++;
+						}
+					} catch (e) {
+						// eslint-disable-line no-unused-vars
+						this.errors++;
 					}
-				} catch (e) { // eslint-disable-line no-unused-vars
-					this.errors++;
-				}
-			}, context);
-		}, 1);
+				}, context);
+			},
+			1,
+		);
 		results.push(forEachContextResult);
 	});
 
@@ -248,15 +275,19 @@ function benchmarkForEachOperations (dataSizes) {
  * @param {Array} iterations - Array of iteration counts to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkUuidOperations (iterations) {
+function benchmarkUuidOperations(iterations) {
 	const results = [];
 	const store = haro();
 
-	iterations.forEach(count => {
+	iterations.forEach((count) => {
 		// UUID generation
-		const uuidResult = benchmark(`UUID generation (${count} iterations)`, () => {
-			store.uuid();
-		}, count);
+		const uuidResult = benchmark(
+			`UUID generation (${count} iterations)`,
+			() => {
+				store.uuid();
+			},
+			count,
+		);
 		results.push(uuidResult);
 
 		// UUID uniqueness test (collect UUIDs and check for duplicates)
@@ -273,7 +304,7 @@ function benchmarkUuidOperations (iterations) {
 			avgTime: (uniquenessEnd - uniquenessStart) / count,
 			opsPerSecond: Math.floor(count / ((uniquenessEnd - uniquenessStart) / 1000)),
 			duplicates: count - uuids.size,
-			uniqueRatio: (uuids.size / count * 100).toFixed(2) + "%"
+			uniqueRatio: ((uuids.size / count) * 100).toFixed(2) + "%",
 		};
 		results.push(uniquenessResult);
 	});
@@ -285,18 +316,25 @@ function benchmarkUuidOperations (iterations) {
  * Prints formatted benchmark results
  * @param {Array} results - Array of benchmark results
  */
-function printResults (results) {
+function printResults(results) {
 	console.log("\n" + "=".repeat(80));
 	console.log("UTILITY OPERATIONS BENCHMARK RESULTS");
 	console.log("=".repeat(80));
 
-	results.forEach(result => {
-		const opsIndicator = result.opsPerSecond > 10000 ? "✅" :
-			result.opsPerSecond > 1000 ? "🟡" :
-				result.opsPerSecond > 100 ? "🟠" : "🔴";
+	results.forEach((result) => {
+		const opsIndicator =
+			result.opsPerSecond > 10000
+				? "✅"
+				: result.opsPerSecond > 1000
+					? "🟡"
+					: result.opsPerSecond > 100
+						? "🟠"
+						: "🔴";
 
 		console.log(`${opsIndicator} ${result.name}`);
-		console.log(`   ${result.opsPerSecond.toLocaleString()} ops/sec | ${result.totalTime.toFixed(2)}ms total | ${result.avgTime.toFixed(4)}ms avg`);
+		console.log(
+			`   ${result.opsPerSecond.toLocaleString()} ops/sec | ${result.totalTime.toFixed(2)}ms total | ${result.avgTime.toFixed(4)}ms avg`,
+		);
 
 		if (result.duplicates !== undefined) {
 			console.log(`   Duplicates: ${result.duplicates} | Unique ratio: ${result.uniqueRatio}`);
@@ -309,7 +347,7 @@ function printResults (results) {
  * Runs all utility operation benchmarks
  * @returns {Array} Array of all benchmark results
  */
-function runUtilityOperationsBenchmarks () {
+function runUtilityOperationsBenchmarks() {
 	console.log("Starting Utility Operations Benchmarks...\n");
 
 	const dataSizes = [100, 1000, 5000];

@@ -6,7 +6,7 @@ import { haro } from "../dist/haro.js";
  * @param {number} size - Number of records to generate
  * @returns {Array} Array of test records with searchable fields
  */
-function generateSearchTestData (size) {
+function generateSearchTestData(size) {
 	const data = [];
 	const departments = ["Engineering", "Marketing", "Sales", "HR", "Finance"];
 	const skills = ["JavaScript", "Python", "Java", "React", "Node.js", "SQL", "Docker", "AWS"];
@@ -22,19 +22,23 @@ function generateSearchTestData (size) {
 			skills: [
 				skills[i % skills.length],
 				skills[(i + 1) % skills.length],
-				skills[(i + 2) % skills.length]
+				skills[(i + 2) % skills.length],
 			],
 			city: cities[i % cities.length],
 			active: Math.random() > 0.3,
 			salary: Math.floor(Math.random() * 100000) + 50000,
-			joinDate: new Date(2020 + Math.floor(Math.random() * 4), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28)),
+			joinDate: new Date(
+				2020 + Math.floor(Math.random() * 4),
+				Math.floor(Math.random() * 12),
+				Math.floor(Math.random() * 28),
+			),
 			tags: [`tag${i % 10}`, `category${i % 5}`],
 			metadata: {
 				created: new Date(),
 				score: Math.random() * 100,
 				level: Math.floor(Math.random() * 10),
-				region: `Region ${i % 3}`
-			}
+				region: `Region ${i % 3}`,
+			},
 		});
 	}
 
@@ -48,7 +52,7 @@ function generateSearchTestData (size) {
  * @param {number} iterations - Number of iterations to run
  * @returns {Object} Benchmark results
  */
-function benchmark (name, fn, iterations = 1000) {
+function benchmark(name, fn, iterations = 1000) {
 	const start = performance.now();
 	for (let i = 0; i < iterations; i++) {
 		fn();
@@ -62,7 +66,7 @@ function benchmark (name, fn, iterations = 1000) {
 		iterations,
 		totalTime: total,
 		avgTime,
-		opsPerSecond: Math.floor(1000 / avgTime)
+		opsPerSecond: Math.floor(1000 / avgTime),
 	};
 }
 
@@ -71,13 +75,13 @@ function benchmark (name, fn, iterations = 1000) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkFindOperations (dataSizes) {
+function benchmarkFindOperations(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generateSearchTestData(size);
 		const store = haro(testData, {
-			index: ["department", "age", "city", "active", "active|department", "city|department"]
+			index: ["department", "age", "city", "active", "active|department", "city|department"],
 		});
 
 		// Simple find operations
@@ -111,38 +115,39 @@ function benchmarkFindOperations (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkFilterOperations (dataSizes) {
+function benchmarkFilterOperations(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generateSearchTestData(size);
 		const store = haro(testData);
 
 		// Simple filter operations
 		const filterAgeResult = benchmark(`FILTER by age range (${size} records)`, () => {
-			store.filter(record => record.age >= 25 && record.age <= 35);
+			store.filter((record) => record.age >= 25 && record.age <= 35);
 		});
 		results.push(filterAgeResult);
 
 		const filterSalaryResult = benchmark(`FILTER by salary range (${size} records)`, () => {
-			store.filter(record => record.salary > 75000);
+			store.filter((record) => record.salary > 75000);
 		});
 		results.push(filterSalaryResult);
 
 		// Complex filter operations
 		const filterComplexResult = benchmark(`FILTER complex condition (${size} records)`, () => {
-			store.filter(record =>
-				record.active &&
-        record.age > 30 &&
-        record.department === "Engineering" &&
-        record.skills.includes("JavaScript")
+			store.filter(
+				(record) =>
+					record.active &&
+					record.age > 30 &&
+					record.department === "Engineering" &&
+					record.skills.includes("JavaScript"),
 			);
 		});
 		results.push(filterComplexResult);
 
 		// Array filter operations
 		const filterArrayResult = benchmark(`FILTER by array contains (${size} records)`, () => {
-			store.filter(record => record.skills.includes("React"));
+			store.filter((record) => record.skills.includes("React"));
 		});
 		results.push(filterArrayResult);
 	});
@@ -155,13 +160,13 @@ function benchmarkFilterOperations (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkSearchOperations (dataSizes) {
+function benchmarkSearchOperations(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generateSearchTestData(size);
 		const store = haro(testData, {
-			index: ["department", "skills", "city", "name", "tags"]
+			index: ["department", "skills", "city", "name", "tags"],
 		});
 
 		// String search operations
@@ -203,13 +208,24 @@ function benchmarkSearchOperations (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkWhereOperations (dataSizes) {
+function benchmarkWhereOperations(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generateSearchTestData(size);
 		const store = haro(testData, {
-			index: ["department", "skills", "city", "active", "tags", "age", "salary", "department|active", "city|department"]
+			index: [
+				"department",
+				"skills",
+				"city",
+				"active",
+				"tags",
+				"age",
+				"salary",
+				"department|active",
+				"city|department",
+			],
+			warnOnFullScan: false,
 		});
 
 		// Simple where operations
@@ -220,42 +236,57 @@ function benchmarkWhereOperations (dataSizes) {
 
 		// Array where operations with OR (default)
 		const whereArrayOrResult = benchmark(`WHERE array OR operation (${size} records)`, () => {
-			store.where({
-				skills: ["JavaScript", "Python"]
-			}, "||");
+			store.where(
+				{
+					skills: ["JavaScript", "Python"],
+				},
+				"||",
+			);
 		});
 		results.push(whereArrayOrResult);
 
 		// Array where operations with AND
 		const whereArrayAndResult = benchmark(`WHERE array AND operation (${size} records)`, () => {
-			store.where({
-				skills: ["JavaScript", "React"]
-			}, "&&");
+			store.where(
+				{
+					skills: ["JavaScript", "React"],
+				},
+				"&&",
+			);
 		});
 		results.push(whereArrayAndResult);
 
 		// Multiple array fields with OR
 		const whereMultiArrayOrResult = benchmark(`WHERE multiple arrays OR (${size} records)`, () => {
-			store.where({
-				skills: ["JavaScript", "Python"],
-				tags: ["tag0", "tag1"]
-			}, "||");
+			store.where(
+				{
+					skills: ["JavaScript", "Python"],
+					tags: ["tag0", "tag1"],
+				},
+				"||",
+			);
 		});
 		results.push(whereMultiArrayOrResult);
 
 		// Multiple array fields with AND
-		const whereMultiArrayAndResult = benchmark(`WHERE multiple arrays AND (${size} records)`, () => {
-			store.where({
-				skills: ["JavaScript"],
-				tags: ["tag0"]
-			}, "&&");
-		});
+		const whereMultiArrayAndResult = benchmark(
+			`WHERE multiple arrays AND (${size} records)`,
+			() => {
+				store.where(
+					{
+						skills: ["JavaScript"],
+						tags: ["tag0"],
+					},
+					"&&",
+				);
+			},
+		);
 		results.push(whereMultiArrayAndResult);
 
 		// Regex where operations
 		const whereRegexResult = benchmark(`WHERE with regex (${size} records)`, () => {
 			store.where({
-				department: /^Eng/
+				department: /^Eng/,
 			});
 		});
 		results.push(whereRegexResult);
@@ -264,7 +295,7 @@ function benchmarkWhereOperations (dataSizes) {
 		const whereMultiRegexResult = benchmark(`WHERE multiple regex (${size} records)`, () => {
 			store.where({
 				department: /^(Engineering|Marketing)$/,
-				city: /^(New|San)/
+				city: /^(New|San)/,
 			});
 		});
 		results.push(whereMultiRegexResult);
@@ -274,27 +305,33 @@ function benchmarkWhereOperations (dataSizes) {
 			store.where({
 				department: "Engineering",
 				active: true,
-				skills: ["JavaScript"]
+				skills: ["JavaScript"],
 			});
 		});
 		results.push(whereComplexResult);
 
 		// Very complex where with all predicate types
-		const whereVeryComplexResult = benchmark(`WHERE very complex predicates (${size} records)`, () => {
-			store.where({
-				department: ["Engineering", "Marketing"],
-				active: true,
-				skills: ["JavaScript", "Python"],
-				city: /^(New|San)/
-			}, "||");
-		});
+		const whereVeryComplexResult = benchmark(
+			`WHERE very complex predicates (${size} records)`,
+			() => {
+				store.where(
+					{
+						department: ["Engineering", "Marketing"],
+						active: true,
+						skills: ["JavaScript", "Python"],
+						city: /^(New|San)/,
+					},
+					"||",
+				);
+			},
+		);
 		results.push(whereVeryComplexResult);
 
 		// Nested field matching (if metadata fields are indexed)
 		const whereNestedResult = benchmark(`WHERE nested field matching (${size} records)`, () => {
 			store.where({
 				department: "Engineering",
-				tags: ["tag0", "tag1"]
+				tags: ["tag0", "tag1"],
 			});
 		});
 		results.push(whereNestedResult);
@@ -303,8 +340,8 @@ function benchmarkWhereOperations (dataSizes) {
 		const whereVsFilterResult = benchmark(`WHERE vs FILTER comparison (${size} records)`, () => {
 			const wherePredicate = { department: "Engineering", active: true };
 			const whereResults = store.where(wherePredicate);
-			const filterResults = store.filter(record =>
-				record.department === "Engineering" && record.active === true
+			const filterResults = store.filter(
+				(record) => record.department === "Engineering" && record.active === true,
 			);
 
 			return { whereCount: whereResults.length, filterCount: filterResults.length };
@@ -320,7 +357,7 @@ function benchmarkWhereOperations (dataSizes) {
 		// Edge case: non-indexed field
 		const whereNonIndexedResult = benchmark(`WHERE non-indexed field (${size} records)`, () => {
 			store.where({
-				email: "user0@example.com"
+				email: "user0@example.com",
 			});
 		});
 		results.push(whereNonIndexedResult);
@@ -334,32 +371,22 @@ function benchmarkWhereOperations (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkMapReduceOperations (dataSizes) {
+function benchmarkMapReduceOperations(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generateSearchTestData(size);
 		const store = haro(testData);
 
 		// Map operations
 		const mapResult = benchmark(`MAP transformation (${size} records)`, () => {
-			store.map(record => ({
+			store.map((record) => ({
 				id: record.id,
 				name: record.name,
-				department: record.department
+				department: record.department,
 			}));
 		});
 		results.push(mapResult);
-
-		// Reduce operations
-		const reduceResult = benchmark(`REDUCE aggregation (${size} records)`, () => {
-			store.reduce((acc, record) => {
-				acc[record.department] = (acc[record.department] || 0) + 1;
-
-				return acc;
-			}, {});
-		});
-		results.push(reduceResult);
 
 		// ForEach operations
 		const forEachResult = benchmark(`FOREACH iteration (${size} records)`, () => {
@@ -379,13 +406,13 @@ function benchmarkMapReduceOperations (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkSortOperations (dataSizes) {
+function benchmarkSortOperations(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generateSearchTestData(size);
 		const store = haro(testData, {
-			index: ["age", "salary", "name", "department"]
+			index: ["age", "salary", "name", "department"],
 		});
 
 		// Sort operations
@@ -420,13 +447,19 @@ function benchmarkSortOperations (dataSizes) {
  * Prints benchmark results in a formatted table
  * @param {Array} results - Array of benchmark results
  */
-function printResults (results) {
+function printResults(results) {
 	console.log("\n=== SEARCH & FILTER BENCHMARK RESULTS ===\n");
 
-	console.log("Operation".padEnd(40) + "Iterations".padEnd(12) + "Total Time (ms)".padEnd(18) + "Avg Time (ms)".padEnd(16) + "Ops/Second");
+	console.log(
+		"Operation".padEnd(40) +
+			"Iterations".padEnd(12) +
+			"Total Time (ms)".padEnd(18) +
+			"Avg Time (ms)".padEnd(16) +
+			"Ops/Second",
+	);
 	console.log("-".repeat(98));
 
-	results.forEach(result => {
+	results.forEach((result) => {
 		const name = result.name.padEnd(40);
 		const iterations = result.iterations.toString().padEnd(12);
 		const totalTime = result.totalTime.toFixed(2).padEnd(18);
@@ -442,7 +475,7 @@ function printResults (results) {
 /**
  * Main function to run all search and filter benchmarks
  */
-function runSearchFilterBenchmarks () {
+function runSearchFilterBenchmarks() {
 	console.log("🔍 Running Search & Filter Benchmarks...\n");
 
 	const dataSizes = [1000, 10000, 50000];

@@ -1,6 +1,6 @@
 import assert from "node:assert";
-import {describe, it} from "mocha";
-import {Haro} from "../../src/haro.js";
+import { describe, it } from "node:test";
+import { Haro } from "../../src/haro.js";
 
 describe("Constructor", () => {
 	it("should create a new instance with default configuration", () => {
@@ -20,7 +20,7 @@ describe("Constructor", () => {
 			immutable: true,
 			index: ["name", "email"],
 			key: "userId",
-			versioning: true
+			versioning: true,
 		};
 		const instance = new Haro(config);
 
@@ -39,12 +39,12 @@ describe("Constructor", () => {
 
 	it("should use provided id", () => {
 		const customId = "custom-store-id";
-		const instance = new Haro({id: customId});
+		const instance = new Haro({ id: customId });
 		assert.strictEqual(instance.id, customId);
 	});
 
 	it("should handle non-array index configuration", () => {
-		const instance = new Haro({index: "name"});
+		const instance = new Haro({ index: "name" });
 		assert.deepStrictEqual(instance.index, []);
 	});
 });

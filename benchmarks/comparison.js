@@ -9,7 +9,7 @@ import { generateIndexTestData } from "./index-operations.js";
  * @param {number} iterations - Number of iterations to run
  * @returns {Object} Benchmark results
  */
-function benchmark (name, fn, iterations = 1000) {
+function benchmark(name, fn, iterations = 1000) {
 	const start = performance.now();
 	for (let i = 0; i < iterations; i++) {
 		fn();
@@ -23,7 +23,7 @@ function benchmark (name, fn, iterations = 1000) {
 		iterations,
 		totalTime: total,
 		avgTime,
-		opsPerSecond: Math.floor(1000 / avgTime)
+		opsPerSecond: Math.floor(1000 / avgTime),
 	};
 }
 
@@ -32,38 +32,54 @@ function benchmark (name, fn, iterations = 1000) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkStorageComparison (dataSizes) {
+function benchmarkStorageComparison(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generateIndexTestData(size);
 
 		// Haro storage
-		const haroSetResult = benchmark(`Haro SET (${size} records)`, () => {
-			const store = haro();
-			testData.forEach(record => store.set(record.id, record));
-		}, 10);
+		const haroSetResult = benchmark(
+			`Haro SET (${size} records)`,
+			() => {
+				const store = haro();
+				testData.forEach((record) => store.set(record.id, record));
+			},
+			10,
+		);
 		results.push(haroSetResult);
 
 		// Native Map storage
-		const mapSetResult = benchmark(`Map SET (${size} records)`, () => {
-			const map = new Map();
-			testData.forEach(record => map.set(record.id, record));
-		}, 10);
+		const mapSetResult = benchmark(
+			`Map SET (${size} records)`,
+			() => {
+				const map = new Map();
+				testData.forEach((record) => map.set(record.id, record));
+			},
+			10,
+		);
 		results.push(mapSetResult);
 
 		// Native Object storage
-		const objectSetResult = benchmark(`Object SET (${size} records)`, () => {
-			const obj = {};
-			testData.forEach(record => obj[record.id] = record); // eslint-disable-line no-return-assign
-		}, 10);
+		const objectSetResult = benchmark(
+			`Object SET (${size} records)`,
+			() => {
+				const obj = {};
+				testData.forEach((record) => (obj[record.id] = record)); // eslint-disable-line no-return-assign
+			},
+			10,
+		);
 		results.push(objectSetResult);
 
 		// Array storage
-		const arraySetResult = benchmark(`Array PUSH (${size} records)`, () => {
-			const arr = [];
-			testData.forEach(record => arr.push(record));
-		}, 10);
+		const arraySetResult = benchmark(
+			`Array PUSH (${size} records)`,
+			() => {
+				const arr = [];
+				testData.forEach((record) => arr.push(record));
+			},
+			10,
+		);
 		results.push(arraySetResult);
 	});
 
@@ -75,10 +91,10 @@ function benchmarkStorageComparison (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkRetrievalComparison (dataSizes) {
+function benchmarkRetrievalComparison(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generateIndexTestData(size);
 
 		// Prepare data structures
@@ -87,7 +103,7 @@ function benchmarkRetrievalComparison (dataSizes) {
 		const objectStore = {};
 		const arrayStore = [];
 
-		testData.forEach(record => {
+		testData.forEach((record) => {
 			mapStore.set(record.id, record);
 			objectStore[record.id] = record;
 			arrayStore.push(record);
@@ -124,7 +140,7 @@ function benchmarkRetrievalComparison (dataSizes) {
 		// Array find (by property)
 		const arrayFindResult = benchmark(`Array FIND (${size} records)`, () => {
 			const id = Math.floor(Math.random() * size);
-			arrayStore.find(record => record.id === id);
+			arrayStore.find((record) => record.id === id);
 		});
 		results.push(arrayFindResult);
 	});
@@ -137,10 +153,10 @@ function benchmarkRetrievalComparison (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkQueryComparison (dataSizes) {
+function benchmarkQueryComparison(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generateIndexTestData(size);
 
 		// Prepare data structures
@@ -155,31 +171,29 @@ function benchmarkQueryComparison (dataSizes) {
 
 		// Haro filter query
 		const haroFilterResult = benchmark(`Haro FILTER (${size} records)`, () => {
-			haroStore.filter(record => record.category === "A");
+			haroStore.filter((record) => record.category === "A");
 		});
 		results.push(haroFilterResult);
 
 		// Array filter query
 		const arrayFilterResult = benchmark(`Array FILTER (${size} records)`, () => {
-			arrayStore.filter(record => record.category === "A");
+			arrayStore.filter((record) => record.category === "A");
 		});
 		results.push(arrayFilterResult);
 
 		// Complex query comparison
 		const haroComplexResult = benchmark(`Haro COMPLEX query (${size} records)`, () => {
-			haroStore.filter(record =>
-				record.category === "A" &&
-        record.status === "active" &&
-        record.priority === "high"
+			haroStore.filter(
+				(record) =>
+					record.category === "A" && record.status === "active" && record.priority === "high",
 			);
 		});
 		results.push(haroComplexResult);
 
 		const arrayComplexResult = benchmark(`Array COMPLEX query (${size} records)`, () => {
-			arrayStore.filter(record =>
-				record.category === "A" &&
-        record.status === "active" &&
-        record.priority === "high"
+			arrayStore.filter(
+				(record) =>
+					record.category === "A" && record.status === "active" && record.priority === "high",
 			);
 		});
 		results.push(arrayComplexResult);
@@ -193,55 +207,67 @@ function benchmarkQueryComparison (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkDeletionComparison (dataSizes) {
+function benchmarkDeletionComparison(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generateIndexTestData(size);
 
 		// Haro deletion
-		const haroDeleteResult = benchmark(`Haro DELETE (${size} records)`, () => {
-			const store = haro(testData);
-			const keys = Array.from(store.keys());
-			for (let i = 0; i < Math.min(100, keys.length); i++) {
-				try {
-					store.del(keys[i]);
-				} catch (e) { // eslint-disable-line no-unused-vars
-					// Record might already be deleted
+		const haroDeleteResult = benchmark(
+			`Haro DELETE (${size} records)`,
+			() => {
+				const store = haro(testData);
+				const keys = Array.from(store.keys());
+				for (let i = 0; i < Math.min(100, keys.length); i++) {
+					store.delete(keys[i]);
 				}
-			}
-		}, 10);
+			},
+			10,
+		);
 		results.push(haroDeleteResult);
 
 		// Map deletion
-		const mapDeleteResult = benchmark(`Map DELETE (${size} records)`, () => {
-			const map = new Map();
-			testData.forEach(record => map.set(record.id, record));
-			const keys = Array.from(map.keys());
-			for (let i = 0; i < Math.min(100, keys.length); i++) {
-				map.delete(keys[i]);
-			}
-		}, 10);
+		const mapDeleteResult = benchmark(
+			`Map DELETE (${size} records)`,
+			() => {
+				const map = new Map();
+				testData.forEach((record) => map.set(record.id, record));
+				const keys = Array.from(map.keys());
+				for (let i = 0; i < Math.min(100, keys.length); i++) {
+					map.delete(keys[i]);
+				}
+			},
+			10,
+		);
 		results.push(mapDeleteResult);
 
 		// Object deletion
-		const objectDeleteResult = benchmark(`Object DELETE (${size} records)`, () => {
-			const obj = {};
-			testData.forEach(record => obj[record.id] = record); // eslint-disable-line no-return-assign
-			const keys = Object.keys(obj);
-			for (let i = 0; i < Math.min(100, keys.length); i++) {
-				delete obj[keys[i]];
-			}
-		}, 10);
+		const objectDeleteResult = benchmark(
+			`Object DELETE (${size} records)`,
+			() => {
+				const obj = {};
+				testData.forEach((record) => (obj[record.id] = record)); // eslint-disable-line no-return-assign
+				const keys = Object.keys(obj);
+				for (let i = 0; i < Math.min(100, keys.length); i++) {
+					delete obj[keys[i]];
+				}
+			},
+			10,
+		);
 		results.push(objectDeleteResult);
 
 		// Array splice deletion
-		const arrayDeleteResult = benchmark(`Array SPLICE (${size} records)`, () => {
-			const arr = [...testData];
-			for (let i = 0; i < Math.min(100, arr.length); i++) {
-				arr.splice(0, 1);
-			}
-		}, 10);
+		const arrayDeleteResult = benchmark(
+			`Array SPLICE (${size} records)`,
+			() => {
+				const arr = [...testData];
+				for (let i = 0; i < Math.min(100, arr.length); i++) {
+					arr.splice(0, 1);
+				}
+			},
+			10,
+		);
 		results.push(arrayDeleteResult);
 	});
 
@@ -253,10 +279,10 @@ function benchmarkDeletionComparison (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkAggregationComparison (dataSizes) {
+function benchmarkAggregationComparison(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generateIndexTestData(size);
 
 		// Prepare data structures
@@ -265,35 +291,15 @@ function benchmarkAggregationComparison (dataSizes) {
 
 		// Haro map operation
 		const haroMapResult = benchmark(`Haro MAP (${size} records)`, () => {
-			haroStore.map(record => record.category);
+			haroStore.map((record) => record.category);
 		});
 		results.push(haroMapResult);
 
 		// Array map operation
 		const arrayMapResult = benchmark(`Array MAP (${size} records)`, () => {
-			arrayStore.map(record => record.category);
+			arrayStore.map((record) => record.category);
 		});
 		results.push(arrayMapResult);
-
-		// Haro reduce operation
-		const haroReduceResult = benchmark(`Haro REDUCE (${size} records)`, () => {
-			haroStore.reduce((acc, record) => {
-				acc[record.category] = (acc[record.category] || 0) + 1;
-
-				return acc;
-			}, {});
-		});
-		results.push(haroReduceResult);
-
-		// Array reduce operation
-		const arrayReduceResult = benchmark(`Array REDUCE (${size} records)`, () => {
-			arrayStore.reduce((acc, record) => {
-				acc[record.category] = (acc[record.category] || 0) + 1;
-
-				return acc;
-			}, {});
-		});
-		results.push(arrayReduceResult);
 
 		// Haro forEach operation
 		const haroForEachResult = benchmark(`Haro FOREACH (${size} records)`, () => {
@@ -318,10 +324,10 @@ function benchmarkAggregationComparison (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkSortingComparison (dataSizes) {
+function benchmarkSortingComparison(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generateIndexTestData(size);
 
 		// Prepare data structures
@@ -329,44 +335,64 @@ function benchmarkSortingComparison (dataSizes) {
 		const arrayStore = [...testData];
 
 		// Haro sort operation
-		const haroSortResult = benchmark(`Haro SORT (${size} records)`, () => {
-			haroStore.sort((a, b) => a.score - b.score);
-		}, 10);
+		const haroSortResult = benchmark(
+			`Haro SORT (${size} records)`,
+			() => {
+				haroStore.sort((a, b) => a.score - b.score);
+			},
+			10,
+		);
 		results.push(haroSortResult);
 
 		// Array sort operation
-		const arraySortResult = benchmark(`Array SORT (${size} records)`, () => {
-			[...arrayStore].sort((a, b) => a.score - b.score);
-		}, 10);
+		const arraySortResult = benchmark(
+			`Array SORT (${size} records)`,
+			() => {
+				[...arrayStore].sort((a, b) => a.score - b.score);
+			},
+			10,
+		);
 		results.push(arraySortResult);
 
 		// Haro sortBy operation (indexed)
-		const haroSortByResult = benchmark(`Haro SORTBY indexed (${size} records)`, () => {
-			haroStore.sortBy("score");
-		}, 10);
+		const haroSortByResult = benchmark(
+			`Haro SORTBY indexed (${size} records)`,
+			() => {
+				haroStore.sortBy("score");
+			},
+			10,
+		);
 		results.push(haroSortByResult);
 
 		// Complex sort comparison
-		const haroComplexSortResult = benchmark(`Haro COMPLEX sort (${size} records)`, () => {
-			haroStore.sort((a, b) => {
-				if (a.category !== b.category) {
-					return a.category.localeCompare(b.category);
-				}
+		const haroComplexSortResult = benchmark(
+			`Haro COMPLEX sort (${size} records)`,
+			() => {
+				haroStore.sort((a, b) => {
+					if (a.category !== b.category) {
+						return a.category.localeCompare(b.category);
+					}
 
-				return b.score - a.score;
-			});
-		}, 10);
+					return b.score - a.score;
+				});
+			},
+			10,
+		);
 		results.push(haroComplexSortResult);
 
-		const arrayComplexSortResult = benchmark(`Array COMPLEX sort (${size} records)`, () => {
-			[...arrayStore].sort((a, b) => {
-				if (a.category !== b.category) {
-					return a.category.localeCompare(b.category);
-				}
+		const arrayComplexSortResult = benchmark(
+			`Array COMPLEX sort (${size} records)`,
+			() => {
+				[...arrayStore].sort((a, b) => {
+					if (a.category !== b.category) {
+						return a.category.localeCompare(b.category);
+					}
 
-				return b.score - a.score;
-			});
-		}, 10);
+					return b.score - a.score;
+				});
+			},
+			10,
+		);
 		results.push(arrayComplexSortResult);
 	});
 
@@ -378,10 +404,10 @@ function benchmarkSortingComparison (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of memory comparison results
  */
-function benchmarkMemoryComparison (dataSizes) {
+function benchmarkMemoryComparison(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generateIndexTestData(size);
 
 		// Measure memory usage for each data structure
@@ -393,27 +419,27 @@ function benchmarkMemoryComparison (dataSizes) {
 		const haroMemEnd = process.memoryUsage().heapUsed;
 		measurements.push({
 			name: `Haro memory (${size} records)`,
-			memoryUsed: (haroMemEnd - haroMemStart) / 1024 / 1024 // MB
+			memoryUsed: (haroMemEnd - haroMemStart) / 1024 / 1024, // MB
 		});
 
 		// Map memory usage
 		const mapMemStart = process.memoryUsage().heapUsed;
 		const mapStore = new Map();
-		testData.forEach(record => mapStore.set(record.id, record));
+		testData.forEach((record) => mapStore.set(record.id, record));
 		const mapMemEnd = process.memoryUsage().heapUsed;
 		measurements.push({
 			name: `Map memory (${size} records)`,
-			memoryUsed: (mapMemEnd - mapMemStart) / 1024 / 1024 // MB
+			memoryUsed: (mapMemEnd - mapMemStart) / 1024 / 1024, // MB
 		});
 
 		// Object memory usage
 		const objMemStart = process.memoryUsage().heapUsed;
 		const objStore = {};
-		testData.forEach(record => objStore[record.id] = record); // eslint-disable-line no-return-assign
+		testData.forEach((record) => (objStore[record.id] = record)); // eslint-disable-line no-return-assign
 		const objMemEnd = process.memoryUsage().heapUsed;
 		measurements.push({
 			name: `Object memory (${size} records)`,
-			memoryUsed: (objMemEnd - objMemStart) / 1024 / 1024 // MB
+			memoryUsed: (objMemEnd - objMemStart) / 1024 / 1024, // MB
 		});
 
 		// Array memory usage
@@ -422,7 +448,7 @@ function benchmarkMemoryComparison (dataSizes) {
 		const arrMemEnd = process.memoryUsage().heapUsed;
 		measurements.push({
 			name: `Array memory (${size} records)`,
-			memoryUsed: (arrMemEnd - arrMemStart) / 1024 / 1024 // MB
+			memoryUsed: (arrMemEnd - arrMemStart) / 1024 / 1024, // MB
 		});
 
 		results.push(...measurements);
@@ -436,60 +462,70 @@ function benchmarkMemoryComparison (dataSizes) {
  * @param {Array} dataSizes - Array of data sizes to test
  * @returns {Array} Array of benchmark results
  */
-function benchmarkAdvancedFeatures (dataSizes) {
+function benchmarkAdvancedFeatures(dataSizes) {
 	const results = [];
 
-	dataSizes.forEach(size => {
+	dataSizes.forEach((size) => {
 		const testData = generateIndexTestData(size);
 
 		// Haro advanced features
-		const haroAdvancedResult = benchmark(`Haro ADVANCED features (${size} records)`, () => {
-			const store = haro(testData, {
-				index: ["category", "status", "category|status"],
-				versioning: true
-			});
+		const haroAdvancedResult = benchmark(
+			`Haro ADVANCED features (${size} records)`,
+			() => {
+				const store = haro(testData, {
+					index: ["category", "status", "category|status"],
+					versioning: true,
+				});
 
-			// Use advanced features
-			store.find({ category: "A", status: "active" });
-			store.search(/^A/, "category");
-			store.where({ category: ["A", "B"] });
-			store.sortBy("category");
-			store.limit(10, 20);
+				// Use advanced features
+				store.find({ category: "A", status: "active" });
+				store.search(/^A/, "category");
+				store.where({ category: ["A", "B"] });
+				store.sortBy("category");
+				store.limit(10, 20);
 
-			return store;
-		}, 10);
+				return store;
+			},
+			10,
+		);
 		results.push(haroAdvancedResult);
 
 		// Simulate similar operations with native structures
-		const nativeAdvancedResult = benchmark(`Native ADVANCED simulation (${size} records)`, () => {
-			const store = [...testData];
+		const nativeAdvancedResult = benchmark(
+			`Native ADVANCED simulation (${size} records)`,
+			() => {
+				const store = [...testData];
 
-			// Category index simulation
-			const categoryIndex = new Map();
-			store.forEach(record => {
-				if (!categoryIndex.has(record.category)) {
-					categoryIndex.set(record.category, []);
-				}
-				categoryIndex.get(record.category).push(record);
-			});
+				// Category index simulation
+				const categoryIndex = new Map();
+				store.forEach((record) => {
+					if (!categoryIndex.has(record.category)) {
+						categoryIndex.set(record.category, []);
+					}
+					categoryIndex.get(record.category).push(record);
+				});
 
-			// Find simulation
-			const found = store.filter(record => record.category === "A" && record.status === "active");
+				// Find simulation
+				const found = store.filter(
+					(record) => record.category === "A" && record.status === "active",
+				);
 
-			// Search simulation
-			const searched = store.filter(record => (/^A/).test(record.category));
+				// Search simulation
+				const searched = store.filter((record) => /^A/.test(record.category));
 
-			// Where simulation
-			const where = store.filter(record => ["A", "B"].includes(record.category));
+				// Where simulation
+				const where = store.filter((record) => ["A", "B"].includes(record.category));
 
-			// Sort simulation
-			const sorted = [...store].sort((a, b) => a.category.localeCompare(b.category));
+				// Sort simulation
+				const sorted = [...store].sort((a, b) => a.category.localeCompare(b.category));
 
-			// Limit simulation
-			const limited = sorted.slice(10, 30);
+				// Limit simulation
+				const limited = sorted.slice(10, 30);
 
-			return { found, searched, where, sorted, limited };
-		}, 10);
+				return { found, searched, where, sorted, limited };
+			},
+			10,
+		);
 		results.push(nativeAdvancedResult);
 	});
 
@@ -501,13 +537,19 @@ function benchmarkAdvancedFeatures (dataSizes) {
  * @param {Array} results - Array of benchmark results
  * @param {string} title - Title for the results section
  */
-function printResults (results, title) {
+function printResults(results, title) {
 	console.log(`\n=== ${title} ===\n`);
 
-	console.log("Operation".padEnd(40) + "Iterations".padEnd(12) + "Total Time (ms)".padEnd(18) + "Avg Time (ms)".padEnd(16) + "Ops/Second");
+	console.log(
+		"Operation".padEnd(40) +
+			"Iterations".padEnd(12) +
+			"Total Time (ms)".padEnd(18) +
+			"Avg Time (ms)".padEnd(16) +
+			"Ops/Second",
+	);
 	console.log("-".repeat(98));
 
-	results.forEach(result => {
+	results.forEach((result) => {
 		const name = result.name.padEnd(40);
 		const iterations = result.iterations.toString().padEnd(12);
 		const totalTime = result.totalTime.toFixed(2).padEnd(18);
@@ -524,13 +566,13 @@ function printResults (results, title) {
  * Prints memory comparison results
  * @param {Array} results - Array of memory measurements
  */
-function printMemoryResults (results) {
+function printMemoryResults(results) {
 	console.log("\n=== MEMORY USAGE COMPARISON ===\n");
 
 	console.log("Data Structure".padEnd(40) + "Memory Used (MB)");
 	console.log("-".repeat(60));
 
-	results.forEach(result => {
+	results.forEach((result) => {
 		const name = result.name.padEnd(40);
 		const memoryUsed = result.memoryUsed.toFixed(2);
 
@@ -543,7 +585,7 @@ function printMemoryResults (results) {
 /**
  * Main function to run all comparison benchmarks
  */
-function runComparisonBenchmarks () {
+function runComparisonBenchmarks() {
 	console.log("⚡ Running Haro vs Native Structures Comparison...\n");
 
 	const dataSizes = [1000, 10000, 50000];
@@ -587,7 +629,7 @@ function runComparisonBenchmarks () {
 		...deletionResults,
 		...aggregationResults,
 		...sortingResults,
-		...advancedResults
+		...advancedResults,
 	];
 
 	return { allResults, memoryResults };

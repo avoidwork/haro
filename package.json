@@ -1,7 +1,7 @@
 {
   "name": "haro",
-  "version": "16.0.0",
-  "description": "Haro is a modern immutable DataStore",
+  "version": "17.0.0",
+  "description": "A fast, flexible immutable DataStore for collections of records with indexing, versioning, and advanced querying capabilities",
   "type": "module",
   "types": "types/haro.d.ts",
   "source": "src/haro.js",
@@ -14,16 +14,17 @@
   "files": [
     "dist/haro.cjs",
     "dist/haro.js",
-    "types"
+    "types/haro.d.ts"
   ],
   "scripts": {
     "benchmark": "node benchmarks/index.js",
     "build": "npm run lint && npm run rollup",
     "changelog": "auto-changelog -p",
-    "lint": "eslint --fix *.js benchmarks/*.js src/*.js tests/**/*.js",
-    "mocha": "c8 mocha tests/**/*.js",
+    "fix": "oxlint --fix *.js benchmarks src tests/unit && oxfmt *.js benchmarks/*.js src/*.js tests/unit/*.js --write",
+    "lint": "oxlint *.js benchmarks src tests/unit && oxfmt *.js benchmarks/*.js src/*.js tests/unit/*.js --check",
+    "coverage": "node --test --experimental-test-coverage --test-coverage-exclude=dist/** --test-coverage-exclude=tests/** --test-reporter=spec tests/**/*.test.js 2>&1 | grep -A 1000 \"start of coverage report\" > coverage.txt",
     "rollup": "rollup --config",
-    "test": "npm run lint && npm run mocha",
+    "test": "npm run lint && node --test tests/**/*.js",
     "prepare": "husky"
   },
   "repository": {
@@ -35,7 +36,18 @@
     "data",
     "store",
     "datastore",
-    "api",
+    "collection",
+    "index",
+    "indexing",
+    "query",
+    "search",
+    "filter",
+    "versioning",
+    "batch",
+    "bulk",
+    "memory",
+    "cache",
+    "map",
     "haro"
   ],
   "author": "Jason Mulligan <jason.mulligan@avoidwork.com>",
@@ -46,17 +58,18 @@
   "homepage": "https://github.com/avoidwork/haro",
   "engineStrict": true,
   "engines": {
-    "node": ">=17.0.0"
+    "node": ">=19.0.0"
+  },
+  "dependencies": {
+    "tiny-lru": "^13.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.31.0",
-    "@rollup/plugin-terser": "^1.0.0",
     "auto-changelog": "^2.5.0",
-    "c8": "^11.0.0",
-    "eslint": "^10.0.0",
-    "globals": "^17.0.0",
+    "globals": "^17.5.0",
     "husky": "^9.1.7",
-    "mocha": "^11.7.1",
-    "rollup": "^4.45.0"
+    "oxfmt": "^0.45.0",
+    "oxlint": "^1.60.0",
+    "rollup": "^4.60.2",
+    "tinybench": "^6.0.0"
   }
 }

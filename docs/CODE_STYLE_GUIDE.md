@@ -13,7 +13,7 @@ This document outlines the coding standards and conventions for the Haro project
 7. [Error Handling](#error-handling)
 8. [Performance Considerations](#performance-considerations)
 9. [Security Guidelines](#security-guidelines)
-10. [ESLint Configuration](#eslint-configuration)
+10. [Oxlint Configuration](#oxlint-configuration)
 
 ## General Principles
 
@@ -37,8 +37,8 @@ Use modern JavaScript features appropriately:
 
 ```javascript
 // ✅ Good - Use const/let instead of var
-const API_ENDPOINT = 'https://api.example.com';
-let userData = null;
+const STRING_EMPTY = '';
+let result = null;
 
 // ✅ Good - Use arrow functions for concise syntax
 const processData = data => data.map(item => item.value);
@@ -47,11 +47,15 @@ const processData = data => data.map(item => item.value);
 const message = `Processing ${count} items`;
 
 // ✅ Good - Use destructuring
-const {name, age} = user;
+const { name, age } = user;
 const [first, second] = array;
 
 // ✅ Good - Use spread operator
 const newArray = [...existingArray, newItem];
+
+// ✅ Good - Use optional chaining and nullish coalescing
+const key = data[this.key] ?? this.uuid();
+const userName = user?.profile?.name;
 ```
 
 ### Variable Declarations
@@ -105,6 +109,7 @@ const proc = (req) => {...};
 ### Constants
 - Use **UPPER_SNAKE_CASE** for constants
 - Group related constants together
+- Import constants from `constants.js` for string literals used in comparisons
 
 ```javascript
 // ✅ Good
@@ -114,6 +119,20 @@ const ERROR_MESSAGES = {
     INVALID_INPUT: 'Invalid input provided',
     NETWORK_ERROR: 'Network connection failed'
 };
+
+// ✅ Good - String constants from constants.js
+import {
+    STRING_EMPTY,
+    STRING_FUNCTION,
+    STRING_OBJECT,
+    STRING_RECORD_NOT_FOUND
+} from './constants.js';
+
+function validateData(data) {
+    if (typeof data !== STRING_OBJECT) {
+        throw new Error(STRING_RECORD_NOT_FOUND);
+    }
+}
 ```
 
 ### Classes
@@ -268,14 +287,19 @@ function complexCalculation(data) {
     // This approach reduces time complexity from O(n*m) to O(n+m)
     return algorithmImplementation(data);
 }
+
+// ✅ Good - Use eslint-disable comments for intentional violations
+// eslint-disable-line no-unused-vars
+// Hook for custom logic before batch; override in subclass if needed
+return arg;
 ```
 
 ## Testing Standards
 
 ### Unit Tests
 - Place unit tests in `tests/unit/` directory
-- Use **node-assert** for assertions
-- Run tests with **Mocha**
+- Use **node:assert** for assertions
+- Run tests with **Node.js native test runner** (`node --test`)
 - Follow **AAA pattern** (Arrange, Act, Assert)
 
 ```javascript
@@ -471,9 +495,9 @@ function processUserProfile(profile) {
 }
 ```
 
-## ESLint Configuration
+## Oxlint Configuration
 
-The project uses ESLint for code quality enforcement. Key rules include:
+The project uses Oxlint for code quality enforcement. Key rules include:
 
 - **Indentation**: Tabs with consistent variable declaration alignment
 - **Quotes**: Double quotes with escape avoidance
@@ -483,14 +507,15 @@ The project uses ESLint for code quality enforcement. Key rules include:
 - **Space Requirements**: Consistent spacing around operators and keywords
 - **No Unused Variables**: All variables must be used
 - **Consistent Returns**: Functions should have consistent return patterns
+- **No Console**: Console statements are not allowed (except `warn` and `error` for warnings/errors)
 
-### Running ESLint
+### Running Oxlint
 ```bash
 # Check all files
 npm run lint
 
 # Fix auto-fixable issues
-npm run lint:fix
+npm run fix
 ```
 
 ## Best Practices Summary
@@ -508,8 +533,9 @@ npm run lint:fix
 
 ## Tools and Automation
 
-- **ESLint**: Code quality and style enforcement
-- **Mocha**: Test runner for unit and integration tests
+- **Oxlint**: Code quality and style enforcement
+- **Oxfmt**: Code formatter
+- **Node.js native test runner**: Test runner for unit and integration tests
 - **Node Assert**: Assertion library for testing
 - **Rollup**: Module bundler for distribution
 - **Husky**: Git hooks for pre-commit checks

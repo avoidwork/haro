@@ -1,360 +1,325 @@
-import { runBasicOperationsBenchmarks } from "./basic-operations.js";
-import { runSearchFilterBenchmarks } from "./search-filter.js";
-import { runIndexOperationsBenchmarks } from "./index-operations.js";
-import { runMemoryBenchmarks } from "./memory-usage.js";
-import { runComparisonBenchmarks } from "./comparison.js";
-import { runUtilityOperationsBenchmarks } from "./utility-operations.js";
-import { runPaginationBenchmarks } from "./pagination.js";
-import { runPersistenceBenchmarks } from "./persistence.js";
-import { runImmutableComparisonBenchmarks } from "./immutable-comparison.js";
+import { Bench } from "tinybench";
+import { haro } from "../dist/haro.js";
 
 /**
- * Formats duration in milliseconds to human-readable format
- * @param {number} ms - Duration in milliseconds
- * @returns {string} Formatted duration string
+ * Creates a benchmark suite for basic CRUD operations
+ * @param {number} size - Number of records to test
+ * @returns {Bench} Configured benchmark suite
  */
-function formatDuration (ms) {
-	if (ms < 1000) {
-		return `${ms.toFixed(0)}ms`;
-	} else if (ms < 60000) {
-		return `${(ms / 1000).toFixed(1)}s`;
-	} else {
-		return `${(ms / 60000).toFixed(1)}m`;
-	}
+function createBasicOperationsBench(size = 10000) {
+	const bench = new Bench({ time: 500 });
+	const testData = Array.from({ length: size }, (_, i) => ({
+		id: i,
+		name: `test${i}`,
+		category: "A",
+	}));
+	const store = haro(testData);
+
+	bench
+		.add(`store.set() ${size} records`, () => {
+			const newStore = haro();
+			for (let i = 0; i < size; i++) {
+				newStore.set(i, testData[i]);
+			}
+		})
+		.add(`store.get() ${size} records`, () => {
+			for (let i = 0; i < size; i++) {
+				store.get(i);
+			}
+		})
+		.add(`store.has() ${size} keys`, () => {
+			for (let i = 0; i < size; i++) {
+				store.has(i);
+			}
+		})
+		.add(`store.delete() ${size} records`, () => {
+			const deleteStore = haro(testData);
+			for (let i = 0; i < size; i++) {
+				deleteStore.delete(i);
+			}
+		});
+
+	return bench;
 }
 
 /**
- * Generates a summary report of all benchmark results
- * @param {Object} results - All benchmark results
- * @returns {Object} Summary report
+ * Creates a benchmark suite for search and filter operations
+ * @param {number} size - Number of records to test
+ * @returns {Bench} Configured benchmark suite
  */
-function generateSummaryReport (results) {
-	const { basicOps, searchFilter, indexOps, memory, comparison, utilities, pagination, persistence, immutableComparison } = results;
+function createSearchFilterBench(size = 10000) {
+	const bench = new Bench({ time: 500 });
+	const testData = Array.from({ length: size }, (_, i) => ({
+		id: i,
+		name: `User ${i}`,
+		department: i % 5 === 0 ? "Engineering" : "Marketing",
+		skills: ["JavaScript", "Python"],
+		city: "New York",
+		active: true,
+		tags: [`tag${i % 10}`],
+		age: 25 + (i % 30),
+		salary: 50000 + (i % 100000),
+	}));
 
-	const summary = {
-		totalTests: 0,
-		totalTime: 0,
-		categories: {},
-		performance: {
-			fastest: { name: "", opsPerSecond: 0 },
-			slowest: { name: "", opsPerSecond: Infinity },
-			mostMemoryEfficient: { name: "", memoryUsed: Infinity },
-			leastMemoryEfficient: { name: "", memoryUsed: 0 }
-		},
-		recommendations: []
-	};
-
-	// Process basic operations
-	if (basicOps && basicOps.length > 0) {
-		summary.categories.basicOperations = {
-			testCount: basicOps.length,
-			totalTime: basicOps.reduce((sum, test) => sum + test.totalTime, 0),
-			avgOpsPerSecond: basicOps.reduce((sum, test) => sum + test.opsPerSecond, 0) / basicOps.length
-		};
-
-		// Find fastest and slowest operations
-		basicOps.forEach(test => {
-			if (test.opsPerSecond > summary.performance.fastest.opsPerSecond) {
-				summary.performance.fastest = { name: test.name, opsPerSecond: test.opsPerSecond };
-			}
-			if (test.opsPerSecond < summary.performance.slowest.opsPerSecond) {
-				summary.performance.slowest = { name: test.name, opsPerSecond: test.opsPerSecond };
-			}
-		});
-	}
-
-	// Process search and filter operations
-	if (searchFilter && searchFilter.length > 0) {
-		summary.categories.searchFilter = {
-			testCount: searchFilter.length,
-			totalTime: searchFilter.reduce((sum, test) => sum + test.totalTime, 0),
-			avgOpsPerSecond: searchFilter.reduce((sum, test) => sum + test.opsPerSecond, 0) / searchFilter.length
-		};
-	}
-
-	// Process index operations
-	if (indexOps && indexOps.length > 0) {
-		summary.categories.indexOperations = {
-			testCount: indexOps.length,
-			totalTime: indexOps.reduce((sum, test) => sum + test.totalTime, 0),
-			avgOpsPerSecond: indexOps.reduce((sum, test) => sum + test.opsPerSecond, 0) / indexOps.length
-		};
-	}
-
-	// Process memory results
-	if (memory && memory.results && memory.results.length > 0) {
-		summary.categories.memoryUsage = {
-			testCount: memory.results.length,
-			totalTime: memory.results.reduce((sum, test) => sum + test.executionTime, 0),
-			avgHeapDelta: memory.results.reduce((sum, test) => sum + test.memoryDelta.heapUsed, 0) / memory.results.length
-		};
-
-		// Find memory efficiency
-		memory.results.forEach(test => {
-			if (test.memoryDelta.heapUsed < summary.performance.mostMemoryEfficient.memoryUsed) {
-				summary.performance.mostMemoryEfficient = {
-					name: test.description,
-					memoryUsed: test.memoryDelta.heapUsed
-				};
-			}
-			if (test.memoryDelta.heapUsed > summary.performance.leastMemoryEfficient.memoryUsed) {
-				summary.performance.leastMemoryEfficient = {
-					name: test.description,
-					memoryUsed: test.memoryDelta.heapUsed
-				};
-			}
-		});
-	}
-
-	// Process comparison results
-	if (comparison && comparison.allResults && comparison.allResults.length > 0) {
-		summary.categories.comparison = {
-			testCount: comparison.allResults.length,
-			totalTime: comparison.allResults.reduce((sum, test) => sum + test.totalTime, 0),
-			avgOpsPerSecond: comparison.allResults.reduce((sum, test) => sum + test.opsPerSecond, 0) / comparison.allResults.length
-		};
-	}
-
-	// Process utility operations
-	if (utilities && utilities.length > 0) {
-		summary.categories.utilityOperations = {
-			testCount: utilities.length,
-			totalTime: utilities.reduce((sum, test) => sum + test.totalTime, 0),
-			avgOpsPerSecond: utilities.reduce((sum, test) => sum + test.opsPerSecond, 0) / utilities.length
-		};
-	}
-
-	// Process pagination results
-	if (pagination && pagination.length > 0) {
-		summary.categories.pagination = {
-			testCount: pagination.length,
-			totalTime: pagination.reduce((sum, test) => sum + test.totalTime, 0),
-			avgOpsPerSecond: pagination.reduce((sum, test) => sum + test.opsPerSecond, 0) / pagination.length
-		};
-	}
-
-	// Process persistence results
-	if (persistence && persistence.length > 0) {
-		summary.categories.persistence = {
-			testCount: persistence.length,
-			totalTime: persistence.reduce((sum, test) => sum + test.totalTime, 0),
-			avgOpsPerSecond: persistence.filter(test => test.opsPerSecond > 0).reduce((sum, test) => sum + test.opsPerSecond, 0) / persistence.filter(test => test.opsPerSecond > 0).length || 0
-		};
-	}
-
-	// Process immutable comparison results
-	if (immutableComparison && immutableComparison.length > 0) {
-		summary.categories.immutableComparison = {
-			testCount: immutableComparison.length,
-			totalTime: immutableComparison.reduce((sum, test) => sum + test.totalTime, 0),
-			avgOpsPerSecond: immutableComparison.filter(test => test.opsPerSecond > 0).reduce((sum, test) => sum + test.opsPerSecond, 0) / immutableComparison.filter(test => test.opsPerSecond > 0).length || 0
-		};
-	}
-
-	// Calculate totals
-	summary.totalTests = Object.values(summary.categories).reduce((sum, cat) => sum + cat.testCount, 0);
-	summary.totalTime = Object.values(summary.categories).reduce((sum, cat) => sum + cat.totalTime, 0);
-
-	// Generate recommendations
-	if (summary.categories.basicOperations && summary.categories.basicOperations.avgOpsPerSecond > 10000) {
-		summary.recommendations.push("✅ Basic operations performance is excellent for most use cases");
-	}
-
-	if (summary.categories.indexOperations && summary.categories.searchFilter) {
-		const indexAvg = summary.categories.indexOperations.avgOpsPerSecond;
-		const searchAvg = summary.categories.searchFilter.avgOpsPerSecond;
-		if (indexAvg > searchAvg * 2) {
-			summary.recommendations.push("💡 Consider using indexed queries (find) instead of filters for better performance");
-		}
-	}
-
-	if (summary.categories.memoryUsage && summary.categories.memoryUsage.avgHeapDelta < 10) {
-		summary.recommendations.push("✅ Memory usage is efficient for typical workloads");
-	} else if (summary.categories.memoryUsage && summary.categories.memoryUsage.avgHeapDelta > 50) {
-		summary.recommendations.push("⚠️ Consider optimizing memory usage for large datasets");
-	}
-
-	if (summary.categories.comparison) {
-		summary.recommendations.push("📊 Review comparison results to understand trade-offs vs native structures");
-	}
-
-	if (summary.categories.utilityOperations && summary.categories.utilityOperations.avgOpsPerSecond > 1000) {
-		summary.recommendations.push("✅ Utility operations (clone, merge, freeze) perform well");
-	}
-
-	if (summary.categories.pagination && summary.categories.pagination.avgOpsPerSecond > 100) {
-		summary.recommendations.push("✅ Pagination performance is suitable for typical UI requirements");
-	}
-
-	if (summary.categories.persistence) {
-		summary.recommendations.push("💾 Persistence operations available for data serialization needs");
-	}
-
-	if (summary.categories.immutableComparison) {
-		summary.recommendations.push("🔒 Review immutable vs mutable comparison for data safety vs performance trade-offs");
-	}
-
-	return summary;
-}
-
-/**
- * Prints the summary report
- * @param {Object} summary - Summary report object
- */
-function printSummaryReport (summary) {
-	console.log("\n" + "=".repeat(80));
-	console.log("🎯 HARO BENCHMARK SUMMARY REPORT");
-	console.log("=".repeat(80));
-
-	console.log("\n📊 OVERVIEW:");
-	console.log(`   Total Tests: ${summary.totalTests}`);
-	console.log(`   Total Time: ${formatDuration(summary.totalTime)}`);
-	console.log(`   Categories: ${Object.keys(summary.categories).length}`);
-
-	console.log("\n🏆 PERFORMANCE HIGHLIGHTS:");
-	console.log(`   Fastest Operation: ${summary.performance.fastest.name}`);
-	console.log(`   └── ${summary.performance.fastest.opsPerSecond.toLocaleString()} ops/second`);
-	console.log(`   Slowest Operation: ${summary.performance.slowest.name}`);
-	console.log(`   └── ${summary.performance.slowest.opsPerSecond.toLocaleString()} ops/second`);
-
-	if (summary.performance.mostMemoryEfficient.memoryUsed !== Infinity) {
-		console.log("\n💾 MEMORY EFFICIENCY:");
-		console.log(`   Most Efficient: ${summary.performance.mostMemoryEfficient.name}`);
-		console.log(`   └── ${summary.performance.mostMemoryEfficient.memoryUsed.toFixed(2)} MB`);
-		console.log(`   Least Efficient: ${summary.performance.leastMemoryEfficient.name}`);
-		console.log(`   └── ${summary.performance.leastMemoryEfficient.memoryUsed.toFixed(2)} MB`);
-	}
-
-	console.log("\n📋 CATEGORY BREAKDOWN:");
-	Object.entries(summary.categories).forEach(([category, stats]) => {
-		console.log(`   ${category}:`);
-		console.log(`   ├── Tests: ${stats.testCount}`);
-		console.log(`   ├── Time: ${formatDuration(stats.totalTime)}`);
-		if (stats.avgOpsPerSecond) {
-			console.log(`   └── Avg Performance: ${stats.avgOpsPerSecond.toFixed(0)} ops/second`);
-		} else if (stats.avgHeapDelta) {
-			console.log(`   └── Avg Memory: ${stats.avgHeapDelta.toFixed(2)} MB`);
-		}
+	const store = haro(testData, {
+		index: ["department", "skills", "city", "active", "tags", "age", "salary"],
+		warnOnFullScan: false,
 	});
 
-	if (summary.recommendations.length > 0) {
-		console.log("\n💡 RECOMMENDATIONS:");
-		summary.recommendations.forEach(rec => {
-			console.log(`   ${rec}`);
+	bench
+		.add(`FIND by indexed field (${size} records)`, () => {
+			store.find({ department: "Engineering" });
+		})
+		.add(`WHERE by indexed field (${size} records)`, () => {
+			store.where({ department: "Engineering" });
+		})
+		.add(`SEARCH in index (${size} records)`, () => {
+			store.search("Engineering", "department");
+		})
+		.add(`FILTER all records (${size} records)`, () => {
+			store.filter((record) => record.active === true);
 		});
-	}
 
-	console.log("\n" + "=".repeat(80));
-	console.log("🏁 BENCHMARK COMPLETE");
-	console.log("=".repeat(80) + "\n");
+	return bench;
 }
 
 /**
- * Main function to run all benchmarks
- * @param {Object} options - Benchmark options
- * @returns {Object} All benchmark results
+ * Creates a benchmark suite for index operations
+ * @param {number} size - Number of records to test
+ * @returns {Bench} Configured benchmark suite
  */
-async function runAllBenchmarks (options = {}) {
+function createIndexOperationsBench(size = 10000) {
+	const bench = new Bench({ time: 500 });
+	const testData = Array.from({ length: size }, (_, i) => ({
+		id: i,
+		category: i % 5 === 0 ? "A" : "B",
+		status: "active",
+		priority: "high",
+		region: "north",
+		userId: Math.floor(i / 10),
+		timestamp: new Date(),
+		score: Math.floor(Math.random() * 1000),
+		tags: [`tag${i % 20}`],
+	}));
+
+	bench
+		.add(`CREATE indexes (${size} records)`, () => {
+			const store = haro(testData, {
+				index: ["category", "status", "priority", "region", "userId"],
+			});
+			return store;
+		})
+		.add(`FIND with index (${size} records)`, () => {
+			const store = haro(testData, { index: ["category"] });
+			store.find({ category: "A" });
+		})
+		.add(`REINDEX single field (${size} records)`, () => {
+			const store = haro(testData, { index: ["category"] });
+			store.reindex("status");
+		});
+
+	return bench;
+}
+
+/**
+ * Creates a benchmark suite for utility operations
+ * @param {number} size - Number of records to test
+ * @returns {Bench} Configured benchmark suite
+ */
+function createUtilityOperationsBench(size = 1000) {
+	const bench = new Bench({ time: 500 });
+	const store = haro();
+	const testData = { id: 1, name: "test", tags: ["a", "b", "c"] };
+
+	bench
+		.add(`toArray() (${size} iterations)`, () => {
+			for (let i = 0; i < size; i++) {
+				store.toArray();
+			}
+		})
+		.add(`entries() (${size} iterations)`, () => {
+			for (let i = 0; i < size; i++) {
+				Array.from(store.entries());
+			}
+		})
+		.add(`keys() (${size} iterations)`, () => {
+			for (let i = 0; i < size; i++) {
+				Array.from(store.keys());
+			}
+		})
+		.add(`values() (${size} iterations)`, () => {
+			for (let i = 0; i < size; i++) {
+				Array.from(store.values());
+			}
+		});
+
+	return bench;
+}
+
+/**
+ * Creates a benchmark suite for pagination operations
+ * @param {number} size - Number of records to test
+ * @returns {Bench} Configured benchmark suite
+ */
+function createPaginationBench(size = 10000) {
+	const bench = new Bench({ time: 500 });
+	const testData = Array.from({ length: size }, (_, i) => ({
+		id: i,
+		name: `Item ${i}`,
+		category: `cat${i % 10}`,
+	}));
+	const store = haro(testData);
+
+	bench
+		.add(`LIMIT 10 (${size} records)`, () => {
+			store.limit(0, 10);
+		})
+		.add(`LIMIT 50 (${size} records)`, () => {
+			store.limit(0, 50);
+		})
+		.add(`LIMIT 100 (${size} records)`, () => {
+			store.limit(0, 100);
+		})
+		.add(`LIMIT with offset (${size} records)`, () => {
+			store.limit(500, 50);
+		});
+
+	return bench;
+}
+
+/**
+ * Creates a benchmark suite for persistence operations
+ * @param {number} size - Number of records to test
+ * @returns {Bench} Configured benchmark suite
+ */
+function createPersistenceBench(size = 5000) {
+	const bench = new Bench({ time: 500 });
+	const testData = Array.from({ length: size }, (_, i) => ({
+		id: i,
+		name: `Record ${i}`,
+		department: `Dept${i % 10}`,
+		location: `Loc${i % 5}`,
+		active: true,
+	}));
+	const store = haro(testData, { index: ["department", "location", "active"] });
+
+	bench
+		.add(`DUMP records (${size} records)`, () => {
+			store.dump("records");
+		})
+		.add(`DUMP indexes (${size} records)`, () => {
+			store.dump("indexes");
+		})
+		.add(`OVERRIDE records (${size} records)`, () => {
+			const dump = store.dump("records");
+			const newStore = haro();
+			newStore.override(dump, "records");
+		});
+
+	return bench;
+}
+
+/**
+ * Runs all benchmark suites and displays results
+ * @param {Object} options - Benchmark options
+ * @returns {Promise<Object>} All benchmark results
+ */
+async function runAllBenchmarks(options = {}) {
 	const {
 		includeBasic = true,
 		includeSearch = true,
 		includeIndex = true,
-		includeMemory = true,
-		includeComparison = true,
 		includeUtilities = true,
 		includePagination = true,
 		includePersistence = true,
-		includeImmutableComparison = true,
-		verbose = true
+		verbose = true,
 	} = options;
 
 	const results = {};
-	const startTime = Date.now();
+	const sizes = {
+		basic: 10000,
+		search: 10000,
+		index: 10000,
+		utility: 1000,
+		pagination: 10000,
+		persistence: 5000,
+	};
 
-	console.log("🚀 Starting Haro Benchmark Suite...\n");
-	console.log("📋 Benchmark Configuration:");
-	console.log(`   Node.js Version: ${process.version}`);
-	console.log(`   Platform: ${process.platform}`);
-	console.log(`   Architecture: ${process.arch}`);
-	console.log(`   Memory: ${Math.round(process.memoryUsage().heapTotal / 1024 / 1024)} MB available\n`);
+	console.log("🚀 Starting Haro Benchmark Suite (tinybench)...\n");
+	console.log(`Node.js: ${process.version}\n`);
 
 	try {
-		// Run basic operations benchmarks
 		if (includeBasic) {
-			if (verbose) console.log("⏳ Running basic operations benchmarks...");
-			results.basicOps = runBasicOperationsBenchmarks();
-			if (verbose) console.log("✅ Basic operations benchmarks completed\n");
+			if (verbose) console.log("⏳ Running basic operations...");
+			const bench = createBasicOperationsBench(sizes.basic);
+			await bench.run();
+			results.basicOps = bench;
+			if (verbose) {
+				console.log("\n📊 BASIC OPERATIONS:");
+				console.table(bench.table());
+			}
 		}
 
-		// Run search and filter benchmarks
 		if (includeSearch) {
-			if (verbose) console.log("⏳ Running search and filter benchmarks...");
-			results.searchFilter = runSearchFilterBenchmarks();
-			if (verbose) console.log("✅ Search and filter benchmarks completed\n");
+			if (verbose) console.log("⏳ Running search/filter operations...");
+			const bench = createSearchFilterBench(sizes.search);
+			await bench.run();
+			results.searchFilter = bench;
+			if (verbose) {
+				console.log("\n📊 SEARCH & FILTER:");
+				console.table(bench.table());
+			}
 		}
 
-		// Run index operations benchmarks
 		if (includeIndex) {
-			if (verbose) console.log("⏳ Running index operations benchmarks...");
-			results.indexOps = runIndexOperationsBenchmarks();
-			if (verbose) console.log("✅ Index operations benchmarks completed\n");
+			if (verbose) console.log("⏳ Running index operations...");
+			const bench = createIndexOperationsBench(sizes.index);
+			await bench.run();
+			results.indexOps = bench;
+			if (verbose) {
+				console.log("\n📊 INDEX OPERATIONS:");
+				console.table(bench.table());
+			}
 		}
 
-		// Run memory benchmarks
-		if (includeMemory) {
-			if (verbose) console.log("⏳ Running memory usage benchmarks...");
-			results.memory = runMemoryBenchmarks();
-			if (verbose) console.log("✅ Memory usage benchmarks completed\n");
-		}
-
-		// Run comparison benchmarks
-		if (includeComparison) {
-			if (verbose) console.log("⏳ Running comparison benchmarks...");
-			results.comparison = runComparisonBenchmarks();
-			if (verbose) console.log("✅ Comparison benchmarks completed\n");
-		}
-
-		// Run utility operations benchmarks
 		if (includeUtilities) {
-			if (verbose) console.log("⏳ Running utility operations benchmarks...");
-			results.utilities = runUtilityOperationsBenchmarks();
-			if (verbose) console.log("✅ Utility operations benchmarks completed\n");
+			if (verbose) console.log("⏳ Running utility operations...");
+			const bench = createUtilityOperationsBench(sizes.utility);
+			await bench.run();
+			results.utilities = bench;
+			if (verbose) {
+				console.log("\n📊 UTILITY OPERATIONS:");
+				console.table(bench.table());
+			}
 		}
 
-		// Run pagination benchmarks
 		if (includePagination) {
-			if (verbose) console.log("⏳ Running pagination benchmarks...");
-			results.pagination = runPaginationBenchmarks();
-			if (verbose) console.log("✅ Pagination benchmarks completed\n");
+			if (verbose) console.log("⏳ Running pagination operations...");
+			const bench = createPaginationBench(sizes.pagination);
+			await bench.run();
+			results.pagination = bench;
+			if (verbose) {
+				console.log("\n📊 PAGINATION:");
+				console.table(bench.table());
+			}
 		}
 
-		// Run persistence benchmarks
 		if (includePersistence) {
-			if (verbose) console.log("⏳ Running persistence benchmarks...");
-			results.persistence = runPersistenceBenchmarks();
-			if (verbose) console.log("✅ Persistence benchmarks completed\n");
+			if (verbose) console.log("⏳ Running persistence operations...");
+			const bench = createPersistenceBench(sizes.persistence);
+			await bench.run();
+			results.persistence = bench;
+			if (verbose) {
+				console.log("\n📊 PERSISTENCE:");
+				console.table(bench.table());
+			}
 		}
 
-		// Run immutable vs mutable comparison benchmarks
-		if (includeImmutableComparison) {
-			if (verbose) console.log("⏳ Running immutable vs mutable comparison benchmarks...");
-			results.immutableComparison = runImmutableComparisonBenchmarks();
-			if (verbose) console.log("✅ Immutable vs mutable comparison benchmarks completed\n");
-		}
+		console.log("\n" + "=".repeat(80));
+		console.log("🏁 BENCHMARK COMPLETE");
+		console.log("=".repeat(80) + "\n");
 
-		const endTime = Date.now();
-		const totalDuration = endTime - startTime;
-
-		// Generate and print summary
-		const summary = generateSummaryReport(results);
-		summary.totalDuration = totalDuration;
-
-		if (verbose) {
-			printSummaryReport(summary);
-		}
-
-		return { results, summary };
-
+		return results;
 	} catch (error) {
 		console.error("❌ Benchmark suite failed:", error);
 		throw error;
@@ -365,32 +330,28 @@ async function runAllBenchmarks (options = {}) {
  * CLI argument parser
  * @returns {Object} Parsed CLI options
  */
-function parseCliArguments () {
+function parseCliArguments() {
 	const args = process.argv.slice(2);
 	const options = {
 		includeBasic: true,
 		includeSearch: true,
 		includeIndex: true,
-		includeMemory: true,
-		includeComparison: true,
 		includeUtilities: true,
 		includePagination: true,
 		includePersistence: true,
-		includeImmutableComparison: true,
-		verbose: true
+		verbose: true,
 	};
 
-	// Helper function to disable all categories except the specified one
-	const runOnlyCategory = category => {
-		Object.keys(options).forEach(key => {
+	const runOnlyCategory = (category) => {
+		Object.keys(options).forEach((key) => {
 			if (key.startsWith("include") && key !== category) {
 				options[key] = false;
 			}
 		});
 	};
 
-	args.forEach(arg => {
-		switch (arg) { // eslint-disable-line default-case
+	args.forEach((arg) => {
+		switch (arg) {
 			case "--basic-only":
 				runOnlyCategory("includeBasic");
 				break;
@@ -399,12 +360,6 @@ function parseCliArguments () {
 				break;
 			case "--index-only":
 				runOnlyCategory("includeIndex");
-				break;
-			case "--memory-only":
-				runOnlyCategory("includeMemory");
-				break;
-			case "--comparison-only":
-				runOnlyCategory("includeComparison");
 				break;
 			case "--utilities-only":
 				runOnlyCategory("includeUtilities");
@@ -415,23 +370,10 @@ function parseCliArguments () {
 			case "--persistence-only":
 				runOnlyCategory("includePersistence");
 				break;
-			case "--immutable-only":
-				runOnlyCategory("includeImmutableComparison");
-				break;
 			case "--core-only":
-				// Run only core benchmarks (basic, search, index)
-				options.includeMemory = false;
-				options.includeComparison = false;
 				options.includeUtilities = false;
 				options.includePagination = false;
 				options.includePersistence = false;
-				options.includeImmutableComparison = false;
-				break;
-			case "--advanced-only":
-				// Run only advanced benchmarks
-				options.includeBasic = false;
-				options.includeSearch = false;
-				options.includeIndex = false;
 				break;
 			case "--no-basic":
 				options.includeBasic = false;
@@ -442,12 +384,6 @@ function parseCliArguments () {
 			case "--no-index":
 				options.includeIndex = false;
 				break;
-			case "--no-memory":
-				options.includeMemory = false;
-				break;
-			case "--no-comparison":
-				options.includeComparison = false;
-				break;
 			case "--no-utilities":
 				options.includeUtilities = false;
 				break;
@@ -457,15 +393,12 @@ function parseCliArguments () {
 			case "--no-persistence":
 				options.includePersistence = false;
 				break;
-			case "--no-immutable":
-				options.includeImmutableComparison = false;
-				break;
 			case "--quiet":
 				options.verbose = false;
 				break;
 			case "--help":
 				console.log(`
-Haro Benchmark Suite v16.0.0
+Haro Benchmark Suite v17.0.0 (tinybench)
 
 Usage: node benchmarks/index.js [options]
 
@@ -473,50 +406,30 @@ SINGLE CATEGORY OPTIONS:
   --basic-only           Run only basic CRUD operations benchmarks
   --search-only          Run only search and filter benchmarks  
   --index-only           Run only index operations benchmarks
-  --memory-only          Run only memory usage benchmarks
-  --comparison-only      Run only vs native structures benchmarks
-  --utilities-only       Run only utility operations benchmarks (clone, merge, freeze, etc.)
-  --pagination-only      Run only pagination/limit benchmarks
-  --persistence-only     Run only dump/override persistence benchmarks
-  --immutable-only       Run only immutable vs mutable comparison benchmarks
+  --utilities-only       Run only utility operations benchmarks
+  --pagination-only      Run only pagination benchmarks
+  --persistence-only     Run only persistence benchmarks
 
 CATEGORY GROUP OPTIONS:
   --core-only            Run only core benchmarks (basic, search, index)
-  --advanced-only        Run only advanced benchmarks (memory, comparison, utilities, etc.)
 
 EXCLUSION OPTIONS:
   --no-basic             Exclude basic operations benchmarks
   --no-search            Exclude search and filter benchmarks
   --no-index             Exclude index operations benchmarks  
-  --no-memory            Exclude memory usage benchmarks
-  --no-comparison        Exclude comparison benchmarks
   --no-utilities         Exclude utility operations benchmarks
   --no-pagination        Exclude pagination benchmarks
   --no-persistence       Exclude persistence benchmarks
-  --no-immutable         Exclude immutable vs mutable benchmarks
 
 OUTPUT OPTIONS:
   --quiet                Suppress verbose output
   --help                 Show this help message
 
-BENCHMARK CATEGORIES:
-  Basic Operations       CRUD operations (set, get, delete, batch)
-  Search & Filter        Query operations (find, filter, search, where)
-  Index Operations       Indexing performance and benefits
-  Memory Usage           Memory consumption and efficiency analysis
-  Comparison             Performance vs native JavaScript structures
-  Utility Operations     Helper methods (clone, merge, freeze, forEach, uuid)
-  Pagination             Limit-based pagination performance
-  Persistence            Dump/override operations for data serialization
-  Immutable Comparison   Performance comparison between mutable and immutable modes
-
 Examples:
   node benchmarks/index.js                    # Run all benchmarks
   node benchmarks/index.js --basic-only       # Run basic operations only
   node benchmarks/index.js --core-only        # Run core benchmarks only
-  node benchmarks/index.js --no-memory        # Run all except memory benchmarks
   node benchmarks/index.js --quiet            # Run all benchmarks quietly
-  node benchmarks/index.js --utilities-only   # Test utility methods only
         `);
 				process.exit(0);
 				break;
@@ -529,10 +442,10 @@ Examples:
 // Run benchmarks if this file is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
 	const options = parseCliArguments();
-	runAllBenchmarks(options).catch(error => {
+	runAllBenchmarks(options).catch((error) => {
 		console.error("Fatal error:", error);
 		process.exit(1);
 	});
 }
 
-export { runAllBenchmarks, generateSummaryReport };
+export { runAllBenchmarks };
