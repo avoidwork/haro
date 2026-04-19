@@ -31,7 +31,7 @@ A fast, flexible immutable DataStore for collections of records with indexing, v
 
 ## Key Features
 
-- **⚡ Blazing Fast**: O(1) indexed lookups - up to 20M ops/sec for instant data access
+- **⚡ Blazing Fast**: O(1) indexed lookups - up to 500K ops/sec for instant data access
 - **📚 Built-in Versioning**: Automatic change tracking without writing audit trail code
 - **🔒 Immutable Mode**: Data safety with frozen objects - prevent accidental mutations
 - **🔍 Advanced Querying**: Complex queries with `find()`, `where()`, `search()` - no manual filtering
@@ -53,7 +53,7 @@ A fast, flexible immutable DataStore for collections of records with indexing, v
 
 ### 🚀 Performance Benefits
 
-- **20M+ ops/sec**: Blazing fast indexed lookups for real-time applications
+- **500K+ ops/sec**: Blazing fast indexed lookups for real-time applications
 - **Automatic optimization**: Indexes maintained automatically on every operation
 - **Batch operations**: Process 10,000 records in milliseconds
 - **Memory efficient**: Optimized data structures for minimal overhead
@@ -574,31 +574,31 @@ Haro provides excellent performance for in-memory data operations:
 | Operation | Latency (avg) | Throughput (ops/s) |
 |-----------|---------------|-------------------|
 | **Basic Operations** |
-| store.set() 10000 records | 1507481 μs | 747 ops/s |
-| store.get() 10000 records | 34701 μs | 29015 ops/s |
-| store.has() 10000 keys | 2026 μs | 495325 ops/s |
-| store.delete() 10000 records | 2352541 μs | 432 ops/s |
+| set() 10000 records | 1507 ms | 747 ops/s |
+| get() 10000 records | 35 ms | 29015 ops/s |
+| has() 10000 keys | 2 ms | 495325 ops/s |
+| delete() 10000 records | 2353 ms | 432 ops/s |
 | **Search & Filter** |
-| FIND by indexed field 10000 records | 97926 μs | 10299 ops/s |
-| WHERE by indexed field 10000 records | 221501 μs | 4516 ops/s |
-| SEARCH in index 10000 records | 115837 μs | 8716 ops/s |
-| FILTER all records 10000 records | 114828 μs | 8822 ops/s |
+| find() by indexed field 10000 records | 98 ms | 10299 ops/s |
+| where() by indexed field 10000 records | 222 ms | 4516 ops/s |
+| search() in index 10000 records | 116 ms | 8716 ops/s |
+| filter() all records 10000 records | 115 ms | 8822 ops/s |
 | **Index Operations** |
-| CREATE indexes 10000 records | 10841763 μs | 94 ops/s |
-| FIND with index 10000 records | 3995929 μs | 267 ops/s |
-| REINDEX single field 10000 records | 5738721 μs | 182 ops/s |
+| haro() with indexes 10000 records | 10842 ms | 94 ops/s |
+| find() with index 10000 records | 3996 ms | 267 ops/s |
+| reindex() single field 10000 records | 5739 ms | 182 ops/s |
 | **Utility Operations** |
-| toArray() 1000 iterations | 21157 μs | 47750 ops/s |
-| entries() 1000 iterations | 91936 μs | 10986 ops/s |
-| keys() 1000 iterations | 17109 μs | 59043 ops/s |
-| values() 1000 iterations | 16680 μs | 60553 ops/s |
+| toArray() 1000 iterations | 21 ms | 47750 ops/s |
+| entries() 1000 iterations | 92 ms | 10986 ops/s |
+| keys() 1000 iterations | 17 ms | 59043 ops/s |
+| values() 1000 iterations | 17 ms | 60553 ops/s |
 | **Pagination** |
-| LIMIT 10 10000 records | 14727 μs | 69050 ops/s |
-| LIMIT 50 10000 records | 15543 μs | 65516 ops/s |
-| LIMIT 100 10000 records | 16611 μs | 61172 ops/s |
-| LIMIT with offset 10000 records | 15574 μs | 65522 ops/s |
+| limit() 10 10000 records | 15 ms | 69050 ops/s |
+| limit() 50 10000 records | 16 ms | 65516 ops/s |
+| limit() 100 10000 records | 17 ms | 61172 ops/s |
+| limit() with offset 10000 records | 16 ms | 65522 ops/s |
 | **Persistence** |
-| DUMP records 5000 records | 75368 μs | 13583 ops/s |
+| dump() records 5000 records | 75 ms | 13583 ops/s |
 
 See [`benchmarks/README.md`](https://github.com/avoidwork/haro/blob/master/benchmarks/README.md) for complete benchmark documentation and detailed results.
 
