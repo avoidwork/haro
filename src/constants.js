@@ -1,5 +1,6 @@
 // String constants - Single characters and symbols
 export const STRING_COMMA = ",";
+export const STRING_DOT = ".";
 export const STRING_EMPTY = "";
 export const STRING_PIPE = "|";
 export const STRING_DOUBLE_PIPE = "||";

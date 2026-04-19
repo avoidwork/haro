@@ -16,6 +16,7 @@ import {
 	STRING_CACHE_DOMAIN_WHERE,
 	STRING_COMMA,
 	STRING_CONSTRUCTOR,
+	STRING_DOT,
 	STRING_DOUBLE_AND,
 	STRING_DOUBLE_PIPE,
 	STRING_EMPTY,
@@ -167,7 +168,6 @@ export class Haro {
 	setMany(records) {
 		if (this.#inBatch) {
 			throw new Error(STRING_ERROR_BATCH_SETMANY);
-			/* node:coverage ignore next */
 		}
 		this.#inBatch = true;
 		const results = records.map((i) => this.set(null, i, true));
@@ -320,7 +320,7 @@ export class Haro {
 		if (obj === null || obj === undefined || path === STRING_EMPTY) {
 			return undefined;
 		}
-		const keys = path.split(".");
+		const keys = path.split(STRING_DOT);
 		let result = obj;
 		const keysLen = keys.length;
 		for (let i = 0; i < keysLen; i++) {
@@ -399,7 +399,7 @@ export class Haro {
 	 */
 	#getIndexKeys(arg, delimiter, data) {
 		const fields = arg.split(this.#delimiter).sort(this.#sortKeys);
-		const result = [""];
+		const result = [STRING_EMPTY];
 		const fieldsLen = fields.length;
 		for (let i = 0; i < fieldsLen; i++) {
 			const field = fields[i];
@@ -431,7 +431,7 @@ export class Haro {
 	 */
 	#getIndexKeysForWhere(arg, delimiter, where) {
 		const fields = arg.split(this.#delimiter).sort(this.#sortKeys);
-		const result = [""];
+		const result = [STRING_EMPTY];
 		const fieldsLen = fields.length;
 		for (let i = 0; i < fieldsLen; i++) {
 			const field = fields[i];

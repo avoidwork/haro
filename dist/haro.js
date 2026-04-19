@@ -7,6 +7,7 @@
  */
 import {randomUUID}from'crypto';import {lru}from'tiny-lru';// String constants - Single characters and symbols
 const STRING_COMMA = ",";
+const STRING_DOT = ".";
 const STRING_EMPTY = "";
 const STRING_PIPE = "|";
 const STRING_DOUBLE_PIPE = "||";
@@ -184,7 +185,6 @@ class Haro {
 	setMany(records) {
 		if (this.#inBatch) {
 			throw new Error(STRING_ERROR_BATCH_SETMANY);
-			/* node:coverage ignore next */
 		}
 		this.#inBatch = true;
 		const results = records.map((i) => this.set(null, i, true));
@@ -337,7 +337,7 @@ class Haro {
 		if (obj === null || obj === undefined || path === STRING_EMPTY) {
 			return undefined;
 		}
-		const keys = path.split(".");
+		const keys = path.split(STRING_DOT);
 		let result = obj;
 		const keysLen = keys.length;
 		for (let i = 0; i < keysLen; i++) {
@@ -416,7 +416,7 @@ class Haro {
 	 */
 	#getIndexKeys(arg, delimiter, data) {
 		const fields = arg.split(this.#delimiter).sort(this.#sortKeys);
-		const result = [""];
+		const result = [STRING_EMPTY];
 		const fieldsLen = fields.length;
 		for (let i = 0; i < fieldsLen; i++) {
 			const field = fields[i];
@@ -448,7 +448,7 @@ class Haro {
 	 */
 	#getIndexKeysForWhere(arg, delimiter, where) {
 		const fields = arg.split(this.#delimiter).sort(this.#sortKeys);
-		const result = [""];
+		const result = [STRING_EMPTY];
 		const fieldsLen = fields.length;
 		for (let i = 0; i < fieldsLen; i++) {
 			const field = fields[i];
