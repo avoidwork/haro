@@ -257,6 +257,45 @@ class Haro {
 	}
 
 	/**
+	 * Freezes a result when immutable mode is enabled.
+	 * @param {Array|Object} result - Value to freeze
+	 * @returns {Array|Object} Frozen or unchanged result
+	 */
+	#freezeResult(result) {
+		if (this.#immutable) {
+			if (Array.isArray(result)) {
+				for (let i = 0, len = result.length; i < len; i++) {
+					Object.freeze(result[i]);
+				}
+				Object.freeze(result);
+			} else {
+				Object.freeze(result);
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Returns a cached result, cloned or frozen based on immutable mode.
+	 * @param {*} cached - Cached value
+	 * @returns {*} Cloned (non-immutable) or frozen (immutable) result
+	 */
+	#fromCache(cached) {
+		return this.#immutable ? Object.freeze(cached) : this.#clone(cached);
+	}
+
+	/**
+	 * Stores results in cache if enabled.
+	 * @param {*} cacheKey - Cache key
+	 * @param {Array} records - Result records to cache
+	 */
+	#toCache(cacheKey, records) {
+		if (this.#cacheEnabled) {
+			this.#cache.set(cacheKey, records);
+		}
+	}
+
+	/**
 	 * Deletes a record and removes it from all indexes.
 	 * @param {string} [key=STRING_EMPTY] - Key to delete
 	 * @throws {Error} If key not found
@@ -368,7 +407,7 @@ class Haro {
 			const idx = this.#indexes.get(i);
 			if (!idx) return;
 			const values = i.includes(this.#delimiter)
-				? this.#getIndexKeys(i, this.#delimiter, data)
+				? this.#getIndexKeysFrom(i, data, (f, s) => this.#getNestedValue(s, f))
 				: Array.isArray(this.#getNestedValue(data, i))
 					? this.#getNestedValue(data, i)
 					: [this.#getNestedValue(data, i)];
@@ -415,58 +454,20 @@ class Haro {
 	}
 
 	/**
-	 * Generates index keys for composite indexes from data object.
+	 * Generates index keys from source object using a value getter function.
 	 * @param {string} arg - Composite index field names
 	 * @param {string} delimiter - Field delimiter
-	 * @param {Object} data - Data object
+	 * @param {Object} source - Source object (data or where clause)
+	 * @param {Function} getValueFn - Function(field, source) => value
 	 * @returns {string[]} Index keys
 	 */
-	#getIndexKeys(arg, delimiter, data) {
+	#getIndexKeysFrom(arg, source, getValueFn) {
 		const fields = arg.split(this.#delimiter).sort(this.#sortKeys);
 		const result = [STRING_EMPTY];
 		const fieldsLen = fields.length;
 		for (let i = 0; i < fieldsLen; i++) {
 			const field = fields[i];
-			const fieldValue = this.#getNestedValue(data, field);
-			const values = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
-			const newResult = [];
-			const resultLen = result.length;
-			const valuesLen = values.length;
-			for (let j = 0; j < resultLen; j++) {
-				const existing = result[j];
-				for (let k = 0; k < valuesLen; k++) {
-					const value = values[k];
-					const newKey = i === 0 ? value : `${existing}${this.#delimiter}${value}`;
-					newResult.push(newKey);
-				}
-			}
-			result.length = 0;
-			result.push(...newResult);
-		}
-		return result;
-	}
-
-	/**
-	 * Generates index keys for where object (handles both dot notation and direct access).
-	 * @param {string} arg - Composite index field names
-	 * @param {string} delimiter - Field delimiter
-	 * @param {Object} where - Where object
-	 * @returns {string[]} Index keys
-	 */
-	#getIndexKeysForWhere(arg, delimiter, where) {
-		const fields = arg.split(this.#delimiter).sort(this.#sortKeys);
-		const result = [STRING_EMPTY];
-		const fieldsLen = fields.length;
-		for (let i = 0; i < fieldsLen; i++) {
-			const field = fields[i];
-			// Check if field exists directly in where object first (for dot notation keys)
-			let fieldValue;
-			if (field in where) {
-				fieldValue = where[field];
-				/* node:coverage ignore next 4 */
-			} else {
-				fieldValue = this.#getNestedValue(where, field);
-			}
+			const fieldValue = getValueFn(field, source);
 			const values = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
 			const newResult = [];
 			const resultLen = result.length;
@@ -512,7 +513,9 @@ class Haro {
 
 		const index = this.#indexes.get(compositeKey);
 		if (index) {
-			const keys = this.#getIndexKeysForWhere(compositeKey, this.#delimiter, where);
+			const keys = this.#getIndexKeysFrom(compositeKey, where, (f, s) =>
+				f in s ? s[f] : this.#getNestedValue(s, f),
+			);
 			const keysLen = keys.length;
 			for (let i = 0; i < keysLen; i++) {
 				const v = keys[i];
@@ -525,11 +528,7 @@ class Haro {
 			}
 		}
 
-		const records = Array.from(result, (i) => this.get(i));
-		if (this.#immutable) {
-			return Object.freeze(records);
-		}
-		return records;
+		return this.#freezeResult(Array.from(result, (i) => this.get(i)));
 	}
 
 	/**
@@ -550,10 +549,7 @@ class Haro {
 				result.push(value);
 			}
 		});
-		if (this.#immutable) {
-			return Object.freeze(result);
-		}
-		return result;
+		return this.#freezeResult(result);
 	}
 
 	/**
@@ -587,10 +583,7 @@ class Haro {
 		if (result === undefined) {
 			return null;
 		}
-		if (this.#immutable) {
-			return Object.freeze(result);
-		}
-		return result;
+		return this.#freezeResult(result);
 	}
 
 	/**
@@ -629,12 +622,7 @@ class Haro {
 		if (typeof max !== STRING_NUMBER) {
 			throw new Error(STRING_ERROR_LIMIT_MAX_TYPE);
 		}
-		let result = this.registry.slice(offset, offset + max).map((i) => this.get(i));
-		if (this.#immutable) {
-			result = Object.freeze(result);
-		}
-
-		return result;
+		return this.#freezeResult(this.registry.slice(offset, offset + max).map((i) => this.get(i)));
 	}
 
 	/**
@@ -651,11 +639,7 @@ class Haro {
 		}
 		let result = [];
 		this.forEach((value, key) => result.push(fn(value, key)));
-		if (this.#immutable) {
-			result = Object.freeze(result);
-		}
-
-		return result;
+		return this.#freezeResult(result);
 	}
 
 	/**
@@ -762,7 +746,7 @@ class Haro {
 			cacheKey = await this.#getCacheKey(STRING_CACHE_DOMAIN_SEARCH, value, index);
 			const cached = this.#cache.get(cacheKey);
 			if (cached !== undefined) {
-				return this.#immutable ? Object.freeze(cached) : this.#clone(cached);
+				return this.#fromCache(cached);
 			}
 		}
 
@@ -799,14 +783,8 @@ class Haro {
 		}
 		const records = Array.from(result, (key) => this.get(key));
 
-		if (this.#cacheEnabled) {
-			this.#cache.set(cacheKey, records);
-		}
-
-		if (this.#immutable) {
-			return Object.freeze(records);
-		}
-		return records;
+		this.#toCache(cacheKey, records);
+		return this.#freezeResult(records);
 	}
 
 	/**
@@ -876,7 +854,7 @@ class Haro {
 				this.#indexes.set(field, idx);
 			}
 			const values = field.includes(this.#delimiter)
-				? this.#getIndexKeys(field, this.#delimiter, data)
+				? this.#getIndexKeysFrom(field, data, (f, s) => this.#getNestedValue(s, f))
 				: Array.isArray(this.#getNestedValue(data, field))
 					? this.#getNestedValue(data, field)
 					: [this.#getNestedValue(data, field)];
@@ -959,10 +937,7 @@ class Haro {
 			return mapped;
 		});
 
-		if (this.#immutable) {
-			return Object.freeze(result);
-		}
-		return result;
+		return this.#freezeResult(result);
 	}
 
 	/**
@@ -974,11 +949,7 @@ class Haro {
 	toArray() {
 		const result = Array.from(this.#data.values());
 		if (this.#immutable) {
-			const resultLen = result.length;
-			for (let i = 0; i < resultLen; i++) {
-				Object.freeze(result[i]);
-			}
-			Object.freeze(result);
+			return this.#freezeResult(result);
 		}
 
 		return result;
@@ -1058,7 +1029,7 @@ class Haro {
 			cacheKey = await this.#getCacheKey(STRING_CACHE_DOMAIN_WHERE, predicate, op);
 			const cached = this.#cache.get(cacheKey);
 			if (cached !== undefined) {
-				return this.#immutable ? Object.freeze(cached) : this.#clone(cached);
+				return this.#fromCache(cached);
 			}
 		}
 
@@ -1130,14 +1101,8 @@ class Haro {
 				}
 			}
 
-			if (this.#cacheEnabled) {
-				this.#cache.set(cacheKey, results);
-			}
-
-			if (this.#immutable) {
-				return Object.freeze(results);
-			}
-			return results;
+			this.#toCache(cacheKey, results);
+			return this.#freezeResult(results);
 		}
 	}
 }
