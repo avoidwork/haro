@@ -302,7 +302,7 @@ Haro's `find()` and `where()` methods use set operations for query optimization:
 
 Cache keys are generated using SHA-256 hashing of serialized query parameters:
 
-$$CK = \text{domain} + \text{\_} + \text{SHA256}(\text{JSON.stringify}(\text{args}))$$
+$$CK = \text{domain} + \text{\\_} + \text{SHA256}(\text{JSON.stringify}(\text{args}))$$
 
 Where:
 - `$CK$` = Cache key
