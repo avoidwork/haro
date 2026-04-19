@@ -259,7 +259,7 @@ For a composite index with fields $F = [f_1, f_2, \dots, f_n]$, the index keys a
 $$IK = V(f_1) + \text{delimiter} + V(f_2) + \dots + \text{delimiter} + V(f_n)$$
 
 Where:
-- $V(f)$ = Value(s) for field $f$
+- `$V(f)$` = Value(s) for field `f`
 - For array fields, each array element generates a separate key
 
 **Example:**
@@ -302,12 +302,12 @@ Haro's `find()` and `where()` methods use set operations for query optimization:
 
 Cache keys are generated using SHA-256 hashing of serialized query parameters:
 
-$$CK = \text{domain} + \text{"\_"} + \text{SHA256}(\text{JSON.stringify}(\text{args}))$$
+$$CK = \text{domain} + \text{"_"} + \text{SHA256}(\text{JSON.stringify}(\text{args}))$$
 
 Where:
-- $CK$ = Cache key
-- $\text{domain}$ = Query method name ('search' or 'where')
-- $\text{args}$ = Method arguments (value, index for search; predicate, op for where)
+- `$CK$` = Cache key
+- `$\text{domain}$` = Query method name ('search' or 'where')
+- `$\text{args}$` = Method arguments (value, index for search; predicate, op for where)
 
 **Example:**
 ```javascript
@@ -322,12 +322,12 @@ When cache size exceeds maximum ($S > S_{max}$), the least recently used entry i
 
 $$\text{evict}() = \text{LRU\_head}$$
 
-Where $\text{LRU\_head}$ is the oldest accessed entry in the doubly-linked list.
+Where `$\text{LRU\_head}$` is the oldest accessed entry in the doubly-linked list.
 
 **Time Complexity:**
-- Cache hit: $O(1)$ - Direct hash lookup + move to end
-- Cache miss: $O(1)$ - Hash computation + insertion
-- Cache eviction: $O(1)$ - Remove head of LRU list
+- Cache hit: `$O(1)$` - Direct hash lookup + move to end
+- Cache miss: `$O(1)$` - Hash computation + insertion
+- Cache eviction: `$O(1)$` - Remove head of LRU list
 
 ### Immutability Model
 
