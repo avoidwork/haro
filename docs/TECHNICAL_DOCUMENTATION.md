@@ -42,6 +42,7 @@ graph TB
     E --> L["🏷️ Key Field"]
     E --> M["🔒 Immutable Mode"]
     E --> N["📊 Index Fields"]
+    E --> O["💾 Cache Settings"]
     
     classDef dataStore fill:#0066CC,stroke:#004499,stroke-width:2px,color:#fff
     classDef indexSystem fill:#008000,stroke:#006600,stroke-width:2px,color:#fff
@@ -52,7 +53,7 @@ graph TB
     class A,B dataStore
     class C,H,I indexSystem
     class D,J,K versionStore
-    class E,L,M,N config
+    class E,L,M,N,O config
     class F,G detail
 ```
 
@@ -75,6 +76,7 @@ The Haro class uses the following private fields (denoted by `#` prefix):
 - `#inBatch` - Boolean flag for batch operation state
 - `#cache` - LRU cache instance (when enabled)
 - `#cacheEnabled` - Boolean flag for cache state
+- `#cacheSize` - Maximum cache size (when enabled)
 
 These fields are encapsulated and not directly accessible from outside the class.
 
@@ -130,18 +132,19 @@ const store = new Haro({
 
 ```mermaid
 flowchart TD
-    A["🔍 Query Request"] --> B["🔑 Extract Keys from Criteria"]
+    A["🔍 Query Request"] --> B{"Cached Method?<br/>(search/where)"}
     
-    B --> C{"Cache Enabled?"}
+    B -->|Yes| C{"Cache Enabled?"}
+    B -->|No| D{"Index Available?"}
     
-    C -->|Yes| D{"Cache Hit?"}
-    C -->|No| E{"Index Available?"}
+    C -->|Yes| E{"Cache Hit?"}
+    C -->|No| D
     
-    D -->|Yes| F["💾 Return Cached Result"]
-    D -->|No| E
+    E -->|Yes| F["💾 Return Cached Result"]
+    E -->|No| D
     
-    E -->|Yes| G["📇 Index Lookup"]
-    E -->|No| H["🔄 Full Scan"]
+    D -->|Yes| G["📇 Index Lookup"]
+    D -->|No| H["🔄 Full Scan"]
     
     G --> I["📊 Fetch Records"]
     H --> I
@@ -160,12 +163,14 @@ flowchart TD
     classDef scan fill:#FF4500,stroke:#CC3700,stroke-width:2px,color:#fff
     classDef result fill:#6600CC,stroke:#440088,stroke-width:2px,color:#fff
     
-    class A,B,C query
-    class D,F,M cache
+    class A,B query
+    class C,E,F,M cache
     class G index
     class H scan
     class I,J,K,L result
 ```
+
+> **Note:** Cache is only used by `search()` and `where()` methods. Methods like `get()`, `find()`, and `filter()` do not use cache.
 
 ## Indexing System
 
@@ -430,18 +435,20 @@ graph TD
     A --> D["🔒 Immutable Mode"]
     A --> E["📚 Versioning"]
     A --> F["🔗 Delimiter"]
+    A --> G["💾 Cache Settings"]
     
-    B --> G["🎯 Primary Key Selection"]
-    C --> H["⚡ Query Optimization"]
-    D --> I["🛡️ Data Protection"]
-    E --> J["📜 Change Tracking"]
-    F --> K["🔗 Composite Keys"]
+    B --> H["🎯 Primary Key Selection"]
+    C --> I["⚡ Query Optimization"]
+    D --> J["🛡️ Data Protection"]
+    E --> K["📜 Change Tracking"]
+    F --> L["🔗 Composite Keys"]
+    G --> M["⚡ Query Caching"]
     
     classDef config fill:#6600CC,stroke:#440088,stroke-width:2px,color:#fff
     classDef feature fill:#0066CC,stroke:#004499,stroke-width:2px,color:#fff
     
-    class A,B,C,D,E,F config
-    class G,H,I,J,K feature
+    class A,B,C,D,E,F,G config
+    class H,I,J,K,L,M feature
 ```
 
 ## Performance Characteristics
@@ -449,7 +456,7 @@ graph TD
 ### Memory Usage
 
 ```mermaid
-pie title Memory Distribution (without cache)
+pie title Memory Distribution (without cache) - Illustrative
     "Record Data" : 60
     "Index Structures" : 25
     "Version History" : 10
@@ -457,13 +464,15 @@ pie title Memory Distribution (without cache)
 ```
 
 ```mermaid
-pie title Memory Distribution (with cache enabled)
+pie title Memory Distribution (with cache enabled) - Illustrative
     "Record Data" : 50
     "Index Structures" : 20
     "Version History" : 10
     "Cache" : 15
     "Metadata" : 5
 ```
+
+> **Note:** Actual memory distribution varies based on record count, index count, record sizes, and version history depth.
 
 ### Query Performance
 
