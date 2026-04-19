@@ -552,17 +552,24 @@ node benchmarks/index.js
 # Run specific categories
 node benchmarks/index.js --basic-only        # CRUD operations
 node benchmarks/index.js --search-only       # Query operations
-node benchmarks/index.js --comparison-only   # vs native structures
+node benchmarks/index.js --index-only        # Index operations
+node benchmarks/index.js --utilities-only    # Utility operations
+node benchmarks/index.js --pagination-only   # Pagination benchmarks
+node benchmarks/index.js --persistence-only  # Persistence benchmarks
+node benchmarks/index.js --core-only         # Core benchmarks (basic, search, index)
+node benchmarks/index.js --quiet             # Minimal output
 ```
 
-### Performance Highlights
+### Performance Overview
 
-- **GET operations**: Up to 20M ops/sec with index lookups
-- **Indexed FIND queries**: Up to 64,594 ops/sec (1,000 records)
-- **SET operations**: Up to 3.2M ops/sec for typical workloads
-- **Memory efficiency**: Highly efficient for typical workloads
+Haro provides excellent performance for in-memory data operations:
 
-See [`benchmarks/README.md`](https://github.com/avoidwork/haro/blob/master/benchmarks/README.md) for complete benchmark documentation.
+- **Indexed lookups**: O(1) performance for find() operations
+- **Batch operations**: Efficient bulk data processing
+- **Memory efficiency**: Optimized data structures
+- **Scalability**: Consistent performance across different data sizes
+
+See [`benchmarks/README.md`](https://github.com/avoidwork/haro/blob/master/benchmarks/README.md) for complete benchmark documentation and detailed results.
 
 ## Learn More
 

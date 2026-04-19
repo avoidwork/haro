@@ -239,15 +239,15 @@ Compares performance between immutable and mutable modes.
 
 **Overall Test Results:**
 
-- **Total Tests**: 24 tests across 6 categories
+- **Total Tests**: 18 tests across 6 categories
 - **Total Runtime**: ~30 seconds
 - **Test Environment**: Node.js v25.8.1 on Linux
 
 **Performance Highlights:**
 
 - **Fastest Operation**: HAS operation (494,071 ops/second on 10,000 keys)
-- **Slowest Operation**: CREATE indexes (160 ops/second on 10,000 records)
-- **Most Efficient**: DUMP indexes (45,891 ops/sec for 5,000 records)
+- **Slowest Operation**: CREATE indexes (166 ops/second on 10,000 records)
+- **Most Efficient**: keys() iteration (138,812 ops/second)
 
 ### Category Performance Breakdown
 
@@ -272,19 +272,12 @@ Compares performance between immutable and mutable modes.
 - **Average Performance**: 186 ops/second
 - **Key Findings**: Efficient index creation and maintenance
 
-#### Memory Usage
+#### Utility Operations
 
-- **Tests**: Not implemented in current version
-- **Runtime**: N/A
-- **Average Memory**: N/A
-- **Key Findings**: Memory benchmarks not available
-
-#### Comparison with Native Structures
-
-- **Tests**: Not implemented in current version
-- **Runtime**: N/A
-- **Average Performance**: N/A
-- **Key Findings**: Comparison benchmarks not available
+- **Tests**: 4 tests
+- **Runtime**: ~1 second
+- **Average Performance**: 100,606 ops/second
+- **Key Findings**: Very fast utility methods for data access
 
 #### Pagination
 
@@ -300,50 +293,47 @@ Compares performance between immutable and mutable modes.
 - **Average Performance**: 20,954 ops/second
 - **Key Findings**: Good performance for data serialization/deserialization
 
-#### Immutable vs Mutable Comparison
-
-- **Tests**: Not implemented in current version
-- **Runtime**: N/A
-- **Average Performance**: N/A
-- **Key Findings**: Immutable comparison benchmarks not available
-
 ### Detailed Performance Results
 
 #### Basic Operations Performance
 
-- **SET operations**: 826 ops/sec (10,000 records)
-- **GET operations**: 29,426 ops/sec (10,000 records)
-- **DELETE operations**: 471 ops/sec (10,000 records)
+- **SET operations**: 833 ops/sec (10,000 records)
+- **GET operations**: 29,313 ops/sec (10,000 records)
 - **HAS operations**: 494,071 ops/sec (10,000 keys)
-- **CLEAR operations**: Not benchmarked
-- **BATCH operations**: Not benchmarked
+- **DELETE operations**: 475 ops/sec (10,000 records)
 
 #### Query Operations Performance
 
-- **FIND (indexed)**: 10,272 ops/sec (10,000 records)
-- **FILTER operations**: 8,984 ops/sec (10,000 records)
-- **SEARCH operations**: 8,839 ops/sec (10,000 records)
-- **WHERE clauses**: 8,436 ops/sec (10,000 records)
-- **SORT operations**: Not benchmarked
+- **FIND (indexed)**: 10,437 ops/sec (10,000 records)
+- **WHERE (indexed)**: 8,519 ops/sec (10,000 records)
+- **SEARCH operations**: 8,921 ops/sec (10,000 records)
+- **FILTER operations**: 8,975 ops/sec (10,000 records)
 
-#### Comparison with Native Structures
+#### Index Operations Performance
 
-- Not implemented in current benchmark suite
+- **CREATE indexes**: 166 ops/sec (10,000 records)
+- **FIND with index**: 371 ops/sec (10,000 records)
+- **REINDEX single field**: 289 ops/sec (10,000 records)
 
-#### Memory Usage Analysis
+#### Utility Operations Performance
 
-- Not implemented in current benchmark suite
+- **toArray()**: 136,537 ops/sec (1,000 iterations)
+- **entries()**: 12,359 ops/sec (1,000 iterations)
+- **keys()**: 138,812 ops/sec (1,000 iterations)
+- **values()**: 136,351 ops/sec (1,000 iterations)
 
 #### Pagination Performance
 
-- **Small pages (10 items)**: 69,852 ops/sec (10,000 records)
-- **Medium pages (50 items)**: 65,794 ops/sec (10,000 records)
-- **Large pages (100 items)**: 61,308 ops/sec (10,000 records)
-- **Sequential pagination**: Efficient for typical UI requirements
+- **Small pages (10 items)**: 70,487 ops/sec (10,000 records)
+- **Medium pages (50 items)**: 66,494 ops/sec (10,000 records)
+- **Large pages (100 items)**: 61,877 ops/sec (10,000 records)
+- **With offset**: 66,361 ops/sec (10,000 records)
 
-#### Immutable vs Mutable Performance
+#### Persistence Performance
 
-- Not implemented in current benchmark suite
+- **DUMP records**: 13,860 ops/sec (5,000 records)
+- **DUMP indexes**: 45,163 ops/sec (5,000 records)
+- **OVERRIDE records**: 3,807 ops/sec (5,000 records)
 
 ### Performance Recommendations
 
@@ -351,9 +341,10 @@ Based on the latest benchmark results:
 
 1. **✅ Basic operations perform well** - HAS is fastest at 494K ops/sec
 2. **✅ Indexed queries are efficient** - FIND at 10K ops/sec for 10K records
-3. **✅ Pagination is fast** - 69K ops/sec for small pages
-4. **✅ Persistence is reasonable** - DUMP indexes at 45K ops/sec
-5. **⚠️ Index creation is slow** - 160 ops/sec (consider one-time setup)
+3. **✅ Utility methods are very fast** - keys() and values() at 138K ops/sec
+4. **✅ Pagination is fast** - 70K ops/sec for small pages
+5. **✅ Persistence is reasonable** - DUMP indexes at 45K ops/sec
+6. **⚠️ Index creation is slow** - 166 ops/sec (consider one-time setup)
 
 ## Understanding Results
 

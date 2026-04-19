@@ -132,24 +132,24 @@ function createUtilityOperationsBench(size = 1000) {
 	const testData = { id: 1, name: "test", tags: ["a", "b", "c"] };
 
 	bench
-		.add(`CLONE object (${size} iterations)`, () => {
+		.add(`toArray() (${size} iterations)`, () => {
 			for (let i = 0; i < size; i++) {
-				store.clone(testData);
+				store.toArray();
 			}
 		})
-		.add(`MERGE objects (${size} iterations)`, () => {
+		.add(`entries() (${size} iterations)`, () => {
 			for (let i = 0; i < size; i++) {
-				store.merge({ ...testData }, { updated: true });
+				Array.from(store.entries());
 			}
 		})
-		.add(`FREEZE object (${size} iterations)`, () => {
+		.add(`keys() (${size} iterations)`, () => {
 			for (let i = 0; i < size; i++) {
-				store.freeze(testData);
+				Array.from(store.keys());
 			}
 		})
-		.add(`UUID generation (${size} iterations)`, () => {
+		.add(`values() (${size} iterations)`, () => {
 			for (let i = 0; i < size; i++) {
-				store.uuid();
+				Array.from(store.values());
 			}
 		});
 
