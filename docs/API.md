@@ -33,10 +33,11 @@ Haro is an immutable DataStore with indexing, versioning, and batch operations. 
   - [values()](#values)
   - [forEach()](#foreachfn-ctx)
   - [map()](#mapfn)
-- [Utility Methods](#utility-methods)
-  - [clone()](#clonearg)
-  - [freeze()](#freezeargs)
-  - [merge()](#mergea-b-override)
+- [Internal Helper Methods](#internal-helper-methods)
+  - [#freezeResult(result)](#freezeresultresult)
+  - [#fromCache(cached)](#fromcachecached)
+  - [#toCache(cacheKey, records)](#tocachekey-records)
+  - [#getIndexKeysFrom(arg, source, getValueFn)](#getindexkeysfromarg-source-getvaluefn)
 - [Index Management](#index-management)
   - [reindex()](#reindexindex)
 - [Cache Control Methods](#cache-control-methods)
@@ -446,54 +447,67 @@ store.map(record => record.name);
 
 ---
 
-## Utility Methods
+## Internal Helper Methods
 
-### clone(arg)
+Haro uses internal private helper methods for cloning, freezing, and caching operations. These are not part of the public API.
 
-Creates a deep clone of a value.
+### #freezeResult(result)
+
+Freezes individual values or arrays when immutable mode is enabled. Replaces inline `Object.freeze()` checks throughout the codebase.
 
 **Parameters:**
-- `arg` (*): Value to clone
+- `result` (*): Value to freeze
 
-**Returns:** * - Deep clone
+**Returns:** * - Frozen or unchanged result
+
+**Applies to:** `get()`, `find()`, `filter()`, `limit()`, `map()`, `toArray()`, `sort()`, `sortBy()`, `search()`, `where()`
 
 **Example:**
 ```javascript
-store.clone({name: 'John', tags: ['user']});
+// Internal - used automatically by all query methods when immutable: true
 ```
 
----
+### #fromCache(cached)
 
-### freeze(...args)
-
-Creates a frozen array from arguments.
+Returns a cached result, cloning when mutable or freezing when immutable.
 
 **Parameters:**
-- `args` (...*): Arguments to freeze
+- `cached` (*): Cached value
 
-**Returns:** Array<*> - Frozen array
+**Returns:** * - Cloned (non-immutable) or frozen (immutable) result
 
 **Example:**
 ```javascript
-store.freeze(obj1, obj2);
+// Internal - used by search() and where() for cache read
 ```
 
----
+### #toCache(cacheKey, records)
 
-### merge(a, b, override)
-
-Merges two values.
+Stores results in cache when enabled.
 
 **Parameters:**
-- `a` (*): Target value
-- `b` (*): Source value
-- `override` (boolean): Override arrays (default: `false`)
-
-**Returns:** * - Merged result
+- `cacheKey` (*): Cache key
+- `records` (Array): Result records to cache
 
 **Example:**
 ```javascript
-store.merge({a: 1}, {b: 2});
+// Internal - used by search() and where() for cache write
+```
+
+### #getIndexKeysFrom(arg, source, getValueFn)
+
+Generates composite index keys from data objects or where clauses using a value getter callback. Consolidates the former `#getIndexKeys` and `#getIndexKeysForWhere` methods.
+
+**Parameters:**
+- `arg` (string): Composite index field names
+- `source` (Object): Source object (data or where clause)
+- `getValueFn` (Function): Callback `(field, source) => value`
+
+**Returns:** string[] - Index keys
+
+**Example:**
+```javascript
+// Internal - used by setIndex(), deleteIndex(), and find()
 ```
 
 ---

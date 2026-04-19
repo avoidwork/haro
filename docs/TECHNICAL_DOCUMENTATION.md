@@ -197,6 +197,21 @@ graph LR
     class F,G,H,I performance
 ```
 
+### Internal Helper Methods
+
+Haro uses private helper methods to centralize cross-cutting concerns. These are not part of the public API.
+
+- `#freezeResult(result)` - Freezes individual values or arrays when immutable mode is enabled. Replaces inline `Object.freeze()` throughout all return paths in `get()`, `find()`, `filter()`, `limit()`, `map()`, `toArray()`, `sort()`, `sortBy()`, `search()`, and `where()`.
+- `#fromCache(cached)` - Returns a cached result, cloning when mutable or freezing when immutable. Used by `search()` and `where()` for cache read.
+- `#toCache(cacheKey, records)` - Stores results in cache when enabled. Used by `search()` and `where()` for cache write.
+- `# getIndexKeysFrom(arg, source, getValueFn)` - Generates composite index keys using a value getter callback. Consolidates the former `#getIndexKeys` and `#getIndexKeysForWhere` methods. Used by `#setIndex()`, `#deleteIndex()`, and `find()`.
+- `#getNestedValue(obj, path)` - Retrieves nested values using dot notation (e.g., `user.profile.city`). Used by indexing, querying, and predicate matching.
+- `#sortKeys(a, b)` - Type-aware comparator: strings use `localeCompare`, numbers use subtraction, mixed types coerced to string. Used by `find()`, `sortBy()`, and index key generation.
+- `#merge(a, b, override)` - Deep merges values, skipping prototype pollution keys (`__proto__`, `constructor`, `prototype`). Used internally by `set()`.
+- `#invalidateCache()` - Clears cache if enabled and not in batch mode (`#inBatch`). Called by write operations and lazy re-creation after `clear()`.
+- `#getCacheKey(domain, ...args)` - Generates SHA-256 hash cache key from arguments for `search()` and `where()`.
+- `#clone(arg)` - Deep clones values via `structuredClone` or JSON fallback. Used by `forEach()` to ensure non-mutable callback data and version snapshots.
+
 ### Index Maintenance
 
 ```mermaid
@@ -350,17 +365,23 @@ Where `$\text{LRU\\_head}$` is the oldest accessed entry in the doubly-linked li
 
 ### Immutability Model
 
-Objects are frozen using `Object.freeze()`. Formally:
+Objects are frozen using `Object.freeze()` via a centralized `#freezeResult()` helper method. This ensures consistent freezing across all public API return paths. Formally:
 
 $$\text{freeze}(\text{obj}) = \text{obj} \text{ where } \forall \text{prop} \in \text{obj}: \text{prop is non-writable}$$
 
 $$\text{deepFreeze}(\text{obj}) = \text{freeze}(\text{obj}) \text{ where } \forall \text{prop} \in \text{obj}: \text{deepFreeze}(\text{prop})$$
 
+**Centralized freezing:** All query methods (`get()`, `find()`, `filter()`, `limit()`, `map()`, `toArray()`, `sort()`, `sortBy()`, `search()`, `where()`) delegate to `#freezeResult(result)` which handles both single objects and arrays (freezing each element). Version snapshots in `#merge()` are also frozen via `Object.freeze(this.#clone(og))`.
+
 **Cache Mutation Protection:**
 
-When returning cached results, a deep clone is created to prevent mutation:
+When returning cached results, a deep clone is created to prevent mutation, handled by `#fromCache(cached)`:
 
 $$\text{return} = \begin{cases} \text{freeze}(\text{clone}(\text{cached})) & \text{if immutable} \\ \text{clone}(\text{cached}) & \text{if mutable} \end{cases}$$
+
+**Cache write** is handled by `#toCache(cacheKey, records)` which stores raw records in the cache when enabled:
+
+$$\text{cache}.\text{set}(\text{cacheKey}, \text{records}) \text{ when } \text{cacheEnabled}$$
 
 ## Operations
 
@@ -964,7 +985,7 @@ new Haro(config)
 
 ### Utility Methods
 
-Haro uses internal utility methods for cloning and merging data. These are implementation details and not part of the public API.
+Haro's internal utility methods (`#clone()`, `#merge()`, `#freezeResult()`, `#fromCache()`, `#toCache()`) are implementation details and not part of the public API. See [Internal Helper Methods](#internal-helper-methods) for details.
 
 ## Best Practices
 
