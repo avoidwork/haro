@@ -325,38 +325,39 @@ store.limit(0, 10);
 Inserts or updates multiple records.
 
 **Parameters:**
+
 - `records` (Array<Object>): Records to insert or update
 
 **Returns:** Array<Object> - Stored records
 
 **Example:**
+
 ```javascript
 store.setMany([{id: 1, name: 'John'}, {id: 2, name: 'Jane'}]);
 ```
-
----
 
 ### deleteMany(keys)
 
 Deletes multiple records.
 
 **Parameters:**
+
 - `keys` (Array<string|number>): Keys to delete
 
 **Returns:** Array<void>
 
 **Example:**
+
 ```javascript
 store.deleteMany(['key1', 'key2']);
 ```
-
----
 
 ### override(data, type)
 
 Replaces store data or indexes.
 
 **Parameters:**
+
 - `data` (Array<Array>): Data to replace
 - `type` (string): Type: 'records' or 'indexes' (default: `'records'`)
 
@@ -365,11 +366,10 @@ Replaces store data or indexes.
 **Throws:** Error if type is invalid
 
 **Example:**
+
 ```javascript
 store.override([['key1', {name: 'John'}]], 'records');
 ```
-
----
 
 ## Iteration Methods
 
