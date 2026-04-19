@@ -1018,13 +1018,6 @@ export class Haro {
 
 		// Try to use indexes for better performance
 		const indexedKeys = keys.filter((k) => this.#indexes.has(k));
-		if (indexedKeys.length === 0) {
-			// No indexed keys found, fall through to full scan
-			if (this.#warnOnFullScan) {
-				console.warn("where(): performing full table scan - consider adding an index");
-			}
-			return this.filter((a) => this.#matchesPredicate(a, predicate, op));
-		}
 		if (indexedKeys.length > 0) {
 			// Use index-based filtering for better performance
 			let candidateKeys = new Set();
