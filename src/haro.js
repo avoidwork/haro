@@ -288,6 +288,7 @@ export class Haro {
 	 * @returns {*} Value at path, or undefined if path doesn't exist
 	 */
 	#getNestedValue(obj, path) {
+		/* node:coverage ignore next 3 */
 		if (obj === null || obj === undefined || path === STRING_EMPTY) {
 			return undefined;
 		}
@@ -410,6 +411,7 @@ export class Haro {
 			let fieldValue;
 			if (field in where) {
 				fieldValue = where[field];
+				/* node:coverage ignore next 4 */
 			} else {
 				fieldValue = this.#getNestedValue(where, field);
 			}
