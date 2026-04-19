@@ -180,5 +180,19 @@ describe("Basic CRUD Operations", () => {
 
 			assert.strictEqual(versionedStore.versions.size, 0);
 		});
+
+		it("should recreate index after clear on same store", () => {
+			const indexedStore = new Haro({ index: ["name"] });
+			indexedStore.set("user1", { id: "user1", name: "John" });
+			assert.strictEqual(indexedStore.find({ name: "John" }).length, 1);
+
+			indexedStore.clear();
+			assert.strictEqual(indexedStore.size, 0);
+
+			indexedStore.set("user2", { id: "user2", name: "Jane" });
+			const results = indexedStore.find({ name: "Jane" });
+			assert.strictEqual(results.length, 1);
+			assert.strictEqual(results[0].id, "user2");
+		});
 	});
 });
