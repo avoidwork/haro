@@ -48,3 +48,10 @@ npm run benchmark         # Run benchmarks
 - Indexes improve query performance for `find()` and `where()` operations
 - Versioning tracks historical changes when enabled
 - Batch operations are more efficient than individual operations
+- LRU caching is available for `search()` and `where()` methods (opt-in with `cache: true`)
+- Cache uses Web Crypto API for SHA-256 hash generation (requires Node.js >=19.0.0)
+- Cache keys are multi-domain: `search_HASH` or `where_HASH` format
+- Cached results are cloned/frozen to prevent mutation (respects `immutable` mode)
+- Cache invalidates on all write operations but preserves statistics
+- `search()` and `where()` are async methods - use `await` when calling
+- Cache statistics persist for the lifetime of the Haro instance

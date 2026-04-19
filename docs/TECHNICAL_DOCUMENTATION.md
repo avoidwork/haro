@@ -298,6 +298,37 @@ Haro's `find()` and `where()` methods use set operations for query optimization:
 
 > Example: Records with status='active' ∩ Records with role='admin' (must have BOTH)
 
+### Cache Key Generation
+
+Cache keys are generated using SHA-256 hashing of serialized query parameters:
+
+$$CK = \text{domain} + \text{"\_"} + \text{SHA256}(\text{JSON.stringify}(\text{args}))$$
+
+Where:
+- $CK$ = Cache key
+- $\text{domain}$ = Query method name ('search' or 'where')
+- $\text{args}$ = Method arguments (value, index for search; predicate, op for where)
+
+**Example:**
+```javascript
+// Cache key for where({ name: 'John' })
+CK = 'where_' + SHA256(JSON.stringify([{ name: 'John' }]))
+// = 'where_a3f2b8c9d4e5f6...'
+```
+
+### LRU Eviction Policy
+
+When cache size exceeds maximum ($S > S_{max}$), the least recently used entry is evicted:
+
+$$\text{evict}() = \text{LRU\_head}$$
+
+Where $\text{LRU\_head}$ is the oldest accessed entry in the doubly-linked list.
+
+**Time Complexity:**
+- Cache hit: $O(1)$ - Direct hash lookup + move to end
+- Cache miss: $O(1)$ - Hash computation + insertion
+- Cache eviction: $O(1)$ - Remove head of LRU list
+
 ### Immutability Model
 
 Objects are frozen using `Object.freeze()`. Formally:
@@ -305,6 +336,12 @@ Objects are frozen using `Object.freeze()`. Formally:
 $$\text{freeze}(\text{obj}) = \text{obj} \text{ where } \forall \text{prop} \in \text{obj}: \text{prop is non-writable}$$
 
 $$\text{deepFreeze}(\text{obj}) = \text{freeze}(\text{obj}) \text{ where } \forall \text{prop} \in \text{obj}: \text{deepFreeze}(\text{prop})$$
+
+**Cache Mutation Protection:**
+
+When returning cached results, a deep clone is created to prevent mutation:
+
+$$\text{return} = \begin{cases} \text{freeze}(\text{clone}(\text{cached})) & \text{if immutable} \\ \text{clone}(\text{cached}) & \text{if mutable} \end{cases}$$
 
 ## Operations
 
