@@ -3,7 +3,7 @@
  *
  * @copyright 2026 Jason Mulligan <jason.mulligan@avoidwork.com>
  * @license BSD-3-Clause
- * @version 17.0.1
+ * @version 17.0.2
  */
 import {randomUUID}from'crypto';import {lru}from'tiny-lru';// String constants - Single characters and symbols
 const STRING_COMMA = ",";

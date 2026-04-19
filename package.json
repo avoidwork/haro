@@ -1,6 +1,6 @@
 {
   "name": "haro",
-  "version": "17.0.1",
+  "version": "17.0.2",
   "description": "A fast, flexible immutable DataStore for collections of records with indexing, versioning, and advanced querying capabilities",
   "type": "module",
   "types": "types/haro.d.ts",
