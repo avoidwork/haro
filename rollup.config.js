@@ -27,5 +27,6 @@ export default [
 				file: `dist/${pkg.name}.js`,
 			},
 		],
+		external: [...Object.keys(pkg.dependencies), "crypto"],
 	},
 ];
