@@ -1,12 +1,31 @@
 import { randomUUID as uuid } from "crypto";
 import { lru } from "tiny-lru";
 import {
+	CACHE_SIZE_DEFAULT,
 	INT_0,
+	INT_2,
+	STRING_CACHE_DOMAIN_SEARCH,
+	STRING_CACHE_DOMAIN_WHERE,
 	STRING_COMMA,
+	STRING_CONSTRUCTOR,
 	STRING_DOUBLE_AND,
 	STRING_DOUBLE_PIPE,
 	STRING_EMPTY,
+	STRING_ERROR_BATCH_DELETEMANY,
+	STRING_ERROR_BATCH_SETMANY,
+	STRING_ERROR_DELETE_KEY_TYPE,
+	STRING_ERROR_FIND_WHERE_TYPE,
+	STRING_ERROR_LIMIT_MAX_TYPE,
+	STRING_ERROR_LIMIT_OFFSET_TYPE,
+	STRING_ERROR_SEARCH_VALUE,
+	STRING_ERROR_SET_DATA_TYPE,
+	STRING_ERROR_SET_KEY_TYPE,
+	STRING_ERROR_SORT_FN_TYPE,
+	STRING_ERROR_WHERE_OP_TYPE,
+	STRING_ERROR_WHERE_PREDICATE_TYPE,
 	STRING_FUNCTION,
+	STRING_HASH_ALGORITHM,
+	STRING_HEX_PAD,
 	STRING_ID,
 	STRING_INDEXES,
 	STRING_INVALID_FIELD,
@@ -15,11 +34,14 @@ import {
 	STRING_NUMBER,
 	STRING_OBJECT,
 	STRING_PIPE,
+	STRING_PROTOTYPE,
+	STRING_PROTO,
 	STRING_RECORD_NOT_FOUND,
 	STRING_RECORDS,
 	STRING_REGISTRY,
 	STRING_SIZE,
 	STRING_STRING,
+	STRING_UNDERSCORE,
 } from "./constants.js";
 
 /**
@@ -62,7 +84,7 @@ export class Haro {
 	 */
 	constructor({
 		cache = false,
-		cacheSize = 1000,
+		cacheSize = CACHE_SIZE_DEFAULT,
 		delimiter = STRING_PIPE,
 		id = uuid(),
 		immutable = false,
@@ -136,7 +158,7 @@ export class Haro {
 	 */
 	setMany(records) {
 		if (this.#inBatch) {
-			throw new Error("setMany: cannot call setMany within a batch operation");
+			throw new Error(STRING_ERROR_BATCH_SETMANY);
 			/* node:coverage ignore next */
 		}
 		this.#inBatch = true;
@@ -156,9 +178,7 @@ export class Haro {
 	 */
 	deleteMany(keys) {
 		if (this.#inBatch) {
-			/* node:coverage ignore next */ throw new Error(
-				"deleteMany: cannot call deleteMany within a batch operation",
-			);
+			/* node:coverage ignore next */ throw new Error(STRING_ERROR_BATCH_DELETEMANY);
 		}
 		this.#inBatch = true;
 		const results = keys.map((i) => this.delete(i));
@@ -213,7 +233,7 @@ export class Haro {
 	 */
 	delete(key = STRING_EMPTY) {
 		if (typeof key !== STRING_STRING && typeof key !== STRING_NUMBER) {
-			throw new Error("delete: key must be a string or number");
+			throw new Error(STRING_ERROR_DELETE_KEY_TYPE);
 		}
 		if (!this.#data.has(key)) {
 			throw new Error(STRING_RECORD_NOT_FOUND);
@@ -238,10 +258,10 @@ export class Haro {
 	async #getCacheKey(domain, ...args) {
 		const data = JSON.stringify(args);
 		const encoder = new TextEncoder();
-		const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(data));
+		const hashBuffer = await crypto.subtle.digest(STRING_HASH_ALGORITHM, encoder.encode(data));
 		const hashArray = Array.from(new Uint8Array(hashBuffer));
-		const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-		return `${domain}_${hashHex}`;
+		const hashHex = hashArray.map((b) => b.toString(16).padStart(INT_2, STRING_HEX_PAD)).join("");
+		return `${domain}${STRING_UNDERSCORE}${hashHex}`;
 	}
 
 	/**
@@ -452,7 +472,7 @@ export class Haro {
 	 */
 	find(where = {}) {
 		if (typeof where !== STRING_OBJECT || where === null) {
-			throw new Error("find: where must be an object");
+			throw new Error(STRING_ERROR_FIND_WHERE_TYPE);
 		}
 		const whereKeys = Object.keys(where).sort(this.#sortKeys);
 		const compositeKey = whereKeys.join(this.#delimiter);
@@ -572,10 +592,10 @@ export class Haro {
 	 */
 	limit(offset = INT_0, max = INT_0) {
 		if (typeof offset !== STRING_NUMBER) {
-			throw new Error("limit: offset must be a number");
+			throw new Error(STRING_ERROR_LIMIT_OFFSET_TYPE);
 		}
 		if (typeof max !== STRING_NUMBER) {
-			throw new Error("limit: max must be a number");
+			throw new Error(STRING_ERROR_LIMIT_MAX_TYPE);
 		}
 		let result = this.registry.slice(offset, offset + max).map((i) => this.get(i));
 		if (this.#immutable) {
@@ -626,7 +646,7 @@ export class Haro {
 			const keysLen = keys.length;
 			for (let i = 0; i < keysLen; i++) {
 				const key = keys[i];
-				if (key === "__proto__" || key === "constructor" || key === "prototype") {
+				if (key === STRING_PROTO || key === STRING_CONSTRUCTOR || key === STRING_PROTOTYPE) {
 					continue;
 				}
 				a[key] = this.#merge(a[key], b[key], override);
@@ -702,12 +722,12 @@ export class Haro {
 	 */
 	async search(value, index) {
 		if (value === null || value === undefined) {
-			throw new Error("search: value cannot be null or undefined");
+			throw new Error(STRING_ERROR_SEARCH_VALUE);
 		}
 
 		let cacheKey;
 		if (this.#cacheEnabled) {
-			cacheKey = await this.#getCacheKey("search", value, index);
+			cacheKey = await this.#getCacheKey(STRING_CACHE_DOMAIN_SEARCH, value, index);
 			const cached = this.#cache.get(cacheKey);
 			if (cached !== undefined) {
 				return this.#immutable ? Object.freeze(cached) : this.#clone(cached);
@@ -769,10 +789,10 @@ export class Haro {
 	 */
 	set(key = null, data = {}, override = false) {
 		if (key !== null && typeof key !== STRING_STRING && typeof key !== STRING_NUMBER) {
-			throw new Error("set: key must be a string or number");
+			throw new Error(STRING_ERROR_SET_KEY_TYPE);
 		}
 		if (typeof data !== STRING_OBJECT || data === null) {
-			throw new Error("set: data must be an object");
+			throw new Error(STRING_ERROR_SET_DATA_TYPE);
 		}
 		if (key === null) {
 			key = data[this.#key] ?? uuid();
@@ -850,7 +870,7 @@ export class Haro {
 	 */
 	sort(fn, frozen = false) {
 		if (typeof fn !== STRING_FUNCTION) {
-			throw new Error("sort: fn must be a function");
+			throw new Error(STRING_ERROR_SORT_FN_TYPE);
 		}
 		const dataSize = this.#data.size;
 		let result = this.limit(INT_0, dataSize).sort(fn);
@@ -995,15 +1015,15 @@ export class Haro {
 	 */
 	async where(predicate = {}, op = STRING_DOUBLE_PIPE) {
 		if (typeof predicate !== STRING_OBJECT || predicate === null) {
-			throw new Error("where: predicate must be an object");
+			throw new Error(STRING_ERROR_WHERE_PREDICATE_TYPE);
 		}
 		if (typeof op !== STRING_STRING) {
-			throw new Error("where: op must be a string");
+			throw new Error(STRING_ERROR_WHERE_OP_TYPE);
 		}
 
 		let cacheKey;
 		if (this.#cacheEnabled) {
-			cacheKey = await this.#getCacheKey("where", predicate, op);
+			cacheKey = await this.#getCacheKey(STRING_CACHE_DOMAIN_WHERE, predicate, op);
 			const cached = this.#cache.get(cacheKey);
 			if (cached !== undefined) {
 				return this.#immutable ? Object.freeze(cached) : this.#clone(cached);

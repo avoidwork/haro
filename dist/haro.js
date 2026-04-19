@@ -5,7 +5,7 @@
  * @license BSD-3-Clause
  * @version 17.0.0
  */
-import {randomUUID}from'crypto';// String constants - Single characters and symbols
+import {randomUUID}from'crypto';import {lru}from'tiny-lru';// String constants - Single characters and symbols
 const STRING_COMMA = ",";
 const STRING_EMPTY = "";
 const STRING_PIPE = "|";
@@ -30,7 +30,38 @@ const STRING_INVALID_TYPE = "Invalid type";
 const STRING_RECORD_NOT_FOUND = "Record not found";
 
 // Integer constants
-const INT_0 = 0;/**
+const INT_0 = 0;
+const INT_2 = 2;
+
+// Number constants
+const CACHE_SIZE_DEFAULT = 1000;
+
+// String constants - Cache and hashing
+const STRING_CACHE_DOMAIN_SEARCH = "search";
+const STRING_CACHE_DOMAIN_WHERE = "where";
+const STRING_HASH_ALGORITHM = "SHA-256";
+const STRING_HEX_PAD = "0";
+const STRING_UNDERSCORE = "_";
+
+// String constants - Security (prototype pollution protection)
+const STRING_PROTO = "__proto__";
+const STRING_CONSTRUCTOR = "constructor";
+const STRING_PROTOTYPE = "prototype";
+
+// String constants - Error messages
+const STRING_ERROR_BATCH_SETMANY = "setMany: cannot call setMany within a batch operation";
+const STRING_ERROR_BATCH_DELETEMANY =
+	"deleteMany: cannot call deleteMany within a batch operation";
+const STRING_ERROR_DELETE_KEY_TYPE = "delete: key must be a string or number";
+const STRING_ERROR_FIND_WHERE_TYPE = "find: where must be an object";
+const STRING_ERROR_LIMIT_OFFSET_TYPE = "limit: offset must be a number";
+const STRING_ERROR_LIMIT_MAX_TYPE = "limit: max must be a number";
+const STRING_ERROR_SEARCH_VALUE = "search: value cannot be null or undefined";
+const STRING_ERROR_SET_KEY_TYPE = "set: key must be a string or number";
+const STRING_ERROR_SET_DATA_TYPE = "set: data must be an object";
+const STRING_ERROR_SORT_FN_TYPE = "sort: fn must be a function";
+const STRING_ERROR_WHERE_OP_TYPE = "where: op must be a string";
+const STRING_ERROR_WHERE_PREDICATE_TYPE = "where: predicate must be an object";/**
  * Haro is an immutable DataStore with indexing, versioning, and batch operations.
  * Provides a Map-like interface with advanced querying capabilities.
  * @class
@@ -40,6 +71,8 @@ const INT_0 = 0;/**
  * const results = store.find({name: 'John'});
  */
 class Haro {
+	#cache;
+	#cacheEnabled;
 	#data;
 	#delimiter;
 	#id;
@@ -67,6 +100,8 @@ class Haro {
 	 * const store = new Haro({ index: ['name', 'email'], key: 'userId', versioning: true });
 	 */
 	constructor({
+		cache = false,
+		cacheSize = CACHE_SIZE_DEFAULT,
 		delimiter = STRING_PIPE,
 		id = randomUUID(),
 		immutable = false,
@@ -76,6 +111,8 @@ class Haro {
 		warnOnFullScan = true,
 	} = {}) {
 		this.#data = new Map();
+		this.#cacheEnabled = cache === true;
+		this.#cache = cache === true ? lru(cacheSize) : null;
 		this.#delimiter = delimiter;
 		this.#id = id;
 		this.#immutable = immutable;
@@ -138,13 +175,14 @@ class Haro {
 	 */
 	setMany(records) {
 		if (this.#inBatch) {
-			throw new Error("setMany: cannot call setMany within a batch operation");
+			throw new Error(STRING_ERROR_BATCH_SETMANY);
 			/* node:coverage ignore next */
 		}
 		this.#inBatch = true;
 		const results = records.map((i) => this.set(null, i, true));
 		this.#inBatch = false;
 		this.reindex();
+		this.#invalidateCache();
 		return results;
 	}
 
@@ -157,14 +195,13 @@ class Haro {
 	 */
 	deleteMany(keys) {
 		if (this.#inBatch) {
-			/* node:coverage ignore next */ throw new Error(
-				"deleteMany: cannot call deleteMany within a batch operation",
-			);
+			/* node:coverage ignore next */ throw new Error(STRING_ERROR_BATCH_DELETEMANY);
 		}
 		this.#inBatch = true;
 		const results = keys.map((i) => this.delete(i));
 		this.#inBatch = false;
 		this.reindex();
+		this.#invalidateCache();
 		return results;
 	}
 
@@ -186,6 +223,7 @@ class Haro {
 		this.#data.clear();
 		this.#indexes.clear();
 		this.#versions.clear();
+		this.#invalidateCache();
 
 		return this;
 	}
@@ -212,7 +250,7 @@ class Haro {
 	 */
 	delete(key = STRING_EMPTY) {
 		if (typeof key !== STRING_STRING && typeof key !== STRING_NUMBER) {
-			throw new Error("delete: key must be a string or number");
+			throw new Error(STRING_ERROR_DELETE_KEY_TYPE);
 		}
 		if (!this.#data.has(key)) {
 			throw new Error(STRING_RECORD_NOT_FOUND);
@@ -225,6 +263,83 @@ class Haro {
 		if (this.#versioning && !this.#inBatch) {
 			this.#versions.delete(key);
 		}
+		this.#invalidateCache();
+	}
+
+	/**
+	 * Generates a cache key using SHA-256 hash.
+	 * @param {string} domain - Cache key prefix (e.g., 'search', 'where')
+	 * @param {...*} args - Arguments to hash
+	 * @returns {string} Cache key in format 'domain_HASH'
+	 */
+	async #getCacheKey(domain, ...args) {
+		const data = JSON.stringify(args);
+		const encoder = new TextEncoder();
+		const hashBuffer = await crypto.subtle.digest(STRING_HASH_ALGORITHM, encoder.encode(data));
+		const hashArray = Array.from(new Uint8Array(hashBuffer));
+		const hashHex = hashArray.map((b) => b.toString(16).padStart(INT_2, STRING_HEX_PAD)).join("");
+		return `${domain}${STRING_UNDERSCORE}${hashHex}`;
+	}
+
+	/**
+	 * Clears the cache.
+	 * @returns {Haro} This instance
+	 */
+	clearCache() {
+		if (this.#cacheEnabled) {
+			this.#cache.clear();
+		}
+		return this;
+	}
+
+	/**
+	 * Returns the current cache size.
+	 * @returns {number} Number of entries in cache
+	 */
+	getCacheSize() {
+		return this.#cacheEnabled ? this.#cache.size : 0;
+	}
+
+	/**
+	 * Returns cache statistics.
+	 * @returns {Object|null} Stats object with hits, misses, sets, deletes, evictions
+	 */
+	getCacheStats() {
+		return this.#cacheEnabled ? this.#cache.stats() : null;
+	}
+
+	/**
+	 * Invalidates the cache if enabled and not in batch mode.
+	 * @returns {void}
+	 */
+	#invalidateCache() {
+		if (this.#cacheEnabled && !this.#inBatch) {
+			this.#cache.clear();
+		}
+	}
+
+	/**
+	 * Retrieves a value from a nested object using dot notation.
+	 * @param {Object} obj - Object to traverse
+	 * @param {string} path - Dot-notation path (e.g., 'user.address.city')
+	 * @returns {*} Value at path, or undefined if path doesn't exist
+	 */
+	#getNestedValue(obj, path) {
+		/* node:coverage ignore next 3 */
+		if (obj === null || obj === undefined || path === STRING_EMPTY) {
+			return undefined;
+		}
+		const keys = path.split(".");
+		let result = obj;
+		const keysLen = keys.length;
+		for (let i = 0; i < keysLen; i++) {
+			const key = keys[i];
+			if (result === null || result === undefined || !(key in result)) {
+				return undefined;
+			}
+			result = result[key];
+		}
+		return result;
 	}
 
 	/**
@@ -239,9 +354,9 @@ class Haro {
 			if (!idx) return;
 			const values = i.includes(this.#delimiter)
 				? this.#getIndexKeys(i, this.#delimiter, data)
-				: Array.isArray(data[i])
-					? data[i]
-					: [data[i]];
+				: Array.isArray(this.#getNestedValue(data, i))
+					? this.#getNestedValue(data, i)
+					: [this.#getNestedValue(data, i)];
 			const len = values.length;
 			for (let j = 0; j < len; j++) {
 				const value = values[j];
@@ -285,7 +400,7 @@ class Haro {
 	}
 
 	/**
-	 * Generates index keys for composite indexes.
+	 * Generates index keys for composite indexes from data object.
 	 * @param {string} arg - Composite index field names
 	 * @param {string} delimiter - Field delimiter
 	 * @param {Object} data - Data object
@@ -297,7 +412,47 @@ class Haro {
 		const fieldsLen = fields.length;
 		for (let i = 0; i < fieldsLen; i++) {
 			const field = fields[i];
-			const values = Array.isArray(data[field]) ? data[field] : [data[field]];
+			const fieldValue = this.#getNestedValue(data, field);
+			const values = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
+			const newResult = [];
+			const resultLen = result.length;
+			const valuesLen = values.length;
+			for (let j = 0; j < resultLen; j++) {
+				const existing = result[j];
+				for (let k = 0; k < valuesLen; k++) {
+					const value = values[k];
+					const newKey = i === 0 ? value : `${existing}${this.#delimiter}${value}`;
+					newResult.push(newKey);
+				}
+			}
+			result.length = 0;
+			result.push(...newResult);
+		}
+		return result;
+	}
+
+	/**
+	 * Generates index keys for where object (handles both dot notation and direct access).
+	 * @param {string} arg - Composite index field names
+	 * @param {string} delimiter - Field delimiter
+	 * @param {Object} where - Where object
+	 * @returns {string[]} Index keys
+	 */
+	#getIndexKeysForWhere(arg, delimiter, where) {
+		const fields = arg.split(this.#delimiter).sort(this.#sortKeys);
+		const result = [""];
+		const fieldsLen = fields.length;
+		for (let i = 0; i < fieldsLen; i++) {
+			const field = fields[i];
+			// Check if field exists directly in where object first (for dot notation keys)
+			let fieldValue;
+			if (field in where) {
+				fieldValue = where[field];
+				/* node:coverage ignore next 4 */
+			} else {
+				fieldValue = this.#getNestedValue(where, field);
+			}
+			const values = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
 			const newResult = [];
 			const resultLen = result.length;
 			const valuesLen = values.length;
@@ -334,7 +489,7 @@ class Haro {
 	 */
 	find(where = {}) {
 		if (typeof where !== STRING_OBJECT || where === null) {
-			throw new Error("find: where must be an object");
+			throw new Error(STRING_ERROR_FIND_WHERE_TYPE);
 		}
 		const whereKeys = Object.keys(where).sort(this.#sortKeys);
 		const compositeKey = whereKeys.join(this.#delimiter);
@@ -342,7 +497,7 @@ class Haro {
 
 		const index = this.#indexes.get(compositeKey);
 		if (index) {
-			const keys = this.#getIndexKeys(compositeKey, this.#delimiter, where);
+			const keys = this.#getIndexKeysForWhere(compositeKey, this.#delimiter, where);
 			const keysLen = keys.length;
 			for (let i = 0; i < keysLen; i++) {
 				const v = keys[i];
@@ -454,10 +609,10 @@ class Haro {
 	 */
 	limit(offset = INT_0, max = INT_0) {
 		if (typeof offset !== STRING_NUMBER) {
-			throw new Error("limit: offset must be a number");
+			throw new Error(STRING_ERROR_LIMIT_OFFSET_TYPE);
 		}
 		if (typeof max !== STRING_NUMBER) {
-			throw new Error("limit: max must be a number");
+			throw new Error(STRING_ERROR_LIMIT_MAX_TYPE);
 		}
 		let result = this.registry.slice(offset, offset + max).map((i) => this.get(i));
 		if (this.#immutable) {
@@ -508,7 +663,7 @@ class Haro {
 			const keysLen = keys.length;
 			for (let i = 0; i < keysLen; i++) {
 				const key = keys[i];
-				if (key === "__proto__" || key === "constructor" || key === "prototype") {
+				if (key === STRING_PROTO || key === STRING_CONSTRUCTOR || key === STRING_PROTOTYPE) {
 					continue;
 				}
 				a[key] = this.#merge(a[key], b[key], override);
@@ -541,6 +696,7 @@ class Haro {
 		} else {
 			throw new Error(STRING_INVALID_TYPE);
 		}
+		this.#invalidateCache();
 
 		return result;
 	}
@@ -567,6 +723,7 @@ class Haro {
 				this.#setIndex(key, data, indices[i]);
 			}
 		});
+		this.#invalidateCache();
 
 		return this;
 	}
@@ -575,15 +732,25 @@ class Haro {
 	 * Searches for records containing a value.
 	 * @param {*} value - Search value (string, function, or RegExp)
 	 * @param {string|string[]} [index] - Index(es) to search, or all
-	 * @returns {Array<Object>} Matching records
+	 * @returns {Promise<Array<Object>>} Matching records
 	 * @example
 	 * store.search('john');
 	 * store.search(/^admin/, 'role');
 	 */
-	search(value, index) {
+	async search(value, index) {
 		if (value === null || value === undefined) {
-			throw new Error("search: value cannot be null or undefined");
+			throw new Error(STRING_ERROR_SEARCH_VALUE);
 		}
+
+		let cacheKey;
+		if (this.#cacheEnabled) {
+			cacheKey = await this.#getCacheKey(STRING_CACHE_DOMAIN_SEARCH, value, index);
+			const cached = this.#cache.get(cacheKey);
+			if (cached !== undefined) {
+				return this.#immutable ? Object.freeze(cached) : this.#clone(cached);
+			}
+		}
+
 		const result = new Set();
 		const fn = typeof value === STRING_FUNCTION;
 		const rgex = value && typeof value.test === STRING_FUNCTION;
@@ -616,6 +783,11 @@ class Haro {
 			}
 		}
 		const records = Array.from(result, (key) => this.get(key));
+
+		if (this.#cacheEnabled) {
+			this.#cache.set(cacheKey, records);
+		}
+
 		if (this.#immutable) {
 			return Object.freeze(records);
 		}
@@ -634,10 +806,10 @@ class Haro {
 	 */
 	set(key = null, data = {}, override = false) {
 		if (key !== null && typeof key !== STRING_STRING && typeof key !== STRING_NUMBER) {
-			throw new Error("set: key must be a string or number");
+			throw new Error(STRING_ERROR_SET_KEY_TYPE);
 		}
 		if (typeof data !== STRING_OBJECT || data === null) {
-			throw new Error("set: data must be an object");
+			throw new Error(STRING_ERROR_SET_DATA_TYPE);
 		}
 		if (key === null) {
 			key = data[this.#key] ?? randomUUID();
@@ -666,6 +838,7 @@ class Haro {
 		}
 
 		const result = this.get(key);
+		this.#invalidateCache();
 
 		return result;
 	}
@@ -689,9 +862,9 @@ class Haro {
 			}
 			const values = field.includes(this.#delimiter)
 				? this.#getIndexKeys(field, this.#delimiter, data)
-				: Array.isArray(data[field])
-					? data[field]
-					: [data[field]];
+				: Array.isArray(this.#getNestedValue(data, field))
+					? this.#getNestedValue(data, field)
+					: [this.#getNestedValue(data, field)];
 			const valuesLen = values.length;
 			for (let j = 0; j < valuesLen; j++) {
 				const value = values[j];
@@ -714,7 +887,7 @@ class Haro {
 	 */
 	sort(fn, frozen = false) {
 		if (typeof fn !== STRING_FUNCTION) {
-			throw new Error("sort: fn must be a function");
+			throw new Error(STRING_ERROR_SORT_FN_TYPE);
 		}
 		const dataSize = this.#data.size;
 		let result = this.limit(INT_0, dataSize).sort(fn);
@@ -818,7 +991,8 @@ class Haro {
 
 		return keys.every((key) => {
 			const pred = predicate[key];
-			const val = record[key];
+			// Use nested value extraction for dot notation paths
+			const val = this.#getNestedValue(record, key);
 			if (Array.isArray(pred)) {
 				if (Array.isArray(val)) {
 					return op === STRING_DOUBLE_AND
@@ -851,18 +1025,28 @@ class Haro {
 	 * Filters records with predicate logic supporting AND/OR on arrays.
 	 * @param {Object} [predicate={}] - Field-value pairs
 	 * @param {string} [op=STRING_DOUBLE_PIPE] - Operator: '||' (OR) or '&&' (AND)
-	 * @returns {Array<Object>} Matching records
+	 * @returns {Promise<Array<Object>>} Matching records
 	 * @example
 	 * store.where({tags: ['admin', 'user']}, '||');
 	 * store.where({email: /^admin@/});
 	 */
-	where(predicate = {}, op = STRING_DOUBLE_PIPE) {
+	async where(predicate = {}, op = STRING_DOUBLE_PIPE) {
 		if (typeof predicate !== STRING_OBJECT || predicate === null) {
-			throw new Error("where: predicate must be an object");
+			throw new Error(STRING_ERROR_WHERE_PREDICATE_TYPE);
 		}
 		if (typeof op !== STRING_STRING) {
-			throw new Error("where: op must be a string");
+			throw new Error(STRING_ERROR_WHERE_OP_TYPE);
 		}
+
+		let cacheKey;
+		if (this.#cacheEnabled) {
+			cacheKey = await this.#getCacheKey(STRING_CACHE_DOMAIN_WHERE, predicate, op);
+			const cached = this.#cache.get(cacheKey);
+			if (cached !== undefined) {
+				return this.#immutable ? Object.freeze(cached) : this.#clone(cached);
+			}
+		}
+
 		const keys = this.#index.filter((i) => i in predicate);
 		if (keys.length === 0) {
 			if (this.#warnOnFullScan) {
@@ -898,6 +1082,8 @@ class Haro {
 						}
 					}
 				} else {
+					// Direct value lookup - works for both flat and nested fields
+					// Also check for RegExp keys that match the predicate
 					for (const [indexKey, keySet] of idx) {
 						if (indexKey instanceof RegExp) {
 							if (indexKey.test(pred)) {
@@ -927,6 +1113,10 @@ class Haro {
 				if (this.#matchesPredicate(record, predicate, op)) {
 					results.push(record);
 				}
+			}
+
+			if (this.#cacheEnabled) {
+				this.#cache.set(cacheKey, results);
 			}
 
 			if (this.#immutable) {
