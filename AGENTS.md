@@ -49,6 +49,49 @@ npm run benchmark         # Run benchmarks
 - Adheres to DRY, YAGNI, and SOLID principles
 - Follows OWASP security guidance
 
+## Internal Helper Methods
+- `#freezeResult(result)` - Freezes individual values or arrays when immutable mode is enabled
+- `#fromCache(cached)` - Returns cloned result (non-immutable) or frozen result (immutable) from cache
+- `#toCache(cacheKey, records)` - Stores results in cache if enabled
+- `#getIndexKeysFrom(arg, source, getValueFn)` - Generates composite index keys using a getter callback
+- `#getNestedValue(obj, path)` - Retrieves nested values using dot notation (e.g., `user.profile.city`)
+- `#sortKeys(a, b)` - Type-aware comparator: strings use `localeCompare`, numbers use subtraction, mixed types coerced to string
+- `#merge(a, b, override)` - Deep merges values, skips prototype pollution keys (`__proto__`, `constructor`, `prototype`)
+- `#invalidateCache()` - Clears cache if enabled and not in batch mode
+- `#getCacheKey(domain, ...args)` - Generates SHA-256 hash cache key from arguments
+- `#clone(arg)` - Deep clones values via `structuredClone` or JSON fallback
+
+## Immutable Mode
+- Use `#freezeResult()` to return frozen data instead of inline `Object.freeze()` checks
+- Applies to: `get()`, `find()`, `filter()`, `limit()`, `map()`, `toArray()`, `sort()`, `sortBy()`, `search()`, `where()`
+- Cached results are also frozen/cloned via `#fromCache()` when read
+- `#merge()` preserves version snapshots by freezing cloned originals before versioning
+
+## Caching
+- Cache is opt-in via `cache: true` in constructor
+- Automatically invalidates on all write operations (set, delete, clear, reindex, setMany, deleteMany, override)
+- Does NOT invalidate during batch operations (`#inBatch = true`), only after batch completes
+- `search()` and `where()` use multi-domain cache keys: `search_HASH` / `where_HASH`
+- LRU cache size defaults to 1000 (`CACHE_SIZE_DEFAULT`)
+
+## Indexing
+- `#index` config array persists across `clear()` - `clearIndexes` is separate
+- After `clear()`, `#indexes` Map is emptied but `#index` config remains
+- Setting new records after `clear()` triggers lazy re-creation of index Maps in `#setIndex()`
+- Composite indexes use delimiter (default `|`) to join sorted field names
+- Use `#getIndexKeysFrom()` with appropriate getter callbacks for data objects vs where clauses
+
+## Batch Operations
+- `setMany()` and `deleteMany()` set `#inBatch = true` to skip indexing during individual operations
+- Indexing is deferred to `reindex()` call after batch completes
+- Nested batch calls (calling setMany within setMany) throw errors
+- `#inBatch` affects versioning too - versions are not saved during batch operations
+
+## Test Strategy Tips
+- Hard-to-reach branches often involve state transitions (e.g., `clear()` → `set()` on same store)
+- Coverage gaps frequently involve conditional logic on `#inBatch`, `#immutable`, or `#cacheEnabled`
+- Add tests that explicitly combine features (immutable + indexing + batch + caching)
+
 ## Important Notes
 - The `immutable` option freezes data for immutability
 - Indexes improve query performance for `find()` and `where()` operations
@@ -62,3 +105,10 @@ npm run benchmark         # Run benchmarks
 - Cache invalidates on all write operations but preserves statistics
 - `search()` and `where()` are async methods - use `await` when calling
 - Cache statistics persist for the lifetime of the Haro instance
+
+## Refactoring Patterns
+- Centralize immutable freezing in `#freezeResult()` - never use inline `Object.freeze()` for return values
+- Centralize cache read patterns in `#fromCache(cached)` and cache write in `#toCache(key, records)`
+- Consolidate index key generation in `#getIndexKeysFrom()` using a getter callback parameter
+- When DRY requires a single function to handle both data objects and where clauses, use a `getValueFn` callback parameter
+- Always run `npm test` after structural refactors - helper extraction changes call signatures

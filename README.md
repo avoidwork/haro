@@ -425,7 +425,7 @@ For complete API documentation with all methods and examples, see [API.md](https
 - **Core Methods**: `set()`, `get()`, `delete()`, `has()`, `clear()`
 - **Query Methods**: `find()`, `where()`, `search()`, `filter()`, `sortBy()`, `limit()`
 - **Batch Operations**: `setMany()`, `deleteMany()`
-- **Utility Methods**: `clone()`, `merge()`, `toArray()`, `dump()`, `override()`
+- **Utility Methods**: `toArray()`, `dump()`, `override()`
 - **Properties**: `size`, `registry`
 
 ## Troubleshooting
