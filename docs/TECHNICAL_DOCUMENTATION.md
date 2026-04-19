@@ -454,7 +454,9 @@ pie title Memory Distribution (without cache)
     "Index Structures" : 25
     "Version History" : 10
     "Metadata" : 5
+```
 
+```mermaid
 pie title Memory Distribution (with cache enabled)
     "Record Data" : 50
     "Index Structures" : 20
