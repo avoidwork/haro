@@ -4,6 +4,14 @@ import {
 	CACHE_SIZE_DEFAULT,
 	INT_0,
 	INT_2,
+	PROP_DELIMITER,
+	PROP_ID,
+	PROP_IMMUTABLE,
+	PROP_INDEX,
+	PROP_KEY,
+	PROP_VERSIONING,
+	PROP_VERSIONS,
+	PROP_WARN_ON_FULL_SCAN,
 	STRING_CACHE_DOMAIN_SEARCH,
 	STRING_CACHE_DOMAIN_WHERE,
 	STRING_COMMA,
@@ -114,35 +122,35 @@ export class Haro {
 			enumerable: true,
 			get: () => this.#data.size,
 		});
-		Object.defineProperty(this, "key", {
+		Object.defineProperty(this, PROP_KEY, {
 			enumerable: true,
 			get: () => this.#key,
 		});
-		Object.defineProperty(this, "index", {
+		Object.defineProperty(this, PROP_INDEX, {
 			enumerable: true,
 			get: () => [...this.#index],
 		});
-		Object.defineProperty(this, "delimiter", {
+		Object.defineProperty(this, PROP_DELIMITER, {
 			enumerable: true,
 			get: () => this.#delimiter,
 		});
-		Object.defineProperty(this, "immutable", {
+		Object.defineProperty(this, PROP_IMMUTABLE, {
 			enumerable: true,
 			get: () => this.#immutable,
 		});
-		Object.defineProperty(this, "versioning", {
+		Object.defineProperty(this, PROP_VERSIONING, {
 			enumerable: true,
 			get: () => this.#versioning,
 		});
-		Object.defineProperty(this, "warnOnFullScan", {
+		Object.defineProperty(this, PROP_WARN_ON_FULL_SCAN, {
 			enumerable: true,
 			get: () => this.#warnOnFullScan,
 		});
-		Object.defineProperty(this, "versions", {
+		Object.defineProperty(this, PROP_VERSIONS, {
 			enumerable: true,
 			get: () => this.#versions,
 		});
-		Object.defineProperty(this, "id", {
+		Object.defineProperty(this, PROP_ID, {
 			enumerable: true,
 			get: () => this.#id,
 		});

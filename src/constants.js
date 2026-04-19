@@ -6,10 +6,12 @@ export const STRING_DOUBLE_PIPE = "||";
 export const STRING_DOUBLE_AND = "&&";
 
 // String constants - Operation and type names
-export const STRING_ID = "id";
 export const STRING_DEL = "del";
 export const STRING_FUNCTION = "function";
+export const STRING_ID = "id";
+export const STRING_INDEX = "index";
 export const STRING_INDEXES = "indexes";
+export const STRING_KEY = "key";
 export const STRING_OBJECT = "object";
 export const STRING_RECORDS = "records";
 export const STRING_REGISTRY = "registry";
@@ -57,3 +59,13 @@ export const STRING_ERROR_SET_DATA_TYPE = "set: data must be an object";
 export const STRING_ERROR_SORT_FN_TYPE = "sort: fn must be a function";
 export const STRING_ERROR_WHERE_OP_TYPE = "where: op must be a string";
 export const STRING_ERROR_WHERE_PREDICATE_TYPE = "where: predicate must be an object";
+
+// String constants - Property names
+export const PROP_DELIMITER = "delimiter";
+export const PROP_ID = "id";
+export const PROP_IMMUTABLE = "immutable";
+export const PROP_INDEX = "index";
+export const PROP_KEY = "key";
+export const PROP_VERSIONING = "versioning";
+export const PROP_VERSIONS = "versions";
+export const PROP_WARN_ON_FULL_SCAN = "warnOnFullScan";

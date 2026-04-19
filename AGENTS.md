@@ -27,6 +27,12 @@ npm run benchmark         # Run benchmarks
 - Keep functions small and focused
 - Use template literals for string concatenation
 
+## Rules
+- No magic strings or magic numbers - always use constants from `src/constants.js`
+- All string literals must be defined as constants with descriptive names (e.g., `STRING_EMPTY`, `STRING_ID`)
+- All numeric literals (except 0 and 1 in simple operations) should use constants (e.g., `INT_0`, `CACHE_SIZE_DEFAULT`)
+- Constants follow naming convention: `TYPE_NAME` for strings, `TYPE_NAME` for numbers
+
 ## Testing
 - Tests use Node.js native test runner (`node --test`)
 - Test files are in `tests/unit/` directory

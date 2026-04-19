@@ -16,10 +16,8 @@ const STRING_EMPTY = "";
 const STRING_PIPE = "|";
 const STRING_DOUBLE_PIPE = "||";
 const STRING_DOUBLE_AND = "&&";
-
-// String constants - Operation and type names
-const STRING_ID = "id";
 const STRING_FUNCTION = "function";
+const STRING_ID = "id";
 const STRING_INDEXES = "indexes";
 const STRING_OBJECT = "object";
 const STRING_RECORDS = "records";
@@ -67,6 +65,16 @@ const STRING_ERROR_SET_DATA_TYPE = "set: data must be an object";
 const STRING_ERROR_SORT_FN_TYPE = "sort: fn must be a function";
 const STRING_ERROR_WHERE_OP_TYPE = "where: op must be a string";
 const STRING_ERROR_WHERE_PREDICATE_TYPE = "where: predicate must be an object";
+
+// String constants - Property names
+const PROP_DELIMITER = "delimiter";
+const PROP_ID = "id";
+const PROP_IMMUTABLE = "immutable";
+const PROP_INDEX = "index";
+const PROP_KEY = "key";
+const PROP_VERSIONING = "versioning";
+const PROP_VERSIONS = "versions";
+const PROP_WARN_ON_FULL_SCAN = "warnOnFullScan";
 
 /**
  * Haro is an immutable DataStore with indexing, versioning, and batch operations.
@@ -138,35 +146,35 @@ class Haro {
 			enumerable: true,
 			get: () => this.#data.size,
 		});
-		Object.defineProperty(this, "key", {
+		Object.defineProperty(this, PROP_KEY, {
 			enumerable: true,
 			get: () => this.#key,
 		});
-		Object.defineProperty(this, "index", {
+		Object.defineProperty(this, PROP_INDEX, {
 			enumerable: true,
 			get: () => [...this.#index],
 		});
-		Object.defineProperty(this, "delimiter", {
+		Object.defineProperty(this, PROP_DELIMITER, {
 			enumerable: true,
 			get: () => this.#delimiter,
 		});
-		Object.defineProperty(this, "immutable", {
+		Object.defineProperty(this, PROP_IMMUTABLE, {
 			enumerable: true,
 			get: () => this.#immutable,
 		});
-		Object.defineProperty(this, "versioning", {
+		Object.defineProperty(this, PROP_VERSIONING, {
 			enumerable: true,
 			get: () => this.#versioning,
 		});
-		Object.defineProperty(this, "warnOnFullScan", {
+		Object.defineProperty(this, PROP_WARN_ON_FULL_SCAN, {
 			enumerable: true,
 			get: () => this.#warnOnFullScan,
 		});
-		Object.defineProperty(this, "versions", {
+		Object.defineProperty(this, PROP_VERSIONS, {
 			enumerable: true,
 			get: () => this.#versions,
 		});
-		Object.defineProperty(this, "id", {
+		Object.defineProperty(this, PROP_ID, {
 			enumerable: true,
 			get: () => this.#id,
 		});

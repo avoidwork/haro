@@ -40,41 +40,26 @@ export class Haro {
   constructor(config?: HaroConfig);
 
   /**
-   * Performs batch operations on multiple records for efficient bulk processing
-   * @param args - Array of records to process
-   * @param type - Type of operation: 'set' for upsert, 'del' for delete
-   * @returns Array of results from the batch operation
+   * Inserts or updates multiple records
+   * @param records - Array of records to insert or update
+   * @returns Array of stored records
    */
-  batch(args: any[], type?: string): any[];
+  setMany(records: any[]): any[];
 
   /**
-   * Lifecycle hook executed before batch operations for custom preprocessing
-   * @param arg - Arguments passed to batch operation
-   * @param type - Type of batch operation ('set' or 'del')
-   * @returns The arguments array (possibly modified) to be processed
+   * Deletes multiple records
+   * @param keys - Array of keys to delete
+   * @returns Array of void
    */
-  beforeBatch(arg: any, type?: string): any;
+  deleteMany(keys: (string | number)[]): void[];
 
   /**
-   * Lifecycle hook executed before clear operation for custom preprocessing
+   * Returns true if currently in a batch operation
+   * @returns Batch operation status
    */
-  beforeClear(): void;
+  isBatching: boolean;
 
-  /**
-   * Lifecycle hook executed before delete operation for custom preprocessing
-   * @param key - Key of record to delete
-   * @param batch - Whether this is part of a batch operation
-   */
-  beforeDelete(key?: string, batch?: boolean): void;
 
-  /**
-   * Lifecycle hook executed before set operation for custom preprocessing
-   * @param key - Key of record to set
-   * @param data - Record data being set
-   * @param batch - Whether this is part of a batch operation
-   * @param override - Whether to override existing data
-   */
-  beforeSet(key?: string, data?: any, batch?: boolean, override?: boolean): void;
 
   /**
    * Removes all records, indexes, and versions from the store
@@ -92,10 +77,9 @@ export class Haro {
   /**
    * Deletes a record from the store and removes it from all indexes
    * @param key - Key of record to delete
-   * @param batch - Whether this is part of a batch operation
    * @throws Throws error if record with the specified key is not found
    */
-  delete(key?: string, batch?: boolean): void;
+  delete(key?: string): void;
 
   /**
    * Internal method to remove entries from indexes for a deleted record
@@ -135,18 +119,16 @@ export class Haro {
   /**
    * Finds records matching the specified criteria using indexes for optimal performance
    * @param where - Object with field-value pairs to match against
-   * @param raw - Whether to return raw data without processing
    * @returns Array of matching records (frozen if immutable mode)
    */
-  find(where?: Record<string, any>, raw?: boolean): any[];
+  find(where?: Record<string, any>): any[];
 
   /**
    * Filters records using a predicate function, similar to Array.filter
    * @param fn - Predicate function to test each record (record, key, store)
-   * @param raw - Whether to return raw data without processing
    * @returns Array of records that pass the predicate test
    */
-  filter(fn: (value: any) => boolean, raw?: boolean): any[];
+  filter(fn: (value: any, key: string, store: Haro) => boolean): any[];
 
   /**
    * Executes a function for each record in the store, similar to Array.forEach
@@ -197,10 +179,9 @@ export class Haro {
    * Returns a limited subset of records with offset support for pagination
    * @param offset - Number of records to skip from the beginning
    * @param max - Maximum number of records to return
-   * @param raw - Whether to return raw data without processing
    * @returns Array of records within the specified range
    */
-  limit(offset?: number, max?: number, raw?: boolean): any[];
+  limit(offset?: number, max?: number): any[];
 
   /**
    * Converts a record into a [key, value] pair array format
@@ -212,10 +193,9 @@ export class Haro {
   /**
    * Transforms all records using a mapping function, similar to Array.map
    * @param fn - Function to transform each record (record, key)
-   * @param raw - Whether to return raw data without processing
    * @returns Array of transformed results
    */
-  map(fn: (value: any, key: string) => any, raw?: boolean): any[];
+  map(fn: (value: any, key: string) => any): any[];
 
   /**
    * Internal helper method for predicate matching with support for arrays and regex
@@ -304,11 +284,10 @@ export class Haro {
    * Sets or updates a record in the store with automatic indexing
    * @param key - Key for the record, or null to use record's key field
    * @param data - Record data to set
-   * @param batch - Whether this is part of a batch operation
    * @param override - Whether to override existing data instead of merging
    * @returns The stored record (frozen if immutable mode)
    */
-  set(key?: string | null, data?: any, batch?: boolean, override?: boolean): any;
+  set(key?: string | null, data?: any, override?: boolean): any;
 
   /**
    * Internal method to add entries to indexes for a record
@@ -317,7 +296,7 @@ export class Haro {
    * @param indice - Specific index to update, or null for all
    * @returns This instance for method chaining
    */
-  setIndex(key: string, data: any, indice?: string | null): Haro;
+  setIndex(key: string, data: any, indice: string | null): Haro;
 
   /**
    * Sorts all records using a comparator function
@@ -325,7 +304,7 @@ export class Haro {
    * @param frozen - Whether to return frozen records
    * @returns Sorted array of records
    */
-  sort(fn: (a: any, b: any) => number, frozen?: boolean): any[];
+  sort(fn: (a: any, b: any) => number, frozen?: boolean): any;
 
   /**
    * Comparator function for sorting keys with type-aware comparison logic
@@ -338,10 +317,9 @@ export class Haro {
   /**
    * Sorts records by a specific indexed field in ascending order
    * @param index - Index field name to sort by
-   * @param raw - Whether to return raw data without processing
    * @returns Array of records sorted by the specified field
    */
-  sortBy(index?: string, raw?: boolean): any[];
+  sortBy(index?: string): any[];
 
   /**
    * Converts all store data to a plain array of records
