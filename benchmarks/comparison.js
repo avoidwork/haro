@@ -40,7 +40,7 @@ function benchmarkStorageComparison(dataSizes) {
 
 		// Haro storage
 		const haroSetResult = benchmark(
-			`Haro SET (${size} records)`,
+			`Haro set() (${size} records)`,
 			() => {
 				const store = haro();
 				testData.forEach((record) => store.set(record.id, record));
@@ -51,7 +51,7 @@ function benchmarkStorageComparison(dataSizes) {
 
 		// Native Map storage
 		const mapSetResult = benchmark(
-			`Map SET (${size} records)`,
+			`Map set() (${size} records)`,
 			() => {
 				const map = new Map();
 				testData.forEach((record) => map.set(record.id, record));
@@ -62,7 +62,7 @@ function benchmarkStorageComparison(dataSizes) {
 
 		// Native Object storage
 		const objectSetResult = benchmark(
-			`Object SET (${size} records)`,
+			`Object set() (${size} records)`,
 			() => {
 				const obj = {};
 				testData.forEach((record) => (obj[record.id] = record)); // eslint-disable-line no-return-assign
@@ -73,7 +73,7 @@ function benchmarkStorageComparison(dataSizes) {
 
 		// Array storage
 		const arraySetResult = benchmark(
-			`Array PUSH (${size} records)`,
+			`Array push() (${size} records)`,
 			() => {
 				const arr = [];
 				testData.forEach((record) => arr.push(record));
@@ -110,35 +110,35 @@ function benchmarkRetrievalComparison(dataSizes) {
 		});
 
 		// Haro retrieval
-		const haroGetResult = benchmark(`Haro GET (${size} records)`, () => {
+		const haroGetResult = benchmark(`Haro get() (${size} records)`, () => {
 			const id = Math.floor(Math.random() * size);
 			haroStore.get(id);
 		});
 		results.push(haroGetResult);
 
 		// Map retrieval
-		const mapGetResult = benchmark(`Map GET (${size} records)`, () => {
+		const mapGetResult = benchmark(`Map get() (${size} records)`, () => {
 			const id = Math.floor(Math.random() * size);
 			mapStore.get(id);
 		});
 		results.push(mapGetResult);
 
 		// Object retrieval
-		const objectGetResult = benchmark(`Object GET (${size} records)`, () => {
+		const objectGetResult = benchmark(`Object get() (${size} records)`, () => {
 			const id = Math.floor(Math.random() * size);
 			objectStore[id]; // eslint-disable-line no-unused-expressions
 		});
 		results.push(objectGetResult);
 
 		// Array retrieval (by index)
-		const arrayGetResult = benchmark(`Array GET (${size} records)`, () => {
+		const arrayGetResult = benchmark(`Array get() (${size} records)`, () => {
 			const index = Math.floor(Math.random() * size);
 			arrayStore[index]; // eslint-disable-line no-unused-expressions
 		});
 		results.push(arrayGetResult);
 
 		// Array find (by property)
-		const arrayFindResult = benchmark(`Array FIND (${size} records)`, () => {
+		const arrayFindResult = benchmark(`Array find() (${size} records)`, () => {
 			const id = Math.floor(Math.random() * size);
 			arrayStore.find((record) => record.id === id);
 		});
@@ -164,25 +164,25 @@ function benchmarkQueryComparison(dataSizes) {
 		const arrayStore = [...testData];
 
 		// Haro indexed query
-		const haroQueryResult = benchmark(`Haro FIND indexed (${size} records)`, () => {
+		const haroQueryResult = benchmark(`Haro find() indexed (${size} records)`, () => {
 			haroStore.find({ category: "A" });
 		});
 		results.push(haroQueryResult);
 
 		// Haro filter query
-		const haroFilterResult = benchmark(`Haro FILTER (${size} records)`, () => {
+		const haroFilterResult = benchmark(`Haro filter() (${size} records)`, () => {
 			haroStore.filter((record) => record.category === "A");
 		});
 		results.push(haroFilterResult);
 
 		// Array filter query
-		const arrayFilterResult = benchmark(`Array FILTER (${size} records)`, () => {
+		const arrayFilterResult = benchmark(`Array filter() (${size} records)`, () => {
 			arrayStore.filter((record) => record.category === "A");
 		});
 		results.push(arrayFilterResult);
 
 		// Complex query comparison
-		const haroComplexResult = benchmark(`Haro COMPLEX query (${size} records)`, () => {
+		const haroComplexResult = benchmark(`Haro complex query (${size} records)`, () => {
 			haroStore.filter(
 				(record) =>
 					record.category === "A" && record.status === "active" && record.priority === "high",
@@ -190,7 +190,7 @@ function benchmarkQueryComparison(dataSizes) {
 		});
 		results.push(haroComplexResult);
 
-		const arrayComplexResult = benchmark(`Array COMPLEX query (${size} records)`, () => {
+		const arrayComplexResult = benchmark(`Array complex query (${size} records)`, () => {
 			arrayStore.filter(
 				(record) =>
 					record.category === "A" && record.status === "active" && record.priority === "high",
@@ -215,7 +215,7 @@ function benchmarkDeletionComparison(dataSizes) {
 
 		// Haro deletion
 		const haroDeleteResult = benchmark(
-			`Haro DELETE (${size} records)`,
+			`Haro delete() (${size} records)`,
 			() => {
 				const store = haro(testData);
 				const keys = Array.from(store.keys());
@@ -229,7 +229,7 @@ function benchmarkDeletionComparison(dataSizes) {
 
 		// Map deletion
 		const mapDeleteResult = benchmark(
-			`Map DELETE (${size} records)`,
+			`Map delete() (${size} records)`,
 			() => {
 				const map = new Map();
 				testData.forEach((record) => map.set(record.id, record));
@@ -244,7 +244,7 @@ function benchmarkDeletionComparison(dataSizes) {
 
 		// Object deletion
 		const objectDeleteResult = benchmark(
-			`Object DELETE (${size} records)`,
+			`Object delete() (${size} records)`,
 			() => {
 				const obj = {};
 				testData.forEach((record) => (obj[record.id] = record)); // eslint-disable-line no-return-assign
@@ -259,7 +259,7 @@ function benchmarkDeletionComparison(dataSizes) {
 
 		// Array splice deletion
 		const arrayDeleteResult = benchmark(
-			`Array SPLICE (${size} records)`,
+			`Array splice() (${size} records)`,
 			() => {
 				const arr = [...testData];
 				for (let i = 0; i < Math.min(100, arr.length); i++) {
@@ -290,26 +290,26 @@ function benchmarkAggregationComparison(dataSizes) {
 		const arrayStore = [...testData];
 
 		// Haro map operation
-		const haroMapResult = benchmark(`Haro MAP (${size} records)`, () => {
+		const haroMapResult = benchmark(`Haro map() (${size} records)`, () => {
 			haroStore.map((record) => record.category);
 		});
 		results.push(haroMapResult);
 
 		// Array map operation
-		const arrayMapResult = benchmark(`Array MAP (${size} records)`, () => {
+		const arrayMapResult = benchmark(`Array map() (${size} records)`, () => {
 			arrayStore.map((record) => record.category);
 		});
 		results.push(arrayMapResult);
 
 		// Haro forEach operation
-		const haroForEachResult = benchmark(`Haro FOREACH (${size} records)`, () => {
+		const haroForEachResult = benchmark(`Haro forEach() (${size} records)`, () => {
 			let count = 0;
 			haroStore.forEach(() => count++);
 		});
 		results.push(haroForEachResult);
 
 		// Array forEach operation
-		const arrayForEachResult = benchmark(`Array FOREACH (${size} records)`, () => {
+		const arrayForEachResult = benchmark(`Array forEach() (${size} records)`, () => {
 			let count = 0;
 			arrayStore.forEach(() => count++);
 		});
@@ -336,7 +336,7 @@ function benchmarkSortingComparison(dataSizes) {
 
 		// Haro sort operation
 		const haroSortResult = benchmark(
-			`Haro SORT (${size} records)`,
+			`Haro sort() (${size} records)`,
 			() => {
 				haroStore.sort((a, b) => a.score - b.score);
 			},
@@ -346,7 +346,7 @@ function benchmarkSortingComparison(dataSizes) {
 
 		// Array sort operation
 		const arraySortResult = benchmark(
-			`Array SORT (${size} records)`,
+			`Array sort() (${size} records)`,
 			() => {
 				[...arrayStore].sort((a, b) => a.score - b.score);
 			},
@@ -356,7 +356,7 @@ function benchmarkSortingComparison(dataSizes) {
 
 		// Haro sortBy operation (indexed)
 		const haroSortByResult = benchmark(
-			`Haro SORTBY indexed (${size} records)`,
+			`Haro sortBy() indexed (${size} records)`,
 			() => {
 				haroStore.sortBy("score");
 			},
@@ -366,7 +366,7 @@ function benchmarkSortingComparison(dataSizes) {
 
 		// Complex sort comparison
 		const haroComplexSortResult = benchmark(
-			`Haro COMPLEX sort (${size} records)`,
+			`Haro complex sort () (${size} records)`,
 			() => {
 				haroStore.sort((a, b) => {
 					if (a.category !== b.category) {
@@ -381,7 +381,7 @@ function benchmarkSortingComparison(dataSizes) {
 		results.push(haroComplexSortResult);
 
 		const arrayComplexSortResult = benchmark(
-			`Array COMPLEX sort (${size} records)`,
+			`Array complex sort () (${size} records)`,
 			() => {
 				[...arrayStore].sort((a, b) => {
 					if (a.category !== b.category) {
@@ -470,7 +470,7 @@ function benchmarkAdvancedFeatures(dataSizes) {
 
 		// Haro advanced features
 		const haroAdvancedResult = benchmark(
-			`Haro ADVANCED features (${size} records)`,
+			`Haro advanced features (${size} records)`,
 			() => {
 				const store = haro(testData, {
 					index: ["category", "status", "category|status"],
@@ -492,7 +492,7 @@ function benchmarkAdvancedFeatures(dataSizes) {
 
 		// Simulate similar operations with native structures
 		const nativeAdvancedResult = benchmark(
-			`Native ADVANCED simulation (${size} records)`,
+			`Native advanced simulation (${size} records)`,
 			() => {
 				const store = [...testData];
 

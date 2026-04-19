@@ -78,14 +78,14 @@ function benchmarkCloneOperations(dataSizes) {
 
 		// Clone simple objects
 		const simpleObject = { id: 1, name: "test", age: 30 };
-		const cloneSimpleResult = benchmark(`Clone simple object (${size} iterations)`, () => {
+		const cloneSimpleResult = benchmark(`clone() simple object (${size} iterations)`, () => {
 			store.clone(simpleObject);
 		});
 		results.push(cloneSimpleResult);
 
 		// Clone complex nested objects
 		const complexObject = testData[0];
-		const cloneComplexResult = benchmark(`Clone complex object (${size} iterations)`, () => {
+		const cloneComplexResult = benchmark(`clone() complex object (${size} iterations)`, () => {
 			store.clone(complexObject);
 		});
 		results.push(cloneComplexResult);
@@ -93,7 +93,7 @@ function benchmarkCloneOperations(dataSizes) {
 		// Clone arrays
 		const arrayData = testData.slice(0, Math.min(100, size));
 		const cloneArrayResult = benchmark(
-			`Clone array (${arrayData.length} items, ${Math.min(100, size)} iterations)`,
+			`clone() array (${arrayData.length} items, ${Math.min(100, size)} iterations)`,
 			() => {
 				store.clone(arrayData);
 			},
@@ -119,7 +119,7 @@ function benchmarkMergeOperations(dataSizes) {
 		// Merge simple objects
 		const base = { id: 1, name: "John", age: 30 };
 		const update = { age: 31, email: "john@example.com" };
-		const mergeSimpleResult = benchmark(`Merge simple objects (${size} iterations)`, () => {
+		const mergeSimpleResult = benchmark(`merge() simple objects (${size} iterations)`, () => {
 			store.merge(store.clone(base), update);
 		});
 		results.push(mergeSimpleResult);
@@ -136,7 +136,7 @@ function benchmarkMergeOperations(dataSizes) {
 			settings: { privacy: true },
 			tags: ["power-user"],
 		};
-		const mergeComplexResult = benchmark(`Merge complex objects (${size} iterations)`, () => {
+		const mergeComplexResult = benchmark(`merge() complex objects (${size} iterations)`, () => {
 			store.merge(store.clone(complexBase), complexUpdate);
 		});
 		results.push(mergeComplexResult);
@@ -144,13 +144,13 @@ function benchmarkMergeOperations(dataSizes) {
 		// Merge arrays
 		const array1 = Array.from({ length: 10 }, (_, i) => i);
 		const array2 = Array.from({ length: 10 }, (_, i) => i + 10);
-		const mergeArrayResult = benchmark(`Merge arrays (${size} iterations)`, () => {
+		const mergeArrayResult = benchmark(`merge() arrays (${size} iterations)`, () => {
 			store.merge(store.clone(array1), array2);
 		});
 		results.push(mergeArrayResult);
 
 		// Merge with override
-		const mergeOverrideResult = benchmark(`Merge with override (${size} iterations)`, () => {
+		const mergeOverrideResult = benchmark(`merge() with override (${size} iterations)`, () => {
 			store.merge(store.clone(array1), array2, true);
 		});
 		results.push(mergeOverrideResult);
@@ -173,7 +173,7 @@ function benchmarkFreezeOperations(dataSizes) {
 
 		// Freeze single objects
 		const singleObject = testData[0];
-		const freezeSingleResult = benchmark(`Freeze single object (${size} iterations)`, () => {
+		const freezeSingleResult = benchmark(`freeze() single object (${size} iterations)`, () => {
 			store.freeze(singleObject);
 		});
 		results.push(freezeSingleResult);
@@ -181,7 +181,7 @@ function benchmarkFreezeOperations(dataSizes) {
 		// Freeze multiple objects
 		const multipleObjects = testData.slice(0, Math.min(10, size));
 		const freezeMultipleResult = benchmark(
-			`Freeze multiple objects (${multipleObjects.length} objects, ${Math.min(100, size)} iterations)`,
+			`freeze() multiple objects (${multipleObjects.length} objects, ${Math.min(100, size)} iterations)`,
 			() => {
 				store.freeze(...multipleObjects);
 			},
@@ -195,7 +195,7 @@ function benchmarkFreezeOperations(dataSizes) {
 			metadata: { count: size, timestamp: new Date() },
 		};
 		const freezeNestedResult = benchmark(
-			`Freeze nested structure (${Math.min(10, size)} iterations)`,
+			`freeze() nested structure (${Math.min(10, size)} iterations)`,
 			() => {
 				store.freeze(nestedStructure);
 			},
@@ -221,7 +221,7 @@ function benchmarkForEachOperations(dataSizes) {
 
 		// Simple forEach operation
 		const forEachSimpleResult = benchmark(
-			`forEach simple operation (${size} records)`,
+			`forEach() simple operation (${size} records)`,
 			() => {
 				let count = 0; // eslint-disable-line no-unused-vars
 				store.forEach(() => {
@@ -235,7 +235,7 @@ function benchmarkForEachOperations(dataSizes) {
 		// Complex forEach operation
 		const aggregated = {};
 		const forEachComplexResult = benchmark(
-			`forEach complex operation (${size} records)`,
+			`forEach() complex operation (${size} records)`,
 			() => {
 				store.forEach((record) => {
 					const dept = record.metadata?.preferences?.theme || "unknown";
@@ -249,7 +249,7 @@ function benchmarkForEachOperations(dataSizes) {
 		// forEach with context
 		const context = { processed: 0, errors: 0 };
 		const forEachContextResult = benchmark(
-			`forEach with context (${size} records)`,
+			`forEach() with context (${size} records)`,
 			() => {
 				store.forEach(function (record) {
 					try {
@@ -282,7 +282,7 @@ function benchmarkUuidOperations(iterations) {
 	iterations.forEach((count) => {
 		// UUID generation
 		const uuidResult = benchmark(
-			`UUID generation (${count} iterations)`,
+			`uuid() generation (${count} iterations)`,
 			() => {
 				store.uuid();
 			},
@@ -298,7 +298,7 @@ function benchmarkUuidOperations(iterations) {
 		}
 		const uniquenessEnd = performance.now();
 		const uniquenessResult = {
-			name: `UUID uniqueness test (${count} UUIDs)`,
+			name: `uuid() uniqueness test (${count} UUIDs)`,
 			iterations: count,
 			totalTime: uniquenessEnd - uniquenessStart,
 			avgTime: (uniquenessEnd - uniquenessStart) / count,

@@ -66,7 +66,7 @@ function benchmarkSetOperations(dataSizes) {
 		const store = haro();
 
 		// Individual set operations
-		const setResult = benchmark(`SET (${size} records)`, () => {
+		const setResult = benchmark(`set() (${size} records)`, () => {
 			const record = testData[Math.floor(Math.random() * testData.length)];
 			store.set(record.id, record);
 		});
@@ -75,7 +75,7 @@ function benchmarkSetOperations(dataSizes) {
 		// Batch set operations
 		const batchStore = haro();
 		const batchResult = benchmark(
-			`BATCH SET (${size} records)`,
+			`batch() set (${size} records)`,
 			() => {
 				batchStore.batch(testData, "set");
 			},
@@ -100,14 +100,14 @@ function benchmarkGetOperations(dataSizes) {
 		const store = haro(testData);
 
 		// Random get operations
-		const getResult = benchmark(`GET (${size} records)`, () => {
+		const getResult = benchmark(`get() (${size} records)`, () => {
 			const id = Math.floor(Math.random() * size);
 			store.get(id);
 		});
 		results.push(getResult);
 
 		// Has operations
-		const hasResult = benchmark(`HAS (${size} records)`, () => {
+		const hasResult = benchmark(`has() (${size} records)`, () => {
 			const id = Math.floor(Math.random() * size);
 			store.has(id);
 		});
@@ -131,7 +131,7 @@ function benchmarkDeleteOperations(dataSizes) {
 		// Individual delete operations
 		const deleteStore = haro(testData);
 		const deleteResult = benchmark(
-			`DELETE (${size} records)`,
+			`delete() (${size} records)`,
 			() => {
 				const keys = Array.from(deleteStore.keys());
 				if (keys.length > 0) {
@@ -146,7 +146,7 @@ function benchmarkDeleteOperations(dataSizes) {
 		// Clear operations
 		const clearStore = haro(testData);
 		const clearResult = benchmark(
-			`CLEAR (${size} records)`,
+			`clear() (${size} records)`,
 			() => {
 				clearStore.clear();
 				clearStore.batch(testData, "set");
@@ -173,7 +173,7 @@ function benchmarkUtilityOperations(dataSizes) {
 
 		// ToArray operations
 		const toArrayResult = benchmark(
-			`toArray (${size} records)`,
+			`toArray() (${size} records)`,
 			() => {
 				store.toArray();
 			},
@@ -183,7 +183,7 @@ function benchmarkUtilityOperations(dataSizes) {
 
 		// Keys operations
 		const keysResult = benchmark(
-			`keys (${size} records)`,
+			`keys() (${size} records)`,
 			() => {
 				Array.from(store.keys());
 			},
@@ -193,7 +193,7 @@ function benchmarkUtilityOperations(dataSizes) {
 
 		// Values operations
 		const valuesResult = benchmark(
-			`values (${size} records)`,
+			`values() (${size} records)`,
 			() => {
 				Array.from(store.values());
 			},
@@ -203,7 +203,7 @@ function benchmarkUtilityOperations(dataSizes) {
 
 		// Entries operations
 		const entriesResult = benchmark(
-			`entries (${size} records)`,
+			`entries() (${size} records)`,
 			() => {
 				Array.from(store.entries());
 			},

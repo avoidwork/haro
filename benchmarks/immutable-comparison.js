@@ -76,7 +76,7 @@ function benchmarkStoreCreation(dataSizes) {
 
 		// Mutable store creation
 		const mutableCreationResult = benchmark(
-			`Store creation MUTABLE (${size} records)`,
+			`store creation mutable (${size} records)`,
 			() => {
 				return haro(testData, { immutable: false, index: ["department", "active", "tags"] });
 			},
@@ -86,7 +86,7 @@ function benchmarkStoreCreation(dataSizes) {
 
 		// Immutable store creation
 		const immutableCreationResult = benchmark(
-			`Store creation IMMUTABLE (${size} records)`,
+			`store creation immutable (${size} records)`,
 			() => {
 				return haro(testData, { immutable: true, index: ["department", "active", "tags"] });
 			},
@@ -133,14 +133,14 @@ function benchmarkCrudOperations(dataSizes) {
 		const immutableStore = haro(testData, { immutable: true, index: ["department", "active"] });
 
 		// GET operations
-		const mutableGetResult = benchmark(`GET operation MUTABLE (${size} records)`, () => {
+		const mutableGetResult = benchmark(`get() operation mutable (${size} records)`, () => {
 			const randomId = Math.floor(Math.random() * size).toString();
 
 			return mutableStore.get(randomId);
 		});
 		results.push(mutableGetResult);
 
-		const immutableGetResult = benchmark(`GET operation IMMUTABLE (${size} records)`, () => {
+		const immutableGetResult = benchmark(`get() operation immutable (${size} records)`, () => {
 			const randomId = Math.floor(Math.random() * size).toString();
 
 			return immutableStore.get(randomId);
@@ -148,14 +148,14 @@ function benchmarkCrudOperations(dataSizes) {
 		results.push(immutableGetResult);
 
 		// SET operations
-		const mutableSetResult = benchmark(`SET operation MUTABLE (${size} records)`, () => {
+		const mutableSetResult = benchmark(`set() operation mutable (${size} records)`, () => {
 			const randomId = Math.floor(Math.random() * size).toString();
 
 			return mutableStore.set(randomId, { ...testData[0], updated: Date.now() });
 		});
 		results.push(mutableSetResult);
 
-		const immutableSetResult = benchmark(`SET operation IMMUTABLE (${size} records)`, () => {
+		const immutableSetResult = benchmark(`set() operation immutable (${size} records)`, () => {
 			const randomId = Math.floor(Math.random() * size).toString();
 
 			return immutableStore.set(randomId, { ...testData[0], updated: Date.now() });
@@ -165,7 +165,7 @@ function benchmarkCrudOperations(dataSizes) {
 		// DELETE operations (using a subset to avoid depleting data)
 		const deleteCount = Math.min(10, size);
 		const mutableDeleteResult = benchmark(
-			`DELETE operation MUTABLE (${deleteCount} deletes)`,
+			`delete() operation mutable (${deleteCount} deletes)`,
 			() => {
 				const randomId = Math.floor(Math.random() * (size - deleteCount)).toString();
 				try {
@@ -180,7 +180,7 @@ function benchmarkCrudOperations(dataSizes) {
 		results.push(mutableDeleteResult);
 
 		const immutableDeleteResult = benchmark(
-			`DELETE operation IMMUTABLE (${deleteCount} deletes)`,
+			`delete() operation immutable (${deleteCount} deletes)`,
 			() => {
 				const randomId = Math.floor(Math.random() * (size - deleteCount)).toString();
 				try {
@@ -220,29 +220,32 @@ function benchmarkQueryOperations(dataSizes) {
 		});
 
 		// FIND operations
-		const mutableFindResult = benchmark(`FIND operation MUTABLE (${size} records)`, () => {
+		const mutableFindResult = benchmark(`find() operation mutable (${size} records)`, () => {
 			return mutableStore.find({ department: "Dept 0" });
 		});
 		results.push(mutableFindResult);
 
-		const immutableFindResult = benchmark(`FIND operation IMMUTABLE (${size} records)`, () => {
+		const immutableFindResult = benchmark(`find() operation immutable (${size} records)`, () => {
 			return immutableStore.find({ department: "Dept 0" });
 		});
 		results.push(immutableFindResult);
 
 		// FILTER operations
-		const mutableFilterResult = benchmark(`FILTER operation MUTABLE (${size} records)`, () => {
+		const mutableFilterResult = benchmark(`filter() operation mutable (${size} records)`, () => {
 			return mutableStore.filter((record) => record.age > 30);
 		});
 		results.push(mutableFilterResult);
 
-		const immutableFilterResult = benchmark(`FILTER operation IMMUTABLE (${size} records)`, () => {
-			return immutableStore.filter((record) => record.age > 30);
-		});
+		const immutableFilterResult = benchmark(
+			`filter() operation immutable (${size} records)`,
+			() => {
+				return immutableStore.filter((record) => record.age > 30);
+			},
+		);
 		results.push(immutableFilterResult);
 
 		// WHERE operations
-		const mutableWhereResult = benchmark(`WHERE operation MUTABLE (${size} records)`, () => {
+		const mutableWhereResult = benchmark(`where() operation mutable (${size} records)`, () => {
 			return mutableStore.where({
 				department: ["Dept 0", "Dept 1"],
 				active: true,
@@ -250,7 +253,7 @@ function benchmarkQueryOperations(dataSizes) {
 		});
 		results.push(mutableWhereResult);
 
-		const immutableWhereResult = benchmark(`WHERE operation IMMUTABLE (${size} records)`, () => {
+		const immutableWhereResult = benchmark(`where() operation immutable (${size} records)`, () => {
 			return immutableStore.where({
 				department: ["Dept 0", "Dept 1"],
 				active: true,
@@ -259,14 +262,17 @@ function benchmarkQueryOperations(dataSizes) {
 		results.push(immutableWhereResult);
 
 		// SEARCH operations
-		const mutableSearchResult = benchmark(`SEARCH operation MUTABLE (${size} records)`, () => {
+		const mutableSearchResult = benchmark(`search() operation mutable (${size} records)`, () => {
 			return mutableStore.search("tag0");
 		});
 		results.push(mutableSearchResult);
 
-		const immutableSearchResult = benchmark(`SEARCH operation IMMUTABLE (${size} records)`, () => {
-			return immutableStore.search("tag0");
-		});
+		const immutableSearchResult = benchmark(
+			`search() operation immutable (${size} records)`,
+			() => {
+				return immutableStore.search("tag0");
+			},
+		);
 		results.push(immutableSearchResult);
 	});
 
@@ -289,7 +295,7 @@ function benchmarkTransformationOperations(dataSizes) {
 		const immutableStore = haro(testData, { immutable: true });
 
 		// MAP operations
-		const mutableMapResult = benchmark(`MAP operation MUTABLE (${size} records)`, () => {
+		const mutableMapResult = benchmark(`map() operation mutable (${size} records)`, () => {
 			return mutableStore.map((record) => ({
 				id: record.id,
 				name: record.name,
@@ -298,7 +304,7 @@ function benchmarkTransformationOperations(dataSizes) {
 		});
 		results.push(mutableMapResult);
 
-		const immutableMapResult = benchmark(`MAP operation IMMUTABLE (${size} records)`, () => {
+		const immutableMapResult = benchmark(`map() operation immutable (${size} records)`, () => {
 			return immutableStore.map((record) => ({
 				id: record.id,
 				name: record.name,
@@ -308,7 +314,7 @@ function benchmarkTransformationOperations(dataSizes) {
 		results.push(immutableMapResult);
 
 		// forEach operations
-		const mutableForEachResult = benchmark(`forEach operation MUTABLE (${size} records)`, () => {
+		const mutableForEachResult = benchmark(`forEach() operation mutable (${size} records)`, () => {
 			let count = 0;
 			mutableStore.forEach(() => {
 				count++;
@@ -319,7 +325,7 @@ function benchmarkTransformationOperations(dataSizes) {
 		results.push(mutableForEachResult);
 
 		const immutableForEachResult = benchmark(
-			`forEach operation IMMUTABLE (${size} records)`,
+			`forEach() operation immutable (${size} records)`,
 			() => {
 				let count = 0;
 				immutableStore.forEach(() => {
@@ -395,7 +401,7 @@ function benchmarkMemoryUsage(dataSizes) {
 		const operationsEnd = performance.now();
 
 		results.push({
-			name: `Memory usage comparison (${size} records)`,
+			name: `memory usage comparison (${size} records)`,
 			iterations: 1,
 			totalTime: operationsEnd - operationsStart,
 			avgTime: 0,
@@ -403,7 +409,7 @@ function benchmarkMemoryUsage(dataSizes) {
 			mutableStoreMemory: (memAfterMutable - memBefore) / 1024 / 1024, // MB
 			immutableStoreMemory: (memAfterImmutable - memAfterMutable) / 1024 / 1024, // MB
 			mutableOpsMemory: (memAfterMutableOps - memAfterMutable) / 1024 / 1024, // MB
-			immutableOpsMemory: (memAfterImmutableOps - memAfterMutableOps) / 1024 / 1024, // MB
+			immutableOpsMemory: (memAfterImmutableOps - memAfterImmutableOps) / 1024 / 1024, // MB
 			totalMutableMemory: (memAfterMutableOps - memBefore) / 1024 / 1024, // MB
 			totalImmutableMemory: (memAfterImmutableOps - memAfterMutable) / 1024 / 1024, // MB
 		});
@@ -459,7 +465,7 @@ function benchmarkDataSafety(dataSizes) {
 		const immutableRecordAfter = immutableStore.get(0);
 
 		results.push({
-			name: `Data safety analysis (${testData.length} records)`,
+			name: `data safety analysis (${testData.length} records)`,
 			iterations: 1,
 			totalTime: mutationEnd - mutationStart,
 			avgTime: 0,

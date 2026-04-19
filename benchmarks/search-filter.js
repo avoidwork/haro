@@ -85,23 +85,23 @@ function benchmarkFindOperations(dataSizes) {
 		});
 
 		// Simple find operations
-		const findDeptResult = benchmark(`FIND by department (${size} records)`, () => {
+		const findDeptResult = benchmark(`find() by department (${size} records)`, () => {
 			store.find({ department: "Engineering" });
 		});
 		results.push(findDeptResult);
 
-		const findActiveResult = benchmark(`FIND by active status (${size} records)`, () => {
+		const findActiveResult = benchmark(`find() by active status (${size} records)`, () => {
 			store.find({ active: true });
 		});
 		results.push(findActiveResult);
 
 		// Composite find operations
-		const findCompositeResult = benchmark(`FIND by department+active (${size} records)`, () => {
+		const findCompositeResult = benchmark(`find() by department+active (${size} records)`, () => {
 			store.find({ department: "Engineering", active: true });
 		});
 		results.push(findCompositeResult);
 
-		const findCityDeptResult = benchmark(`FIND by city+department (${size} records)`, () => {
+		const findCityDeptResult = benchmark(`find() by city+department (${size} records)`, () => {
 			store.find({ city: "New York", department: "Engineering" });
 		});
 		results.push(findCityDeptResult);
@@ -123,18 +123,18 @@ function benchmarkFilterOperations(dataSizes) {
 		const store = haro(testData);
 
 		// Simple filter operations
-		const filterAgeResult = benchmark(`FILTER by age range (${size} records)`, () => {
+		const filterAgeResult = benchmark(`filter() by age range (${size} records)`, () => {
 			store.filter((record) => record.age >= 25 && record.age <= 35);
 		});
 		results.push(filterAgeResult);
 
-		const filterSalaryResult = benchmark(`FILTER by salary range (${size} records)`, () => {
+		const filterSalaryResult = benchmark(`filter() by salary range (${size} records)`, () => {
 			store.filter((record) => record.salary > 75000);
 		});
 		results.push(filterSalaryResult);
 
 		// Complex filter operations
-		const filterComplexResult = benchmark(`FILTER complex condition (${size} records)`, () => {
+		const filterComplexResult = benchmark(`filter() complex condition (${size} records)`, () => {
 			store.filter(
 				(record) =>
 					record.active &&
@@ -146,7 +146,7 @@ function benchmarkFilterOperations(dataSizes) {
 		results.push(filterComplexResult);
 
 		// Array filter operations
-		const filterArrayResult = benchmark(`FILTER by array contains (${size} records)`, () => {
+		const filterArrayResult = benchmark(`filter() by array contains (${size} records)`, () => {
 			store.filter((record) => record.skills.includes("React"));
 		});
 		results.push(filterArrayResult);
@@ -170,19 +170,19 @@ function benchmarkSearchOperations(dataSizes) {
 		});
 
 		// String search operations
-		const searchStringResult = benchmark(`SEARCH by string value (${size} records)`, () => {
+		const searchStringResult = benchmark(`search() by string value (${size} records)`, () => {
 			store.search("Engineering", "department");
 		});
 		results.push(searchStringResult);
 
 		// Regex search operations
-		const searchRegexResult = benchmark(`SEARCH by regex (${size} records)`, () => {
+		const searchRegexResult = benchmark(`search() by regex (${size} records)`, () => {
 			store.search(/^User [0-9]+$/, "name");
 		});
 		results.push(searchRegexResult);
 
 		// Function search operations
-		const searchFunctionResult = benchmark(`SEARCH by function (${size} records)`, () => {
+		const searchFunctionResult = benchmark(`search() by function (${size} records)`, () => {
 			store.search((value, index) => {
 				if (index === "department") {
 					return value.startsWith("Eng");
@@ -194,7 +194,7 @@ function benchmarkSearchOperations(dataSizes) {
 		results.push(searchFunctionResult);
 
 		// Multiple index search
-		const searchMultipleResult = benchmark(`SEARCH multiple indexes (${size} records)`, () => {
+		const searchMultipleResult = benchmark(`search() multiple indexes (${size} records)`, () => {
 			store.search("tag1", ["tags", "skills"]);
 		});
 		results.push(searchMultipleResult);
@@ -229,13 +229,13 @@ function benchmarkWhereOperations(dataSizes) {
 		});
 
 		// Simple where operations
-		const whereDeptResult = benchmark(`WHERE by department (${size} records)`, () => {
+		const whereDeptResult = benchmark(`where() by department (${size} records)`, () => {
 			store.where({ department: "Engineering" });
 		});
 		results.push(whereDeptResult);
 
 		// Array where operations with OR (default)
-		const whereArrayOrResult = benchmark(`WHERE array OR operation (${size} records)`, () => {
+		const whereArrayOrResult = benchmark(`where() array OR operation (${size} records)`, () => {
 			store.where(
 				{
 					skills: ["JavaScript", "Python"],
@@ -246,7 +246,7 @@ function benchmarkWhereOperations(dataSizes) {
 		results.push(whereArrayOrResult);
 
 		// Array where operations with AND
-		const whereArrayAndResult = benchmark(`WHERE array AND operation (${size} records)`, () => {
+		const whereArrayAndResult = benchmark(`where() array AND operation (${size} records)`, () => {
 			store.where(
 				{
 					skills: ["JavaScript", "React"],
@@ -257,20 +257,23 @@ function benchmarkWhereOperations(dataSizes) {
 		results.push(whereArrayAndResult);
 
 		// Multiple array fields with OR
-		const whereMultiArrayOrResult = benchmark(`WHERE multiple arrays OR (${size} records)`, () => {
-			store.where(
-				{
-					skills: ["JavaScript", "Python"],
-					tags: ["tag0", "tag1"],
-				},
-				"||",
-			);
-		});
+		const whereMultiArrayOrResult = benchmark(
+			`where() multiple arrays OR (${size} records)`,
+			() => {
+				store.where(
+					{
+						skills: ["JavaScript", "Python"],
+						tags: ["tag0", "tag1"],
+					},
+					"||",
+				);
+			},
+		);
 		results.push(whereMultiArrayOrResult);
 
 		// Multiple array fields with AND
 		const whereMultiArrayAndResult = benchmark(
-			`WHERE multiple arrays AND (${size} records)`,
+			`where() multiple arrays AND (${size} records)`,
 			() => {
 				store.where(
 					{
@@ -284,7 +287,7 @@ function benchmarkWhereOperations(dataSizes) {
 		results.push(whereMultiArrayAndResult);
 
 		// Regex where operations
-		const whereRegexResult = benchmark(`WHERE with regex (${size} records)`, () => {
+		const whereRegexResult = benchmark(`where() with regex (${size} records)`, () => {
 			store.where({
 				department: /^Eng/,
 			});
@@ -292,7 +295,7 @@ function benchmarkWhereOperations(dataSizes) {
 		results.push(whereRegexResult);
 
 		// Multiple regex patterns
-		const whereMultiRegexResult = benchmark(`WHERE multiple regex (${size} records)`, () => {
+		const whereMultiRegexResult = benchmark(`where() multiple regex (${size} records)`, () => {
 			store.where({
 				department: /^(Engineering|Marketing)$/,
 				city: /^(New|San)/,
@@ -301,18 +304,21 @@ function benchmarkWhereOperations(dataSizes) {
 		results.push(whereMultiRegexResult);
 
 		// Complex where operations with mixed types
-		const whereComplexResult = benchmark(`WHERE complex mixed conditions (${size} records)`, () => {
-			store.where({
-				department: "Engineering",
-				active: true,
-				skills: ["JavaScript"],
-			});
-		});
+		const whereComplexResult = benchmark(
+			`where() complex mixed conditions (${size} records)`,
+			() => {
+				store.where({
+					department: "Engineering",
+					active: true,
+					skills: ["JavaScript"],
+				});
+			},
+		);
 		results.push(whereComplexResult);
 
 		// Very complex where with all predicate types
 		const whereVeryComplexResult = benchmark(
-			`WHERE very complex predicates (${size} records)`,
+			`where() very complex predicates (${size} records)`,
 			() => {
 				store.where(
 					{
@@ -328,7 +334,7 @@ function benchmarkWhereOperations(dataSizes) {
 		results.push(whereVeryComplexResult);
 
 		// Nested field matching (if metadata fields are indexed)
-		const whereNestedResult = benchmark(`WHERE nested field matching (${size} records)`, () => {
+		const whereNestedResult = benchmark(`where() nested field matching (${size} records)`, () => {
 			store.where({
 				department: "Engineering",
 				tags: ["tag0", "tag1"],
@@ -337,25 +343,28 @@ function benchmarkWhereOperations(dataSizes) {
 		results.push(whereNestedResult);
 
 		// Performance comparison: where vs filter for same conditions
-		const whereVsFilterResult = benchmark(`WHERE vs FILTER comparison (${size} records)`, () => {
-			const wherePredicate = { department: "Engineering", active: true };
-			const whereResults = store.where(wherePredicate);
-			const filterResults = store.filter(
-				(record) => record.department === "Engineering" && record.active === true,
-			);
+		const whereVsFilterResult = benchmark(
+			`where() vs filter() comparison (${size} records)`,
+			() => {
+				const wherePredicate = { department: "Engineering", active: true };
+				const whereResults = store.where(wherePredicate);
+				const filterResults = store.filter(
+					(record) => record.department === "Engineering" && record.active === true,
+				);
 
-			return { whereCount: whereResults.length, filterCount: filterResults.length };
-		});
+				return { whereCount: whereResults.length, filterCount: filterResults.length };
+			},
+		);
 		results.push(whereVsFilterResult);
 
 		// Edge case: empty predicate
-		const whereEmptyResult = benchmark(`WHERE empty predicate (${size} records)`, () => {
+		const whereEmptyResult = benchmark(`where() empty predicate (${size} records)`, () => {
 			store.where({});
 		});
 		results.push(whereEmptyResult);
 
 		// Edge case: non-indexed field
-		const whereNonIndexedResult = benchmark(`WHERE non-indexed field (${size} records)`, () => {
+		const whereNonIndexedResult = benchmark(`where() non-indexed field (${size} records)`, () => {
 			store.where({
 				email: "user0@example.com",
 			});
@@ -379,7 +388,7 @@ function benchmarkMapReduceOperations(dataSizes) {
 		const store = haro(testData);
 
 		// Map operations
-		const mapResult = benchmark(`MAP transformation (${size} records)`, () => {
+		const mapResult = benchmark(`map() transformation (${size} records)`, () => {
 			store.map((record) => ({
 				id: record.id,
 				name: record.name,
@@ -389,7 +398,7 @@ function benchmarkMapReduceOperations(dataSizes) {
 		results.push(mapResult);
 
 		// ForEach operations
-		const forEachResult = benchmark(`FOREACH iteration (${size} records)`, () => {
+		const forEachResult = benchmark(`forEach() iteration (${size} records)`, () => {
 			let count = 0; // eslint-disable-line no-unused-vars
 			store.forEach(() => {
 				count++;
@@ -416,19 +425,19 @@ function benchmarkSortOperations(dataSizes) {
 		});
 
 		// Sort operations
-		const sortResult = benchmark(`SORT by age (${size} records)`, () => {
+		const sortResult = benchmark(`sort() by age (${size} records)`, () => {
 			store.sort((a, b) => a.age - b.age);
 		});
 		results.push(sortResult);
 
 		// SortBy operations
-		const sortByResult = benchmark(`SORT BY indexed field (${size} records)`, () => {
+		const sortByResult = benchmark(`sortBy() indexed field (${size} records)`, () => {
 			store.sortBy("age");
 		});
 		results.push(sortByResult);
 
 		// Complex sort operations
-		const complexSortResult = benchmark(`SORT complex comparison (${size} records)`, () => {
+		const complexSortResult = benchmark(`sort() complex comparison (${size} records)`, () => {
 			store.sort((a, b) => {
 				if (a.department !== b.department) {
 					return a.department.localeCompare(b.department);

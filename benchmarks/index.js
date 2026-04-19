@@ -16,23 +16,23 @@ function createBasicOperationsBench(size = 10000) {
 	const store = haro(testData);
 
 	bench
-		.add(`store.set() ${size} records`, () => {
+		.add(`set() ${size} records`, () => {
 			const newStore = haro();
 			for (let i = 0; i < size; i++) {
 				newStore.set(i, testData[i]);
 			}
 		})
-		.add(`store.get() ${size} records`, () => {
+		.add(`get() ${size} records`, () => {
 			for (let i = 0; i < size; i++) {
 				store.get(i);
 			}
 		})
-		.add(`store.has() ${size} keys`, () => {
+		.add(`has() ${size} keys`, () => {
 			for (let i = 0; i < size; i++) {
 				store.has(i);
 			}
 		})
-		.add(`store.delete() ${size} records`, () => {
+		.add(`delete() ${size} records`, () => {
 			const deleteStore = haro(testData);
 			for (let i = 0; i < size; i++) {
 				deleteStore.delete(i);
@@ -67,16 +67,16 @@ function createSearchFilterBench(size = 10000) {
 	});
 
 	bench
-		.add(`FIND by indexed field (${size} records)`, () => {
+		.add(`find() by indexed field (${size} records)`, () => {
 			store.find({ department: "Engineering" });
 		})
-		.add(`WHERE by indexed field (${size} records)`, () => {
+		.add(`where() by indexed field (${size} records)`, () => {
 			store.where({ department: "Engineering" });
 		})
-		.add(`SEARCH in index (${size} records)`, () => {
+		.add(`search() in index (${size} records)`, () => {
 			store.search("Engineering", "department");
 		})
-		.add(`FILTER all records (${size} records)`, () => {
+		.add(`filter() all records (${size} records)`, () => {
 			store.filter((record) => record.active === true);
 		});
 
@@ -103,17 +103,17 @@ function createIndexOperationsBench(size = 10000) {
 	}));
 
 	bench
-		.add(`CREATE indexes (${size} records)`, () => {
+		.add(`haro() with indexes (${size} records)`, () => {
 			const store = haro(testData, {
 				index: ["category", "status", "priority", "region", "userId"],
 			});
 			return store;
 		})
-		.add(`FIND with index (${size} records)`, () => {
+		.add(`find() with index (${size} records)`, () => {
 			const store = haro(testData, { index: ["category"] });
 			store.find({ category: "A" });
 		})
-		.add(`REINDEX single field (${size} records)`, () => {
+		.add(`reindex() single field (${size} records)`, () => {
 			const store = haro(testData, { index: ["category"] });
 			store.reindex("status");
 		});
@@ -171,16 +171,16 @@ function createPaginationBench(size = 10000) {
 	const store = haro(testData);
 
 	bench
-		.add(`LIMIT 10 (${size} records)`, () => {
+		.add(`limit() 10 (${size} records)`, () => {
 			store.limit(0, 10);
 		})
-		.add(`LIMIT 50 (${size} records)`, () => {
+		.add(`limit() 50 (${size} records)`, () => {
 			store.limit(0, 50);
 		})
-		.add(`LIMIT 100 (${size} records)`, () => {
+		.add(`limit() 100 (${size} records)`, () => {
 			store.limit(0, 100);
 		})
-		.add(`LIMIT with offset (${size} records)`, () => {
+		.add(`limit() with offset (${size} records)`, () => {
 			store.limit(500, 50);
 		});
 
@@ -204,13 +204,13 @@ function createPersistenceBench(size = 5000) {
 	const store = haro(testData, { index: ["department", "location", "active"] });
 
 	bench
-		.add(`DUMP records (${size} records)`, () => {
+		.add(`dump() records (${size} records)`, () => {
 			store.dump("records");
 		})
-		.add(`DUMP indexes (${size} records)`, () => {
+		.add(`dump() indexes (${size} records)`, () => {
 			store.dump("indexes");
 		})
-		.add(`OVERRIDE records (${size} records)`, () => {
+		.add(`override() records (${size} records)`, () => {
 			const dump = store.dump("records");
 			const newStore = haro();
 			newStore.override(dump, "records");

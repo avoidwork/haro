@@ -93,13 +93,13 @@ function benchmarkDumpOperations(dataSizes) {
 		});
 
 		// Dump records
-		const dumpRecordsResult = benchmark(`DUMP records (${size} records)`, () => {
+		const dumpRecordsResult = benchmark(`dump() records (${size} records)`, () => {
 			return store.dump("records");
 		});
 		results.push(dumpRecordsResult);
 
 		// Dump indexes
-		const dumpIndexesResult = benchmark(`DUMP indexes (${size} records)`, () => {
+		const dumpIndexesResult = benchmark(`dump() indexes (${size} records)`, () => {
 			return store.dump("indexes");
 		});
 		results.push(dumpIndexesResult);
@@ -143,7 +143,7 @@ function benchmarkOverrideOperations(dataSizes) {
 		const indexesDump = sourceStore.dump("indexes");
 
 		// Override with records
-		const overrideRecordsResult = benchmark(`OVERRIDE records (${size} records)`, () => {
+		const overrideRecordsResult = benchmark(`override() records (${size} records)`, () => {
 			const targetStore = haro();
 			targetStore.override(recordsDump, "records");
 
@@ -152,7 +152,7 @@ function benchmarkOverrideOperations(dataSizes) {
 		results.push(overrideRecordsResult);
 
 		// Override with indexes
-		const overrideIndexesResult = benchmark(`OVERRIDE indexes (${size} records)`, () => {
+		const overrideIndexesResult = benchmark(`override() indexes (${size} records)`, () => {
 			const targetStore = haro(testData);
 			targetStore.override(indexesDump, "indexes");
 
@@ -161,7 +161,7 @@ function benchmarkOverrideOperations(dataSizes) {
 		results.push(overrideIndexesResult);
 
 		// Complete restoration (records + indexes)
-		const completeRestoreResult = benchmark(`OVERRIDE complete restore (${size} records)`, () => {
+		const completeRestoreResult = benchmark(`override() complete restore (${size} records)`, () => {
 			const targetStore = haro();
 			targetStore.override(recordsDump, "records");
 			targetStore.override(indexesDump, "indexes");
@@ -213,7 +213,7 @@ function benchmarkRoundTripPersistence(dataSizes) {
 		}
 
 		// Round-trip with records only
-		const roundTripRecordsResult = benchmark(`Round-trip records only (${size} records)`, () => {
+		const roundTripRecordsResult = benchmark(`round-trip records only (${size} records)`, () => {
 			// Dump
 			const dump = sourceStore.dump("records");
 			// Restore
@@ -225,7 +225,7 @@ function benchmarkRoundTripPersistence(dataSizes) {
 		results.push(roundTripRecordsResult);
 
 		// Round-trip with complete state (records + indexes)
-		const roundTripCompleteResult = benchmark(`Round-trip complete state (${size} records)`, () => {
+		const roundTripCompleteResult = benchmark(`round-trip complete state (${size} records)`, () => {
 			// Dump both
 			const recordsDump = sourceStore.dump("records");
 			const indexesDump = sourceStore.dump("indexes");
@@ -240,7 +240,7 @@ function benchmarkRoundTripPersistence(dataSizes) {
 
 		// Test with different store configurations
 		const roundTripConfigResult = benchmark(
-			`Round-trip with config restore (${size} records)`,
+			`round-trip with config restore (${size} records)`,
 			() => {
 				const recordsDump = sourceStore.dump("records");
 				const targetStore = haro(null, {
@@ -383,14 +383,14 @@ function benchmarkComplexObjectPersistence(dataSizes) {
 		});
 
 		// Dump complex objects
-		const dumpComplexResult = benchmark(`DUMP complex objects (${size} records)`, () => {
+		const dumpComplexResult = benchmark(`dump() complex objects (${size} records)`, () => {
 			return store.dump("records");
 		});
 		results.push(dumpComplexResult);
 
 		// Override complex objects
 		const dump = store.dump("records");
-		const overrideComplexResult = benchmark(`OVERRIDE complex objects (${size} records)`, () => {
+		const overrideComplexResult = benchmark(`override() complex objects (${size} records)`, () => {
 			const targetStore = haro();
 			targetStore.override(dump, "records");
 

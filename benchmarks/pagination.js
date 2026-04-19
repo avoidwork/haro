@@ -71,26 +71,29 @@ function benchmarkBasicLimitOperations(dataSizes) {
 		const store = haro(testData);
 
 		// Small page sizes
-		const smallPageResult = benchmark(`LIMIT small page (10 items from ${size} records)`, () => {
+		const smallPageResult = benchmark(`limit() small page (10 items from ${size} records)`, () => {
 			store.limit(0, 10);
 		});
 		results.push(smallPageResult);
 
 		// Medium page sizes
-		const mediumPageResult = benchmark(`LIMIT medium page (50 items from ${size} records)`, () => {
-			store.limit(0, 50);
-		});
+		const mediumPageResult = benchmark(
+			`limit() medium page (50 items from ${size} records)`,
+			() => {
+				store.limit(0, 50);
+			},
+		);
 		results.push(mediumPageResult);
 
 		// Large page sizes
-		const largePageResult = benchmark(`LIMIT large page (100 items from ${size} records)`, () => {
+		const largePageResult = benchmark(`limit() large page (100 items from ${size} records)`, () => {
 			store.limit(0, 100);
 		});
 		results.push(largePageResult);
 
 		// Very large page sizes
 		const veryLargePageResult = benchmark(
-			`LIMIT very large page (1000 items from ${size} records)`,
+			`limit() very large page (1000 items from ${size} records)`,
 			() => {
 				store.limit(0, Math.min(1000, size));
 			},
@@ -115,7 +118,7 @@ function benchmarkOffsetPagination(dataSizes) {
 		const pageSize = 20;
 
 		// First page (offset 0)
-		const firstPageResult = benchmark(`LIMIT first page (offset 0, ${pageSize} items)`, () => {
+		const firstPageResult = benchmark(`limit() first page (offset 0, ${pageSize} items)`, () => {
 			store.limit(0, pageSize);
 		});
 		results.push(firstPageResult);
@@ -123,7 +126,7 @@ function benchmarkOffsetPagination(dataSizes) {
 		// Middle page
 		const middleOffset = Math.floor(size / 2);
 		const middlePageResult = benchmark(
-			`LIMIT middle page (offset ${middleOffset}, ${pageSize} items)`,
+			`limit() middle page (offset ${middleOffset}, ${pageSize} items)`,
 			() => {
 				store.limit(middleOffset, pageSize);
 			},
@@ -133,7 +136,7 @@ function benchmarkOffsetPagination(dataSizes) {
 		// Near end page
 		const nearEndOffset = Math.max(0, size - pageSize * 2);
 		const nearEndPageResult = benchmark(
-			`LIMIT near end page (offset ${nearEndOffset}, ${pageSize} items)`,
+			`limit() near end page (offset ${nearEndOffset}, ${pageSize} items)`,
 			() => {
 				store.limit(nearEndOffset, pageSize);
 			},
@@ -143,7 +146,7 @@ function benchmarkOffsetPagination(dataSizes) {
 		// Last page (potentially partial)
 		const lastOffset = Math.max(0, size - pageSize);
 		const lastPageResult = benchmark(
-			`LIMIT last page (offset ${lastOffset}, ${pageSize} items)`,
+			`limit() last page (offset ${lastOffset}, ${pageSize} items)`,
 			() => {
 				store.limit(lastOffset, pageSize);
 			},
@@ -152,7 +155,7 @@ function benchmarkOffsetPagination(dataSizes) {
 
 		// Beyond data bounds (should return empty)
 		const beyondBoundsResult = benchmark(
-			`LIMIT beyond bounds (offset ${size + 100}, ${pageSize} items)`,
+			`limit() beyond bounds (offset ${size + 100}, ${pageSize} items)`,
 			() => {
 				store.limit(size + 100, pageSize);
 			},
@@ -179,7 +182,7 @@ function benchmarkPageSizeOptimization(dataSizes) {
 		pageSizes.forEach((pageSize) => {
 			if (pageSize <= size) {
 				const pageSizeResult = benchmark(
-					`LIMIT page size ${pageSize} (${size} total records)`,
+					`limit() page size ${pageSize} (${size} total records)`,
 					() => {
 						store.limit(0, pageSize);
 					},
@@ -206,7 +209,7 @@ function benchmarkPaginationModes(dataSizes) {
 		// Test with immutable store
 		const immutableStore = haro(testData, { immutable: true });
 		const immutableResult = benchmark(
-			`LIMIT immutable mode (50 items from ${size} records)`,
+			`limit() immutable mode (50 items from ${size} records)`,
 			() => {
 				immutableStore.limit(0, 50);
 			},
@@ -215,20 +218,20 @@ function benchmarkPaginationModes(dataSizes) {
 
 		// Test with mutable store
 		const mutableStore = haro(testData, { immutable: false });
-		const mutableResult = benchmark(`LIMIT mutable mode (50 items from ${size} records)`, () => {
+		const mutableResult = benchmark(`limit() mutable mode (50 items from ${size} records)`, () => {
 			mutableStore.limit(0, 50);
 		});
 		results.push(mutableResult);
 
 		// Test with raw data
-		const rawResult = benchmark(`LIMIT raw data (50 items from ${size} records)`, () => {
+		const rawResult = benchmark(`limit() raw data (50 items from ${size} records)`, () => {
 			mutableStore.limit(0, 50, true);
 		});
 		results.push(rawResult);
 
 		// Test with processed data
 		const processedResult = benchmark(
-			`LIMIT processed data (50 items from ${size} records)`,
+			`limit() processed data (50 items from ${size} records)`,
 			() => {
 				mutableStore.limit(0, 50, false);
 			},
@@ -256,7 +259,7 @@ function benchmarkSequentialPagination(dataSizes) {
 		// Simulate browsing through first 10 pages
 		const pagesToTest = Math.min(10, totalPages);
 		const sequentialResult = benchmark(
-			`LIMIT sequential pagination (${pagesToTest} pages, ${pageSize} items each)`,
+			`limit() sequential pagination (${pagesToTest} pages, ${pageSize} items each)`,
 			() => {
 				for (let page = 0; page < pagesToTest; page++) {
 					const offset = page * pageSize;
@@ -269,7 +272,7 @@ function benchmarkSequentialPagination(dataSizes) {
 
 		// Simulate random page access pattern
 		const randomPagesResult = benchmark(
-			`LIMIT random page access (10 random pages, ${pageSize} items each)`,
+			`limit() random page access (10 random pages, ${pageSize} items each)`,
 			() => {
 				for (let i = 0; i < 10; i++) {
 					const randomPage = Math.floor(Math.random() * totalPages);
@@ -300,7 +303,7 @@ function benchmarkPaginationWithOperations(dataSizes) {
 		});
 
 		// Pagination after filtering
-		const paginateAfterFilterResult = benchmark(`LIMIT after filter (${size} records)`, () => {
+		const paginateAfterFilterResult = benchmark(`limit() after filter (${size} records)`, () => {
 			const filtered = store.filter((record) => record.priority > 3);
 			// Simulate pagination on filtered results by taking first 20
 
@@ -309,7 +312,7 @@ function benchmarkPaginationWithOperations(dataSizes) {
 		results.push(paginateAfterFilterResult);
 
 		// Pagination after find operation
-		const paginateAfterFindResult = benchmark(`LIMIT after find (${size} records)`, () => {
+		const paginateAfterFindResult = benchmark(`limit() after find (${size} records)`, () => {
 			const found = store.find({ category: "A" });
 			// Simulate pagination on found results by taking first 20
 
@@ -319,7 +322,7 @@ function benchmarkPaginationWithOperations(dataSizes) {
 
 		// Combined operations: find + sort + paginate simulation
 		const combinedOperationsResult = benchmark(
-			`Combined find + sort + limit (${size} records)`,
+			`Combined find + sort + limit() (${size} records)`,
 			() => {
 				const found = store.find({ status: "active" });
 				const sorted = found.sort((a, b) => b.score - a.score);

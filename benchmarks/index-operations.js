@@ -79,7 +79,7 @@ function benchmarkSingleIndexOperations(dataSizes) {
 
 		// Initial index creation during construction
 		const initialIndexResult = benchmark(
-			`CREATE initial indexes (${size} records)`,
+			`haro() with initial indexes (${size} records)`,
 			() => {
 				const store = haro(testData, {
 					index: ["category", "status", "priority", "region", "userId"],
@@ -94,7 +94,7 @@ function benchmarkSingleIndexOperations(dataSizes) {
 		// Reindex single field
 		const store = haro(testData, { index: ["category"] });
 		const reindexSingleResult = benchmark(
-			`REINDEX single field (${size} records)`,
+			`reindex() single field (${size} records)`,
 			() => {
 				store.reindex("status");
 			},
@@ -104,7 +104,7 @@ function benchmarkSingleIndexOperations(dataSizes) {
 
 		// Reindex all fields
 		const reindexAllResult = benchmark(
-			`REINDEX all fields (${size} records)`,
+			`reindex() all fields (${size} records)`,
 			() => {
 				store.reindex();
 			},
@@ -129,7 +129,7 @@ function benchmarkCompositeIndexOperations(dataSizes) {
 
 		// Create composite indexes
 		const compositeIndexResult = benchmark(
-			`CREATE composite indexes (${size} records)`,
+			`haro() with composite indexes (${size} records)`,
 			() => {
 				const store = haro(testData, {
 					index: [
@@ -152,14 +152,17 @@ function benchmarkCompositeIndexOperations(dataSizes) {
 			index: ["category|status", "region|priority", "userId|projectId"],
 		});
 
-		const queryCompositeResult = benchmark(`QUERY composite index (${size} records)`, () => {
+		const queryCompositeResult = benchmark(`find() composite index (${size} records)`, () => {
 			store.find({ category: "A", status: "active" });
 		});
 		results.push(queryCompositeResult);
 
-		const queryTripleCompositeResult = benchmark(`QUERY triple composite (${size} records)`, () => {
-			store.find({ category: "A", status: "active", priority: "high" });
-		});
+		const queryTripleCompositeResult = benchmark(
+			`find() triple composite (${size} records)`,
+			() => {
+				store.find({ category: "A", status: "active", priority: "high" });
+			},
+		);
 		results.push(queryTripleCompositeResult);
 	});
 
@@ -179,7 +182,7 @@ function benchmarkArrayIndexOperations(dataSizes) {
 
 		// Create array field indexes
 		const arrayIndexResult = benchmark(
-			`CREATE array indexes (${size} records)`,
+			`haro() with array indexes (${size} records)`,
 			() => {
 				const store = haro(testData, {
 					index: ["tags", "tags|category", "tags|status"],
@@ -193,13 +196,13 @@ function benchmarkArrayIndexOperations(dataSizes) {
 
 		// Query array indexes
 		const store = haro(testData, { index: ["tags"] });
-		const queryArrayResult = benchmark(`QUERY array index (${size} records)`, () => {
+		const queryArrayResult = benchmark(`find() array index (${size} records)`, () => {
 			store.find({ tags: "tag1" });
 		});
 		results.push(queryArrayResult);
 
 		// Search array indexes
-		const searchArrayResult = benchmark(`SEARCH array index (${size} records)`, () => {
+		const searchArrayResult = benchmark(`search() array index (${size} records)`, () => {
 			store.search("tag1", "tags");
 		});
 		results.push(searchArrayResult);
@@ -221,7 +224,7 @@ function benchmarkNestedIndexOperations(dataSizes) {
 
 		// Create nested field indexes (simulated with dot notation)
 		const nestedIndexResult = benchmark(
-			`CREATE nested indexes (${size} records)`,
+			`haro() with nested indexes (${size} records)`,
 			() => {
 				const store = haro(testData, {
 					index: ["metadata.level", "metadata.department", "flags.isPublic"],
@@ -251,9 +254,9 @@ function benchmarkIndexModificationOperations(dataSizes) {
 			index: ["category", "status", "priority", "category|status", "userId"],
 		});
 
-		// Benchmark SET operations with existing indexes
+		// Benchmark set operations with existing indexes
 		const setWithIndexResult = benchmark(
-			`SET with indexes (${size} records)`,
+			`set() with indexes (${size} records)`,
 			() => {
 				const randomId = Math.floor(Math.random() * size);
 				store.set(randomId, {
@@ -267,9 +270,9 @@ function benchmarkIndexModificationOperations(dataSizes) {
 		);
 		results.push(setWithIndexResult);
 
-		// Benchmark DELETE operations with existing indexes
+		// Benchmark delete operations with existing indexes
 		const deleteWithIndexResult = benchmark(
-			`DELETE with indexes (${size} records)`,
+			`delete() with indexes (${size} records)`,
 			() => {
 				const keys = Array.from(store.keys());
 				if (keys.length > 0) {
@@ -281,9 +284,9 @@ function benchmarkIndexModificationOperations(dataSizes) {
 		);
 		results.push(deleteWithIndexResult);
 
-		// Benchmark BATCH operations with existing indexes
+		// Benchmark batch operations with existing indexes
 		const batchWithIndexResult = benchmark(
-			`BATCH with indexes (${size} records)`,
+			`batch() with indexes (${size} records)`,
 			() => {
 				const batchData = testData.slice(0, 10).map((item) => ({
 					...item,
@@ -324,7 +327,7 @@ function benchmarkIndexMemoryOperations(dataSizes) {
 
 		// Benchmark index dump operations
 		const dumpIndexResult = benchmark(
-			`DUMP indexes (${size} records)`,
+			`dump() indexes (${size} records)`,
 			() => {
 				store.dump("indexes");
 			},
@@ -335,7 +338,7 @@ function benchmarkIndexMemoryOperations(dataSizes) {
 		// Benchmark index override operations
 		const indexData = store.dump("indexes");
 		const overrideIndexResult = benchmark(
-			`OVERRIDE indexes (${size} records)`,
+			`override() indexes (${size} records)`,
 			() => {
 				const newStore = haro();
 				newStore.override(indexData, "indexes");
@@ -346,7 +349,7 @@ function benchmarkIndexMemoryOperations(dataSizes) {
 
 		// Benchmark index size measurement
 		const indexSizeResult = benchmark(
-			`INDEX size check (${size} records)`,
+			`indexes size check (${size} records)`,
 			() => {
 				const indexes = store.indexes;
 				let totalSize = 0;
@@ -380,7 +383,7 @@ function benchmarkIndexComparison(dataSizes) {
 		// Store without indexes
 		const storeNoIndex = haro(testData);
 		const filterNoIndexResult = benchmark(
-			`FILTER no index (${size} records)`,
+			`filter() no index (${size} records)`,
 			() => {
 				storeNoIndex.filter((record) => record.category === "A");
 			},
@@ -391,7 +394,7 @@ function benchmarkIndexComparison(dataSizes) {
 		// Store with indexes
 		const storeWithIndex = haro(testData, { index: ["category"] });
 		const findWithIndexResult = benchmark(
-			`FIND with index (${size} records)`,
+			`find() with index (${size} records)`,
 			() => {
 				storeWithIndex.find({ category: "A" });
 			},
@@ -401,7 +404,7 @@ function benchmarkIndexComparison(dataSizes) {
 
 		// Complex query without indexes
 		const complexFilterResult = benchmark(
-			`COMPLEX filter no index (${size} records)`,
+			`complex filter() no index (${size} records)`,
 			() => {
 				storeNoIndex.filter(
 					(record) =>
@@ -417,7 +420,7 @@ function benchmarkIndexComparison(dataSizes) {
 			index: ["category", "status", "priority", "category|status|priority"],
 		});
 		const complexFindResult = benchmark(
-			`COMPLEX find with index (${size} records)`,
+			`complex find() with index (${size} records)`,
 			() => {
 				storeComplexIndex.find({
 					category: "A",
