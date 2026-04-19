@@ -325,7 +325,6 @@ store.limit(0, 10);
 Inserts or updates multiple records.
 
 **Parameters:**
-
 - `records` (Array<Object>): Records to insert or update
 
 **Returns:** Array<Object> - Stored records
