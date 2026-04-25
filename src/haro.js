@@ -4,6 +4,7 @@ import {
 	CACHE_SIZE_DEFAULT,
 	INT_0,
 	INT_2,
+	INT_256,
 	PROP_DELIMITER,
 	PROP_ID,
 	PROP_IMMUTABLE,
@@ -17,8 +18,6 @@ import {
 	STRING_COMMA,
 	STRING_CONSTRUCTOR,
 	STRING_DOT,
-	STRING_DOUBLE_AND,
-	STRING_DOUBLE_PIPE,
 	STRING_EMPTY,
 	STRING_ERROR_BATCH_DELETEMANY,
 	STRING_ERROR_BATCH_SETMANY,
@@ -43,6 +42,7 @@ import {
 	STRING_NUMBER,
 	STRING_OBJECT,
 	STRING_PIPE,
+	STRING_DOUBLE_PIPE,
 	STRING_PROTOTYPE,
 	STRING_PROTO,
 	STRING_RECORD_NOT_FOUND,
@@ -52,6 +52,7 @@ import {
 	STRING_STRING,
 	STRING_UNDERSCORE,
 } from "./constants.js";
+import { PredicateStrategy } from "./query-strategy.js";
 
 /**
  * Haro is an immutable DataStore with indexing, versioning, and batch operations.
@@ -373,6 +374,21 @@ export class Haro {
 	}
 
 	/**
+	 * Extracts index values for a field from a source object.
+	 * Handles both composite indexes and scalar/array fields.
+	 * @param {string} field - Field name or composite index path
+	 * @param {Object} source - Source object
+	 * @returns {Array} Array of index values
+	 */
+	#getIndexValues(field, source) {
+		if (field.includes(this.#delimiter)) {
+			return this.#getIndexKeysFrom(field, source, (f, s) => this.#getNestedValue(s, f));
+		}
+		const val = this.#getNestedValue(source, field);
+		return Array.isArray(val) ? val : [val];
+	}
+
+	/**
 	 * Removes a record from all indexes.
 	 * @param {string} key - Record key
 	 * @param {Object} data - Record data
@@ -382,11 +398,7 @@ export class Haro {
 		this.#index.forEach((i) => {
 			const idx = this.#indexes.get(i);
 			if (!idx) return;
-			const values = i.includes(this.#delimiter)
-				? this.#getIndexKeysFrom(i, data, (f, s) => this.#getNestedValue(s, f))
-				: Array.isArray(this.#getNestedValue(data, i))
-					? this.#getNestedValue(data, i)
-					: [this.#getNestedValue(data, i)];
+			const values = this.#getIndexValues(i, data);
 			const len = values.length;
 			for (let j = 0; j < len; j++) {
 				const value = values[j];
@@ -625,9 +637,9 @@ export class Haro {
 	 * @param {boolean} [override=false] - Override arrays
 	 * @returns {*} Merged result
 	 */
-	#merge(a, b, override = false) {
+	#merge(a, b) {
 		if (Array.isArray(a) && Array.isArray(b)) {
-			a = override ? b : a.concat(b);
+			a = a.concat(b);
 		} else if (
 			typeof a === STRING_OBJECT &&
 			a !== null &&
@@ -641,7 +653,7 @@ export class Haro {
 				if (key === STRING_PROTO || key === STRING_CONSTRUCTOR || key === STRING_PROTOTYPE) {
 					continue;
 				}
-				a[key] = this.#merge(a[key], b[key], override);
+				a[key] = this.#merge(a[key], b[key]);
 			}
 		} else {
 			a = b;
@@ -729,6 +741,9 @@ export class Haro {
 		const result = new Set();
 		const fn = typeof value === STRING_FUNCTION;
 		const rgex = value && typeof value.test === STRING_FUNCTION;
+		if (rgex && value.source.length > INT_256) {
+			throw new Error(STRING_ERROR_SEARCH_VALUE);
+		}
 		const indices = index ? (Array.isArray(index) ? index : [index]) : this.#index;
 		const indicesLen = indices.length;
 
@@ -783,7 +798,11 @@ export class Haro {
 		if (key === null) {
 			key = data[this.#key] ?? uuid();
 		}
-		let x = { ...data, [this.#key]: key };
+		const pollutionProps = new Set([STRING_PROTO, STRING_CONSTRUCTOR, STRING_PROTOTYPE]);
+		const safeData = Object.fromEntries(
+			Object.entries(data).filter(([k]) => !pollutionProps.has(k)),
+		);
+		let x = { ...safeData, [this.#key]: key };
 		if (!this.#data.has(key)) {
 			if (this.#versioning && !this.#inBatch) {
 				this.#versions.set(key, new Set());
@@ -829,11 +848,7 @@ export class Haro {
 				idx = new Map();
 				this.#indexes.set(field, idx);
 			}
-			const values = field.includes(this.#delimiter)
-				? this.#getIndexKeysFrom(field, data, (f, s) => this.#getNestedValue(s, f))
-				: Array.isArray(this.#getNestedValue(data, field))
-					? this.#getNestedValue(data, field)
-					: [this.#getNestedValue(data, field)];
+			const values = this.#getIndexValues(field, data);
 			const valuesLen = values.length;
 			for (let j = 0; j < valuesLen; j++) {
 				const value = values[j];
@@ -854,17 +869,14 @@ export class Haro {
 	 * @example
 	 * store.sort((a, b) => a.age - b.age);
 	 */
-	sort(fn, frozen = false) {
+	sort(fn) {
 		if (typeof fn !== STRING_FUNCTION) {
 			throw new Error(STRING_ERROR_SORT_FN_TYPE);
 		}
-		const dataSize = this.#data.size;
-		let result = this.limit(INT_0, dataSize).sort(fn);
-		if (frozen) {
-			result = Object.freeze(result);
-		}
-
-		return result;
+		const result = Array.from(this.#data.values())
+			.map((v) => (this.#immutable ? this.#clone(v) : v))
+			.sort(fn);
+		return this.#freezeResult(result);
 	}
 
 	/**
@@ -942,48 +954,6 @@ export class Haro {
 	}
 
 	/**
-	 * Matches a record against a predicate.
-	 * @param {Object} record - Record to test
-	 * @param {Object} predicate - Predicate object
-	 * @param {string} op - Operator: '||' or '&&'
-	 * @returns {boolean} True if matches
-	 */
-	#matchesPredicate(record, predicate, op) {
-		const keys = Object.keys(predicate);
-
-		return keys.every((key) => {
-			const pred = predicate[key];
-			// Use nested value extraction for dot notation paths
-			const val = this.#getNestedValue(record, key);
-			if (Array.isArray(pred)) {
-				if (Array.isArray(val)) {
-					return op === STRING_DOUBLE_AND
-						? pred.every((p) => val.includes(p))
-						: pred.some((p) => val.includes(p));
-				}
-				return op === STRING_DOUBLE_AND
-					? pred.every((p) => val === p)
-					: pred.some((p) => val === p);
-			}
-			if (Array.isArray(val)) {
-				return val.some((v) => {
-					if (pred instanceof RegExp) {
-						return pred.test(v);
-					}
-					if (v instanceof RegExp) {
-						return v.test(pred);
-					}
-					return v === pred;
-				});
-			}
-			if (pred instanceof RegExp) {
-				return pred.test(val);
-			}
-			return val === pred;
-		});
-	}
-
-	/**
 	 * Filters records with predicate logic supporting AND/OR on arrays.
 	 * @param {Object} [predicate={}] - Field-value pairs
 	 * @param {string} [op=STRING_DOUBLE_PIPE] - Operator: '||' (OR) or '&&' (AND)
@@ -1014,7 +984,10 @@ export class Haro {
 			if (this.#warnOnFullScan) {
 				console.warn("where(): performing full table scan - consider adding an index");
 			}
-			return this.filter((a) => this.#matchesPredicate(a, predicate, op));
+			const strategy = PredicateStrategy.of(op);
+			return this.filter((a) =>
+				strategy.matches(a, predicate, (r, k) => this.#getNestedValue(r, k)),
+			);
 		}
 
 		// Try to use indexes for better performance
@@ -1069,10 +1042,11 @@ export class Haro {
 				}
 			}
 			// Filter candidates with full predicate logic
+			const strategy = PredicateStrategy.of(op);
 			const results = [];
 			for (const key of candidateKeys) {
 				const record = this.get(key);
-				if (this.#matchesPredicate(record, predicate, op)) {
+				if (strategy.matches(record, predicate, (r, k) => this.#getNestedValue(r, k))) {
 					results.push(record);
 				}
 			}
@@ -1080,6 +1054,10 @@ export class Haro {
 			this.#toCache(cacheKey, results);
 			return this.#freezeResult(results);
 		}
+
+		// Indexed keys matched but no candidates found - return empty array
+		this.#toCache(cacheKey, []);
+		return this.#freezeResult([]);
 	}
 }
 

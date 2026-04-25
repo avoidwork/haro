@@ -91,8 +91,12 @@ describe("Utility Methods", () => {
 			assert.strictEqual(results[2].name, "Charlie");
 		});
 
-		it("should return frozen results when frozen=true", () => {
-			const results = store.sort((a, b) => a.age - b.age, true);
+		it("should return frozen results when immutable=true", () => {
+			const immutableStore = new Haro({ immutable: true });
+			immutableStore.set("user1", { id: "user1", name: "Charlie", age: 30 });
+			immutableStore.set("user2", { id: "user2", name: "Alice", age: 25 });
+			immutableStore.set("user3", { id: "user3", name: "Bob", age: 35 });
+			const results = immutableStore.sort((a, b) => a.age - b.age);
 			assert.strictEqual(Object.isFrozen(results), true);
 		});
 	});

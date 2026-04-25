@@ -29,7 +29,9 @@ export const STRING_RECORD_NOT_FOUND = "Record not found";
 
 // Integer constants
 export const INT_0 = 0;
+export const INT_1 = 1;
 export const INT_2 = 2;
+export const INT_256 = 256;
 
 // Number constants
 export const CACHE_SIZE_DEFAULT = 1000;
