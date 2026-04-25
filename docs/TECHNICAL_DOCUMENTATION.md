@@ -204,13 +204,50 @@ Haro uses private helper methods to centralize cross-cutting concerns. These are
 - `#freezeResult(result)` - Freezes individual values or arrays when immutable mode is enabled. Replaces inline `Object.freeze()` throughout all return paths in `get()`, `find()`, `filter()`, `limit()`, `map()`, `toArray()`, `sort()`, `sortBy()`, `search()`, and `where()`.
 - `#fromCache(cached)` - Returns a cached result, cloning when mutable or freezing when immutable. Used by `search()` and `where()` for cache read.
 - `#toCache(cacheKey, records)` - Stores results in cache when enabled. Used by `search()` and `where()` for cache write.
-- `# getIndexKeysFrom(arg, source, getValueFn)` - Generates composite index keys using a value getter callback. Consolidates the former `#getIndexKeys` and `#getIndexKeysForWhere` methods. Used by `#setIndex()`, `#deleteIndex()`, and `find()`.
+- `#getIndexKeysFrom(arg, source, getValueFn)` - Generates composite index keys using a value getter callback. Consolidates the former `#getIndexKeys` and `#getIndexKeysForWhere` methods. Used by `#setIndex()`, `#deleteIndex()`, and `find()`.
+- `#getIndexValues(field, source)` - Extracts index values for a field from a source object, handling both composite indexes and scalar/array fields. Centralizes the deduplicated logic formerly in `#setIndex()` and `#deleteIndex()`.
 - `#getNestedValue(obj, path)` - Retrieves nested values using dot notation (e.g., `user.profile.city`). Used by indexing, querying, and predicate matching.
 - `#sortKeys(a, b)` - Type-aware comparator: strings use `localeCompare`, numbers use subtraction, mixed types coerced to string. Used by `find()`, `sortBy()`, and index key generation.
-- `#merge(a, b, override)` - Deep merges values, skipping prototype pollution keys (`__proto__`, `constructor`, `prototype`). Used internally by `set()`.
+- `#merge(a, b)` - Deep merges values, skipping prototype pollution keys (`__proto__`, `constructor`, `prototype`). Used internally by `set()`. The `override` parameter has been removed.
 - `#invalidateCache()` - Clears cache if enabled and not in batch mode (`#inBatch`). Called by write operations and lazy re-creation after `clear()`.
 - `#getCacheKey(domain, ...args)` - Generates SHA-256 hash cache key from arguments for `search()` and `where()`.
 - `#clone(arg)` - Deep clones values via `structuredClone` or JSON fallback. Used by `forEach()` to ensure non-mutable callback data and version snapshots.
+
+### Query Strategy
+
+Haro delegates predicate matching to an extensible Strategy Pattern implemented in `src/query-strategy.js`. The former `#matchesPredicate` method was refactored into separate classes following the Single Responsibility Principle:
+
+```
+┌──────────────────────────┐
+│   PredicateStrategy      │
+│   - of(op) factory       │
+│   - matches() method     │
+└──────────┬───────────────┘
+           │ delegates to
+           ▼
+┌──────────────────────────┐     ┌─────────────────────┐
+│ ValueMatcher             │     │ Strategy Modes      │
+│ - match(val, pred)       │     │ OR (||) = some()     │
+│ Handles:                 │     │ AND (&&) = every()   │
+│  • string/num equality    │     └─────────────────────┘
+│  • RegExp (either dir.)  │
+└──────────────────────────┘
+```
+
+**Classes:**
+- `ValueMatcher` - Low-level value comparison. Handles string/number equality and RegExp matching in both directions (`pred.test(val)` and `val.test(pred)`).
+- `PredicateStrategy` - Composite strategy with `AND`/`OR` logic. Factory method `of(op)` creates strategy instances. The `matches(record, predicate, getNestedValue)` method checks if all predicate fields match the record.
+
+**Algorithm:**
+For a predicate object `{field1: val1, field2: val2}`:
+$$\text{match} = \bigwedge_{f} \text{fieldMatch}(\text{record}, f, \text{predicate}[f])$$
+
+Where `fieldMatch` uses `AND` or `OR` logic depending on the strategy mode when the predicate value is an array.
+
+**Architecture benefit:** Predicating logic is now a standalone module, making it:
+- Testable in isolation
+- Extensible (new predicate types can be added without modifying Haro)
+- Decoupled from the DataStore implementation
 
 ### Index Maintenance
 
@@ -271,6 +308,7 @@ Haro's operations are grounded in computer science fundamentals, providing predi
 | WHERE (cached) | $O(1)$ | Direct cache lookup |
 | WHERE (uncached) | $O(1)$ to $O(n)$ | Indexed lookup or full scan fallback |
 | FILTER | $O(n)$ | Predicate evaluation per record |
+| SORT | $O(n \log n)$ | Full sort via comparator (returns frozen array in immutable mode) |
 | SORTBY | $O(k \log k + n)$ | Sorting by indexed field (k = unique indexed values) |
 | LIMIT | $O(m)$ | m = max records to return |
 
@@ -382,6 +420,52 @@ $$\text{return} = \begin{cases} \text{freeze}(\text{clone}(\text{cached})) & \te
 **Cache write** is handled by `#toCache(cacheKey, records)` which stores raw records in the cache when enabled:
 
 $$\text{cache}.\text{set}(\text{cacheKey}, \text{records}) \text{ when } \text{cacheEnabled}$$
+
+### Security Model
+
+Haro implements two security-focused protections against common injection attacks:
+
+#### Prototype Pollution Prevention
+
+When setting records, `set()` silently filters keys named `__proto__`, `constructor`, and `prototype` from the input data before storing. This prevents JavaScript prototype pollution attacks that could compromise the application:
+
+```javascript
+// Safe - prototype pollution keys are filtered
+store.set('key1', {
+  __proto__: { polluted: true },  // filtered out
+  constructor: { polluted: true }, // filtered out
+  prototype: { polluted: true },   // filtered out
+  safeField: 'value'              // stored normally
+});
+
+// The store is safe:
+Object.prototype.polluted === undefined; // true
+```
+
+This protection operates at the `set()` level (via spreading only safe keys into the record object) and at the `#merge()` level (skipping these keys during deep merge).
+
+#### Regular Expression Denial of Service (ReDoS) Defense
+
+The `search()` method validates RegExp patterns before execution. Regular expressions with a source pattern longer than 256 characters are rejected with an error:
+
+```javascript
+// Safe - normal patterns
+await store.search(/^admin.*/, 'role');    // works
+await store.search(/[a-z]*/, 'name');      // works
+
+// Rejected - potential ReDoS vector
+await store.search(/a{200}/, 'field');     // throws Error
+```
+
+The threshold of 256 characters balances security with practical use cases (complex search patterns should use indexed queries, not regex).
+
+#### Attack Surface Summary
+
+| Threat | Mitigation | Location |
+|--------|-----------|----------|
+| Prototype pollution | Filter `__proto__`, `constructor`, `prototype` | `set()`, `#merge()` |
+| ReDoS (regex injection) | Limit RegExp source length to 256 chars | `search()` |
+| Cache mutation | Deep clone on read, freeze in immutable mode | `#fromCache()` |
 
 ## Operations
 

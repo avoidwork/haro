@@ -21,7 +21,7 @@ Haro is an immutable DataStore with indexing, versioning, and batch operations. 
   - [search()](#searchvalue-index)
   - [filter()](#filterfn)
   - [sortBy()](#sortbyindex)
-  - [sort()](#sortfn-frozen)
+  - [sort()](#sortfn)
   - [limit()](#limitoffset-max)
 - [Batch Operations](#batch-operations)
   - [setMany()](#setmanyrecords)
@@ -38,6 +38,7 @@ Haro is an immutable DataStore with indexing, versioning, and batch operations. 
   - [#fromCache(cached)](#fromcachecached)
   - [#toCache(cacheKey, records)](#tocachekey-records)
   - [#getIndexKeysFrom(arg, source, getValueFn)](#getindexkeysfromarg-source-getvaluefn)
+  - [#getIndexValues(field, source)](#getindexvaluesfield-source)
 - [Index Management](#index-management)
   - [reindex()](#reindexindex)
 - [Cache Control Methods](#cache-control-methods)
@@ -52,6 +53,9 @@ Haro is an immutable DataStore with indexing, versioning, and batch operations. 
   - [size](#size)
 - [Factory Function](#factory-function)
   - [haro()](#harodata-config)
+- [Query Strategy](#query-strategy)
+  - [ValueMatcher](#valuematcher)
+  - [PredicateStrategy](#predicstrategy)
 
 ---
 
@@ -115,6 +119,8 @@ Sets or updates a record with automatic indexing.
 - `override` (boolean): Override instead of merge (default: `false`)
 
 **Returns:** Object - Stored record
+
+**Security:** Keys named `__proto__`, `constructor`, or `prototype` in `data` are silently filtered to prevent prototype pollution attacks.
 
 **Example:**
 ```javascript
@@ -210,13 +216,13 @@ store.find({'user.email': 'john@example.com', 'user.profile.department': 'IT'});
 
 ### where(predicate, op)
 
-Filters records with predicate logic supporting AND/OR on arrays. Supports dot notation for nested fields.
+Filters records with predicate logic supporting AND/OR on arrays. Supports dot notation for nested fields. When indexed fields are found in the predicate, an index-based optimization is used. When no indexed fields match, a full table scan is performed as a fallback. Returns an empty array when indexed queries find no candidates.
 
 **Parameters:**
 - `predicate` (Object): Field-value pairs (supports dot notation for nested paths)
 - `op` (string): Operator: '||' (OR) or '&&' (AND) (default: `'||'`)
 
-**Returns:** Promise<Array<Object>> - Matching records (async)
+**Returns:** Promise<Array<Object>> - Matching records (async). Always returns an array (never void/undefined).
 
 **Example:**
 ```javascript
@@ -226,6 +232,8 @@ const results = await store.where({tags: ['admin', 'user']}, '||');
 // Nested field with dot notation
 const filtered = await store.where({'user.profile.department': 'IT', 'user.status': 'active'});
 ```
+
+**Note:** Query predicates are matched via an extensible Strategy Pattern (`src/query-strategy.js`) implementing AND/OR logic across array predicates. When indexed fields match the predicate, an index-based optimization is used. When no indexed fields match, a full table scan is performed. Always returns an array (never void/undefined), even when indexed queries find no candidates.
 
 ---
 
@@ -239,11 +247,15 @@ Searches for records containing a value.
 
 **Returns:** Promise<Array<Object>> - Matching records (async)
 
+**Throws:** Error if value is null/undefined or if a RegExp has a source pattern longer than 256 characters (ReDoS protection)
+
 **Example:**
 ```javascript
 const results = await store.search('john');
 const matches = await store.search(/^admin/, 'role');
 ```
+
+**Security:** Regular expression patterns with `source.length > 256` are rejected to prevent ReDoS (Regular Expression Denial of Service) attacks.
 
 ---
 
@@ -283,13 +295,12 @@ store.sortBy('age');
 
 ---
 
-### sort(fn, frozen)
+### sort(fn)
 
-Sorts records using a comparator function.
+Sorts records using a comparator function and returns a frozen array in immutable mode.
 
 **Parameters:**
 - `fn` (Function): Comparator (a, b) => number
-- `frozen` (boolean): Return frozen records (default: `false`)
 
 **Returns:** Array<Object> - Sorted records
 
@@ -299,6 +310,8 @@ Sorts records using a comparator function.
 ```javascript
 store.sort((a, b) => a.age - b.age);
 ```
+
+**Note:** In immutable mode, results are automatically frozen. The `frozen` parameter has been removed as immutable mode now handles this via `#freezeResult()`.
 
 ---
 
@@ -512,6 +525,40 @@ Generates composite index keys from data objects or where clauses using a value 
 
 ---
 
+### #getIndexValues(field, source)
+
+Extracts index values for a field from a source object, handling both composite indexes and scalar/array fields. Centralizes the logic formerly duplicated in `#setIndex()` and `#deleteIndex()` into a single method.
+
+**Parameters:**
+- `field` (string): Field name or composite index path
+- `source` (Object): Source object
+
+**Returns:** Array - Array of index values
+
+**Example:**
+```javascript
+// Internal - used by #setIndex(), #deleteIndex()
+```
+
+---
+
+### #getIndexValues(field, source)
+
+Extracts index values for a field from a source object, handling both composite indexes and scalar/array fields. Centralizes the logic formerly duplicated in `#setIndex()` and `#deleteIndex()`.
+
+**Parameters:**
+- `field` (string): Field name or composite index path
+- `source` (Object): Source object
+
+**Returns:** Array - Array of index values
+
+**Example:**
+```javascript
+// Internal - used by #setIndex(), #deleteIndex()
+```
+
+---
+
 ## Index Management
 
 ### reindex(index)
@@ -641,6 +688,49 @@ Factory function to create a Haro instance.
 **Example:**
 ```javascript
 const store = haro([{id: 1, name: 'John'}], {index: ['name']});
+```
+
+---
+
+## Query Strategy
+
+Haro uses an extensible strategy pattern for predicate matching, implemented in the `src/query-strategy.js` module. This encapsulates the `#matchesPredicate` logic into reusable classes.
+
+### ValueMatcher
+
+Low-level value comparison logic used by all strategies.
+
+**Static Method:**
+- `ValueMatcher.match(val, pred)` - Compares a value against a predicate
+  - Handles string/number equality
+  - Handles RegExp matching (in either direction)
+
+**Example:**
+```javascript
+import { ValueMatcher } from './query-strategy.js';
+ValueMatcher.match('hello', 'hello');        // true
+ValueMatcher.match('hello', /^hel/);         // true
+ValueMatcher.match('hello', /xyz/);          // false
+```
+
+### PredicateStrategy
+
+Implements AND/OR logic for matching records against field-level predicates.
+
+**Static Method:**
+- `PredicateStrategy.of(op)` - Factory creating strategy with `'&&'` (AND) or `'||'` (OR) logic
+- `strategy.matches(record, predicate, getNestedValue)` - Checks if a record matches all predicate fields
+
+**Example:**
+```javascript
+import { PredicateStrategy } from './query-strategy.js';
+
+const strategy = PredicateStrategy.of('&&');
+strategy.matches(
+  { name: 'John', role: 'admin' },
+  { name: 'John', role: 'admin' },
+  (record, key) => record[key]
+); // true
 ```
 
 ---
