@@ -64,6 +64,15 @@ describe("Searching and Filtering", () => {
 			assert.strictEqual(results.length, 1);
 			assert.strictEqual(results[0].name, "Alice");
 		});
+
+		it("should throw error for regex with source longer than 256 characters", async () => {
+			const tooLongRegex = new RegExp("a".repeat(300));
+
+			await assert.rejects(
+				() => store.search(tooLongRegex, "name"),
+				/search: value cannot be null or undefined/,
+			);
+		});
 	});
 
 	describe("filter()", () => {
@@ -306,6 +315,16 @@ describe("Searching and Filtering", () => {
 
 			assert.strictEqual(results.length, 1);
 			assert.strictEqual(results[0].id, "1");
+		});
+
+		it("should return empty array when indexed fields exist but index maps are cleared", async () => {
+			const indexedStore = new Haro({ index: ["name"] });
+			indexedStore.override([]);
+
+			const results = await indexedStore.where({ name: "John" });
+
+			assert.strictEqual(results.length, 0);
+			assert.ok(Array.isArray(results));
 		});
 	});
 

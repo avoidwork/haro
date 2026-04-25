@@ -766,9 +766,6 @@ class Haro {
 			const keysLen = keys.length;
 			for (let i = 0; i < keysLen; i++) {
 				const key = keys[i];
-				if (key === STRING_PROTO || key === STRING_CONSTRUCTOR || key === STRING_PROTOTYPE) {
-					continue;
-				}
 				a[key] = this.#merge(a[key], b[key]);
 			}
 		} else {
