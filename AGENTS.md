@@ -6,6 +6,7 @@ Haro is a modern immutable DataStore for collections of records with indexing, v
 ## Project Structure
 - `src/haro.js` - Main Haro class and factory function
 - `src/constants.js` - String and number constants
+- `src/query-strategy.js` - Strategy pattern for predicate matching (`ValueMatcher`, `PredicateStrategy`)
 - `tests/` - Unit tests using Node.js native test runner
 - `dist/` - Built distribution files (generated)
 - `types/haro.d.ts` - TypeScript definitions
@@ -54,9 +55,10 @@ npm run benchmark         # Run benchmarks
 - `#fromCache(cached)` - Returns cloned result (non-immutable) or frozen result (immutable) from cache
 - `#toCache(cacheKey, records)` - Stores results in cache if enabled
 - `#getIndexKeysFrom(arg, source, getValueFn)` - Generates composite index keys using a getter callback
+- `#getIndexValues(field, source)` - Extracts index values for a field, handling composite indexes and scalar/array fields. Centralizes deduplicated logic from `#setIndex()` and `#deleteIndex()`
 - `#getNestedValue(obj, path)` - Retrieves nested values using dot notation (e.g., `user.profile.city`)
 - `#sortKeys(a, b)` - Type-aware comparator: strings use `localeCompare`, numbers use subtraction, mixed types coerced to string
-- `#merge(a, b, override)` - Deep merges values, skips prototype pollution keys (`__proto__`, `constructor`, `prototype`)
+- `#merge(a, b)` - Deep merges values, skips prototype pollution keys (`__proto__`, `constructor`, `prototype`). `override` parameter removed
 - `#invalidateCache()` - Clears cache if enabled and not in batch mode
 - `#getCacheKey(domain, ...args)` - Generates SHA-256 hash cache key from arguments
 - `#clone(arg)` - Deep clones values via `structuredClone` or JSON fallback

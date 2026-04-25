@@ -197,23 +197,15 @@ export class Haro {
    */
   map(fn: (value: any, key: string) => any): any[];
 
-  /**
-   * Internal helper method for predicate matching with support for arrays and regex
-   * @param record - Record to test against predicate
-   * @param predicate - Predicate object with field-value pairs
-   * @param op - Operator for array matching ('||' for OR, '&&' for AND)
-   * @returns True if record matches predicate criteria
-   */
-  matchesPredicate(record: any, predicate: Record<string, any>, op: string): boolean;
 
   /**
-   * Merges two values together with support for arrays and objects
+   * Deep merges two values together with support for arrays and objects.
+   * Skips prototype pollution keys (__proto__, constructor, prototype).
    * @param a - First value (target)
    * @param b - Second value (source)
-   * @param override - Whether to override arrays instead of concatenating
    * @returns Merged result
    */
-  merge(a: any, b: any, override?: boolean): any;
+  merge(a: any, b: any): any;
 
   /**
    * Lifecycle hook executed after batch operations for custom postprocessing
@@ -299,12 +291,12 @@ export class Haro {
   setIndex(key: string, data: any, indice: string | null): Haro;
 
   /**
-   * Sorts all records using a comparator function
+   * Sorts all records using a comparator function.
+   * In immutable mode, results are automatically frozen.
    * @param fn - Comparator function for sorting (a, b) => number
-   * @param frozen - Whether to return frozen records
    * @returns Sorted array of records
    */
-  sort(fn: (a: any, b: any) => number, frozen?: boolean): any;
+  sort(fn: (a: any, b: any) => number): any;
 
   /**
    * Comparator function for sorting keys with type-aware comparison logic

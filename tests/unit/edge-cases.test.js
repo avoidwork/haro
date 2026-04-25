@@ -143,4 +143,62 @@ describe("Edge Cases Coverage", () => {
 			}
 		});
 	});
+
+	describe("prototype pollution prevention", () => {
+		it("should prevent __proto__ pollution during initial set", () => {
+			const store = new Haro({ index: ["name"] });
+
+			store.set("user1", {
+				name: "John",
+				__proto__: { evil: "injected" },
+			});
+
+			const record = store.get("user1");
+			assert.strictEqual(record.name, "John");
+			assert.notStrictEqual(record.__proto__, { evil: "injected" });
+		});
+
+		it("should prevent __proto__ pollution during update via merge", () => {
+			const store = new Haro({ index: ["name"] });
+
+			store.set("user1", { name: "John", age: 30 });
+			store.set("user1", {
+				name: "Jane",
+				__proto__: { evil: "injected" },
+			});
+
+			const record = store.get("user1");
+			assert.strictEqual(record.name, "Jane");
+			assert.strictEqual(record.age, 30);
+			assert.strictEqual(record.hasOwnProperty("__proto__"), false);
+		});
+
+		it("should prevent constructor pollution during update", () => {
+			const store = new Haro({ index: ["name"] });
+
+			store.set("user1", { name: "John", age: 30 });
+			store.set("user1", {
+				name: "Jane",
+				constructor: { evil: "injected" },
+			});
+
+			const record = store.get("user1");
+			assert.strictEqual(record.name, "Jane");
+			assert.strictEqual(record.age, 30);
+		});
+
+		it("should prevent prototype pollution during update", () => {
+			const store = new Haro({ index: ["name"] });
+
+			store.set("user1", { name: "John", age: 30 });
+			store.set("user1", {
+				name: "Jane",
+				prototype: { evil: "injected" },
+			});
+
+			const record = store.get("user1");
+			assert.strictEqual(record.name, "Jane");
+			assert.strictEqual(record.age, 30);
+		});
+	});
 });
