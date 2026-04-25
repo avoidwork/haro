@@ -98,6 +98,9 @@ describe("Utility Methods", () => {
 			immutableStore.set("user3", { id: "user3", name: "Bob", age: 35 });
 			const results = immutableStore.sort((a, b) => a.age - b.age);
 			assert.strictEqual(Object.isFrozen(results), true);
+			assert.strictEqual(results[0].name, "Alice");
+			assert.strictEqual(results[1].name, "Charlie");
+			assert.strictEqual(results[2].name, "Bob");
 		});
 	});
 
