@@ -22,7 +22,7 @@ List key changes.
 ## Checklist
 
 - [ ] I have read the [CONTRIBUTING](.github/CONTRIBUTING.md) document.
-- [ ] My code follows the style guidelines (pylint, isort, black, mypy).
+- [ ] My code follows the style guidelines (oxlint, oxfmt, npm test).
 - [ ] I have added tests that cover my changes.
 - [ ] All new and existing tests passed.
 - [ ] Commit message follows Conventional Commits.
