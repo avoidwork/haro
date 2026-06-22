@@ -67,7 +67,7 @@
     "auto-changelog": "^2.5.0",
     "globals": "^17.5.0",
     "husky": "^9.1.7",
-    "oxfmt": "^0.55.0",
+    "oxfmt": "^0.56.0",
     "oxlint": "^1.60.0",
     "rollup": "^4.60.2",
     "tinybench": "^6.0.0"
