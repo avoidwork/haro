@@ -64,6 +64,31 @@ describe("Batch Operations", () => {
 			assert.strictEqual(johnResults[0].age, 30);
 		});
 
+		it("should create a version set for keys first inserted during a batch", () => {
+			const store = new Haro({ key: "id", index: ["name"], versioning: true });
+			store.setMany([{ id: "user1", name: "John" }]);
+
+			// Updating a key that was first seen inside a batch must not throw
+			store.set("user1", { name: "Jane" });
+
+			assert.strictEqual(store.get("user1").name, "Jane");
+			assert.strictEqual(store.versions.get("user1").size, 1);
+			assert.strictEqual([...store.versions.get("user1")][0].name, "John");
+			assert.strictEqual(store.find({ name: "Jane" }).length, 1);
+		});
+
+		it("should delete versions for records removed during a batch", () => {
+			const store = new Haro({ key: "id", versioning: true });
+			store.set("user1", { id: "user1", name: "John" });
+			store.set("user1", { name: "Jane" });
+			assert.strictEqual(store.versions.has("user1"), true);
+
+			store.deleteMany(["user1"]);
+
+			assert.strictEqual(store.size, 0);
+			assert.strictEqual(store.versions.has("user1"), false);
+		});
+
 		it("should skip versioning during batch", () => {
 			const store = new Haro({ key: "id", versioning: true });
 			store.set("user1", { id: "user1", name: "John" });
