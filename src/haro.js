@@ -291,7 +291,7 @@ export class Haro {
 			this.#deleteIndex(key, og);
 		}
 		this.#data.delete(key);
-		if (this.#versioning && !this.#inBatch) {
+		if (this.#versioning) {
 			this.#versions.delete(key);
 		}
 		this.#invalidateCache();
@@ -801,7 +801,7 @@ export class Haro {
 		);
 		let x = { ...safeData, [this.#key]: key };
 		if (!this.#data.has(key)) {
-			if (this.#versioning && !this.#inBatch) {
+			if (this.#versioning) {
 				this.#versions.set(key, new Set());
 			}
 		} else {
